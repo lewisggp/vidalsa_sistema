@@ -15,6 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\ValidarSesionUnica::class,
         ]);
 
+        // Configuración para Easypanel/Docker (Reverse Proxy)
+        $middleware->trustProxies(at: '*');
+
         $middleware->validateCsrfTokens(except: [
             'logout',
         ]);
