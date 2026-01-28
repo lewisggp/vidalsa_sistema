@@ -1,0 +1,80 @@
+@forelse($catalogos as $catalogo)
+    <tr>
+        <td class="table-cell-custom table-cell-center table-cell-bordered" style="padding: 0; width: 160px;">
+            @if($catalogo->FOTO_REFERENCIAL)
+                <div class="table-image-wrapper" style="width: 100%; height: 90px; display: flex; align-items: center; justify-content: center;">
+                    <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" 
+                         data-src="{{ route('drive.file', ['path' => str_replace('/storage/google/', '', $catalogo->FOTO_REFERENCIAL)]) }}" 
+                         alt="Foto" 
+                         class="lazy-catalog-img"
+                         style="max-height: 100%; max-width: 100%; object-fit: contain; opacity: 0; transition: opacity 0.3s;">
+                </div>
+            @else
+                <div class="table-image-wrapper placeholder" style="width: 100%; height: 90px; display: flex; align-items: center; justify-content: center;">
+                    <i class="material-icons" style="font-size: 24px;">image_not_supported</i>
+                </div>
+            @endif
+        </td>
+        <td class="table-cell-custom table-cell-bordered" data-label="Modelo / Año">
+            <div class="catalog-Model">{{ $catalogo->MODELO }}</div>
+            <div style="font-size: 15px; color: #000;">{{ $catalogo->ANIO_ESPEC }}</div>
+        </td>
+        <td class="table-cell-custom table-cell-bordered" data-label="Motor y Energía">
+            <div class="catalog-label">Motor</div>
+            <div class="catalog-value">{{ $catalogo->MOTOR ?: 'N/A' }}</div>
+            
+            <div class="catalog-label">Energía</div>
+             <div class="catalog-value-secondary">{{ $catalogo->COMBUSTIBLE ?: '-' }}</div>
+        </td>
+        <td class="table-cell-custom table-cell-bordered" data-label="Capacidad / Consumo">
+            <div class="catalog-label">Capacidad</div>
+             <div class="catalog-value">{{ $catalogo->CAPACIDAD ?: '-' }}</div>
+
+            <div class="catalog-label">Consumo</div>
+             <div class="catalog-value-secondary">{{ $catalogo->CONSUMO_PROMEDIO ? $catalogo->CONSUMO_PROMEDIO . ' L/DIA' : '-' }}</div>
+        </td>
+        <td class="table-cell-custom table-cell-bordered" data-label="Mantenimiento">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 2px; font-size: 13px; color: #475569;">
+                <div>
+                    <div class="catalog-label" style="font-size: 11.5px;">Aceite Motor:</div>
+                    <div style="color: #1e293b; line-height: 1.1;">{{ $catalogo->ACEITE_MOTOR ?: '-' }}</div>
+                </div>
+                <div>
+                    <div class="catalog-label" style="font-size: 11.5px;">Aceite Caja:</div>
+                    <div style="color: #1e293b; line-height: 1.1;">{{ $catalogo->ACEITE_CAJA ?: '-' }}</div>
+                </div>
+                <div>
+                    <div class="catalog-label" style="font-size: 11.5px;">Liga Freno:</div>
+                    <div style="color: #1e293b; line-height: 1.1;">{{ $catalogo->LIGA_FRENO ?: '-' }}</div>
+                </div>
+                <div>
+                    <div class="catalog-label" style="font-size: 11.5px;">Refrigerante:</div>
+                    <div style="color: #1e293b; line-height: 1.1;">{{ $catalogo->REFRIGERANTE ?: '-' }}</div>
+                </div>
+                <div style="grid-column: span 2;">
+                    <div class="catalog-label" style="font-size: 11.5px;">Batería:</div>
+                    <div style="color: #1e293b; line-height: 1.1;">{{ $catalogo->TIPO_BATERIA ?: '-' }}</div>
+                </div>
+            </div>
+        </td>
+        <td style="padding: 4px 12px; text-align: center;" data-label="Acciones">
+            <div style="display: flex; gap: 8px; justify-content: center; width: 100%;">
+                <a href="{{ route('catalogo.edit', $catalogo->ID_ESPEC) }}" class="btn-details-mini" title="Editar" style="flex: 1; background: #ebf4ff; color: var(--maquinaria-blue);">
+                    <i class="material-icons">edit</i>
+                </a>
+                <div style="flex: 1;">
+                    <button type="button" onclick="confirmDeleteCatalogo('{{$catalogo->ID_ESPEC}}', '{{ addslashes($catalogo->MODELO) }}')" class="btn-details-mini" style="background: #fee2e2; color: #ef4444; width: 100%; height: 35px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 6px;" title="Eliminar">
+                        <i class="material-icons">delete</i>
+                    </button>
+                </div>
+            </div>
+        </td>
+    </tr>
+@empty
+    <tr>
+        <td colspan="6" style="text-align: center; padding: 40px; color: #94a3b8;">
+            <i class="material-icons" style="font-size: 48px; display: block; margin-bottom: 10px;">inventory_2</i>
+            No hay modelos registrados que coincidan con los filtros.
+        </td>
+    </tr>
+@endforelse

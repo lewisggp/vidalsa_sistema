@@ -1,0 +1,195 @@
+/* Catalog Responsive Styles - Mobile Optimization */
+@media (max-width: 768px) {
+    #catalogoFiltersForm {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+    }
+
+    .filter-item {
+        min-width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+
+    .btn-primary-maquinaria,
+    .btn-secondary-maquinaria {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .action-buttons-container {
+        width: 100%;
+        text-align: center !important;
+        margin-top: 10px;
+    }
+
+    /* Adjust table font size for mobile specific */
+    .admin-table th,
+    .admin-table td {
+        font-size: 13px !important;
+        padding: 8px 5px !important;
+        white-space: normal !important;
+    }
+
+    .page-title-card {
+        text-align: center !important;
+    }
+
+    /* Responsive Table Headers for Catalog */
+    .admin-table thead {
+        display: none !important;
+    }
+
+    .admin-table tr {
+        display: flex;
+        flex-wrap: wrap;
+        /* Allow cells to flow */
+        margin-bottom: 20px;
+        border: 1px solid #cbd5e0;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        background: white;
+    }
+
+    .admin-table td {
+        box-sizing: border-box !important;
+    }
+
+    /* 1. ROW 1: PHOTO + MODEL (Side-by-side) */
+    .admin-table td:nth-child(1) {
+        order: 1;
+        width: 35% !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        padding: 5px !important;
+        border-bottom: 1px solid #f1f5f9;
+        border-right: 1px solid #f1f5f9;
+        background: #f8fafc;
+        box-sizing: border-box !important;
+    }
+
+    .table-image-wrapper {
+        width: 100% !important;
+        height: auto !important;
+        aspect-ratio: 3/2;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+
+    .admin-table td:nth-child(2) {
+        order: 2;
+        width: 65% !important;
+        display: flex !important;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 10px !important;
+        border-bottom: 1px solid #f1f5f9;
+        background: #f8fafc;
+        text-align: left !important;
+        box-sizing: border-box !important;
+    }
+
+    /* 2. ROW 2: MOTOR + CAPACITY (Side-by-side 50/50) */
+    .admin-table td:nth-child(3) {
+        order: 3;
+        width: 50% !important;
+        /* Half width */
+        display: block;
+        text-align: left !important;
+        border-bottom: 1px solid #f1f5f9;
+        border-right: 1px solid #f1f5f9;
+        /* Separator */
+        padding: 10px !important;
+        background: white;
+        min-height: 80px;
+        /* Ensure equal height visual */
+    }
+
+    .admin-table td:nth-child(4) {
+        order: 4;
+        width: 50% !important;
+        /* Half width */
+        display: block;
+        text-align: left !important;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 10px !important;
+        background: white;
+        min-height: 80px;
+    }
+
+    /* Reset specific styles from previous attempts to align with new grid */
+    .admin-table td:nth-child(3),
+    .admin-table td:nth-child(4) {
+        background: white !important;
+        padding-bottom: 10px !important;
+        border-top: none !important;
+    }
+
+    /* 3. ROW 3: LUBRICANTS (Full Width) */
+    .admin-table td:nth-child(5) {
+        order: 5;
+        width: 100% !important;
+        display: block;
+        text-align: left !important;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 10px !important;
+        background: #fdfdfd;
+    }
+
+    /* Hide labels */
+    .admin-table td:nth-child(n+3):not(:last-child)::before {
+        display: none;
+    }
+
+    /* 4. ROW 4: ACTIONS (Full Width) - Already set correctly */
+    .admin-table td:last-child {
+        order: 6;
+    }
+
+    /* Mobile Card Actions (Edit/Delete) - Full Width Bottom */
+    .admin-table td:last-child {
+        display: flex !important;
+        width: auto !important;
+        /* Let it fill naturally to avoid padding overflow */
+        box-sizing: border-box;
+        /* Ensure padding is included in width calculation just in case */
+        border-top: 1px solid #f1f5f9;
+        padding: 10px !important;
+        background: #f8fafc;
+        justify-content: space-between;
+        gap: 10px;
+        border-radius: 0 0 8px 8px;
+        margin: 0;
+        /* Ensure no negative margins */
+    }
+
+    .admin-table td:last-child::before {
+        display: none;
+    }
+
+    /* Action Buttons inside the cell */
+    .admin-table td:last-child .btn-details-mini {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 8px 0;
+        height: 35px;
+        border-radius: 6px;
+        max-width: none;
+        /* Ensure no max-width restricts it */
+    }
+
+    /* Fix "Nuevo Modelo" button width */
+    .action-buttons-container {
+        width: 100%;
+        box-sizing: border-box;
+        /* Crucial for padding/border inclusion */
+        flex: 1 1 100%;
+        text-align: center;
+        padding: 0 5px;
+        /* Slight buffer if needed, or 0 */
+    }
+}

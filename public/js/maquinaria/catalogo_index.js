@@ -1,0 +1,359 @@
+// catalogo_index.js - Catalogo Module Logic
+// Version: 1.0 - SPA Compatible Architecture
+
+// --- Delete Modal Logic (Optimized - AJAX) ---
+window.confirmDeleteCatalogo = function (id, modelName) {
+    if (!id || String(id).trim() === '') {
+        alert('Error: ID del registro no válido. Por favor recarga la página.');
+        console.error('ID missing for confirmDeleteCatalogo');
+        return;
+    }
+
+    const modal = document.getElementById('deleteModal');
+    const nameSpan = document.getElementById('deleteModalUserName');
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+
+    if (modal && nameSpan && confirmBtn) {
+        nameSpan.innerText = modelName;
+
+        // Clean previous event listeners
+        const newBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+
+        // Handle confirm click (AJAX)
+        newBtn.onclick = async function () {
+            // UI Feedback
+            newBtn.disabled = true;
+            newBtn.innerText = 'Eliminando...';
+
+            let targetUrl = '';
+            // console.log('Attempting DELETE for ID:', id);
+            try {
+                targetUrl = `/admin/catalogo/${id}`;
+                // console.log('Target URL:', targetUrl);
+
+                const response = await fetch(targetUrl, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                // Parse JSON Safely
+                let data = {};
+                try {
+                    data = await response.json();
+                } catch (e) { }
+
+                if (response.ok) {
+                    // Success: Close modal and Refresh Table
+                    window.closeDeleteModal();
+
+                    // Show Success Message
+                    if (window.showModal) {
+                        window.showModal({
+                            type: 'success',
+                            title: 'Eliminado',
+                            message: data.message || 'Registro eliminado correctamente.',
+                            hideCancel: true
+                        });
+                    }
+
+                    window.loadCatalogo();
+                } else {
+                    throw new Error(data.message || 'Error al eliminar');
+                }
+
+            } catch (error) {
+                console.error('Delete Error:', error);
+                alert('Error al eliminar: ' + error.message);
+            } finally {
+                // Reset Button State
+                newBtn.disabled = false;
+                newBtn.innerText = 'Eliminar';
+            }
+        };
+
+        // Show Modal
+        modal.style.display = 'flex';
+        setTimeout(() => modal.style.opacity = '1', 10);
+    } else {
+        console.error('Modal elements not found for delete');
+    }
+};
+
+window.closeDeleteModal = function () {
+    const modal = document.getElementById('deleteModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+};
+
+// --- Specific Catalog Logic (Standardized) ---
+window.selectAdvancedOption = function (type, value, event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    if (type === 'modelo') {
+        const input = document.getElementById('searchModeloInput');
+        if (input) {
+            input.value = value;
+            input.placeholder = value ? value : 'Buscar Modelo...'; // Update placeholder if selected
+        }
+        const hidden = document.getElementById('input_modelo_filter');
+        if (hidden) hidden.value = value;
+
+        const clearBtn = document.getElementById('btn_clear_modelo');
+        if (clearBtn) clearBtn.style.display = value ? 'block' : 'none';
+
+        const dropdown = document.getElementById('modeloFilterSelect');
+        if (dropdown) dropdown.classList.remove('active');
+    }
+
+    if (type === 'anio') {
+        const input = document.getElementById('searchAnioInput');
+        if (input) {
+            input.value = value;
+            input.placeholder = value ? value : 'Buscar Año...';
+        }
+        const hidden = document.getElementById('input_anio_filter');
+        if (hidden) hidden.value = value;
+
+        const clearBtn = document.getElementById('btn_clear_anio');
+        if (clearBtn) clearBtn.style.display = value ? 'block' : 'none';
+
+        const dropdown = document.getElementById('anioFilterSelect');
+        if (dropdown) dropdown.classList.remove('active');
+    }
+
+    // Trigger Load
+    window.loadCatalogo();
+};
+
+window.debounceTimer = null;
+window.debounceLoadCatalogo = function () {
+    if (window.debounceTimer) clearTimeout(window.debounceTimer);
+    window.debounceTimer = setTimeout(() => {
+        // Sync text inputs to hidden inputs for free text search
+        const modInput = document.getElementById('searchModeloInput');
+        const anioInput = document.getElementById('searchAnioInput');
+
+        if (modInput) document.getElementById('input_modelo_filter').value = modInput.value;
+        if (anioInput) document.getElementById('input_anio_filter').value = anioInput.value;
+
+        window.loadCatalogo();
+    }, 600); // Increased to 600ms to match Vehicles and prevent frequent preloader flashes
+};
+
+// Global AbortController to cancel pending requests
+window.currentRequestController = null;
+
+// Clear individual filter (Unique name to prevent conflicts)
+// Clear individual filter (Standardized)
+window.clearCatalogoFilter = function (filterName) {
+    if (window.debounceTimer) clearTimeout(window.debounceTimer);
+
+    // Update UI Elements
+    if (filterName === 'modelo') {
+        const input = document.getElementById('searchModeloInput');
+        if (input) {
+            input.value = '';
+            input.placeholder = 'Buscar Modelo...';
+        }
+        document.getElementById('input_modelo_filter').value = '';
+        document.getElementById('btn_clear_modelo').style.display = 'none';
+
+        // Reset dropdown highlighting
+        const dropdown = document.getElementById('modeloFilterSelect');
+        if (dropdown) {
+            dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+                item.classList.remove('selected');
+                item.style.fontWeight = '';
+                item.style.color = '';
+            });
+            // Re-select "Todos"
+            const allOption = dropdown.querySelector('.dropdown-item:first-child');
+            if (allOption) allOption.classList.add('selected');
+        }
+    }
+
+    if (filterName === 'anio') {
+        const input = document.getElementById('searchAnioInput');
+        if (input) {
+            input.value = '';
+            input.placeholder = 'Buscar Año...';
+        }
+        document.getElementById('input_anio_filter').value = '';
+        document.getElementById('btn_clear_anio').style.display = 'none';
+
+        // Reset dropdown highlighting
+        const dropdown = document.getElementById('anioFilterSelect');
+        if (dropdown) {
+            dropdown.querySelectorAll('.dropdown-item').forEach(item => item.classList.remove('selected'));
+        }
+    }
+
+    // Rely on standard load to fetch data with remaining filters
+    window.loadCatalogo();
+};
+
+
+// Standardized Load Function (Matches Equipos Logic)
+window.loadCatalogo = async function (url = null, showSpinner = true) {
+    // 1. Cancel previous pending request
+    if (window.currentRequestController) {
+        window.currentRequestController.abort();
+    }
+    window.currentRequestController = new AbortController();
+    const signal = window.currentRequestController.signal;
+
+    const tableBody = document.getElementById('catalogoTableBody');
+    if (!tableBody) return;
+
+    let baseUrl = url || '/admin/catalogo';
+
+    // Explicitly gather inputs (Single Source of Truth)
+    const modeloInput = document.getElementById('input_modelo_filter');
+    const anioInput = document.getElementById('input_anio_filter');
+
+    // Unified Filter Object
+    const filters = {
+        modelo: (modeloInput?.value !== '') ? modeloInput?.value : null,
+        anio: (anioInput?.value !== '') ? anioInput?.value : null,
+        ajax_load: '1'
+    };
+
+    const params = new URLSearchParams();
+
+    // Cleanly append only valid filter values
+    Object.entries(filters).forEach(([key, value]) => {
+        if (value && typeof value === 'string' && value.trim() !== '') {
+            params.append(key, value.trim());
+        }
+    });
+
+    // Strip existing params from baseUrl if we are rebuilding them (unless it's pagination link)
+    if (!url && baseUrl.includes('?')) {
+        baseUrl = baseUrl.split('?')[0];
+    }
+
+    // If url passed (pagination), use its params + force ajax_load, OR merge?
+    // Usually pagination links already include params. 
+    // IF url is passed, we normally trust it but ensure ajax_load is there.
+    let finalUrl;
+    if (url) {
+        const urlObj = new URL(url, window.location.origin);
+        urlObj.searchParams.set('ajax_load', '1');
+        finalUrl = urlObj.toString();
+    } else {
+        finalUrl = baseUrl + '?' + params.toString();
+    }
+
+    // UI Feedback
+    if (tableBody) tableBody.style.opacity = '0.5';
+    if (showSpinner && typeof window.showPreloader === 'function') window.showPreloader();
+
+    try {
+        const response = await fetch(finalUrl, {
+            signal: signal,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!response.ok) throw new Error('Network response was not ok');
+
+        const data = await response.json();
+
+        // Update Table Content
+        if (tableBody) {
+            tableBody.innerHTML = data.html;
+            tableBody.style.opacity = '1';
+        }
+
+        // Re-initalize Lazy Loading
+        initCatalogo();
+
+        // Update Pagination
+        const paginationContainer = document.getElementById('catalogoPagination');
+        if (paginationContainer) {
+            paginationContainer.innerHTML = data.pagination;
+            paginationContainer.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    window.loadCatalogo(this.href);
+                });
+            });
+        }
+
+        // Update Stats Sidebar
+        const statsContainer = document.getElementById('statsSidebarContainer');
+        if (statsContainer && data.stats) {
+            statsContainer.innerHTML = data.stats;
+        }
+
+        // Update Browser URL (for shareable links)
+        window.history.pushState({}, '', finalUrl.replace('&ajax_load=1', '').replace('?ajax_load=1', ''));
+
+    } catch (error) {
+        if (error.name === 'AbortError') return;
+        console.error('Error loading catalogo:', error);
+        if (tableBody) tableBody.style.opacity = '1';
+    } finally {
+        if (window.currentRequestController === null || (window.currentRequestController && window.currentRequestController.signal === signal)) {
+            if (showSpinner && typeof window.hidePreloader === 'function') window.hidePreloader();
+            if (window.currentRequestController && window.currentRequestController.signal === signal) {
+                window.currentRequestController = null;
+            }
+        }
+    }
+};
+
+// Initialize Catalogo Module
+function initCatalogo() {
+    if (!document.getElementById('catalogoTableBody')) return;
+
+    // Initialize Pagination on Load
+    const paginationContainer = document.getElementById('catalogoPagination');
+    if (paginationContainer) {
+        paginationContainer.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                window.loadCatalogo(this.href);
+            });
+        });
+    }
+
+    // Lazy Load Images
+    const lazyImages = document.querySelectorAll('img.lazy-catalog-img');
+    if ('IntersectionObserver' in window) {
+        const imageObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    img.onload = () => img.style.opacity = 1;
+                    imageObserver.unobserve(img);
+                }
+            });
+        });
+        lazyImages.forEach(img => imageObserver.observe(img));
+    } else {
+        // Fallback
+        lazyImages.forEach(img => {
+            img.src = img.dataset.src;
+            img.onload = () => img.style.opacity = 1;
+        });
+    }
+}
+
+// Register with Module Manager for SPA compatibility
+ModuleManager.register('catalogo',
+    () => document.getElementById('catalogoTableBody') !== null,
+    initCatalogo
+);
