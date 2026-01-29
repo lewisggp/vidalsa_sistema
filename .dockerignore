@@ -1,0 +1,50 @@
+# Dependencies
+/node_modules
+/vendor
+
+# Build output
+/public/build
+/public/hot
+
+# Laravel specific
+/storage/*.key
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+
+# Environment
+.env
+.env.backup
+.env.production
+
+# Git
+.git
+.gitattributes
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Logs and temporary files
+*.log
+temp_log.txt
+output.log
+migration_log.txt
+
+# Debug files
+debug_drive_test.php
+quick_debug.php
+check_indexes.php
+reset_password.php
+update_password.php
+
+# Documentation
+README.md
+
+# Tests
+/tests
+phpunit.xml
