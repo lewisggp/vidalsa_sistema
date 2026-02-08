@@ -73,17 +73,6 @@ window.selectMovilizacionFilter = function (type, value) {
     window.loadMovilizaciones();
 };
 
-window.filterDropdownOptions = function (input) {
-    const filter = input.value.toUpperCase();
-    const listInfo = input.closest('.custom-dropdown').querySelector('.dropdown-item-list');
-    if (!listInfo) return;
-
-    const items = listInfo.querySelectorAll('.dropdown-item');
-    items.forEach(item => {
-        const txt = item.textContent || item.innerText;
-        item.style.display = (txt.toUpperCase().indexOf(filter) > -1) ? "" : "none";
-    });
-};
 
 window.loadMovilizaciones = function (url = null) {
     const tableBody = document.getElementById('movilizacionesTableBody');
@@ -91,14 +80,14 @@ window.loadMovilizaciones = function (url = null) {
 
     let baseUrl = url || window.location.pathname;
     const searchInput = document.getElementById('searchInput');
-    const frenteInput = document.getElementById('input_frente_filter');
-    const tipoInput = document.getElementById('input_tipo_filter');
+    const frenteInput = document.querySelector('input[name="id_frente"]');
+    const tipoInput = document.querySelector('input[name="id_tipo"]');
 
     const params = new URLSearchParams();
     if (searchInput?.value) params.append('search', searchInput.value);
 
-    // Handle 'all' logic for frente
-    if (frenteInput?.value && frenteInput.value !== 'all') {
+    // Handle 'all' logic for frente - SEND IT so server knows to load data (even if it's all)
+    if (frenteInput?.value) {
         params.append('id_frente', frenteInput.value);
     }
 
@@ -112,6 +101,48 @@ window.loadMovilizaciones = function (url = null) {
             if (page) params.append('page', page);
             baseUrl = urlObj.pathname;
         } catch (e) { console.error(e); }
+    }
+
+    // OPTIMIZATION: Check if there are any meaningful filters
+    // Strategy: Only skip server request if EVERYTHING is null/empty (truly no input from user)
+    const filters = {
+        search: searchInput?.value,
+        id_frente: frenteInput?.value,
+        id_tipo: tipoInput?.value
+    };
+
+    const hasAnyInput = Object.values(filters).some(value => {
+        if (value === null || value === '' || value === undefined) return false;
+        if (typeof value === 'string' && value.trim() === '') return false;
+        return true; // Any non-empty value means user provided input
+    });
+
+    // If truly no input at all, clear UI without server request
+    if (!hasAnyInput) {
+        console.log('No active filters detected - clearing UI without server request');
+
+        // Clear table with friendly message
+        tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8; font-style: italic;">SELECCIONE UN FILTRO PARA VISUALIZAR LAS MOVILIZACIONES</td></tr>';
+        tableBody.style.opacity = '1';
+
+        // Clear pagination
+        const paginationContainer = document.getElementById('movilizacionesPagination');
+        if (paginationContainer) paginationContainer.innerHTML = '';
+
+        // Clear stats
+        const statsContainer = document.getElementById('statusStatsContainer');
+        if (statsContainer) {
+            statsContainer.innerHTML = '<h4 style="margin: 0 0 15px 0; font-size: 13px; text-transform: uppercase; color: #64748b; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-weight: 700; display: flex; align-items: center; gap: 8px;"><i class="material-icons" style="font-size: 18px; color: #8b5cf6;">local_shipping</i>En Tránsito por Frente</h4><ul style="list-style: none; padding: 0; margin: 0;"><li style="padding: 15px; text-align: center; color: #94a3b8; font-style: italic; font-size: 13px;">No hay equipos en tránsito</li></ul>';
+        }
+
+        // Clear total count
+        const totalTransitoEl = document.getElementById('totalTransitoCount');
+        if (totalTransitoEl) totalTransitoEl.innerText = '0';
+
+        // Update URL to reflect empty state
+        window.history.pushState(null, '', window.location.pathname);
+
+        return Promise.resolve();
     }
 
     const finalUrl = baseUrl + '?' + params.toString();
@@ -137,6 +168,12 @@ window.loadMovilizaciones = function (url = null) {
                 statsContainer.innerHTML = data.statsHtml;
             }
 
+            // Update Global Transit Count (Purple Card)
+            const totalTransitoEl = document.getElementById('totalTransitoCount');
+            if (totalTransitoEl && data.totalTransito !== undefined) {
+                totalTransitoEl.innerText = data.totalTransito;
+            }
+
             window.history.pushState(null, '', finalUrl);
             if (window.hidePreloader) window.hidePreloader();
         })
@@ -149,43 +186,10 @@ window.loadMovilizaciones = function (url = null) {
 
 // Global Event Listeners (SPA Safe)
 function initMovilizacionesListeners() {
-    // Dropdown toggles
-    const triggers = document.querySelectorAll('.dropdown-trigger');
-    triggers.forEach(trigger => {
-        // Avoid adding duplicate listeners if possible, or clone-replace
-        trigger.onclick = function (e) {
-            e.stopPropagation();
-            // Close others
-            document.querySelectorAll('.custom-dropdown').forEach(d => {
-                if (d !== this.parentNode && d.classList.contains('active')) {
-                    d.classList.remove('active');
-                    d.querySelector('.dropdown-content').style.display = 'none';
-                }
-            });
+    // NOTE: Dropdown toggles now handled by global delegation in uicomponents.js
+    // No need to manually attach onclick to .dropdown-trigger elements
 
-            const parent = this.parentNode; // .custom-dropdown
-            const content = parent.querySelector('.dropdown-content');
-
-            // Toggle Logic
-            if (content.style.display === 'block') {
-                content.style.display = 'none';
-                parent.classList.remove('active');
-            } else {
-                content.style.display = 'block';
-                parent.classList.add('active');
-            }
-        };
-    });
-
-    // Close when clicking outside
-    document.addEventListener('click', function (e) {
-        if (!e.target.closest('.custom-dropdown')) {
-            document.querySelectorAll('.custom-dropdown .dropdown-content').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.custom-dropdown').forEach(el => el.classList.remove('active'));
-        }
-    });
-
-    // Search Input Auto-Search
+    // Search Input Auto-Search (module-specific logic)
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.addEventListener('keyup', function () {
@@ -214,3 +218,10 @@ if (typeof ModuleManager !== 'undefined') {
         initMovilizaciones
     );
 }
+
+// Listen for SPA navigation to reinitialize module
+window.addEventListener('spa:contentLoaded', function () {
+    if (document.getElementById('movilizacionesTableBody')) {
+        initMovilizaciones();
+    }
+});

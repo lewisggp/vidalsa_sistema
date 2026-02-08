@@ -11,20 +11,24 @@ function initEquiposForm() {
     const showFieldError = (input, message) => {
         if (!input) return;
         input.classList.add('is-invalid');
+
+        // Custom Dropdown Support
+        const dropdown = input.closest('.custom-dropdown');
+        if (dropdown) {
+            const trigger = dropdown.querySelector('.dropdown-trigger');
+            if (trigger) trigger.style.borderColor = '#e53e3e';
+        }
+
         const parent = input.parentNode;
         if (!parent) return;
 
         // Remove existing
-        const existing = parent.querySelectorAll('.invalid-feedback');
+        const existing = parent.querySelectorAll('.error-message-inline');
         existing.forEach(el => el.remove());
 
         // Add new
-        const feedback = document.createElement('div');
-        feedback.className = 'invalid-feedback';
-        feedback.style.color = '#e53e3e';
-        feedback.style.fontSize = '12px';
-        feedback.style.marginTop = '4px';
-        feedback.style.display = 'block';
+        const feedback = document.createElement('span');
+        feedback.className = 'error-message-inline';
         feedback.innerText = message;
         parent.appendChild(feedback);
     };
@@ -32,9 +36,18 @@ function initEquiposForm() {
     const clearFieldError = (input) => {
         if (!input) return;
         input.classList.remove('is-invalid');
+
+        // Custom Dropdown Support
+        const dropdown = input.closest('.custom-dropdown');
+        if (dropdown) {
+            dropdown.classList.remove('is-invalid'); // Fix: Remove class from container too
+            const trigger = dropdown.querySelector('.dropdown-trigger');
+            if (trigger) trigger.style.borderColor = '';
+        }
+
         const parent = input.parentNode;
         if (parent) {
-            const existing = parent.querySelectorAll('.invalid-feedback');
+            const existing = parent.querySelectorAll('.error-message-inline');
             existing.forEach(el => el.remove());
         }
     };
@@ -104,14 +117,38 @@ function initEquiposForm() {
             });
     };
 
-    // Attach Blur Listeners
+    // Match 'blur' behavior for dropdowns
+    window.addEventListener('dropdown-selection', function (e) {
+        // e.detail = { dropdownId, value, label, inputName } sent from uicomponents.js
+        // Map type (suffix) to input ID
+        const type = e.detail.type || e.detail.inputName;
+        const inputId = 'input_' + type;
+        const input = document.getElementById(inputId);
+        if (input) {
+            clearFieldError(input);
+            // Optionally triggering checkUniqueness if needed (for sensitive dropdowns)
+        }
+    });
+
+    // FIX 1 & 4: Attach Blur Listeners FIRST (without destructive cloning)
     ['serial_chasis', 'serial_motor', 'codigo_patio', 'placa'].forEach(id => {
         const input = document.getElementById(id);
-        if (input) {
-            // Remove old listener if any (cleansing)
-            const newNode = input.cloneNode(true);
-            input.parentNode.replaceChild(newNode, input);
-            newNode.addEventListener('blur', () => checkUniqueness(newNode));
+        if (input && !input.dataset.blurAttached) {
+            input.addEventListener('blur', () => checkUniqueness(input));
+            input.dataset.blurAttached = 'true';
+        }
+    });
+
+    // FIX 4: AUTO-CLEAR VALIDATION ERRORS (after blur listeners, prevents conflicts)
+    form.querySelectorAll('input, select, textarea').forEach(input => {
+        if (!input.dataset.clearAttached) {
+            input.addEventListener('input', function () {
+                clearFieldError(this);
+            });
+            input.addEventListener('change', function () {
+                clearFieldError(this);
+            });
+            input.dataset.clearAttached = 'true';
         }
     });
 
@@ -122,52 +159,69 @@ function initEquiposForm() {
     // Check if handler already attached?
     if (form.dataset.handlerAttached) return;
 
-    form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        // A. Pending Validation Check
-        const pendingValidations = Array.from(form.querySelectorAll('.validation-loader')).filter(el => el.style.display !== 'none');
-        if (pendingValidations.length > 0) {
-            if (typeof window.showModal === 'function') {
-                window.showModal({ type: 'info', title: 'Verificando Datos', message: 'Estamos validando seriales...', confirmText: 'Entendido', hideCancel: true });
-            }
-            return;
-        }
-
+    // --- SUBMIT CORE LOGIC ---
+    const executeSubmission = () => {
         // B. Clear Errors
         const summary = document.getElementById('errorSummary');
         if (summary) summary.style.display = 'none';
 
         // C. Client Validation
         let hasEmpty = false;
+
         form.querySelectorAll('[required]').forEach(input => {
             if (!input.value.trim()) {
                 let label = input.closest('div').querySelector('label')?.innerText.replace('*', '').trim() || input.name;
                 showFieldError(input, `El campo ${label} es obligatorio.`);
                 hasEmpty = true;
+            } else {
+                clearFieldError(input);
             }
         });
 
-        // Custom dropdowns hidden inputs
-        ['TIPO_EQUIPO', 'CATEGORIA_FLOTA', 'ESTADO_OPERATIVO', 'MARCA', 'MODELO'].forEach(name => {
-            const input = form.querySelector(`input[name="${name}"]`);
+        // FIX 2: Correct field ID mapping (dropdowns use input_* pattern)
+        const criticalFields = {
+            'input_tipo_equipo': 'Tipo de Equipo',
+            'input_categoria_flota': 'Categoría de Flota',
+            'input_frente_trabajo': 'Frente de Trabajo',
+            'input_estatus': 'Estatus',
+            'marca': 'Marca',
+            'modelo': 'Modelo'
+        };
+
+        Object.entries(criticalFields).forEach(([inputId, label]) => {
+            const input = document.getElementById(inputId);
             if (input && !input.value.trim()) {
-                showFieldError(input, `El campo ${name} es obligatorio.`);
+                showFieldError(input, `El campo ${label} es obligatorio.`);
                 hasEmpty = true;
             }
         });
 
-        const invalidInputs = form.querySelectorAll('.is-invalid');
+        const invalidInputs = form.querySelectorAll('.is-invalid'); // RESTORED
         if (hasEmpty || invalidInputs.length > 0) {
+            if (window.hidePreloader) window.hidePreloader();
             showGlobalSummary();
             return;
         }
 
         // D. Submit
-        if (typeof window.showPreloader === 'function') window.showPreloader();
+        if (typeof window.showPreloader === 'function') {
+            window.showPreloader();
+        }
+
+        // Lock submit button
+        const submitBtn = form.querySelector('button[type="submit"]');
+        let originalBtnContent = '';
+
+        if (submitBtn) {
+            console.log('✅ Button found, disabling...');
+            originalBtnContent = submitBtn.innerHTML;
+            submitBtn.style.width = submitBtn.offsetWidth + 'px';
+            submitBtn.disabled = true;
+            // Removed inline spinner to show global preloader instead
+        }
 
         const formData = new FormData(form);
+
         fetch(form.action, {
             method: 'POST',
             headers: {
@@ -186,25 +240,88 @@ function initEquiposForm() {
                         window.showModal({
                             type: 'success',
                             title: '¡Éxito!',
-                            message: body.message || 'Operación exitosa.',
+                            message: body.message || 'Equipo registrado correctamente.',
                             confirmText: 'Aceptar',
                             hideCancel: true,
-                            onConfirm: () => window.location.href = body.redirect || '/admin/equipos'
+                            onConfirm: () => {
+                                // DETECT MODE: If dragging/editing, redirect to index. If creating, reset form.
+                                const isEdit = form.querySelector('input[name="_method"][value="PUT"]');
+
+                                if (isEdit) {
+                                    window.location.href = '/admin/equipos';
+                                    return;
+                                }
+
+                                // 1. Standard Form Reset
+                                form.reset();
+
+                                // 2. Clear Visual Elements (Custom Dropdowns)
+                                form.querySelectorAll('.custom-dropdown').forEach(dropdown => {
+                                    const input = dropdown.querySelector('input[type="hidden"]');
+                                    const label = dropdown.querySelector('[data-filter-label]');
+                                    if (input) input.value = '';
+                                    if (label) label.innerText = 'SELECCIONE';
+                                    dropdown.classList.remove('active', 'is-invalid');
+                                });
+
+                                // 3. Ensure Text Inputs are Empty (Browser consistency)
+                                form.querySelectorAll('input[type="text"], textarea').forEach(input => input.value = '');
+
+                                // 4. Clear Validation Visuals
+                                form.querySelectorAll('.error-message-inline').forEach(el => el.remove());
+                                form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+
+                                // Reset button
+                                if (submitBtn) {
+                                    submitBtn.disabled = false;
+                                    submitBtn.innerHTML = originalBtnContent;
+                                }
+
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }
                         });
-                        setTimeout(() => window.location.href = body.redirect || '/admin/equipos', 2000);
-                    } else {
-                        window.location.href = body.redirect || '/admin/equipos';
                     }
+                    // No redirection/reload
                 } else if (status === 422) {
+                    // DIAGNOSTIC LOGGING: Show exact server errors
+                    console.error('❌ Validation Failed (422):', body.errors);
+                    console.table(body.errors); // Pretty table format
+
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalBtnContent;
+                    }
+
+                    // FIX 3: Server-to-Client error mapping (handle dropdown prefixes)
+                    const serverToClientMap = {
+                        'TIPO_EQUIPO': 'input_tipo_equipo',
+                        'CATEGORIA_FLOTA': 'input_categoria_flota',
+                        'FRENTE_TRABAJO': 'input_frente_trabajo',
+                        'ESTADO_OPERATIVO': 'input_estatus'
+                    };
+
+                    let errorsDisplayed = 0;
                     Object.entries(body.errors).forEach(([field, msgs]) => {
-                        let input = form.querySelector(`[name="${field}"]`);
+                        // Try mapped ID first, then exact name, then bracket notation
+                        const inputId = serverToClientMap[field] || field;
+                        let input = document.getElementById(inputId) || form.querySelector(`[name="${field}"]`);
+
                         if (!input && field.includes('.')) {
                             const parts = field.split('.');
                             const bracketName = parts.shift() + parts.map(p => `[${p}]`).join('');
                             input = form.querySelector(`[name="${bracketName}"]`);
                         }
-                        if (input) showFieldError(input, msgs[0]);
+
+                        if (input) {
+                            showFieldError(input, msgs[0]);
+                            errorsDisplayed++;
+                            console.log(`✓ Error mapped: ${field} → #${input.id || input.name}`);
+                        } else {
+                            console.warn(`⚠️ Could not find input for field: ${field}`, msgs);
+                        }
                     });
+
+                    console.log(`📊 Total errors: ${Object.keys(body.errors).length}, Displayed: ${errorsDisplayed}`);
                     showGlobalSummary();
                 } else {
                     throw new Error(body.message || 'Error desconocido.');
@@ -212,16 +329,65 @@ function initEquiposForm() {
             })
             .catch(err => {
                 if (window.hidePreloader) window.hidePreloader();
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnContent;
+                }
                 console.error(err);
                 if (typeof window.showModal === 'function') window.showModal({ type: 'error', title: 'Error', message: 'Ocurrió un error inesperado.', confirmText: 'Cerrar', hideCancel: true });
             });
+    };
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // A. Pending Validation Check (Wait Mode)
+        const pendingValidations = () => Array.from(form.querySelectorAll('.validation-loader')).filter(el => el.style.display !== 'none');
+
+        if (pendingValidations().length > 0) {
+            // Show Preloader instead of Blocking Modal
+            if (typeof window.showPreloader === 'function') window.showPreloader();
+
+            // Poll for completion
+            const checkInterval = setInterval(() => {
+                if (pendingValidations().length === 0) {
+                    clearInterval(checkInterval);
+                    // Proceed!
+                    executeSubmission();
+                }
+            }, 100);
+            return;
+        }
+
+        // Proceed immediately if no checks pending
+        executeSubmission();
     });
 
     form.dataset.handlerAttached = "true";
 }
 
-// Register with Module Manager
-ModuleManager.register('equipos_form',
-    () => document.getElementById('createEquipoForm') !== null || document.getElementById('editEquipoForm') !== null,
-    initEquiposForm
-);
+// Register with Module Manager if available
+if (typeof ModuleManager !== 'undefined') {
+    ModuleManager.register('equipos_form',
+        () => document.getElementById('createEquipoForm') !== null || document.getElementById('editEquipoForm') !== null,
+        initEquiposForm
+    );
+}
+
+// Standard Init (Fallback/Primary)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initEquiposForm);
+} else {
+    initEquiposForm();
+}
+
+// Listen for SPA navigation to reset handler flag
+window.addEventListener('spa:contentLoaded', function () {
+    const form = document.getElementById('createEquipoForm') || document.getElementById('editEquipoForm');
+    if (form) {
+        // Reset flag to allow reinitialization
+        form.dataset.handlerAttached = null;
+        initEquiposForm();
+    }
+});

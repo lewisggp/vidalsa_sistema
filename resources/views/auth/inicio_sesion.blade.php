@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Maquinaria - Inicio de Sesión</title>
+    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <!-- Fonts (Local) -->
     <link href="{{ asset('css/fonts.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/maquinaria/inicio_sesion.css') }}?v={{ time() }}">
@@ -36,11 +37,10 @@
     <div class="login-container">
         <!-- SVG Background: Formas exactas maquinaria -->
         <svg class="background-svg" viewBox="0 0 1440 900" preserveAspectRatio="xMinYMin slice" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 0 H 600 L 500 400 Q 450 480 350 450 L 0 350 Z" fill="#d1d3d4" />
+            <path d="M0 0 H 600 L 500 400 Q 450 480 350 450 L 0 350 Z" fill="#efefefff" />
             <path d="M0 900 V 400 Q 150 750 600 850 T 1440 900 Z" fill="#00004d" />
             <path d="M1440 0 V 400 Q 1300 350 1200 0 Z" fill="#00004d" />
             <path d="M1440 900 V 500 Q 1350 650 1440 800 Z" fill="#00004d" opacity="0.9" />
-            <path d="M1440 400 Q 1250 500 1440 600 Z" fill="#d1d3d4" opacity="0.4" />
         </svg>
 
         <!-- Título independiente -->

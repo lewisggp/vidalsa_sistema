@@ -10,17 +10,10 @@
 </section>
 
 <div class="admin-card" style="max-width: 1000px; margin: 0 auto;">
-    <form action="{{ route('equipos.update', $equipo->ID_EQUIPO) }}" method="POST" enctype="multipart/form-data" onsubmit="if(window.showPreloader) window.showPreloader();">
+    <form id="editEquipoForm" action="{{ route('equipos.update', $equipo->ID_EQUIPO) }}" method="POST" enctype="multipart/form-data" novalidate>
         @csrf
         @method('PUT')
 
-        <!-- Error Notification -->
-        @if($errors->any())
-            <div style="background: #fff5f5; border: 1px solid #fed7d7; color: #c53030; padding: 12px 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600;">
-                <i class="material-icons" style="color: var(--maquinaria-red);">error_outline</i>
-                Hay errores en el formulario. Por favor, revise los campos resaltados en rojo.
-            </div>
-        @endif
 
         @include('admin.equipos.partials.form_fields')
 

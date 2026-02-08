@@ -18,33 +18,33 @@
         <div class="filter-toolbar-container" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center; margin-bottom: 5px;">
             <!-- Frente Filter -->
             <div class="filter-item" style="flex: 1; min-width: 150px; max-width: 260px;">
-                <div class="custom-dropdown" id="frenteFilterSelect">
-                    <input type="hidden" name="id_frente" id="input_frente_filter" value="{{ request('id_frente') }}" form="search-form">
+                <div class="custom-dropdown" id="frenteFilterSelect" data-filter-type="id_frente" data-default-label="Filtrar Frente...">
+                    <input type="hidden" name="id_frente" data-filter-value value="{{ request('id_frente') }}" form="search-form">
                     
                     @php 
                         $currentFrente = $frentes->firstWhere('ID_FRENTE', request('id_frente'));
                     @endphp
 
-                    <div class="dropdown-trigger" style="padding: 0; display: flex; align-items: center; background: {{ request('id_frente') && request('id_frente') != 'all' ? '#e1effa' : '#fbfcfd' }}; overflow: hidden; border: 1px solid {{ request('id_frente') && request('id_frente') != 'all' ? '#0067b1' : '#cbd5e0' }}; border-radius: 12px; height: 45px;">
+                    <div class="dropdown-trigger {{ request('id_frente') && request('id_frente') != 'all' ? 'filter-active' : '' }}" style="padding: 0; display: flex; align-items: center; background: #fbfcfd; overflow: hidden; border: 1px solid #cbd5e0; border-radius: 12px; height: 45px;">
                         <div style="padding: 0 10px; display: flex; align-items: center; color: var(--maquinaria-gray-text);">
                             <i class="material-icons" style="font-size: 18px;">search</i>
                         </div>
-                        <input type="text" id="filterSearchInput" 
+                        <input type="text" name="filter_search_dropdown" data-filter-search
                             placeholder="{{ $currentFrente ? $currentFrente->NOMBRE_FRENTE : 'Filtrar Frente...' }}" 
                             style="width: 100%; border: none; background: transparent; padding: 10px 5px; font-size: 14px; outline: none;"
                             onkeyup="filterDropdownOptions(this)"
+                            onfocus="this.closest('.custom-dropdown').classList.add('active')"
                             autocomplete="off">
-                        <i id="btn_clear_frente" class="material-icons" style="padding: 0 5px; cursor: pointer; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_frente') && request('id_frente') != 'all' ? 'block' : 'none' }};" onclick="event.stopPropagation(); selectMovilizacionFilter('frente', '');">close</i>
-                        <i class="material-icons" style="padding: 0 10px; cursor: pointer; color: var(--maquinaria-gray-text);">expand_more</i>
+                        <i class="material-icons" data-clear-btn style="padding: 0 5px; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_frente') && request('id_frente') != 'all' ? 'block' : 'none' }};" onclick="event.stopPropagation(); clearDropdownFilter('frenteFilterSelect'); loadMovilizaciones();">close</i>
                     </div>
 
                     <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible;">
-                        <div class="dropdown-item-list" id="frenteItemsList" style="max-height: 250px; overflow-y: auto;">
-                            <div class="dropdown-item {{ !request('id_frente') || request('id_frente') == 'all' ? 'selected' : '' }}" onclick="selectMovilizacionFilter('frente', 'all');">
-                                Todos los Frentes
+                        <div class="dropdown-item-list" style="max-height: 250px; overflow-y: auto;">
+                            <div class="dropdown-item {{ !request('id_frente') || request('id_frente') == 'all' ? 'selected' : '' }}" data-value="all" onclick="selectOption('frenteFilterSelect', 'all', 'TODOS LOS FRENTES'); loadMovilizaciones();">
+                                TODOS LOS FRENTES
                             </div>
                             @foreach($frentes as $frente)
-                                <div class="dropdown-item {{ request('id_frente') == $frente->ID_FRENTE ? 'selected' : '' }}" onclick="selectMovilizacionFilter('frente', '{{ $frente->ID_FRENTE }}');">
+                                <div class="dropdown-item {{ request('id_frente') == $frente->ID_FRENTE ? 'selected' : '' }}" data-value="{{ $frente->ID_FRENTE }}" onclick="selectOption('frenteFilterSelect', '{{ $frente->ID_FRENTE }}', '{{ $frente->NOMBRE_FRENTE }}'); loadMovilizaciones();">
                                     {{ $frente->NOMBRE_FRENTE }}
                                 </div>
                             @endforeach
@@ -55,33 +55,33 @@
 
             <!-- Tipo Filter -->
             <div class="filter-item" style="flex: 1; min-width: 150px; max-width: 260px;">
-                <div class="custom-dropdown" id="tipoFilterSelect">
-                    <input type="hidden" name="id_tipo" id="input_tipo_filter" value="{{ request('id_tipo') }}" form="search-form">
+                <div class="custom-dropdown" id="tipoFilterSelect" data-filter-type="id_tipo" data-default-label="Filtrar Tipo...">
+                    <input type="hidden" name="id_tipo" data-filter-value value="{{ request('id_tipo') }}" form="search-form">
                     
                     @php 
                         $currentTipo = $allTipos->firstWhere('id', request('id_tipo'));
                     @endphp
 
-                    <div class="dropdown-trigger" style="padding: 0; display: flex; align-items: center; background: {{ request('id_tipo') ? '#e1effa' : '#fbfcfd' }}; overflow: hidden; border: 1px solid {{ request('id_tipo') ? '#0067b1' : '#cbd5e0' }}; border-radius: 12px; height: 45px;">
+                    <div class="dropdown-trigger {{ request('id_tipo') ? 'filter-active' : '' }}" style="padding: 0; display: flex; align-items: center; background: #fbfcfd; overflow: hidden; border: 1px solid #cbd5e0; border-radius: 12px; height: 45px;">
                         <div style="padding: 0 10px; display: flex; align-items: center; color: var(--maquinaria-gray-text);">
                             <i class="material-icons" style="font-size: 18px;">search</i>
                         </div>
-                        <input type="text" id="filterTipoSearchInput" 
+                        <input type="text" name="filter_search_dropdown" data-filter-search
                             placeholder="{{ $currentTipo ? $currentTipo->nombre : 'Filtrar Tipo...' }}" 
                             style="width: 100%; border: none; background: transparent; padding: 10px 5px; font-size: 14px; outline: none;"
                             onkeyup="filterDropdownOptions(this)"
+                            onfocus="this.closest('.custom-dropdown').classList.add('active')"
                             autocomplete="off">
-                        <i id="btn_clear_tipo" class="material-icons" style="padding: 0 5px; cursor: pointer; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_tipo') ? 'block' : 'none' }};" onclick="event.stopPropagation(); selectMovilizacionFilter('tipo', '');">close</i>
-                        <i class="material-icons" style="padding: 0 10px; cursor: pointer; color: var(--maquinaria-gray-text);">expand_more</i>
+                        <i class="material-icons" data-clear-btn style="padding: 0 5px; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_tipo') ? 'block' : 'none' }};" onclick="event.stopPropagation(); clearDropdownFilter('tipoFilterSelect'); loadMovilizaciones();">close</i>
                     </div>
 
                     <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible;">
-                        <div class="dropdown-item-list" id="tipoItemsList" style="max-height: 250px; overflow-y: auto;">
-                            <div class="dropdown-item {{ !request('id_tipo') ? 'selected' : '' }}" onclick="selectMovilizacionFilter('tipo', '');">
-                                Todos los Tipos
+                        <div class="dropdown-item-list" style="max-height: 250px; overflow-y: auto;">
+                            <div class="dropdown-item {{ !request('id_tipo') || request('id_tipo') == 'all' ? 'selected' : '' }}" data-value="all" onclick="selectOption('tipoFilterSelect', 'all', 'TODOS LOS TIPOS'); loadMovilizaciones();">
+                                TODOS LOS TIPOS
                             </div>
                             @foreach($allTipos as $tipo)
-                                <div class="dropdown-item {{ request('id_tipo') == $tipo->id ? 'selected' : '' }}" onclick="selectMovilizacionFilter('tipo', '{{ $tipo->id }}');">
+                                <div class="dropdown-item {{ request('id_tipo') == $tipo->id ? 'selected' : '' }}" data-value="{{ $tipo->id }}" onclick="selectOption('tipoFilterSelect', '{{ $tipo->id }}', '{{ $tipo->nombre }}'); loadMovilizaciones();">
                                     {{ $tipo->nombre }}
                                 </div>
                             @endforeach
@@ -138,10 +138,10 @@
         <div style="background: linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%); border-radius: 12px; padding: 15px; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; overflow: hidden;">
             <i class="material-icons" style="position: absolute; right: -15px; bottom: -15px; font-size: 80px; opacity: 0.1; transform: rotate(-15deg);">agriculture</i>
             <div style="position: relative; z-index: 2;">
-                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.9; margin-bottom: 5px;">Total Movimientos</div>
+                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.9; margin-bottom: 5px;">Equipos en Tránsito</div>
                 <div style="display: flex; align-items: baseline; gap: 5px;">
-                    <span style="font-size: 32px; font-weight: 800; line-height: 1; letter-spacing: -1px;">
-                        {{ $movilizaciones->total() }}
+                    <span id="totalTransitoCount" style="font-size: 32px; font-weight: 800; line-height: 1; letter-spacing: -1px;">
+                        {{ $totalTransito }}
                     </span>
                     <span style="font-size: 12px; opacity: 0.8; font-weight: 500;">registros</span>
                 </div>
@@ -151,16 +151,18 @@
         <!-- Status Stats -->
         <div id="statusStatsContainer" style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
              <h4 style="margin: 0 0 15px 0; font-size: 13px; text-transform: uppercase; color: #64748b; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                <i class="material-icons" style="font-size: 18px; color: #8b5cf6;">donut_large</i>
-                Estado de Envíos
+                <i class="material-icons" style="font-size: 18px; color: #8b5cf6;">local_shipping</i>
+                En Tránsito por Frente
             </h4>
              <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px;">
-                @foreach($statusStats as $stat)
-                    <li style="padding: 10px; background: #f8fafc; border-radius: 8px; border: 1px solid #f1f5f9;">
-                        <span style="display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; font-weight: 600;">{{ $stat->ESTADO_MVO }}</span>
-                        <strong style="color: #1e293b; font-size: 18px;">{{ $stat->total }}</strong>
+                @forelse($transitoPorFrente as $stat)
+                    <li style="padding: 10px; background: #f8fafc; border-radius: 8px; border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 12px; color: #64748b; font-weight: 600;">{{ $stat->NOMBRE_FRENTE }}</span>
+                        <span style="background: #e0e7ff; color: #4338ca; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 700;">{{ $stat->total }}</span>
                     </li>
-                @endforeach
+                @empty
+                    <li style="padding: 15px; text-align: center; color: #94a3b8; font-style: italic; font-size: 13px;">No hay equipos en tránsito</li>
+                @endforelse
             </ul>
         </div>
 

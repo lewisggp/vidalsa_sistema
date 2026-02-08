@@ -2,48 +2,149 @@
 <h3 style="color: var(--maquinaria-blue); font-size: 16px; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; margin-bottom: 20px;">Información General</h3>
 
 <div class="grid-responsive-5">
-    <!-- Código de Patio -->
-    <div>
-        <label for="codigo_patio" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">Código de Patio</label>
-        <input type="text" id="codigo_patio" name="CODIGO_PATIO" class="form-input-custom @error('CODIGO_PATIO') is-invalid @enderror" value="{{ old('CODIGO_PATIO', $equipo->CODIGO_PATIO ?? '') }}" placeholder="Ej: V-01" autocomplete="off">
-        @error('CODIGO_PATIO') <span class="error-message-inline">{{ $message }}</span> @enderror
-    </div>
-
     <!-- Tipo de Equipo -->
     <div>
-        <label for="tipo_equipo" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">Tipo de Equipo</label>
-        <input type="text" id="tipo_equipo" name="TIPO_EQUIPO" list="tipos_list" class="form-input-custom @error('TIPO_EQUIPO') is-invalid @enderror" value="{{ old('TIPO_EQUIPO', $equipo->TIPO_EQUIPO ?? '') }}" placeholder="Seleccione o escriba..." required maxlength="35" autocomplete="off">
-        @error('TIPO_EQUIPO') <span class="error-message-inline">{{ $message }}</span> @enderror
-        <datalist id="tipos_list">
-            @foreach($tipos_equipo as $tipo)
-                <option value="{{ $tipo }}">
-            @endforeach
-        </datalist>
+        <label for="input_tipo_equipo" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">Tipo de Equipo</label>
+        <div class="custom-form-autocomplete">
+            <input type="text" id="input_tipo_equipo" name="TIPO_EQUIPO" 
+                   class="form-input-custom @error('TIPO_EQUIPO') is-invalid @enderror" 
+                   value="{{ old('TIPO_EQUIPO', $equipo->TIPO_EQUIPO ?? '') }}" 
+                   placeholder="Seleccione o escriba..." 
+                   required maxlength="35" autocomplete="off"
+                   onfocus="showFormDropdown(this)" 
+                   onblur="hideFormDropdownDelayed(this)" 
+                   oninput="filterFormDropdown(this)">
+            <div class="dropdown-list">
+                @foreach($tipos_equipo as $tipo)
+                    <div class="dropdown-item" onmousedown="selectDropdownItem(this, '{{ $tipo }}')">{{ $tipo }}</div>
+                @endforeach
+            </div>
+        </div>
     </div>
 
-    <!-- Marca -->
+    <!-- Marca (AJAX Autocomplete) -->
     <div>
-        <label for="marca" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">Marca</label>
-        <input type="text" id="marca" name="MARCA" list="marcas_list" class="form-input-custom @error('MARCA') is-invalid @enderror" value="{{ old('MARCA', $equipo->MARCA ?? '') }}" placeholder="Seleccione o escriba..." required autocomplete="off">
+        <label for="marca" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">
+            Marca <span style="color: var(--maquinaria-red);">*</span>
+        </label>
+        <div class="custom-form-autocomplete">
+            <input type="text" id="marca" name="MARCA" 
+                   class="form-input-custom @error('MARCA') is-invalid @enderror" 
+                   value="{{ old('MARCA', $equipo->MARCA ?? '') }}" 
+                   placeholder="Escribe para buscar marca..." 
+                   autocomplete="off"
+                   onfocus="showFormDropdown(this)" 
+                   onblur="hideFormDropdownDelayed(this)" 
+                   oninput="filterFormDropdown(this)" 
+                   required>
+            <div class="dropdown-list">
+                @foreach($marcas as $marca)
+                    <div class="dropdown-item" onmousedown="selectDropdownItem(this, '{{ $marca }}')">{{ $marca }}</div>
+                @endforeach
+            </div>
+        </div>
         @error('MARCA') <span class="error-message-inline">{{ $message }}</span> @enderror
-        <datalist id="marcas_list"></datalist>
     </div>
 
-    <!-- Modelo -->
+    <style>
+        .custom-form-autocomplete {
+            position: relative;
+            width: 100%;
+        }
+        .dropdown-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            margin-top: 4px;
+            max-height: 250px;
+            overflow-y: auto;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            z-index: 50;
+            display: none;
+        }
+        .dropdown-item {
+            padding: 10px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #4a5568;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+        .dropdown-item:hover {
+            background-color: #f7fafc;
+            color: #2b6cb0;
+            padding-left: 20px;
+        }
+    </style>
+
+    <!-- Modelo (AJAX Autocomplete) -->
     <div>
-        <label for="modelo" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">Modelo</label>
-        <input type="text" id="modelo" name="MODELO" list="modelos_list" class="form-input-custom @error('MODELO') is-invalid @enderror" value="{{ old('MODELO', $equipo->MODELO ?? '') }}" placeholder="Seleccione o escriba..." required autocomplete="off">
+        <label for="modelo" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">
+            Modelo <span style="color: var(--maquinaria-red);">*</span>
+        </label>
+        <div class="custom-form-autocomplete">
+            <input type="text" id="modelo" name="MODELO" class="form-input-custom @error('MODELO') is-invalid @enderror" 
+                   value="{{ old('MODELO', $equipo->MODELO ?? '') }}" 
+                   placeholder="Escribe para buscar modelo..." 
+                   autocomplete="off"
+                   onfocus="showFormDropdown(this)" 
+                   onblur="hideFormDropdownDelayed(this)" 
+                   oninput="filterFormDropdown(this)" 
+                   required>
+            <div class="dropdown-list">
+                @foreach($modelos as $modelo)
+                    <div class="dropdown-item" onmousedown="selectDropdownItem(this, '{{ $modelo }}')">{{ $modelo }}</div>
+                @endforeach
+            </div>
+        </div>
+
         @error('MODELO') <span class="error-message-inline">{{ $message }}</span> @enderror
-        <datalist id="modelos_list"></datalist>
     </div>
 
-    <!-- Año -->
-    <div>
-        <label for="anio" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">Año</label>
-        <input type="text" id="anio" name="ANIO" class="form-input-custom @error('ANIO') is-invalid @enderror" value="{{ old('ANIO', $equipo->ANIO ?? '') }}" placeholder="Ej: 2025" required maxlength="4" oninput="this.value = this.value.replace(/[^0-9]/g, '');" autocomplete="off">
-        @error('ANIO') <span class="error-message-inline">{{ $message }}</span> @enderror
-    </div>
+    <!-- Año + Número de Etiqueta (Grid 2 columnas en 1 espacio de la grilla principal) -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <!-- Año -->
+        <div>
+            <label for="anio" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">Año</label>
+            <div class="custom-form-autocomplete">
+                <input type="text" id="anio" name="ANIO"
+                       class="form-input-custom @error('ANIO') is-invalid @enderror" 
+                       value="{{ old('ANIO', $equipo->ANIO ?? '') }}" 
+                       placeholder="Escriba o seleccione..." 
+                       required 
+                       maxlength="4" 
+                       oninput="this.value = this.value.replace(/[^0-9]/g, ''); filterFormDropdown(this)"
+                       onfocus="showFormDropdown(this)"
+                       onblur="hideFormDropdownDelayed(this)"
+                       autocomplete="off">
+                <div class="dropdown-list">
+                    @foreach($aniosList ?? [] as $anio)
+                        <div class="dropdown-item" onmousedown="selectDropdownItem(this, '{{ $anio }}')">{{ $anio }}</div>
+                    @endforeach
+                </div>
+            </div>
+            @error('ANIO') <span class="error-message-inline">{{ $message }}</span> @enderror
+        </div>
 
+        <!-- Número de Etiqueta -->
+        <div>
+            <label for="numero_etiqueta" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">N Etiqueta</label>
+            <input type="text" id="numero_etiqueta" name="NUMERO_ETIQUETA" 
+                   class="form-input-custom @error('NUMERO_ETIQUETA') is-invalid @enderror" 
+                   value="{{ old('NUMERO_ETIQUETA', $equipo->NUMERO_ETIQUETA ?? '') }}" 
+                   placeholder="Ej: 001" 
+                   maxlength="10"
+                   autocomplete="off">
+            @error('NUMERO_ETIQUETA') <span class="error-message-inline">{{ $message }}</span> @enderror
+        </div>
+    </div>
+    
     <!-- Serial Chasis -->
     <div>
         <label for="serial_chasis" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">Serial de Chasis</label>
@@ -62,14 +163,14 @@
     <div>
         <span id="lbl_categoria_title" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">Categoría de Flota</span>
         <div class="custom-dropdown @error('CATEGORIA_FLOTA') is-invalid @enderror" id="categoriaSelect">
-            <input type="hidden" name="CATEGORIA_FLOTA" id="input_categoria" value="{{ old('CATEGORIA_FLOTA', $equipo->CATEGORIA_FLOTA ?? '') }}" aria-label="Categoría de Flota">
-            <div class="dropdown-trigger" id="trigger_categoria" onclick="toggleDropdown('categoriaSelect')" tabindex="0" role="button" aria-haspopup="listbox" aria-labelledby="lbl_categoria_title label_categoria">
-                <span id="label_categoria">{{ old('CATEGORIA_FLOTA', $equipo->CATEGORIA_FLOTA ?? '') ?: 'SELECCIONE' }}</span>
+            <input type="hidden" name="CATEGORIA_FLOTA" id="input_categoria_flota" data-filter-value value="{{ old('CATEGORIA_FLOTA', $equipo->CATEGORIA_FLOTA ?? '') }}" aria-label="Categoría de Flota">
+            <div class="dropdown-trigger" id="trigger_categoria" onclick="toggleDropdown('categoriaSelect', event)" tabindex="0" role="button" aria-haspopup="listbox" aria-labelledby="lbl_categoria_title label_categoria_flota" style="cursor: default;">
+                <span id="label_categoria_flota" data-filter-label>{{ old('CATEGORIA_FLOTA', $equipo->CATEGORIA_FLOTA ?? '') ?: 'SELECCIONE' }}</span>
                 <i class="material-icons">expand_more</i>
             </div>
             <div class="dropdown-content">
                 @foreach($categorias as $cat)
-                    <div class="dropdown-item" onclick="selectOption('categoriaSelect', '{{ $cat }}', '{{ $cat }}', 'categoria')">{{ $cat }}</div>
+                    <div class="dropdown-item" onclick="selectOption('categoriaSelect', '{{ $cat }}', '{{ $cat }}', 'categoria_flota')">{{ $cat }}</div>
                 @endforeach
             </div>
         </div>
@@ -80,15 +181,15 @@
     <div>
         <span id="lbl_frente_title" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">Frente de Trabajo</span>
         <div class="custom-dropdown @error('ID_FRENTE_ACTUAL') is-invalid @enderror" id="frenteSelect">
-            <input type="hidden" name="ID_FRENTE_ACTUAL" id="input_frente" value="{{ old('ID_FRENTE_ACTUAL', $equipo->ID_FRENTE_ACTUAL ?? '') }}" aria-label="Frente de Trabajo">
-            <div class="dropdown-trigger" id="trigger_frente" onclick="toggleDropdown('frenteSelect')" tabindex="0" role="button" aria-haspopup="listbox" aria-labelledby="lbl_frente_title label_frente">
-                <span id="label_frente">{{ $frentes[old('ID_FRENTE_ACTUAL', $equipo->ID_FRENTE_ACTUAL ?? '')] ?? 'SELECCIONE' }}</span>
+            <input type="hidden" name="ID_FRENTE_ACTUAL" id="input_frente_trabajo" data-filter-value value="{{ old('ID_FRENTE_ACTUAL', $equipo->ID_FRENTE_ACTUAL ?? '') }}" aria-label="Frente de Trabajo">
+            <div class="dropdown-trigger" id="trigger_frente" onclick="toggleDropdown('frenteSelect', event)" tabindex="0" role="button" aria-haspopup="listbox" aria-labelledby="lbl_frente_title label_frente_trabajo" style="cursor: default;">
+                <span id="label_frente_trabajo" data-filter-label>{{ $frentes[old('ID_FRENTE_ACTUAL', $equipo->ID_FRENTE_ACTUAL ?? '')] ?? 'SELECCIONE' }}</span>
                 <i class="material-icons">expand_more</i>
             </div>
             <div class="dropdown-content">
-                <div class="dropdown-item" onclick="selectOption('frenteSelect', '', 'Sin Asignar', 'frente')">Sin Asignar</div>
+                <div class="dropdown-item" onclick="selectOption('frenteSelect', '', 'Sin Asignar', 'frente_trabajo')">Sin Asignar</div>
                 @foreach($frentes as $id => $nombre)
-                    <div class="dropdown-item" onclick="selectOption('frenteSelect', '{{ $id }}', '{{ $nombre }}', 'frente')">{{ $nombre }}</div>
+                    <div class="dropdown-item" onclick="selectOption('frenteSelect', '{{ $id }}', '{{ $nombre }}', 'frente_trabajo')">{{ $nombre }}</div>
                 @endforeach
             </div>
         </div>
@@ -99,9 +200,9 @@
     <div>
         <span id="lbl_estado_title" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">Estatus</span>
         <div class="custom-dropdown" id="estadoSelect">
-            <input type="hidden" name="ESTADO_OPERATIVO" id="input_estado" value="{{ old('ESTADO_OPERATIVO', $equipo->ESTADO_OPERATIVO ?? 'OPERATIVO') }}" aria-label="Estatus Operativo">
-            <div class="dropdown-trigger" id="trigger_estado" onclick="toggleDropdown('estadoSelect')" tabindex="0" role="button" aria-haspopup="listbox" aria-labelledby="lbl_estado_title label_estado">
-                <span id="label_estado">{{ old('ESTADO_OPERATIVO', $equipo->ESTADO_OPERATIVO ?? 'OPERATIVO') == 'EN MANTENIMIENTO' ? 'MANTENIMIENTO' : old('ESTADO_OPERATIVO', $equipo->ESTADO_OPERATIVO ?? 'OPERATIVO') }}</span>
+            <input type="hidden" name="ESTADO_OPERATIVO" id="input_estatus" data-filter-value value="{{ old('ESTADO_OPERATIVO', $equipo->ESTADO_OPERATIVO ?? 'OPERATIVO') }}" aria-label="Estatus Operativo">
+            <div class="dropdown-trigger" id="trigger_estado" onclick="toggleDropdown('estadoSelect', event)" tabindex="0" role="button" aria-haspopup="listbox" aria-labelledby="lbl_estado_title label_estatus" style="cursor: default;">
+                <span id="label_estatus" data-filter-label>{{ old('ESTADO_OPERATIVO', $equipo->ESTADO_OPERATIVO ?? 'OPERATIVO') == 'EN MANTENIMIENTO' ? 'MANTENIMIENTO' : old('ESTADO_OPERATIVO', $equipo->ESTADO_OPERATIVO ?? 'OPERATIVO') }}</span>
                 <i class="material-icons">expand_more</i>
             </div>
             <div class="dropdown-content">
@@ -110,12 +211,49 @@
                         $val_display = is_numeric($key) ? $val : $val;
                         $val_value = is_numeric($key) ? $val : $key;
                     @endphp
-                    <div class="dropdown-item" onclick="selectOption('estadoSelect', '{{ $val_value }}', '{{ $val_display }}', 'estado')">{{ $val_display }}</div>
+                    <div class="dropdown-item" onclick="selectOption('estadoSelect', '{{ $val_value }}', '{{ $val_display }}', 'estatus')">{{ $val_display }}</div>
                 @endforeach
             </div>
         </div>
     </div>
+
+    <!-- Código de Patio -->
+    <div>
+        <label for="codigo_patio" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">Código de Patio</label>
+        <input type="text" id="codigo_patio" name="CODIGO_PATIO" class="form-input-custom @error('CODIGO_PATIO') is-invalid @enderror" value="{{ old('CODIGO_PATIO', $equipo->CODIGO_PATIO ?? '') }}" placeholder="Ej: V-01" autocomplete="off">
+        @error('CODIGO_PATIO') <span class="error-message-inline">{{ $message }}</span> @enderror
+    </div>
 </div>
+
+<!-- Catalog Linking Widget (Appears when model + year match catalog) -->
+<div id="catalog_link_widget" style="display: none; margin: 30px 0; padding: 20px; background: linear-gradient(135deg, #ebf8ff 0%, #f0f9ff 100%); border: 2px solid #0284c7; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+        <div style="background: #0284c7; padding: 10px; border-radius: 50%; display: flex;">
+            <i class="material-icons" style="color: white; font-size: 28px;">inventory_2</i>
+        </div>
+        <div style="flex: 1;">
+            <h4 style="margin: 0; color: #0c4a6e; font-size: 16px; font-weight: 800;">¡Encontramos este modelo en el Catálogo!</h4>
+            <p style="margin: 5px 0 0 0; color: #075985; font-size: 14px;">Vincular las especificaciones técnicas si coinciden con las del equipo a registrar.</p>
+        </div>
+    </div>
+    
+    <div id="catalog_preview" style="background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #bae6fd;">
+        <!-- Catalog data will be inserted here by JavaScript -->
+    </div>
+    
+    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button type="button" onclick="ignoreCatalogSuggestion()" style="background: white; color: #64748b; border: 1px solid #cbd5e0; padding: 10px 20px; border-radius: 8px; font-weight: 600; transition: 0.2s;">
+            <i class="material-icons" style="font-size: 18px; vertical-align: middle; margin-right: 5px;">close</i>
+            Ignorar
+        </button>
+        <button type="button" onclick="linkToCatalog()" style="background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; transition: 0.2s; box-shadow: 0 2px 4px rgba(2,132,199,0.2);">
+            <i class="material-icons" style="font-size: 18px; vertical-align: middle; margin-right: 5px;">link</i>
+            Vincular
+        </button>
+    </div>
+</div>
+
+<input type="hidden" id="linked_id_espec" name="ID_ESPEC" value="{{ old('ID_ESPEC', $equipo->ID_ESPEC ?? '') }}">
 
 <!-- Documentation -->
 <h3 style="color: var(--maquinaria-blue); font-size: 16px; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; margin-bottom: 20px; margin-top: 30px;">Documentación Legal</h3>
@@ -150,7 +288,7 @@
                     <a href="{{ $equipo->documentacion->LINK_DOC_PROPIEDAD }}" target="_blank" class="btn-preview-pdf" style="text-decoration: none;">
                         <i class="material-icons">visibility</i> Ver PDF
                     </a>
-                    <label for="doc_propiedad" title="Reemplazar PDF" style="cursor: pointer; margin-left: 5px; color: var(--maquinaria-blue); display: flex; align-items: center;">
+                    <label for="doc_propiedad" title="Reemplazar PDF" style="margin-left: 5px; color: var(--maquinaria-blue); display: flex; align-items: center;">
                         <i class="material-icons" style="font-size: 20px;">edit</i>
                     </label>
                  @else
@@ -171,12 +309,21 @@
     <!-- Póliza -->
     <div>
         <label for="seguro" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">Póliza</label>
-        <input type="text" id="seguro" name="documentacion[NOMBRE_SEGURO]" list="seguros_list" class="form-input-custom" value="{{ old('documentacion.NOMBRE_SEGURO', $equipo->documentacion->seguro->NOMBRE_ASEGURADORA ?? '') }}" placeholder="Seleccione o escriba aseguradora..." autocomplete="off">
-        <datalist id="seguros_list">
-            @foreach($seguros as $nombre)
-                <option value="{{ $nombre }}">
-            @endforeach
-        </datalist>
+        <div class="custom-form-autocomplete">
+            <input type="text" id="seguro" name="documentacion[NOMBRE_SEGURO]" 
+                   class="form-input-custom" 
+                   value="{{ old('documentacion.NOMBRE_SEGURO', $equipo->documentacion->seguro->NOMBRE_ASEGURADORA ?? '') }}" 
+                   placeholder="Seleccione o escriba aseguradora..." 
+                   autocomplete="off"
+                   onfocus="showFormDropdown(this)" 
+                   onblur="hideFormDropdownDelayed(this)" 
+                   oninput="filterFormDropdown(this)">
+            <div class="dropdown-list">
+                @foreach($seguros as $nombre)
+                    <div class="dropdown-item" onmousedown="selectDropdownItem(this, '{{ $nombre }}')">{{ $nombre }}</div>
+                @endforeach
+            </div>
+        </div>
     </div>
 
     <div style="position: relative;">
@@ -189,7 +336,7 @@
                     <a href="{{ $equipo->documentacion->LINK_POLIZA_SEGURO }}" target="_blank" class="btn-preview-pdf" style="text-decoration: none;">
                         <i class="material-icons">visibility</i> Ver PDF
                     </a>
-                    <label for="poliza_seguro" title="Reemplazar PDF" style="cursor: pointer; margin-left: 5px; color: var(--maquinaria-blue); display: flex; align-items: center;">
+                    <label for="poliza_seguro" title="Reemplazar PDF" style="margin-left: 5px; color: var(--maquinaria-blue); display: flex; align-items: center;">
                         <i class="material-icons" style="font-size: 20px;">edit</i>
                     </label>
                  @else
@@ -218,7 +365,7 @@
                     <a href="{{ $equipo->documentacion->LINK_ROTC }}" target="_blank" class="btn-preview-pdf" style="text-decoration: none;">
                         <i class="material-icons">visibility</i> Ver PDF
                     </a>
-                    <label for="doc_rotc" title="Reemplazar PDF" style="cursor: pointer; margin-left: 5px; color: var(--maquinaria-blue); display: flex; align-items: center;">
+                    <label for="doc_rotc" title="Reemplazar PDF" style="margin-left: 5px; color: var(--maquinaria-blue); display: flex; align-items: center;">
                         <i class="material-icons" style="font-size: 20px;">edit</i>
                     </label>
                  @else
@@ -246,7 +393,7 @@
                     <a href="{{ $equipo->documentacion->LINK_RACDA }}" target="_blank" class="btn-preview-pdf" style="text-decoration: none;">
                         <i class="material-icons">visibility</i> Ver PDF
                     </a>
-                    <label for="doc_racda" title="Reemplazar PDF" style="cursor: pointer; margin-left: 5px; color: var(--maquinaria-blue); display: flex; align-items: center;">
+                    <label for="doc_racda" title="Reemplazar PDF" style="margin-left: 5px; color: var(--maquinaria-blue); display: flex; align-items: center;">
                         <i class="material-icons" style="font-size: 20px;">edit</i>
                     </label>
                  @else
@@ -262,18 +409,7 @@
         <small id="file_racda" style="color: #718096; font-size: 10px; display: {{ $hasRacda ? 'block' : 'none' }};">{{ $hasRacda ? '📄 RACDA cargado' : '' }}</small>
     </div>
 
-    <!-- Ficha Técnica -->
-    <div>
-        <label for="ficha_tecnica" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">Ficha Técnica</label>
-        <input type="text" id="ficha_tecnica" name="FICHA_TECNICA_MODELO" list="specs_list" class="form-input-custom" value="{{ old('FICHA_TECNICA_MODELO', $equipo->especificaciones->MODELO ?? '') }}" placeholder="Seleccione o escriba..." autocomplete="off">
-        <datalist id="specs_list">
-            @foreach($modelos_specs as $spec)
-                <option value="{{ $spec->MODELO }}">
-            @endforeach
-        </datalist>
-        <input type="hidden" name="ID_ESPEC" value="{{ old('ID_ESPEC', $equipo->ID_ESPEC ?? '') }}">
-    </div>
-
+    
     <!-- Link GPS -->
     <div>
         <label for="link_gps" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">Link GPS</label>
@@ -287,7 +423,7 @@
     <div>
         <label for="foto_equipo" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">Foto del Equipo</label>
         <div style="display: flex; gap: 10px; align-items: center; height: 38px;">
-            <label for="foto_equipo" id="preview_equipo" style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: white; border-radius: 8px; border: 1px solid #cbd5e0; flex-shrink: 0; cursor: pointer; transition: all 0.2s;" title="Foto del Equipo" onmouseover="this.style.borderColor='var(--maquinaria-blue)';" onmouseout="this.style.borderColor='#cbd5e0';">
+            <label for="foto_equipo" id="preview_equipo" style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: white; border-radius: 8px; border: 1px solid #cbd5e0; flex-shrink: 0; transition: all 0.2s;" title="Foto del Equipo" onmouseover="this.style.borderColor='var(--maquinaria-blue)';" onmouseout="this.style.borderColor='#cbd5e0';">
                 @if(isset($equipo) && $equipo->FOTO_EQUIPO)
                     <img src="{{ asset($equipo->FOTO_EQUIPO) }}" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px;">
                 @else

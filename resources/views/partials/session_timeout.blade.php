@@ -2,107 +2,200 @@
     <!-- Session Timeout Modal -->
     <div id="sessionTimeoutModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center; backdrop-filter: blur(4px);">
         <div style="background: white; padding: 30px; border-radius: 16px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
-            <div style="background: #fef2f2; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
-                <i class="material-icons" style="font-size: 32px; color: #dc2626;">timer</i>
-            </div>
             <h3 style="margin: 0 0 10px; color: #1e293b; font-size: 20px; font-weight: 700;">Tu sesión está por expirar</h3>
             <p style="margin: 0 0 25px; color: #64748b; font-size: 15px; line-height: 1.5;">Por seguridad, tu sesión se cerrará automáticamente en <strong id="sessionCountdown" style="color: #dc2626;">60</strong> segundos debido a inactividad.</p>
             
             <div style="display: flex; flex-direction: column; gap: 10px;">
-                <button onclick="extendSession()" style="width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 15px; cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);">
-                    Mantener Sesión Activa
-                </button>
-                <button onclick="logoutNow()" style="width: 100%; padding: 12px; background: transparent; color: #64748b; border: 1px solid #cbd5e0; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s;">
-                    Cerrar Sesión
+                <button id="btnExtendSession" onclick="extendSession()" style="width: 100%; padding: 12px; background: var(--maquinaria-blue); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 15px; transition: background 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 103, 177, 0.3); cursor: default;">
+                    Mantener Sesión
                 </button>
             </div>
         </div>
     </div>
 
     <script>
-        // Session Timeout Logic (Restored)
+        /**
+         * Robust Session Timeout Manager
+         * Uses absolute timestamps to prevent drift when tab is backgrounded/sleeping.
+         */
         (function() {
-            const lifetime = {{ config('session.lifetime') ?? 10 }} * 60 * 1000; // Minutes to ms
-            const warningBuffer = 60 * 1000; // 60 seconds warning
-            // Ensure proper calculation even if lifetime is small
-            const warningTime = (lifetime > warningBuffer) ? lifetime - warningBuffer : lifetime * 0.9;
+            // Configuration
+            const SESSION_LIFETIME_MINUTES = {{ config('session.lifetime') ?? 120 }};
+            const WARNING_DURATION_SECONDS = 60;
+            const PING_INTERVAL_MS = 300000; // Ping server every 5 minutes of activity
             
-            let warningTimer;
-            let logoutTimer;
-            let countdownInterval;
-            let isWarningShown = false;
+            // State
+            let sessionExpirationTime;
+            let lastServerPingTime = Date.now();
+            let checkInterval;
+            let isModalVisible = false;
 
-            function startTimers() {
-                clearTimeout(warningTimer);
-                clearTimeout(logoutTimer);
-                clearInterval(countdownInterval);
-
-                warningTimer = setTimeout(showWarning, warningTime);
-                logoutTimer = setTimeout(performLogout, lifetime);
+            function initSession() {
+                updateExpirationTime();
+                startCheckInterval();
+                setupEventListeners();
             }
 
-            function resetTimers() {
-                if (isWarningShown) return; // Don't reset if modal is open - user must explicitly choose
-                startTimers();
+            function updateExpirationTime() {
+                // Set expiration to NOW + Lifetime
+                sessionExpirationTime = Date.now() + (SESSION_LIFETIME_MINUTES * 60 * 1000);
             }
 
-            function showWarning() {
-                isWarningShown = true;
+            function checkSessionStatus() {
+                const now = Date.now();
+                const msRemaining = sessionExpirationTime - now;
+
+                if (msRemaining <= 0) {
+                    // Time is up!
+                    performLogout();
+                } else if (msRemaining <= (WARNING_DURATION_SECONDS * 1000)) {
+                    // Enter Warning Zone
+                    showWarning(Math.ceil(msRemaining / 1000));
+                } else {
+                    // Safe Zone
+                    if (isModalVisible) hideWarning();
+                }
+            }
+
+            function startCheckInterval() {
+                if (checkInterval) clearInterval(checkInterval);
+                // Check every second
+                checkInterval = setInterval(checkSessionStatus, 1000);
+            }
+
+            function showWarning(secondsRemaining) {
                 const modal = document.getElementById('sessionTimeoutModal');
-                if(modal) modal.style.display = 'flex';
+                const counter = document.getElementById('sessionCountdown');
                 
-                // Countdown visual
-                let seconds = 60;
-                const el = document.getElementById('sessionCountdown');
-                if(el) el.innerText = seconds;
+                if (modal) {
+                    modal.style.display = 'flex';
+                    // Force high z-index
+                    modal.style.zIndex = '99999'; 
+                    isModalVisible = true;
+                }
                 
-                // Beep or sound could go here
-                
-                countdownInterval = setInterval(() => {
-                    seconds--;
-                    if(el) el.innerText = seconds;
-                    if(seconds <= 0) clearInterval(countdownInterval);
-                }, 1000);
+                if (counter) {
+                    counter.innerText = secondsRemaining > 0 ? secondsRemaining : 0;
+                }
             }
-            
+
+            function hideWarning() {
+                const modal = document.getElementById('sessionTimeoutModal');
+                if (modal) {
+                    modal.style.display = 'none';
+                    isModalVisible = false;
+                }
+                
+                // Reset button state just in case it was left pending
+                const btn = document.getElementById('btnExtendSession');
+                if(btn) {
+                    btn.disabled = false;
+                    btn.innerText = 'Mantener Sesión';
+                    btn.style.opacity = '1';
+                }
+            }
+
+            // Expose function to global scope for the button click
             window.extendSession = function() {
-                // Ping to keep server session alive
-                fetch(window.location.href, { method: 'HEAD' });
+                const btn = document.getElementById('btnExtendSession');
                 
-                // Hide modal
-                const modal = document.getElementById('sessionTimeoutModal');
-                if(modal) modal.style.display = 'none';
-                
-                isWarningShown = false;
-                startTimers();
-            };
+                // UX: Prevent double click
+                if(btn) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.7';
+                }
 
-            window.logoutNow = function() {
-               performLogout(); 
+                // Show system preloader
+                if (typeof window.showPreloader === 'function') {
+                    window.showPreloader();
+                }
+
+                fetch('/refresh-csrf', { method: 'GET' })
+                    .then(response => {
+                        if (response.ok) {
+                            // Success! Reset everything.
+                            updateExpirationTime();
+                            lastServerPingTime = Date.now();
+                            hideWarning();
+                        } else {
+                            // If ping fails (e.g. 401/419), we are likely already logged out
+                            window.location.reload(); 
+                        }
+                    })
+                    .catch(() => {
+                        // Network error or offline
+                         window.location.reload(); 
+                    })
+                    .finally(() => {
+                         // Hide system preloader
+                         if (typeof window.hidePreloader === 'function') {
+                             window.hidePreloader();
+                         }
+                    });
             };
 
             function performLogout() {
-                // Post to standard Laravel logout route
+                // Stop checking to prevent loops
+                clearInterval(checkInterval);
+                
+                // Create and submit logout form
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = '/logout';
                 
-                const csrf = document.createElement('input');
-                csrf.type = 'hidden';
-                csrf.name = '_token';
-                csrf.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                form.appendChild(csrf);
+                const csrfToken = document.querySelector('meta[name="csrf-token"]');
+                if(csrfToken) {
+                    const csrf = document.createElement('input');
+                    csrf.type = 'hidden';
+                    csrf.name = '_token';
+                    csrf.value = csrfToken.getAttribute('content');
+                    form.appendChild(csrf);
+                }
                 
                 document.body.appendChild(form);
                 form.submit();
             }
 
-            // Attach events to reset timer on activity
-            ['click', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
-                document.addEventListener(evt, resetTimers, true);
-            });
+            function handleActivity() {
+                // If the modal is visible, ONLY the button should extend the session.
+                // Ignore passive mouse movements.
+                if (isModalVisible) return;
 
-            // Start on load
-            startTimers();
+                // Update local expiration time so popup doesn't appear while working
+                updateExpirationTime();
+
+                // Throttle: Only ping server if 5 minutes (PING_INTERVAL_MS) have passed since last ping
+                const now = Date.now();
+                if (now - lastServerPingTime > PING_INTERVAL_MS) {
+                    lastServerPingTime = now;
+                    
+                    // Lightweight background ping to keep session alive on server
+                    fetch('/refresh-csrf', { method: 'GET' }).catch(() => {
+                        // Ignore errors in background ping (e.g. if offline)
+                    });
+                }
+            }
+
+            function setupEventListeners() {
+                // Activity Listeners
+                const events = ['click', 'mousemove', 'keydown', 'scroll', 'touchstart'];
+                events.forEach(evt => {
+                    document.addEventListener(evt, handleActivity, { passive: true });
+                });
+
+                // Tab Visibility Listener (The Key Fix for Sleeping Tabs)
+                document.addEventListener('visibilitychange', () => {
+                   if (!document.hidden) {
+                       // Immediately check status when tab wakes up
+                       checkSessionStatus();
+                       
+                       // Optional: If we woke up and it's been a long time, maybe force a ping?
+                       // But checkSessionStatus will handle logout if expired.
+                   }
+                });
+            }
+
+            // Start
+            initSession();
         })();
     </script>

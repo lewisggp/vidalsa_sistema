@@ -9,8 +9,8 @@
         align-items: center; 
         padding: 10px 12px; 
         border-radius: 8px; 
+        border-radius: 8px; 
         transition: all 0.2s ease;
-        cursor: pointer;
         border: 1px solid transparent;
         margin-bottom: 6px;
     }
@@ -95,7 +95,7 @@
             Por Modelo
         </h4>
         @if(request('modelo'))
-            <span onclick="selectAdvancedOption('modelo', '');" style="font-size: 10px; color: #ef4444; cursor: pointer; font-weight: 600; background: #fee2e2; padding: 2px 6px; border-radius: 4px;">
+            <span onclick="selectAdvancedOption('modelo', '');" style="font-size: 10px; color: #ef4444; font-weight: 600; background: #fee2e2; padding: 2px 6px; border-radius: 4px;">
                 Borrar Filtro
             </span>
         @endif

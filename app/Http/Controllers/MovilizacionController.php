@@ -60,7 +60,7 @@ class MovilizacionController extends Controller
             $query->where('ID_FRENTE_DESTINO', $request->id_frente);
         }
 
-        if ($request->filled('id_tipo')) {
+        if ($request->filled('id_tipo') && $request->id_tipo !== 'all') {
             $query->whereHas('equipo', function($q) use ($request) {
                 $q->where('id_tipo_equipo', $request->id_tipo);
             });
@@ -72,18 +72,16 @@ class MovilizacionController extends Controller
 
         $movilizaciones = $query->orderBy('FECHA_DESPACHO', 'desc')->paginate(12);
 
-        // Sidebar Stats - Optimize: Skip if just paginating (AJAX page > 1 or page param present)
-        $statsHtml = '';
-        $statusStats = collect([]);
+        // Stats: Total In Transit & In Transit by Destination Front
+        // These are GLOBAL stats (not filtered by search/table filters) as per dashboard requirements
+        $totalTransito = Movilizacion::where('ESTADO_MVO', 'TRANSITO')->count();
         
-        // Only load stats if it's NOT a pure pagination request (or if it's the first load)
-        // If wantsJson and page is present, likely just moving pages, stats remain same.
-        // If wantsJson and NOT page, it's a filter update, stats might change.
-        if (!$request->wantsJson() || !$request->has('page')) {
-             $statusStats = Movilizacion::select('ESTADO_MVO', DB::raw('count(*) as total'))
-                ->groupBy('ESTADO_MVO')
-                ->get();
-        }
+        $transitoPorFrente = Movilizacion::where('ESTADO_MVO', 'TRANSITO')
+            ->join('frentes_trabajo', 'movilizacion_historial.ID_FRENTE_DESTINO', '=', 'frentes_trabajo.ID_FRENTE')
+            ->select('frentes_trabajo.NOMBRE_FRENTE', DB::raw('count(*) as total'))
+            ->groupBy('frentes_trabajo.NOMBRE_FRENTE')
+            ->orderByDesc('total')
+            ->get();
 
         $frentes = FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')->orderBy('NOMBRE_FRENTE')->get();
         $allTipos = \App\Models\TipoEquipo::orderBy('nombre')->get();
@@ -93,31 +91,34 @@ class MovilizacionController extends Controller
             $tableHtml = view('admin.movilizaciones.partials.table_rows', compact('movilizaciones'))->render();
             $paginationHtml = $movilizaciones->appends($request->all())->links()->toHtml();
 
-            // Rebuild Stats HTML only if we have stats
-            if ($statusStats->isNotEmpty()) {
-                $statsHtml = '<h4 style="margin: 0 0 15px 0; font-size: 13px; text-transform: uppercase; color: #64748b; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                    <i class="material-icons" style="font-size: 18px; color: #8b5cf6;">donut_large</i>
-                    Estado de Envíos
-                </h4>
-                <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px;">';
-                
-                foreach($statusStats as $stat) {
-                    $statsHtml .= '<li style="padding: 10px; background: #f8fafc; border-radius: 8px; border: 1px solid #f1f5f9;">
-                            <span style="display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; font-weight: 600;">' . $stat->ESTADO_MVO . '</span>
-                            <strong style="color: #1e293b; font-size: 18px;">' . $stat->total . '</strong>
+            // Rebuild Stats HTML for AJAX updates (although these are global, keeping them dynamic is good practice)
+            $statsHtml = '<h4 style="margin: 0 0 15px 0; font-size: 13px; text-transform: uppercase; color: #64748b; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                <i class="material-icons" style="font-size: 18px; color: #8b5cf6;">local_shipping</i>
+                En Tránsito por Frente
+            </h4>
+            <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px;">';
+            
+            if ($transitoPorFrente->isNotEmpty()) {
+                foreach($transitoPorFrente as $stat) {
+                    $statsHtml .= '<li style="padding: 10px; background: #f8fafc; border-radius: 8px; border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 12px; color: #64748b; font-weight: 600;">' . $stat->NOMBRE_FRENTE . '</span>
+                            <span style="background: #e0e7ff; color: #4338ca; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 700;">' . $stat->total . '</span>
                         </li>';
                 }
-                $statsHtml .= '</ul>';
+            } else {
+                $statsHtml .= '<li style="padding: 15px; text-align: center; color: #94a3b8; font-style: italic; font-size: 13px;">No hay equipos en tránsito</li>';
             }
+            $statsHtml .= '</ul>';
 
             return response()->json([
                 'html' => $tableHtml,
                 'pagination' => $paginationHtml,
-                'statsHtml' => $statsHtml
+                'statsHtml' => $statsHtml,
+                'totalTransito' => $totalTransito // Send this for frontend update if needed (will need JS update)
             ]);
         }
 
-        return view('admin.movilizaciones.index', compact('movilizaciones', 'statusStats', 'frentes', 'allTipos'));
+        return view('admin.movilizaciones.index', compact('movilizaciones', 'totalTransito', 'transitoPorFrente', 'frentes', 'allTipos'));
     }
 
     public function create()
@@ -238,17 +239,66 @@ class MovilizacionController extends Controller
 
     public function updateStatus(Request $request, $id)
     {
-        $mov = Movilizacion::findOrFail($id);
-        $request->validate([
-            'status' => 'required|in:RECIBIDO,RETORNADO'
-        ]);
+        DB::beginTransaction();
+        try {
+            $mov = Movilizacion::with('equipo', 'frenteOrigen', 'frenteDestino')->findOrFail($id);
+            $usuario = auth()->user();
+            
+            $request->validate([
+                'status' => 'required|in:RECIBIDO,RETORNADO'
+            ]);
+            
+            // Validar autorización
+            $esGlobal = ($usuario->NIVEL_ACCESO == 1);
+            $usuarioFrente = $usuario->ID_FRENTE_ASIGNADO;
+            
+            if (!$esGlobal) {
+                // Usuarios LOCAL deben estar en el frente correcto
+                if ($request->status == 'RECIBIDO' && $usuarioFrente != $mov->ID_FRENTE_DESTINO) {
+                    abort(403, 'Solo el frente destino puede confirmar la recepción');
+                }
+                
+                if ($request->status == 'RETORNADO' && $usuarioFrente != $mov->ID_FRENTE_ORIGEN) {
+                    abort(403, 'Solo el frente origen puede confirmar el retorno');
+                }
+            }
+            
+            // Validar que esté en tránsito
+            if ($mov->ESTADO_MVO != 'TRANSITO') {
+                return back()->withErrors(['error' => 'Esta movilización ya fue procesada']);
+            }
+            
+            // 1. Actualizar movilización
+            $mov->update([
+                'ESTADO_MVO' => $request->status,
+                'FECHA_RECEPCION' => now()
+            ]);
 
-        $mov->update([
-            'ESTADO_MVO' => $request->status,
-            'FECHA_RECEPCION' => now()
-        ]);
+            // 2. Actualizar tabla equipos según el estado
+            if ($request->status == 'RECIBIDO') {
+                // RECIBIDO en DESTINO → Actualizar al frente destino
+                $mov->equipo->update([
+                    'ID_FRENTE_ACTUAL' => $mov->ID_FRENTE_DESTINO,
+                    'CONFIRMADO_EN_SITIO' => 1
+                ]);
+                $message = 'Equipo recibido exitosamente en ' . $mov->frenteDestino->NOMBRE_FRENTE;
+            } 
+            elseif ($request->status == 'RETORNADO') {
+                // RETORNADO → Volver al frente ORIGEN
+                $mov->equipo->update([
+                    'ID_FRENTE_ACTUAL' => $mov->ID_FRENTE_ORIGEN,
+                    'CONFIRMADO_EN_SITIO' => 1
+                ]);
+                $message = 'Equipo retornado exitosamente a ' . $mov->frenteOrigen->NOMBRE_FRENTE;
+            }
 
-        $message = $request->status == 'RECIBIDO' ? 'Equipo recibido exitosamente.' : 'Equipo retornado exitosamente.';
-        return back()->with('success', $message);
+            DB::commit();
+            return back()->with('success', $message);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error en updateStatus: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Error al actualizar: ' . $e->getMessage()]);
+        }
     }
 }

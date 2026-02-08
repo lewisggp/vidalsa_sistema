@@ -19,6 +19,10 @@ class ChangePasswordController extends Controller
     {
         $request->validate([
             'password' => ['required', 'confirmed', 'min:6'],
+        ], [
+            'password.required' => 'La contraseña es obligatoria.',
+            'password.confirmed' => 'Las contraseñas no coinciden. Por favor, verifique que ambos campos sean idénticos.',
+            'password.min' => 'La contraseña debe tener al menos :min caracteres.',
         ]);
 
         $user = Auth::user();

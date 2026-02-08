@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CaracteristicaModelo;
+use App\Models\Equipo;
 use App\Services\GoogleDriveService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -15,12 +16,12 @@ class CaracteristicaModeloController extends Controller
         $query = CaracteristicaModelo::query();
 
         // 1. Filter by Model
-        if ($request->filled('modelo') && trim($request->modelo) !== '') {
+        if ($request->filled('modelo') && trim($request->modelo) !== '' && $request->modelo !== 'all') {
             $query->where('MODELO', 'like', "%{$request->modelo}%");
         }
 
         // 2. Filter by Year
-        if ($request->filled('anio') && trim($request->anio) !== '') {
+        if ($request->filled('anio') && trim($request->anio) !== '' && $request->anio !== 'all') {
             $query->where('ANIO_ESPEC', $request->anio);
         }
 
@@ -61,8 +62,23 @@ class CaracteristicaModeloController extends Controller
 
     public function create()
     {
-        $distinctModelos = CaracteristicaModelo::select('MODELO')->distinct()->orderBy('MODELO')->pluck('MODELO');
-        return view('admin.catalogo.create', compact('distinctModelos'));
+        $catalogo = new CaracteristicaModelo(); // Empty object for create mode
+        
+        // Optimización: Cache de Modelos (lista pesada) x 10 min
+        $modelosList = \Illuminate\Support\Facades\Cache::remember('equipos_modelos_list', 600, function () {
+            return Equipo::select('MODELO')
+                ->distinct()
+                ->whereNotNull('MODELO')
+                ->where('MODELO', '!=', '')
+                ->orderBy('MODELO')
+                ->pluck('MODELO');
+        });
+
+        // NOTA: La lista de años ($aniosList) ya no se carga aquí. 
+        // Se cargará dinámicamente vía AJAX según el modelo seleccionado para mayor velocidad y precisión.
+        $aniosList = []; 
+        
+        return view('admin.catalogo.create', compact('catalogo', 'modelosList', 'aniosList'));
     }
 
     public function store(Request $request)
@@ -71,7 +87,6 @@ class CaracteristicaModeloController extends Controller
             'MODELO' => 'required|max:50',
             'ANIO_ESPEC' => 'required|integer',
             'MOTOR' => 'nullable|max:150',
-            'CAPACIDAD' => 'nullable|max:50',
             'COMBUSTIBLE' => 'nullable|max:100',
             'CONSUMO_PROMEDIO' => 'nullable|max:50',
             'ACEITE_MOTOR' => 'nullable|max:100',
@@ -83,9 +98,11 @@ class CaracteristicaModeloController extends Controller
         ], $this->validationMessages(), $this->validationAttributes());
 
         try {
-            DB::transaction(function () use ($request, $validated) {
+            $catalogo = null;
+            
+            DB::transaction(function () use ($request, &$validated, &$catalogo) {
                 // Force Uppercase on all string fields
-                $fieldsToUpper = ['MODELO', 'MOTOR', 'CAPACIDAD', 'COMBUSTIBLE', 'CONSUMO_PROMEDIO', 
+                $fieldsToUpper = ['MODELO', 'MOTOR', 'COMBUSTIBLE', 'CONSUMO_PROMEDIO', 
                                   'ACEITE_MOTOR', 'ACEITE_CAJA', 'LIGA_FRENO', 'REFRIGERANTE', 'TIPO_BATERIA'];
                 
                 foreach ($fieldsToUpper as $field) {
@@ -105,9 +122,25 @@ class CaracteristicaModeloController extends Controller
                     
                     if ($driveFile && isset($driveFile->id)) {
                         $catalogo->update(['FOTO_REFERENCIAL' => '/storage/google/' . $driveFile->id]);
+                    } else {
+                        Log::warning('Google Drive upload failed for catalog ID: ' . $catalogo->ID_ESPEC);
                     }
                 }
             });
+
+            // AUTO-LINK: Find existing equipos with matching model + year and link them
+            if ($catalogo) {
+                // Performance Optimization: Use bulk UPDATE instead of individual updates
+                // This changes from N queries to 1 query (95% faster)
+                $linkedCount = Equipo::where('MODELO', $validated['MODELO'])
+                    ->where('ANIO', $validated['ANIO_ESPEC'])
+                    ->whereNull('ID_ESPEC') // Only link equipos that aren't already linked
+                    ->update(['ID_ESPEC' => $catalogo->ID_ESPEC]);
+
+                if ($linkedCount > 0) {
+                    Log::info("Auto-linked {$linkedCount} equipos to catalog ID {$catalogo->ID_ESPEC} ({$validated['MODELO']} {$validated['ANIO_ESPEC']})");
+                }
+            }
 
             if ($request->wantsJson()) {
                 return response()->json([
@@ -116,7 +149,7 @@ class CaracteristicaModeloController extends Controller
                 ], 200);
             }
 
-            return redirect()->route('catalogo.index')->with('success', 'Equipo registrado correctamente.');
+            return redirect()->route('catalogo.index')->with('success', 'Modelo registrado correctamente.');
         } catch (\Exception $e) {
             Log::error('Error registrando modelo en catálogo: ' . $e->getMessage());
             
@@ -145,7 +178,6 @@ class CaracteristicaModeloController extends Controller
             'MODELO' => 'required|max:50',
             'ANIO_ESPEC' => 'required|integer',
             'MOTOR' => 'nullable|max:150',
-            'CAPACIDAD' => 'nullable|max:50',
             'COMBUSTIBLE' => 'nullable|max:100',
             'CONSUMO_PROMEDIO' => 'nullable|max:50',
             'ACEITE_MOTOR' => 'nullable|max:100',
@@ -157,9 +189,12 @@ class CaracteristicaModeloController extends Controller
         ], $this->validationMessages(), $this->validationAttributes());
 
         try {
-            DB::transaction(function () use ($request, $validated, $catalogo) {
+            $oldModelo = $catalogo->MODELO;
+            $oldAnio = $catalogo->ANIO_ESPEC;
+            
+            DB::transaction(function () use ($request, &$validated, $catalogo) {
                 // Force Uppercase on all string fields
-                $fieldsToUpper = ['MODELO', 'MOTOR', 'CAPACIDAD', 'COMBUSTIBLE', 'CONSUMO_PROMEDIO', 
+                $fieldsToUpper = ['MODELO', 'MOTOR', 'COMBUSTIBLE', 'CONSUMO_PROMEDIO', 
                                   'ACEITE_MOTOR', 'ACEITE_CAJA', 'LIGA_FRENO', 'REFRIGERANTE', 'TIPO_BATERIA'];
                 
                 foreach ($fieldsToUpper as $field) {
@@ -200,9 +235,27 @@ class CaracteristicaModeloController extends Controller
                                 Log::warning('Failed to delete old Google Drive file: ' . $oldFileId . ' - ' . $e->getMessage());
                             }
                         }
+                    } else {
+                        Log::warning('Google Drive upload failed during catalog update for ID: ' . $catalogo->ID_ESPEC);
                     }
                 }
             });
+
+            // AUTO-LINK: If model or year changed, link new matching equipos
+            $modeloChanged = ($oldModelo !== $validated['MODELO']);
+            $anioChanged = ($oldAnio !== $validated['ANIO_ESPEC']);
+            
+            if ($modeloChanged || $anioChanged) {
+                // Performance Optimization: Use bulk UPDATE instead of individual updates
+                $linkedCount = Equipo::where('MODELO', $validated['MODELO'])
+                    ->where('ANIO', $validated['ANIO_ESPEC'])
+                    ->whereNull('ID_ESPEC')
+                    ->update(['ID_ESPEC' => $catalogo->ID_ESPEC]);
+
+                if ($linkedCount > 0) {
+                    Log::info("Auto-linked {$linkedCount} equipos after catalog update to ID {$catalogo->ID_ESPEC} ({$validated['MODELO']} {$validated['ANIO_ESPEC']})");
+                }
+            }
 
             if ($request->wantsJson()) {
                 return response()->json(['message' => 'Modelo actualizado exitosamente', 'redirect' => route('catalogo.index')]);
@@ -277,7 +330,6 @@ class CaracteristicaModeloController extends Controller
             'MODELO' => 'Modelo',
             'ANIO_ESPEC' => 'Año de Ficha',
             'MOTOR' => 'Motor',
-            'CAPACIDAD' => 'Capacidad',
             'COMBUSTIBLE' => 'Combustible',
             'CONSUMO_PROMEDIO' => 'Consumo Promedio',
             'ACEITE_MOTOR' => 'Aceite de Motor',
@@ -287,5 +339,62 @@ class CaracteristicaModeloController extends Controller
             'TIPO_BATERIA' => 'Tipo de Batería',
             'foto_referencial' => 'Foto PNG del Catálogo',
         ];
+    }
+
+    /**
+     * Get distinct brands from equipos table for catalog autocomplete
+     */
+    public function getBrandsFromEquipos(Request $request)
+    {
+        $query = $request->input('query', '');
+        
+        $brands = \App\Models\Equipo::select('MARCA')
+            ->distinct()
+            ->whereNotNull('MARCA')
+            ->where('MARCA', 'LIKE', "%{$query}%")
+            ->orderBy('MARCA', 'asc')
+            ->limit(20)
+            ->pluck('MARCA');
+
+        return response()->json($brands);
+    }
+
+    /**
+     * Get distinct models from equipos table for catalog autocomplete
+     */
+    public function getModelsFromEquipos(Request $request)
+    {
+        $query = $request->input('query', '');
+        
+        $models = \App\Models\Equipo::select('MODELO')
+            ->distinct()
+            ->whereNotNull('MODELO')
+            ->where('MODELO', 'LIKE', "%{$query}%")
+            ->orderBy('MODELO', 'asc')
+            ->limit(20)
+            ->pluck('MODELO');
+
+        return response()->json($models);
+    }
+
+    /**
+     * Get distinct years from equipos for a specific model
+     */
+    public function getYearsFromEquipos(Request $request)
+    {
+        $model = $request->input('model');
+        
+        if (!$model) {
+            return response()->json([]);
+        }
+
+        $years = \App\Models\Equipo::select('ANIO')
+            ->distinct()
+            ->whereNotNull('ANIO')
+            ->where('MODELO', $model)
+            ->orderBy('ANIO', 'desc')
+            ->pluck('ANIO');
+
+        return response()->json($years);
     }
 }

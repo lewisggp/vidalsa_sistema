@@ -17,8 +17,8 @@
             
             @include('admin.catalogo.partials.form_fields')
 
-            <div style="margin-top: 40px; display: flex; gap: 12px; justify-content: center;">
-                <a href="{{ route('catalogo.index') }}" class="btn-primary-maquinaria" style="background-color: white; color: #0067b1; border: 1px solid #0067b1;">
+            <div style="margin-top: 30px; display: flex; gap: 12px; justify-content: center;">
+                <a href="{{ route('catalogo.index') }}" class="btn-primary-maquinaria btn-secondary">
                     Cancelar
                 </a>
                 <button type="submit" class="btn-primary-maquinaria">

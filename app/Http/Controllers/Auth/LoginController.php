@@ -94,6 +94,11 @@ class LoginController extends Controller
                     $bloqueo->save();
                 }
 
+                // OPTIMIZATION: Direct redirect for password change
+                if ($user->REQUIERE_CAMBIO_CLAVE) {
+                    return redirect()->route('password.change');
+                }
+
                 return redirect()->route('menu');
             }
 

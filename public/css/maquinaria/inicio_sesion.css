@@ -222,7 +222,8 @@ body {
     z-index: 10;
     width: 400px;
     background-color: #fff;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 25px -5px rgba(0, 0, 0, 0.25), 0 0 10px -5px rgba(0, 0, 0, 0.15);
+    /* Sombra 360 grados consistente */
     border-radius: 12px;
     padding: 10px 10px 30px 10px;
 }
@@ -270,8 +271,18 @@ body {
 }
 
 .custom-input:focus {
-    border-color: #0067b1;
-    box-shadow: 0 0 0 3px rgba(0, 103, 177, 0.1);
+    outline: none;
+    /* No border change on focus */
+}
+
+/* FORCE AUTOFILL STYLE OVERRIDE */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px white inset !important;
+    -webkit-text-fill-color: #333 !important;
+    transition: background-color 5000s ease-in-out 0s;
 }
 
 .custom-label {
@@ -360,7 +371,7 @@ body {
 }
 
 .btn-maquinaria-primary:hover {
-    background-color: #000033;
+    background-color: #656565;
 }
 
 @media (max-width: 993px) {

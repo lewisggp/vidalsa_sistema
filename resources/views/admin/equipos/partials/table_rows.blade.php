@@ -1,7 +1,7 @@
 @forelse($equipos as $equipo)
     <tr>
         <!-- 1. Foto -->
-        <td class="table-cell-custom table-cell-center">
+        <td class="table-cell-custom table-cell-center" style="padding-left: 5px; padding-right: 5px;">
             <!-- Frente Info -->
             <div style="font-size: 13px; color: #000000; margin-bottom: 5px; line-height: 1.1; font-weight: 600; text-align: center; width: 100%; word-wrap: break-word;" title="{{ $equipo->frenteActual->NOMBRE_FRENTE ?? 'Sin Asignar' }}">
                 {{ $equipo->frenteActual->NOMBRE_FRENTE ?? 'Sin Asignar' }}
@@ -24,7 +24,7 @@
         <td class="table-cell-custom" style="font-weight: 600; max-width: 170px; font-size: 14px; color: #000;">
             {{ $equipo->tipo->nombre ?? 'N/A' }}
             @if($equipo->NUMERO_ETIQUETA)
-                <span style="margin-left: 8px; font-weight: 700; color: #0067b1;">#{{ $equipo->NUMERO_ETIQUETA }}</span>
+                <span style="margin-left: 8px; font-weight: 700; color: var(--maquinaria-blue);">#{{ $equipo->NUMERO_ETIQUETA }}</span>
             @endif
         </td>
         <!-- 3. Marca / Modelo -->
@@ -58,7 +58,7 @@
                 <!-- Trigger -->
                 <div onclick="event.stopPropagation(); toggleStatusDropdown(this)" 
                      class="status-trigger" 
-                     style="cursor: pointer; padding: 6px 10px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 5px; font-size: 13px; font-weight: 600; background: white; border: 1px solid #e2e8f0; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                     style="padding: 6px 10px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 5px; font-size: 13px; font-weight: 600; background: white; border: 1px solid #e2e8f0; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                     
                     <div style="display: flex; align-items: center; gap: 6px; color: {{ $currentConfig['color'] }};">
                         <i class="material-icons" style="font-size: 16px;">{{ $currentConfig['icon'] }}</i>
@@ -71,7 +71,7 @@
                 <div class="status-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 5px); left: 0; min-width: 180px; background: white; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; z-index: 50; overflow: hidden;">
                     @foreach($statusConfig as $key => $config)
                         <div onclick="changeStatus('{{ $equipo->ID_EQUIPO }}', '{{ $key }}', '{{ route('equipos.changeStatus', $equipo->ID_EQUIPO) }}', this)" 
-                             style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; cursor: pointer; transition: background 0.1s; border-bottom: 1px solid #f8fafc;" 
+                             style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; transition: background 0.1s; border-bottom: 1px solid #f8fafc;" 
                              onmouseover="this.style.background='#f8fafc'" 
                              onmouseout="this.style.background='white'">
                             
@@ -102,15 +102,8 @@
                     data-chasis="{{ $equipo->SERIAL_CHASIS }}"
                     
                     {{-- Tech Specs --}}
-                    data-motor-tech="{{ $equipo->especificaciones->MOTOR ?? 'N/A' }}"
-                    data-capacidad="{{ $equipo->especificaciones->CAPACIDAD ?? 'N/A' }}"
                     data-combustible="{{ $equipo->especificaciones->COMBUSTIBLE ?? 'N/A' }}"
                     data-consumo="{{ $equipo->especificaciones->CONSUMO_PROMEDIO ?? 'N/A' }}"
-                    data-aceite-m="{{ $equipo->especificaciones->ACEITE_MOTOR ?? 'N/A' }}"
-                    data-aceite-c="{{ $equipo->especificaciones->ACEITE_CAJA ?? 'N/A' }}"
-                    data-liga="{{ $equipo->especificaciones->LIGA_FRENO ?? 'N/A' }}"
-                    data-refrigerante="{{ $equipo->especificaciones->REFRIGERANTE ?? 'N/A' }}"
-                    data-bateria="{{ $equipo->especificaciones->TIPO_BATERIA ?? 'N/A' }}"
 
                     {{-- Documentation --}}
                     data-placa="{{ $equipo->documentacion->PLACA ?? 'N/A' }}"
@@ -124,6 +117,7 @@
                     data-fecha-rotc="{{ $equipo->documentacion->FECHA_ROTC ?? '' }}"
                     data-link-racda="{{ $equipo->documentacion->LINK_RACDA ?? '' }}"
                     data-fecha-racda="{{ $equipo->documentacion->FECHA_RACDA ?? '' }}"
+                    data-link-adicional="{{ $equipo->documentacion->LINK_DOC_ADICIONAL ?? '' }}"
                     data-link-gps="{{ $equipo->LINK_GPS ?? '' }}"
 
                     onclick="showDetailsImproved(this, event)" 

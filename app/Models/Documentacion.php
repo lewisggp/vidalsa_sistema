@@ -23,7 +23,8 @@ class Documentacion extends Model
         'FECHA_ROTC',
         'LINK_ROTC',
         'FECHA_RACDA',
-        'LINK_RACDA'
+        'LINK_RACDA',
+        'LINK_DOC_ADICIONAL'
     ];
 
     public function equipo()

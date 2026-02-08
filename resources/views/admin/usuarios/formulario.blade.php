@@ -37,7 +37,7 @@
                 <span id="lbl_usuario_estatus_title" class="form-label">Estatus de Cuenta</span>
                 <div class="custom-dropdown" id="statusSelect">
                     <input type="hidden" name="ESTATUS" id="input_estatus" value="{{ old('ESTATUS', $user->ESTATUS ?? 'ACTIVO') }}" aria-label="Estatus de Cuenta">
-                    <div class="dropdown-trigger" id="trigger_estatus" onclick="toggleDropdown('statusSelect')" tabindex="0" role="button" aria-haspopup="listbox" aria-labelledby="lbl_usuario_estatus_title label_estatus">
+                    <div class="dropdown-trigger" id="trigger_estatus" onclick="toggleDropdown('statusSelect', event)" tabindex="0" role="button" aria-haspopup="listbox" aria-labelledby="lbl_usuario_estatus_title label_estatus" style="cursor: default;">
                         <span id="label_estatus">{{ old('ESTATUS', $user->ESTATUS ?? 'ACTIVO') }}</span>
                         <i class="material-icons">expand_more</i>
                     </div>
@@ -69,7 +69,7 @@
                 <span id="lbl_usuario_rol_title" class="form-label">Rol Asignado</span>
                 <div class="custom-dropdown" id="roleSelect">
                     <input type="hidden" name="ID_ROL" id="input_rol" value="{{ old('ID_ROL', $user->ID_ROL ?? '') }}" aria-label="Rol Asignado">
-                    <div class="dropdown-trigger" id="trigger_rol" onclick="toggleDropdown('roleSelect')" tabindex="0" role="button" aria-haspopup="listbox" aria-labelledby="lbl_usuario_rol_title label_rol">
+                    <div class="dropdown-trigger" id="trigger_rol" onclick="toggleDropdown('roleSelect', event)" tabindex="0" role="button" aria-haspopup="listbox" aria-labelledby="lbl_usuario_rol_title label_rol" style="cursor: default;">
                         <span id="label_rol">
                             @php 
                                 $currentRol = $roles->firstWhere('ID_ROL', old('ID_ROL', $user->ID_ROL ?? ''));
@@ -95,7 +95,7 @@
                 <span id="lbl_usuario_nivel_title" class="form-label">Nivel de Acceso</span>
                 <div class="custom-dropdown" id="levelSelect">
                     <input type="hidden" name="NIVEL_ACCESO" id="input_nivel" value="{{ old('NIVEL_ACCESO', $user->NIVEL_ACCESO ?? '') }}" aria-label="Nivel de Acceso">
-                    <div class="dropdown-trigger" id="trigger_nivel" onclick="toggleDropdown('levelSelect')" tabindex="0" role="button" aria-haspopup="listbox" aria-labelledby="lbl_usuario_nivel_title label_nivel">
+                    <div class="dropdown-trigger" id="trigger_nivel" onclick="toggleDropdown('levelSelect', event)" tabindex="0" role="button" aria-haspopup="listbox" aria-labelledby="lbl_usuario_nivel_title label_nivel" style="cursor: default;">
                         <span id="label_nivel">
                             @if(old('NIVEL_ACCESO', $user->NIVEL_ACCESO ?? '') == 1)
                                 GLOBAL - ACCESO COMPLETO
@@ -125,7 +125,7 @@
                 <span id="lbl_usuario_frente_title" class="form-label">Frente Asignado</span>
                 <div class="custom-dropdown" id="frenteSelect">
                     <input type="hidden" name="ID_FRENTE_ASIGNADO" id="input_frente" value="{{ old('ID_FRENTE_ASIGNADO', $user->ID_FRENTE_ASIGNADO ?? '') }}" aria-label="Frente Asignado">
-                    <div class="dropdown-trigger" id="trigger_frente" onclick="toggleDropdown('frenteSelect')" tabindex="0" role="button" aria-haspopup="listbox" aria-labelledby="lbl_usuario_frente_title label_frente">
+                    <div class="dropdown-trigger" id="trigger_frente" onclick="toggleDropdown('frenteSelect', event)" tabindex="0" role="button" aria-haspopup="listbox" aria-labelledby="lbl_usuario_frente_title label_frente" style="cursor: default;">
                         <span id="label_frente">
                             @php 
                                 $currentFrente = $frentes->firstWhere('ID_FRENTE', old('ID_FRENTE_ASIGNADO', $user->ID_FRENTE_ASIGNADO ?? ''));
@@ -154,7 +154,7 @@
                 <span id="lbl_permisos_title" class="form-label">Permisos de Sección</span>
                 
                 <div class="custom-multiselect" id="permissionsSelect">
-                    <div class="multiselect-trigger" id="multiselectTrigger" tabindex="0" role="button" aria-haspopup="listbox" aria-labelledby="lbl_permisos_title selectedCount" onclick="toggleDropdown('permissionsSelect')">
+                    <div class="multiselect-trigger" id="multiselectTrigger" onclick="toggleDropdown('permissionsSelect', event)" tabindex="0" role="button" aria-haspopup="listbox" aria-labelledby="lbl_permisos_title selectedCount" style="cursor: default;">
                         <span id="selectedCount">Seleccione permisos...</span>
                         <i class="material-icons">expand_more</i>
                     </div>

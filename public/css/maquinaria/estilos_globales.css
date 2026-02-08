@@ -7,7 +7,8 @@
     --maquinaria-red: #a91d28;
     --maquinaria-dark-blue: #00004d;
     --maquinaria-gray-text: #707070;
-    --maquinaria-gray-bg: #dce0e5;
+    --maquinaria-gray-bg: #f1f1f4;
+
 }
 
 /* --- PRELOADER STYLES (Logo & Background) --- */
@@ -22,13 +23,15 @@
     justify-content: center;
     align-items: center;
     z-index: 99999;
-    transition: opacity 0.5s ease-out, visibility 0.5s;
+    /* transition: opacity 0.5s ease-out, visibility 0.5s;  <-- REMOVED to allow instant show */
 }
 
 .preloader.fade-out {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
+    transition: opacity 0.5s ease-out, visibility 0.5s;
+    /* Apply transition ONLY on fade out */
 }
 
 .preloader-content {
@@ -91,7 +94,6 @@ body {
     font-family: 'Nunito', sans-serif;
     background-color: var(--maquinaria-gray-bg);
     padding-top: 70px;
-    transition: background-color 0.3s ease;
     overflow-x: hidden;
 }
 
@@ -127,7 +129,7 @@ body {
 .dropdown-trigger,
 .multiselect-trigger {
     width: 100%;
-    padding: 10px 15px;
+    padding: 12px 15px;
     border-radius: 12px;
     border: 1px solid #cbd5e0;
     background: #fbfcfd;
@@ -216,7 +218,6 @@ body {
     align-items: center;
     gap: 10px;
     padding: 10px 15px;
-    cursor: pointer;
     border-radius: 8px;
     transition: background 0.2s;
     font-weight: 600;
@@ -445,7 +446,6 @@ body {
     color: white;
     border-radius: 6px;
     border: none;
-    cursor: pointer;
     transition: 0.2s;
     font-size: 13px;
     text-decoration: none;
@@ -471,7 +471,7 @@ body {
     justify-content: center;
     color: white;
     border: none;
-    cursor: pointer;
+    cursor: default;
     transition: 0.2s;
 }
 
@@ -486,7 +486,6 @@ body {
 }
 
 .upload-placeholder-mini label {
-    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -522,7 +521,6 @@ body {
     background: transparent;
     font-weight: 700;
     font-size: 14px;
-    cursor: pointer;
     outline: none;
     width: 100%;
     text-align: center;
@@ -594,6 +592,18 @@ body {
     animation: spin-circular 0.8s linear infinite;
 }
 
+.spinner-mini-white {
+    width: 24px !important;
+    height: 24px !important;
+    border: 3px solid rgba(255, 255, 255, 0.3) !important;
+    border-top-color: #ffffff !important;
+    border-radius: 50% !important;
+    animation: spin-circular 0.8s linear infinite !important;
+    display: inline-block !important;
+    vertical-align: middle !important;
+    margin-right: 8px;
+}
+
 @keyframes spin-mini {
     to {
         transform: rotate(360deg);
@@ -617,6 +627,12 @@ body {
 
 .btn-secondary:hover {
     background-color: #f0f9ff;
+}
+
+/* Filter Active State - Replaces inline conditional styling */
+.filter-active {
+    border-color: var(--maquinaria-blue) !important;
+    background: #e1effa !important;
 }
 
 /* Responsive Filter Styles (Shared between Equipos and Usuarios) */
@@ -821,10 +837,7 @@ body {
     /* Removed pointer cursor */
     transition: all 0.2s;
     text-decoration: none;
-}
 
-.btn-action-maquinaria:hover {
-    filter: brightness(0.9);
 }
 
 /* --- Form Styles --- */
@@ -838,11 +851,20 @@ body {
     font-family: inherit;
     background: #fbfcfd;
     font-size: 15px;
+    text-transform: uppercase !important;
+    /* Enforced per user request */
 }
 
 .form-input-custom:focus {
     outline: none;
     border-color: var(--maquinaria-blue);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(0, 103, 177, 0.1);
+}
+
+
+.btn-action-maquinaria:hover {
+    filter: brightness(0.9);
     background: white;
     box-shadow: 0 0 0 3px rgba(0, 103, 177, 0.1);
 }
@@ -857,7 +879,7 @@ body {
 .error-message-inline {
     color: var(--maquinaria-red);
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     margin-top: 5px;
     display: block;
 }
@@ -1118,6 +1140,21 @@ body {
     background-color: #fff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.2s;
+    min-width: 35px;
+    height: 35px;
+    font-weight: 600;
+}
+
+.dropdown-item {
+    padding: 8px 12px;
+    font-size: 14px;
+    color: #4a5568;
+    transition: background 0.15s, color 0.15s;
+    border-radius: 0px;
+    display: flex;
+    align-items: center;
     text-decoration: none;
     transition: all 0.2s;
     min-width: 35px;
@@ -1438,7 +1475,18 @@ input[type='password']::-ms-clear {
     align-items: center;
     justify-content: space-between;
     padding: 0 15px;
-    cursor: pointer;
+    cursor: default;
+    transition: all 0.2s;
+}
+
+.dropdown-trigger {
+    padding: 8px 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 14px;
+    user-select: none;
     transition: all 0.2s;
 }
 
@@ -1473,7 +1521,6 @@ input[type='password']::-ms-clear {
     display: flex;
     align-items: center;
     padding: 8px 10px;
-    cursor: pointer;
     border-radius: 6px;
     transition: background 0.2s;
 }
@@ -1486,7 +1533,6 @@ input[type='password']::-ms-clear {
     margin-right: 10px;
     width: 16px;
     height: 16px;
-    cursor: pointer;
 }
 
 /* Utility for vertical lines in tables */
@@ -1525,8 +1571,536 @@ input[type='password']::-ms-clear {
     }
 }
 
-/* Selection State for Mobilization (Double Click) */
-.admin-table tbody tr.selected-row-maquinaria td {
-    background-color: #bae6fd !important;
-    border-color: var(--maquinaria-blue) !important;
+/* Selection State for Mobilization (Double Click) - Desktop Only */
+@media (min-width: 769px) {
+    .admin-table tbody tr.selected-row-maquinaria td {
+        background-color: #bae6fd !important;
+        border-color: var(--maquinaria-blue) !important;
+    }
+}
+
+/* GLOBAL FIX: FORCE AUTOFILL TO WHITE BACKGROUND (Fixes flickering on click) */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px white inset !important;
+    -webkit-text-fill-color: #333 !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Dropdown Item Custom (Equipos Acciones Menu) */
+.dropdown-item-custom {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    cursor: default;
+    transition: background 0.2s;
+}
+
+.dropdown-item-custom:hover {
+    background: #f8fafc !important;
+}
+
+/* ========================================
+   MOBILE RESPONSIVE - EQUIPOS TABLE ONLY
+   ======================================== */
+/* ========================================
+   MOBILE RESPONSIVE - EQUIPOS TABLE ONLY
+   ======================================== */
+@media (max-width: 768px) {
+    /* ONLY apply to equipos page using specific class */
+
+    /* Hide table headers on mobile */
+    .table-equipos-mobile thead {
+        display: none !important;
+    }
+
+    /* Remove min-width constraint */
+    .table-equipos-mobile {
+        min-width: 0 !important;
+    }
+
+    /* 
+       GRID LAYOUT TRANSFORMATION
+       Replaces problematic float/block layout with clean Grid
+    */
+    .table-equipos-mobile tbody tr {
+        display: grid !important;
+        /* Force Grid */
+        grid-template-columns: 110px 1fr 45px !important;
+        /* Col 1: Photo, Col 2: Content, Col 3: Details */
+        grid-template-rows: auto auto auto auto !important;
+        /* Rows adapt to content */
+        gap: 0 10px !important;
+        /* Horizontal gap only */
+
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        padding: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: 1px solid #cbd5e1 !important;
+        position: relative;
+    }
+
+    /* Convert all table cells to block layout base */
+    .table-equipos-mobile tbody td {
+        display: block !important;
+        padding: 0 !important;
+        border: none !important;
+        width: auto !important;
+        max-width: none !important;
+        position: relative;
+    }
+
+    /* CRITICAL FIX: Remove generic labels */
+    .table-equipos-mobile tbody td::before {
+        content: none !important;
+        display: none !important;
+    }
+
+    /* ====================================
+       GRID AREAS ASSIGNMENT
+       ==================================== */
+
+    /* 1. PHOTO (Spans 3 Rows, Col 1) */
+    .table-equipos-mobile tbody td:nth-child(1) {
+        grid-column: 1 / 2 !important;
+        grid-row: 1 / 4 !important;
+        /* Spans Tipo, Marca, Serial rows */
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        padding-right: 5px !important;
+    }
+
+    /* Photo Styling */
+    .table-equipos-mobile tbody td:nth-child(1) .table-image-wrapper {
+        width: 100px !important;
+        height: 100px !important;
+        margin-bottom: 5px !important;
+    }
+
+    /* Frente Text (Above Photo) */
+    .table-equipos-mobile tbody td:nth-child(1) div:first-child {
+        font-size: 11px !important;
+        margin-bottom: 4px !important;
+        width: 100% !important;
+        text-align: center !important;
+    }
+
+    /* 2. TIPO (Row 1, Col 2-3) */
+    .table-equipos-mobile tbody td:nth-child(2) {
+        grid-column: 2 / -1 !important;
+        grid-row: 1 / 2 !important;
+        align-self: end !important;
+        padding-bottom: 2px !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        /* Subtle separator */
+        margin-bottom: 4px !important;
+    }
+
+    .table-equipos-mobile tbody td:nth-child(2),
+    .table-equipos-mobile tbody td:nth-child(2) * {
+        font-size: 13px !important;
+    }
+
+    /* 3. MARCA (Row 2, Col 2-3) */
+    .table-equipos-mobile tbody td:nth-child(3) {
+        grid-column: 2 / -1 !important;
+        grid-row: 2 / 3 !important;
+        padding-bottom: 2px !important;
+        margin-bottom: 4px !important;
+    }
+
+    .table-equipos-mobile tbody td:nth-child(3),
+    .table-equipos-mobile tbody td:nth-child(3) * {
+        font-size: 13px !important;
+    }
+
+    /* 4. SERIAL (Row 3, Col 2-3) */
+    .table-equipos-mobile tbody td:nth-child(4) {
+        grid-column: 2 / -1 !important;
+        grid-row: 3 / 4 !important;
+        padding-bottom: 5px !important;
+    }
+
+    .table-equipos-mobile tbody td:nth-child(4),
+    .table-equipos-mobile tbody td:nth-child(4) * {
+        font-size: 13px !important;
+        color: #64748b !important;
+    }
+
+    /* 5. STATUS (Row 4, Col 1-2) Spans most width */
+    .table-equipos-mobile tbody td:nth-child(5) {
+        grid-column: 1 / 3 !important;
+        /* Full width minus details button */
+        grid-row: 4 / 5 !important;
+        padding-top: 8px !important;
+        border-top: 1px solid #f1f5f9 !important;
+        margin-top: 5px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    /* Styling adjustments for dropdown inside grid */
+    .table-equipos-mobile tbody td:nth-child(5) .custom-dropdown,
+    .table-equipos-mobile tbody td:nth-child(5) .dropdown-trigger {
+        width: 100% !important;
+    }
+
+    .table-equipos-mobile tbody td:nth-child(5) .status-trigger {
+        height: 38px !important;
+        /* Consistent touch target */
+    }
+
+    /* 6. DETAILS BUTTON (Row 4, Col 3) */
+    .table-equipos-mobile tbody td:nth-child(6) {
+        grid-column: 3 / 4 !important;
+        grid-row: 4 / 5 !important;
+        padding-top: 8px !important;
+        border-top: 1px solid #f1f5f9 !important;
+        margin-top: 5px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* Compact details button (icon only) */
+    .table-equipos-mobile tbody td:nth-child(6) .btn-details-mini {
+        width: 40px !important;
+        height: 38px !important;
+        /* Match status height */
+        padding: 0 !important;
+        border-radius: 8px !important;
+        background: var(--maquinaria-dark-blue) !important;
+        /* Restored correct color */
+        border: none !important;
+        color: white !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    /* Error / Empty State Fix */
+    .table-equipos-mobile tbody td.table-empty-state {
+        grid-column: 1 / -1 !important;
+        text-align: center !important;
+        padding: 30px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* 
+       SELECTION STATE FIX FOR MOBILE
+       Prevent internal grid lines from becoming dark blue.
+       Instead, highlight the card border and background.
+    */
+    .table-equipos-mobile tbody tr.selected-row-maquinaria {
+        border: 2px solid var(--maquinaria-blue) !important;
+        background-color: #f0f9ff !important;
+        /* Very light blue background */
+        box-shadow: 0 4px 12px rgba(0, 103, 177, 0.15) !important;
+    }
+
+    /* Reset internal cell borders to standard color even when selected */
+    /* Reset internal cell borders to standard color even when selected */
+    /* Reset internal cell borders to standard color even when selected */
+    .table-equipos-mobile tbody tr.selected-row-maquinaria td {
+        background-color: transparent !important;
+        /* Let TR background show through */
+        border: 1px solid transparent !important;
+        /* Reset all borders first */
+        border-bottom: 1px solid #e2e8f0 !important;
+        /* Re-apply bottom separator */
+        color: inherit !important;
+    }
+
+    /* Target specific cells that use borders in grid layout */
+    .table-equipos-mobile tbody tr.selected-row-maquinaria td:nth-child(2),
+    .table-equipos-mobile tbody tr.selected-row-maquinaria td:nth-child(3) {
+        border-bottom: 1px solid #e2e8f0 !important;
+    }
+
+    .table-equipos-mobile tbody tr.selected-row-maquinaria td:nth-child(5),
+    .table-equipos-mobile tbody tr.selected-row-maquinaria td:nth-child(6) {
+        border-top: 1px solid #e2e8f0 !important;
+    }
+
+    /* Remove excessive shadows or blue borders if that's what bothers the user */
+    .table-equipos-mobile tbody tr.selected-row-maquinaria {
+        border: 2px solid var(--maquinaria-blue) !important;
+        /* Restore specific blue highlight */
+        background-color: #f0f9ff !important;
+        box-shadow: 0 4px 12px rgba(0, 103, 177, 0.15) !important;
+    }
+}
+
+/* ============================================
+   DASHBOARD ACTION BUTTONS
+   ============================================ */
+
+/* Botón RECIBIR (verde) */
+.btn-recibir-dashboard {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.btn-recibir-dashboard .material-icons {
+    font-size: 16px;
+}
+
+/* Botón SIN ACCESO (gris) */
+.btn-sin-acceso-dashboard {
+    background: #f1f5f9;
+    color: #94a3b8;
+    border: 1px dashed #cbd5e0;
+    padding: 6px 10px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.btn-sin-acceso-dashboard .material-icons {
+    font-size: 14px;
+    color: #ef4444;
+    /* Rojo para alerta visual - Global */
+}
+
+/* ============================================
+   MOBILE RESPONSIVE - DASHBOARD BUTTONS
+   ============================================ */
+@media (max-width: 768px) {
+
+    /* Botón RECIBIR - solo icono en móvil */
+    .btn-recibir-dashboard {
+        padding: 6px;
+        font-size: 10px;
+        gap: 0;
+        border-radius: 4px;
+    }
+
+    .btn-recibir-dashboard .material-icons {
+        font-size: 18px;
+    }
+
+    .btn-recibir-dashboard span {
+        display: none;
+        /* Ocultar texto en móvil */
+    }
+
+    /* Botón SIN ACCESO - solo icono en móvil */
+    .btn-sin-acceso-dashboard {
+        padding: 6px;
+        font-size: 9px;
+        gap: 0;
+        border-radius: 4px;
+    }
+
+    .btn-sin-acceso-dashboard .material-icons {
+        font-size: 16px;
+        color: #ef4444;
+        /* Rojo para alerta visual */
+    }
+
+    .btn-sin-acceso-dashboard span {
+        display: none;
+        /* Ocultar texto en móvil */
+    }
+}
+
+/* ============================================
+   EQUIPOS INDEX - MOVED FROM INLINE
+   ============================================ */
+.filter-option-item:hover {
+    background-color: #e1effa !important;
+    color: #0067b1 !important;
+}
+
+/* Selection Styles for Row (Desktop Only) */
+@media (min-width: 769px) {
+    tr.selected-row-maquinaria {
+        background-color: #e1effa !important;
+        border-left: 4px solid #0067b1 !important;
+        transition: all 0.2s ease;
+    }
+
+    tr.selected-row-maquinaria td {
+        color: #0067b1 !important;
+    }
+}
+
+/* Floating Bar Style */
+.selection-floating-bar {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #1e293b;
+    color: white;
+    padding: 12px 25px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    opacity: 0;
+}
+
+.selection-floating-bar.active {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.selection-counter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.btn-bulk-action {
+    background: #0067b1;
+    color: white;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 25px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: 0.2s;
+}
+
+.btn-bulk-action:hover {
+    background: #005a9c;
+    transform: scale(1.05);
+}
+
+/* --- RESPONSIVE DETAILS MODAL GRID --- */
+.detail-row-basic {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f1f5f9;
+    gap: 15px;
+}
+
+.detail-row-doc {
+    display: grid;
+    grid-template-columns: 150px 1fr auto;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f1f5f9;
+    gap: 15px;
+}
+
+@media (max-width: 768px) {
+
+    /* Basic Rows: Stack vertically */
+    .detail-row-basic {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 2px !important;
+    }
+
+    /* Doc Rows: Grid Layout (Label on Top, Value + Button side-by-side) */
+    .detail-row-doc {
+        display: grid !important;
+        grid-template-columns: 1fr auto !important;
+        /* Col 1: Value, Col 2: Button */
+        grid-template-rows: auto auto !important;
+        /* Row 1: Label, Row 2: Value+Button */
+        gap: 8px !important;
+        align-items: center !important;
+    }
+
+    /* Label: Spans full width on first row */
+    .detail-row-doc> :nth-child(1) {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        width: 100%;
+        margin-bottom: 0;
+        font-size: 13px;
+        /* Slightly smaller label for hierarchy */
+    }
+
+    /* Value: Second row, first column */
+    .detail-row-doc> :nth-child(2) {
+        grid-column: 1 / 2;
+        grid-row: 2;
+        width: 100%;
+        word-break: break-word;
+        /* Prevent text overflow */
+        padding-right: 10px;
+        /* Space between text and button */
+    }
+
+    /* Button: Second row, second column (Right aligned) */
+    .detail-row-doc> :last-child {
+        grid-column: 2 / 3;
+        grid-row: 2;
+        margin-top: 0 !important;
+        align-self: center;
+        justify-self: end;
+    }
+
+    /* --- PDF MODAL MOBILE OPTIMIZATION --- */
+    /* Make buttons icon-only on mobile to save space */
+    #pdfEditMetaBtn,
+    #pdfDownloadBtn {
+        font-size: 0 !important;
+        /* Hide text */
+        padding: 6px 8px !important;
+        /* Reduce padding */
+        gap: 0 !important;
+    }
+
+    #pdfEditMetaBtn i,
+    #pdfDownloadBtn i {
+        font-size: 18px !important;
+        /* Ensure icon is visible */
+        margin: 0 !important;
+    }
+
+    /* Reduce header padding */
+    #pdfPreviewModal .modal-content>div:first-child {
+        padding: 8px 10px !important;
+    }
+}
+
+/* --- GLOBAL MODAL FIX (Force Resizing on Mobile for Equipos Page) --- */
+@media (max-width: 768px) {
+    #detailsModal .modal-content {
+        width: 95% !important;
+        max-width: 95% !important;
+        margin: 10px auto !important;
+        height: auto !important;
+        max-height: 90vh !important;
+        border-radius: 16px !important;
+    }
+
+    #detailsModal .modal-overlay {
+        padding: 10px !important;
+        align-items: center !important;
+        /* Center vertically */
+    }
 }

@@ -19,41 +19,43 @@
             <div class="catalog-Model">{{ $catalogo->MODELO }}</div>
             <div style="font-size: 15px; color: #000;">{{ $catalogo->ANIO_ESPEC }}</div>
         </td>
-        <td class="table-cell-custom table-cell-bordered" data-label="Motor y Energía">
-            <div class="catalog-label">Motor</div>
-            <div class="catalog-value">{{ $catalogo->MOTOR ?: 'N/A' }}</div>
-            
-            <div class="catalog-label">Energía</div>
-             <div class="catalog-value-secondary">{{ $catalogo->COMBUSTIBLE ?: '-' }}</div>
-        </td>
-        <td class="table-cell-custom table-cell-bordered" data-label="Capacidad / Consumo">
-            <div class="catalog-label">Capacidad</div>
-             <div class="catalog-value">{{ $catalogo->CAPACIDAD ?: '-' }}</div>
-
-            <div class="catalog-label">Consumo</div>
-             <div class="catalog-value-secondary">{{ $catalogo->CONSUMO_PROMEDIO ? $catalogo->CONSUMO_PROMEDIO . ' L/DIA' : '-' }}</div>
+        <td class="table-cell-custom table-cell-bordered" data-label="Motor / Energía / Consumo">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px;">
+                <div>
+                    <div class="catalog-label">Motor</div>
+                    <div style="font-size: 15px; color: #000;">{{ $catalogo->MOTOR ?: 'N/A' }}</div>
+                </div>
+                <div>
+                    <div class="catalog-label">Combustible</div>
+                    <div style="font-size: 15px; color: #000;">{{ $catalogo->COMBUSTIBLE ?: '-' }}</div>
+                </div>
+                <div>
+                    <div class="catalog-label">Batería</div>
+                    <div style="font-size: 15px; color: #000;">{{ $catalogo->TIPO_BATERIA ?: '-' }}</div>
+                </div>
+                <div>
+                    <div class="catalog-label">Consumo</div>
+                    <div style="font-size: 15px; color: #000;">{{ $catalogo->CONSUMO_PROMEDIO ? $catalogo->CONSUMO_PROMEDIO . ' L/DIA' : '-' }}</div>
+                </div>
+            </div>
         </td>
         <td class="table-cell-custom table-cell-bordered" data-label="Mantenimiento">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 2px; font-size: 13px; color: #475569;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px;">
                 <div>
-                    <div class="catalog-label" style="font-size: 11.5px;">Aceite Motor:</div>
-                    <div style="color: #1e293b; line-height: 1.1;">{{ $catalogo->ACEITE_MOTOR ?: '-' }}</div>
+                    <div class="catalog-label">Aceite Motor:</div>
+                    <div style="font-size: 15px; color: #000;">{{ $catalogo->ACEITE_MOTOR ?: '-' }}</div>
                 </div>
                 <div>
-                    <div class="catalog-label" style="font-size: 11.5px;">Aceite Caja:</div>
-                    <div style="color: #1e293b; line-height: 1.1;">{{ $catalogo->ACEITE_CAJA ?: '-' }}</div>
+                    <div class="catalog-label">Aceite Caja:</div>
+                    <div style="font-size: 15px; color: #000;">{{ $catalogo->ACEITE_CAJA ?: '-' }}</div>
                 </div>
                 <div>
-                    <div class="catalog-label" style="font-size: 11.5px;">Liga Freno:</div>
-                    <div style="color: #1e293b; line-height: 1.1;">{{ $catalogo->LIGA_FRENO ?: '-' }}</div>
+                    <div class="catalog-label">Liga Freno:</div>
+                    <div style="font-size: 15px; color: #000;">{{ $catalogo->LIGA_FRENO ?: '-' }}</div>
                 </div>
                 <div>
-                    <div class="catalog-label" style="font-size: 11.5px;">Refrigerante:</div>
-                    <div style="color: #1e293b; line-height: 1.1;">{{ $catalogo->REFRIGERANTE ?: '-' }}</div>
-                </div>
-                <div style="grid-column: span 2;">
-                    <div class="catalog-label" style="font-size: 11.5px;">Batería:</div>
-                    <div style="color: #1e293b; line-height: 1.1;">{{ $catalogo->TIPO_BATERIA ?: '-' }}</div>
+                    <div class="catalog-label">Refrigerante:</div>
+                    <div style="font-size: 15px; color: #000;">{{ $catalogo->REFRIGERANTE ?: '-' }}</div>
                 </div>
             </div>
         </td>
@@ -63,7 +65,7 @@
                     <i class="material-icons">edit</i>
                 </a>
                 <div style="flex: 1;">
-                    <button type="button" onclick="confirmDeleteCatalogo('{{$catalogo->ID_ESPEC}}', '{{ addslashes($catalogo->MODELO) }}')" class="btn-details-mini" style="background: #fee2e2; color: #ef4444; width: 100%; height: 35px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 6px;" title="Eliminar">
+                    <button type="button" onclick="confirmDeleteCatalogo('{{$catalogo->ID_ESPEC}}', '{{ addslashes($catalogo->MODELO) }}')" class="btn-details-mini" style="background: #fee2e2; color: #ef4444; width: 100%; height: 35px; border: none; display: flex; align-items: center; justify-content: center; border-radius: 6px;" title="Eliminar">
                         <i class="material-icons">delete</i>
                     </button>
                 </div>

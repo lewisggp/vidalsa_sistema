@@ -49,11 +49,10 @@ class MovilizacionObserver
         // Cache movilizaciones today (date-based, will auto-refresh when day changes)
         Cache::forever('dashboard_movilizaciones_hoy', Movilizacion::whereDate('FECHA_DESPACHO', now()->today())->count());
         
-        // Cache recent activity (last 5 pending mobilizations)
+        // Cache recent activity (ALL pending mobilizations for dashboard list)
         $recentActivity = Movilizacion::with(['equipo', 'frenteDestino'])
             ->where('ESTADO_MVO', 'TRANSITO')
             ->orderBy('created_at', 'desc')
-            ->take(5)
             ->get();
         
         Cache::forever('dashboard_recent_activity', $recentActivity);

@@ -316,7 +316,6 @@ body {
     background: none;
     border: none;
     padding: 0;
-    cursor: pointer;
     color: #6e7781;
     display: flex;
     align-items: center;
@@ -366,7 +365,6 @@ body {
     border-radius: 8px;
     font-size: 16px;
     font-weight: 700;
-    cursor: pointer;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: background-color 0.2s;
 }

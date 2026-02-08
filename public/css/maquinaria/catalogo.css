@@ -1,195 +1,195 @@
-/* Catalog Responsive Styles - Mobile Optimization */
 @media (max-width: 768px) {
-    #catalogoFiltersForm {
+
+    /* --- PAGE LAYOUT: Force 1 column on mobile --- */
+    .page-layout-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        /* Reduced gap from 20px */
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 5px !important;
+        /* Minimal outer padding */
+    }
+
+    /* Reduce card padding on mobile to give more horizontal space */
+    .admin-card {
+        padding: 5px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* HIDE SIDEBAR ON MOBILE */
+    .counter-sidebar {
+        display: none !important;
+    }
+
+    /* --- FIXED FILTERS: Target the real container, not display: contents form --- */
+    .filter-toolbar-container {
         flex-direction: column !important;
         align-items: stretch !important;
-        gap: 10px !important;
+        gap: 8px !important;
+        margin-bottom: 10px !important;
     }
+
+    /* NOTE: #catalogoFiltersForm uses display: contents, 
+       so it's styled via parent .filter-toolbar-container */
 
     .filter-item {
         min-width: 100% !important;
         flex: 1 1 100% !important;
+        max-width: 100% !important;
+        /* Force full width */
     }
 
-    .btn-primary-maquinaria,
-    .btn-secondary-maquinaria {
-        width: 100%;
+    .custom-dropdown .dropdown-trigger {
+        width: 100% !important;
+        /* Ensure trigger fills the item */
+    }
+
+    /* Fix New Model Button */
+    .action-buttons-container {
+        width: 100% !important;
+        margin-top: 5px !important;
+        padding: 0 !important;
+    }
+
+    .action-buttons-container .btn-primary-maquinaria {
+        width: 100% !important;
         justify-content: center;
     }
 
-    .action-buttons-container {
-        width: 100%;
-        text-align: center !important;
-        margin-top: 10px;
-    }
+    /* --- TABLE TO CARD TRANSFORMATION (CSS GRID) --- */
 
-    /* Adjust table font size for mobile specific */
-    .admin-table th,
-    .admin-table td {
-        font-size: 13px !important;
-        padding: 8px 5px !important;
-        white-space: normal !important;
-    }
-
-    .page-title-card {
-        text-align: center !important;
-    }
-
-    /* Responsive Table Headers for Catalog */
-    .admin-table thead {
+    /* Hide Table Header */
+    .admin-table.catalog-specific-table thead {
         display: none !important;
     }
 
-    .admin-table tr {
-        display: flex;
-        flex-wrap: wrap;
-        /* Allow cells to flow */
-        margin-bottom: 20px;
+    /* FORCE TABLE WIDTH RESET FOR MOBILE */
+    .admin-table.catalog-specific-table {
+        width: 100% !important;
+        min-width: 0 !important;
+        display: block !important;
+        margin-top: 5px !important;
+    }
+
+    /* Card Container (TR) */
+    .admin-table.catalog-specific-table tr {
+        display: grid !important;
+        grid-template-columns: 110px 1fr;
+        /* Reduced Photo to 110px to give more space key */
+        grid-template-rows: auto auto auto;
+        /* Model | Motor | Actions */
+        margin-bottom: 15px;
+        /* Reduced margin */
         border: 1px solid #cbd5e0;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        /* Softer shadow */
         background: white;
+        padding: 0;
+        overflow: hidden;
+        /* Contains children */
     }
 
-    .admin-table td {
-        box-sizing: border-box !important;
+    .admin-table.catalog-specific-table td {
+        border: none !important;
+        /* Remove internal borders */
+        padding: 8px !important;
     }
 
-    /* 1. ROW 1: PHOTO + MODEL (Side-by-side) */
-    .admin-table td:nth-child(1) {
-        order: 1;
-        width: 35% !important;
+    /* 1. PHOTO (Left Column, Spanning 2 data rows) */
+    .admin-table.catalog-specific-table td:nth-child(1) {
+        grid-column: 1 / 2;
+        grid-row: 1 / 3;
+        /* Spans Model and Motor rows */
         display: flex !important;
         align-items: center;
         justify-content: center;
-        padding: 5px !important;
-        border-bottom: 1px solid #f1f5f9;
-        border-right: 1px solid #f1f5f9;
         background: #f8fafc;
-        box-sizing: border-box !important;
+        border-right: 1px solid #f1f5f9 !important;
+        min-height: 120px;
+        /* Reduced min-height slightly */
+        padding: 2px !important;
+        width: 100% !important;
+        /* Fill grid cell */
     }
 
     .table-image-wrapper {
-        width: 100% !important;
+        aspect-ratio: 1/1 !important;
+        /* Square-ish photo mostly */
         height: auto !important;
-        aspect-ratio: 3/2;
-        object-fit: cover;
-        border-radius: 4px;
+        width: 100% !important;
+        max-height: 100px;
+        /* Cap image height */
+        object-fit: contain;
     }
 
-    .admin-table td:nth-child(2) {
-        order: 2;
-        width: 65% !important;
+    /* 2. MODEL/YEAR (Right Column, Top) */
+    .admin-table.catalog-specific-table td:nth-child(2) {
+        grid-column: 2 / 3;
+        grid-row: 1 / 2;
         display: flex !important;
         flex-direction: column;
         justify-content: center;
-        align-items: flex-start;
-        padding: 10px !important;
-        border-bottom: 1px solid #f1f5f9;
-        background: #f8fafc;
-        text-align: left !important;
-        box-sizing: border-box !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        padding: 10px 10px 5px 10px !important;
+        /* Adjusted padding */
     }
 
-    /* 2. ROW 2: MOTOR + CAPACITY (Side-by-side 50/50) */
-    .admin-table td:nth-child(3) {
-        order: 3;
-        width: 50% !important;
-        /* Half width */
-        display: block;
-        text-align: left !important;
-        border-bottom: 1px solid #f1f5f9;
-        border-right: 1px solid #f1f5f9;
-        /* Separator */
-        padding: 10px !important;
-        background: white;
-        min-height: 80px;
-        /* Ensure equal height visual */
+    /* 3. MOTOR (Right Column, Bottom) */
+    .admin-table.catalog-specific-table td:nth-child(3) {
+        grid-column: 2 / 3;
+        grid-row: 2 / 3;
+        display: block !important;
+        padding: 0 10px 10px 10px !important;
     }
 
-    .admin-table td:nth-child(4) {
-        order: 4;
-        width: 50% !important;
-        /* Half width */
-        display: block;
-        text-align: left !important;
-        border-bottom: 1px solid #f1f5f9;
-        padding: 10px !important;
-        background: white;
-        min-height: 80px;
+    /* Target the inner grid div */
+    .admin-table.catalog-specific-table td:nth-child(3)>div {
+        display: block !important;
+        /* Stack items vertically or keep grid but hide items */
     }
 
-    /* Reset specific styles from previous attempts to align with new grid */
-    .admin-table td:nth-child(3),
-    .admin-table td:nth-child(4) {
-        background: white !important;
-        padding-bottom: 10px !important;
-        border-top: none !important;
+    /* Keep Motor (1) and Combustible (2) visible if desired, or just Motor */
+    /* User asked to remove Bateria (3) and Consumo (4) */
+    .admin-table.catalog-specific-table td:nth-child(3)>div>div:nth-child(3),
+    .admin-table.catalog-specific-table td:nth-child(3)>div>div:nth-child(4) {
+        display: none !important;
     }
 
-    /* 3. ROW 3: LUBRICANTS (Full Width) */
-    .admin-table td:nth-child(5) {
-        order: 5;
-        width: 100% !important;
-        display: block;
-        text-align: left !important;
-        border-bottom: 1px solid #f1f5f9;
-        padding: 10px !important;
-        background: #fdfdfd;
+    /* Optional: Remove margin from first item */
+    .admin-table.catalog-specific-table td:nth-child(3)>div>div:first-child {
+        margin-bottom: 5px;
     }
 
-    /* Hide labels */
-    .admin-table td:nth-child(n+3):not(:last-child)::before {
-        display: none;
+    /* 4. LUBRICANTS (HIDDEN) */
+    .admin-table.catalog-specific-table td:nth-child(4) {
+        display: none !important;
     }
 
-    /* 4. ROW 4: ACTIONS (Full Width) - Already set correctly */
-    .admin-table td:last-child {
-        order: 6;
-    }
-
-    /* Mobile Card Actions (Edit/Delete) - Full Width Bottom */
-    .admin-table td:last-child {
+    /* 5. ACTIONS (Bottom, Full Width) */
+    .admin-table.catalog-specific-table td:last-child {
+        grid-column: 1 / 3;
+        /* Full width */
+        grid-row: 3 / 4;
         display: flex !important;
-        width: auto !important;
-        /* Let it fill naturally to avoid padding overflow */
-        box-sizing: border-box;
-        /* Ensure padding is included in width calculation just in case */
-        border-top: 1px solid #f1f5f9;
+        justify-content: center;
+        gap: 10px;
         padding: 10px !important;
         background: #f8fafc;
-        justify-content: space-between;
-        gap: 10px;
-        border-radius: 0 0 8px 8px;
-        margin: 0;
-        /* Ensure no negative margins */
+        border-top: 1px solid #e2e8f0 !important;
     }
 
-    .admin-table td:last-child::before {
-        display: none;
-    }
-
-    /* Action Buttons inside the cell */
-    .admin-table td:last-child .btn-details-mini {
+    .admin-table.catalog-specific-table td:last-child .btn-details-mini {
         flex: 1;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 8px 0;
-        height: 35px;
-        border-radius: 6px;
-        max-width: none;
-        /* Ensure no max-width restricts it */
+        max-width: none !important;
+        height: 38px !important;
+        /* Taller touch targets */
     }
 
-    /* Fix "Nuevo Modelo" button width */
-    .action-buttons-container {
-        width: 100%;
-        box-sizing: border-box;
-        /* Crucial for padding/border inclusion */
-        flex: 1 1 100%;
-        text-align: center;
-        padding: 0 5px;
-        /* Slight buffer if needed, or 0 */
+    /* Remove pseudo-elements from desktop view */
+    .admin-table.catalog-specific-table td::before {
+        display: none !important;
     }
 }

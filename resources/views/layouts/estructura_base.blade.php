@@ -6,8 +6,9 @@
     <title>@yield('title', 'Sistema de Gestión')</title>
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <!-- CSS -->
-    <link rel="stylesheet" href="{{ asset('css/maquinaria/estilos_globales.css') }}?v=10.0">
-    <link rel="stylesheet" href="{{ asset('css/maquinaria/menu.css') }}?v=10.0">
+    <link rel="stylesheet" href="{{ asset('css/maquinaria/estilos_globales.css') }}?v=13.3">
+    <link rel="stylesheet" href="{{ asset('css/maquinaria/menu.css') }}?v=10.3">
+    <link rel="stylesheet" href="{{ asset('css/maquinaria/catalogo.css') }}?v=2.3">
     <!-- Local Fonts Optimization -->
     <link rel="stylesheet" href="{{ asset('css/fonts.css') }}?v=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -43,7 +44,6 @@
             /* Matches menu.css padding-top */
             padding-top: 70px; 
             margin: 0;
-            background-color: #e9e9e9ff; /* <--- CAMBIA EL COLOR DE FONDO AQUÍ */
             opacity: 1 !important; /* Force visible immediately */
         }
         .dashboard-header {
@@ -109,6 +109,7 @@
                     <a href="{{ route('catalogo.index') }}" class="nav-dropdown-link {{ request()->is('admin/catalogo*') ? 'active' : '' }}">
                         <i class="material-icons">menu_book</i> Catálogo de Modelos
                     </a>
+
                 </div>
             </div>
 
@@ -226,19 +227,19 @@
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <!-- Metadata Edit Button (New) -->
                     <button id="pdfEditMetaBtn" onclick="toggleMetadataPanel()" style="background: #eab308; border: none; padding: 6px 12px; font-size: 12px; display: flex; align-items: center; gap: 5px; color: black; border-radius: 4px; font-weight: 600;">
-                        <i class="material-icons" style="font-size: 16px;">edit</i> Editar Datos
+                        <i class="material-icons" style="font-size: 16px;">edit</i> Editar
                     </button>
 
                     <button id="pdfDownloadBtn" onclick="downloadPdfDirect(this.dataset.url, this.dataset.label)" style="background: #3182ce; border: none; padding: 6px 12px; font-size: 12px; display: flex; align-items: center; gap: 5px; color: white; border-radius: 4px;">
                         <i class="material-icons" style="font-size: 16px;">download</i> Descargar
                     </button>
                     
-                    <label id="pdfUpdateLabel" for="pdfUpdateInput" style="background: #059669; border: none; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; border-radius: 50%; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Actualizar Documento">
+                    <label id="pdfUpdateLabel" for="pdfUpdateInput" style="background: #059669; border: none; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: white; border-radius: 50%; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Actualizar Documento">
                         <i class="material-icons" style="font-size: 18px;">add</i>
                         <input type="file" id="pdfUpdateInput" accept="application/pdf" style="display: none;">
                     </label>
 
-                    <button onclick="closePdfPreview()" style="background: none; border: none; color: #cbd5e0; cursor: pointer; padding: 4px; display: flex; align-items: center;">
+                    <button onclick="closePdfPreview()" style="background: none; border: none; color: #cbd5e0; padding: 4px; display: flex; align-items: center;">
                         <i class="material-icons" style="font-size: 20px;">close</i>
                     </button>
                 </div>
@@ -282,7 +283,7 @@
                             <!-- Dynamic Content -->
                             <div id="metaFieldsContainer"></div>
 
-                            <button type="submit" id="btnSaveMeta" style="margin-top: 8px; background: #3182ce; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; width: 100%; box-sizing: border-box;">
+                            <button type="submit" id="btnSaveMeta" style="margin-top: 8px; background: #3182ce; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; width: 100%; box-sizing: border-box;">
                                 <i class="material-icons" style="font-size: 16px;">save</i> Guardar Cambios
                             </button>
                         </form>
@@ -412,128 +413,28 @@
             document.removeEventListener('keyup', window.equiposGlobalKeyupHandler);
             document.addEventListener('keyup', window.equiposGlobalKeyupHandler);
             
-            // --- Session & Activity Monitor (Single Context Mode) ---
-            // Optimized for SAP-like workflow (One active tab)
-            // Maintains robust timestamp checks for anti-sleep protection
-            
-            // Sync with Server Config directly
-            const SESSION_LIFETIME_MS = {{ config('session.lifetime') }} * 60 * 1000;
-            const WARNING_THRESHOLD_MS = 8 * 1000; // 8 Seconds warning
-            
-            let expirationTime = Date.now() + SESSION_LIFETIME_MS;
-            let checkInterval;
-            let isWarningActive = false; 
-            let activityListenersAttached = false;
-
-            // Redirect to logout to force clean session end (Secure POST)
-            function forceLogout() {
-                // Prevent loops if multiple checks fire
-                if (window.isLoggingOut) return;
-                window.isLoggingOut = true;
-
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '/logout';
-                
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                if (csrfToken) {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = '_token';
-                    input.value = csrfToken;
-                    form.appendChild(input);
-                }
-                
-                document.body.appendChild(form);
-                form.submit();
-            }
-
-            function checkSessionStatus() {
-                const now = Date.now();
-                const timeRemaining = expirationTime - now;
-
-                // 1. HARD DEADLINE REACHED (Force Logout)
-                // Checks absolute time difference, immune to device sleep/suspension
-                if (timeRemaining <= 0) {
-                    if (checkInterval) clearInterval(checkInterval);
-                    forceLogout();
-                    return;
-                }
-
-                // 2. WARNING ZONE (Show Modal)
-                if (timeRemaining <= WARNING_THRESHOLD_MS && !isWarningActive) {
-                    isWarningActive = true;
-                    
-                    showModal({
-                        type: 'warning',
-                        title: 'Tu sesión está por expirar',
-                        message: 'Tu sesión se cerrará en breve debido a inactividad. ¿Deseas continuar trabajando?',
-                        confirmText: 'Continuar sesión',
-                        hideCancel: true, 
-                        onConfirm: () => {
-                            continueSession();
-                        }
-                    });
-                }
-            }
-
-            function continueSession() {
-                // Add full duration to NOW (reset clock)
-                expirationTime = Date.now() + SESSION_LIFETIME_MS;
-                isWarningActive = false;
-                
-                // Ping server to keep backend session alive
-                fetch(window.location.href, { method: 'HEAD' }).catch(() => {});
-            }
-
-            function onUserActivity() {
-                // If in warning zone, IGNORE activity. User MUST click button.
-                if (isWarningActive) return;
-                
-                // Passive extend (reset clock)
-                expirationTime = Date.now() + SESSION_LIFETIME_MS;
-            }
-            
-            const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart'];
-            
-            function startActivityMonitoring() {
-                if(activityListenersAttached) return;
-                activityEvents.forEach(evt => {
-                    document.addEventListener(evt, onUserActivity, { passive: true });
-                });
-                
-                // IMPORTANT: Immediate check when tab becomes visible (Wake-Up Handler)
-                document.addEventListener('visibilitychange', () => {
-                   if (!document.hidden) {
-                       checkSessionStatus();
-                   }
-                });
-                
-                activityListenersAttached = true;
-                
-                // Start the heartbeat (runs every second)
-                checkInterval = setInterval(checkSessionStatus, 1000);
-            }
-            
-            // Start everything
-            startActivityMonitoring();
-
         });
 
     </script>
     
-    <!-- Core Scripts (Loaded last for performance) -->
+    {{-- Core Scripts (Always Loaded) --}}
     <script src="{{ asset('js/maquinaria/module_manager.js') }}"></script>
     <script src="{{ asset('js/maquinaria/uicomponents.js') }}?v=12.0"></script>
     <script src="{{ asset('js/maquinaria/navegacion.js') }}?v=10.0"></script>
-    <script src="{{ asset('js/maquinaria/form_logic.js') }}?v=10.0"></script>
-    <!-- Module Scripts (Global Load for SPA) -->
+    <script src="{{ asset('js/maquinaria/form_logic.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/maquinaria/equipo_catalog_linking.js') }}?v={{ time() }}"></script>
+    
+    {{-- Module Scripts (Global Load for SPA Navigation) --}}
+    {{-- NOTE: These MUST be loaded globally because the SPA navigation --}}
+    {{-- calls functions like window.loadEquipos(), window.loadCatalogo(), etc. --}}
+    {{-- from navegacion.js when switching between pages without reload --}}
+    <script src="{{ asset('js/maquinaria/menu.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/maquinaria/catalogo_create.js') }}?v=12.0"></script>
     <script src="{{ asset('js/maquinaria/equipos_index.js') }}?v=19.0"></script>
-    <script src="{{ asset('js/maquinaria/equipos_form.js') }}?v=1.0"></script>
     <script src="{{ asset('js/maquinaria/catalogo_index.js') }}?v=3.6"></script>
-    <script src="{{ asset('js/maquinaria/catalogo_create.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=3.0"></script>
     <script src="{{ asset('js/maquinaria/usuarios_index.js') }}?v=10.0"></script>
+
     <script src="{{ asset('js/maquinaria/frentes_spa.js') }}?v={{ time() }}"></script>
     <script>
         function toggleMobileMenu() {
@@ -653,8 +554,8 @@
             // Show modal
             modalEl.classList.add('active');
 
-            // Auto-close success modal after 1s
-            if (config.type === 'success') {
+            // Auto-close success modal after 3s (unless disabled)
+            if (config.type === 'success' && !config.disableAutoClose) {
                 setTimeout(closeModal, 3000);
             }
 
@@ -800,10 +701,9 @@
                 }
             };
             const fields = {
-                'd_anio': 'anio', 'd_categoria': 'categoria', 'd_motor_serial': 'motorSerial', 'd_motor_tech': 'motorTech',
-                'd_capacidad': 'capacidad', 'd_combustible': 'combustible',
-                'd_consumo': 'consumo', 'd_aceite_m': 'aceiteM', 'd_aceite_c': 'aceiteC', 'd_liga': 'liga',
-                'd_refrigerante': 'refrigerante', 'd_bateria': 'bateria', 'd_titular': 'titular', 'd_nro_doc': 'nroDoc',
+                'd_anio': 'anio', 'd_categoria': 'categoria', 'd_motor_serial': 'motorSerial',
+                'd_combustible': 'combustible', 'd_consumo': 'consumo',
+                'd_titular': 'titular', 'd_nro_doc': 'nroDoc',
                 'd_placa': 'placa', 'd_seguro': 'seguro', 'd_venc_seguro': 'vencSeguro', 'd_fecha_rotc': 'fechaRotc',
                 'd_fecha_racda': 'fechaRacda'
             };
@@ -824,7 +724,7 @@
                         <div class="pdf-btn-container">
                             <button type="button" 
                                 onclick="openPdfPreview('${doc.link}', '${docType}', '${doc.label}', '${d.equipoId}')" 
-                                style="width: 36px; height: 36px; border-radius: 8px; background: #fee2e2; border: 1px solid #fecaca; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;"
+                                style="width: 36px; height: 36px; border-radius: 8px; background: #fee2e2; border: 1px solid #fecaca; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"
                                 onmouseover="this.style.background='#fecaca'" 
                                 onmouseout="this.style.background='#fee2e2'"
                                 title="Ver PDF: ${doc.label}">
@@ -848,6 +748,7 @@
             generatePdfBtn({ label: 'Póliza', link: d.linkSeguro }, 'd_btn_poliza', 'poliza');
             generatePdfBtn({ label: 'ROTC', link: d.linkRotc }, 'd_btn_rotc', 'rotc');
             generatePdfBtn({ label: 'RACDA', link: d.linkRacda }, 'd_btn_racda', 'racda');
+            generatePdfBtn({ label: 'Documento Adicional', link: d.linkAdicional }, 'd_btn_adicional', 'adicional');
             
             modal.classList.add('active');
         };
@@ -908,7 +809,7 @@
                                 <div class="pdf-btn-container">
                                     <button type="button" 
                                         onclick="openPdfPreview('${data.link}', '${type}', '${label}', '${equipoId}')" 
-                                        style="width: 36px; height: 36px; border-radius: 8px; background: #fee2e2; border: 1px solid #fecaca; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;"
+                                        style="width: 36px; height: 36px; border-radius: 8px; background: #fee2e2; border: 1px solid #fecaca; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"
                                         onmouseover="this.style.background='#fecaca'" 
                                         onmouseout="this.style.background='#fee2e2'"
                                         title="Ver PDF: ${label}">
@@ -917,6 +818,11 @@
                                 </div>
                              `;
                              showModal({ type: 'success', title: '¡Cargado!', message: 'Documento subido correctamente.', confirmText: 'OK', hideCancel: true });
+                             
+                             // Refresh Dashboard Alerts if function exists
+                             if (typeof window.refreshDashboardAlerts === 'function') {
+                                 window.refreshDashboardAlerts();
+                             }
                         } else {
                             throw new Error(data.message);
                         }
@@ -1029,6 +935,11 @@
             if(downloadBtn) {
                 downloadBtn.dataset.url = url;
                 downloadBtn.dataset.label = label || 'documento';
+                if(!url || url.length < 5) {
+                    downloadBtn.style.display = 'none';
+                } else {
+                    downloadBtn.style.display = 'flex';
+                }
             }
             
             // Tighter timeout for modern connections - hide loader if taking too long
@@ -1061,7 +972,12 @@
                     });
                 };
                 
-                iframe.src = url + '#toolbar=0&navpanes=0&scrollbar=0&zoom=100';
+                if (url && url.length > 5) {
+                    iframe.src = url + '#toolbar=0&navpanes=0&scrollbar=0&zoom=100';
+                } else {
+                    iframe.src = 'about:blank';
+                    if(loader) loader.style.display = 'none';
+                }
             }
             
             // Setup Update Input
@@ -1120,24 +1036,24 @@
                     if (ctx.docType === 'propiedad') {
                         html += `
                             <div style="${containerStyle}">
-                                <label style="${labelStyle}">Nro. Documento</label>
-                                <input type="text" name="nro_documento" value="${info.nro_documento || ''}" style="${commonInputStyle}" autocomplete="off">
+                                <label for="meta_nro_documento" style="${labelStyle}">Nro. Documento</label>
+                                <input type="text" id="meta_nro_documento" name="nro_documento" value="${info.nro_documento || ''}" style="${commonInputStyle}" autocomplete="off">
                             </div>
                             <div style="${containerStyle}">
-                                <label style="${labelStyle}">Titular</label>
-                                <input type="text" name="titular" value="${info.titular || ''}" style="${commonInputStyle}" autocomplete="off">
+                                <label for="meta_titular" style="${labelStyle}">Titular</label>
+                                <input type="text" id="meta_titular" name="titular" value="${info.titular || ''}" style="${commonInputStyle}" autocomplete="off">
                             </div>
                             <div style="${containerStyle}">
-                                <label style="${labelStyle}">Placa</label>
-                                <input type="text" name="placa" value="${info.placa || ''}" style="${commonInputStyle}" autocomplete="off">
+                                <label for="meta_placa" style="${labelStyle}">Placa</label>
+                                <input type="text" id="meta_placa" name="placa" value="${info.placa || ''}" style="${commonInputStyle}" autocomplete="off">
                             </div>
                             <div style="${containerStyle}">
-                                <label style="${labelStyle}">Serial Chasis</label>
-                                <input type="text" name="serial_chasis" value="${info.serial_chasis || ''}" style="${commonInputStyle}" autocomplete="off">
+                                <label for="meta_serial_chasis" style="${labelStyle}">Serial Chasis</label>
+                                <input type="text" id="meta_serial_chasis" name="serial_chasis" value="${info.serial_chasis || ''}" style="${commonInputStyle}" autocomplete="off">
                             </div>
                             <div style="${containerStyle}">
-                                <label style="${labelStyle}">Serial Motor</label>
-                                <input type="text" name="serial_motor" value="${info.serial_motor || ''}" style="${commonInputStyle}" autocomplete="off">
+                                <label for="meta_serial_motor" style="${labelStyle}">Serial Motor</label>
+                                <input type="text" id="meta_serial_motor" name="serial_motor" value="${info.serial_motor || ''}" style="${commonInputStyle}" autocomplete="off">
                             </div>
                         `;
                     } else if (ctx.docType === 'poliza') {
@@ -1156,12 +1072,13 @@
 
                         html += `
                             <div style="${containerStyle}">
-                                <label style="${labelStyle}">Fecha Vencimiento</label>
-                                <input type="date" name="fecha_vencimiento" value="${info.fecha_vencimiento || ''}" style="${commonInputStyle}" autocomplete="off">
+                                <label for="meta_fecha_vencimiento" style="${labelStyle}">Fecha Vencimiento</label>
+                                <input type="date" id="meta_fecha_vencimiento" name="fecha_vencimiento" value="${info.fecha_vencimiento || ''}" style="${commonInputStyle}" autocomplete="off">
                             </div>
                             <div style="${containerStyle}">
-                                <label style="${labelStyle}">Aseguradora <small style="color: #94a3b8; font-weight: 400;">(Seleccionar o escribir nueva)</small></label>
+                                <label for="meta_nombre_aseguradora" style="${labelStyle}">Aseguradora <small style="color: #94a3b8; font-weight: 400;">(Seleccionar o escribir nueva)</small></label>
                                 <input type="text" 
+                                       id="meta_nombre_aseguradora"
                                        name="nombre_aseguradora" 
                                        list="insurersList_${ctx.equipoId}" 
                                        value="${currentInsurerName || ''}" 
@@ -1176,8 +1093,8 @@
                     } else if (ctx.docType === 'rotc' || ctx.docType === 'racda') {
                         html += `
                             <div style="${containerStyle}">
-                                <label style="${labelStyle}">Fecha Vencimiento</label>
-                                <input type="date" name="fecha_vencimiento" value="${info.fecha_vencimiento || ''}" style="${commonInputStyle}" autocomplete="off">
+                                <label for="meta_fecha_vencimiento_r" style="${labelStyle}">Fecha Vencimiento</label>
+                                <input type="date" id="meta_fecha_vencimiento_r" name="fecha_vencimiento" value="${info.fecha_vencimiento || ''}" style="${commonInputStyle}" autocomplete="off">
                             </div>
                         `;
                     }
@@ -1283,6 +1200,11 @@
                     // Refresh details modal if it's open
                     if (window.activeEquipoButton) {
                         showDetailsImproved(window.activeEquipoButton);
+                    }
+                    
+                    // Refresh Dashboard Alerts if function exists
+                    if (typeof window.refreshDashboardAlerts === 'function') {
+                        window.refreshDashboardAlerts();
                     }
                 } else {
                     throw new Error(data.message);
@@ -1406,8 +1328,13 @@
                             if (btnContainer) {
                                 btnContainer.innerHTML = `
                                     <div class="pdf-btn-container">
-                                        <button type="button" onclick="openPdfPreview('${data.link}', '${type}', '${label}', '${equipoId}')" class="btn-preview-pdf">
-                                            <i class="material-icons">visibility</i> Ver PDF
+                                        <button type="button" 
+                                            onclick="openPdfPreview('${data.link}', '${type}', '${label}', '${equipoId}')" 
+                                            style="width: 36px; height: 36px; border-radius: 8px; background: #fee2e2; border: 1px solid #fecaca; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"
+                                            onmouseover="this.style.background='#fecaca'" 
+                                            onmouseout="this.style.background='#fee2e2'"
+                                            title="Ver PDF: ${label}">
+                                            <i class="material-icons" style="font-size: 20px; color: #dc2626;">picture_as_pdf</i>
                                         </button>
                                     </div>
                                 `;
@@ -1423,6 +1350,11 @@
 
                             // Show success notification
                             showModal({ type: 'success', title: 'Actualizado', message: 'Documento actualizado exitosamente.', confirmText: 'OK', hideCancel: true });
+                            
+                            // Refresh Dashboard Alerts if function exists
+                            if (typeof window.refreshDashboardAlerts === 'function') {
+                                window.refreshDashboardAlerts();
+                            }
                         } else {
                             throw new Error(data.message);
                         }
@@ -1510,7 +1442,7 @@
                                      container.innerHTML = `
                                         <div style="position: relative; width: 30px; height: 30px;">
                                             ${inputHtml}
-                                            <label for="${inputId}" style="cursor: pointer; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #fbfcfd; color: #3b82f6; border: 1px dashed #3b82f6; border-radius: 6px; transition: 0.2s;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fbfcfd'" title="Cargar ${label}">
+                                            <label for="${inputId}" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #fbfcfd; color: #3b82f6; border: 1px dashed #3b82f6; border-radius: 6px; transition: 0.2s;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fbfcfd'" title="Cargar ${label}">
                                                 <i class="material-icons" style="font-size: 18px;">cloud_upload</i>
                                             </label>
                                         </div>
@@ -1761,7 +1693,14 @@
             }
         };
     </script>
+    {{-- Scripts de Formularios (Globales para soporte SPA) --}}
+    <script src="{{ asset('js/maquinaria/module_manager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/maquinaria/form_selects.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/maquinaria/equipos_form.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/maquinaria/catalogo_create.js') }}?v={{ time() }}"></script>
     @yield('extra_js')
     @include('partials.session_timeout')
+
+
 </body>
 </html>

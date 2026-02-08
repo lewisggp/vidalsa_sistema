@@ -13,7 +13,6 @@ class CaracteristicaModelo extends Model
         'MODELO',
         'ANIO_ESPEC',
         'MOTOR',
-        'CAPACIDAD',
         'COMBUSTIBLE',
         'CONSUMO_PROMEDIO',
         'ACEITE_MOTOR',

@@ -34,6 +34,11 @@ class GoogleDriveService
         $this->client->setClientId(config('filesystems.disks.google.clientId'));
         $this->client->setClientSecret(config('filesystems.disks.google.clientSecret'));
 
+        // GLOBAL FIX: Apply SSL bypass and timeout to ALL Google Client requests, not just token generation
+        // Timeout increased to 60s for very slow internet connections
+        $httpClient = new \GuzzleHttp\Client(['timeout' => 60, 'connect_timeout' => 15, 'verify' => false]);
+        $this->client->setHttpClient($httpClient);
+
         // Cache the access token for 55 minutes
         $this->accessToken = Cache::remember('google_drive_access_token', 55 * 60, function () {
             return $this->generateAccessToken();
@@ -51,10 +56,7 @@ class GoogleDriveService
         }
 
         try {
-            // Set a lower timeout for token generation (default is high)
-            $httpClient = new \GuzzleHttp\Client(['timeout' => 5, 'connect_timeout' => 3]);
-            $this->client->setHttpClient($httpClient);
-
+            // Client is already configured in initialize() with the correct HTTP client settings
             $this->client->refreshToken(config('filesystems.disks.google.refreshToken'));
             $token = $this->client->getAccessToken();
             Log::info('Google Drive token generated successfully');

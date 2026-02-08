@@ -22,7 +22,7 @@
         <div style="width: 100%; max-width: 500px; position: relative;">
             
             <div class="custom-dropdown" id="frenteSearchDropdown" style="width: 100%;">
-                <div class="dropdown-trigger" onclick="toggleDropdown('frenteSearchDropdown')" style="background: #fff; border: 1px solid #cbd5e0; border-radius: 12px; height: 45px; display: flex; align-items: center; justify-content: space-between; padding: 0; width: 100%; overflow: hidden; cursor: pointer;">
+                <div class="dropdown-trigger" style="background: #fff; border: 1px solid #cbd5e0; border-radius: 12px; height: 45px; display: flex; align-items: center; justify-content: space-between; padding: 0; width: 100%; overflow: hidden;">
                     
                     <div style="padding: 0 10px; display: flex; align-items: center; color: var(--maquinaria-gray-text);">
                         <i class="material-icons" style="font-size: 18px;">search</i>
@@ -36,9 +36,8 @@
 
                     <div style="display: flex; align-items: center; padding-right: 10px;">
                         <i id="btn_clear_search_frente" class="material-icons" 
-                           style="font-size: 18px; color: #a0aec0; margin-right: 5px; cursor: pointer; display: none;" 
+                           style="font-size: 18px; color: #a0aec0; margin-right: 5px; display: none;" 
                            onclick="event.stopPropagation(); window.clearFrentesSearchSPA();">close</i>
-                        <i class="material-icons" style="color: #a0aec0; cursor: pointer;">expand_more</i>
                     </div>
                 </div>
 
@@ -79,7 +78,7 @@
                 <div class="form-label">Tipo de Frente <span style="color: red;">*</span></div>
                 <div class="custom-dropdown" id="tipoSelect">
                     <input type="hidden" name="TIPO_FRENTE" id="input_tipo" value="{{ old('TIPO_FRENTE', $frente->TIPO_FRENTE ?? '') }}">
-                    <div class="dropdown-trigger" onclick="toggleDropdown('tipoSelect')" style="background: white;">
+                    <div class="dropdown-trigger" onclick="toggleDropdown('tipoSelect', event)" style="background: white; cursor: default;">
                         <span id="label_tipo">{{ old('TIPO_FRENTE', $frente->TIPO_FRENTE ?? 'Seleccione Tipo...') }}</span>
                         <i class="material-icons">expand_more</i>
                     </div>
@@ -100,7 +99,7 @@
                 <div class="form-label">Estatus del Proyecto <span style="color: red;">*</span></div>
                 <div class="custom-dropdown" id="statusSelect">
                     <input type="hidden" name="ESTATUS_FRENTE" id="input_estatus" value="{{ old('ESTATUS_FRENTE', $frente->ESTATUS_FRENTE ?? '') }}">
-                    <div class="dropdown-trigger" onclick="toggleDropdown('statusSelect')" style="background: white;">
+                    <div class="dropdown-trigger" onclick="toggleDropdown('statusSelect', event)" style="background: white; cursor: default;">
                         <span id="label_estatus">{{ old('ESTATUS_FRENTE', $frente->ESTATUS_FRENTE ?? 'Seleccione Estatus...') }}</span>
                         <i class="material-icons">expand_more</i>
                     </div>

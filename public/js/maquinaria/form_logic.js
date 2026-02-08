@@ -1,20 +1,8 @@
 // form_logic.js - Externalized Logic for Form Fields to comply with CSP
-// Version: 2.0 - Using programmatic event listeners instead of inline handlers
+// Version: 3.0 - FINAL FIX - SPA Ready with Guards (Feb 2, 2026)
 
 // --- CRITICAL: Global Dropdown Functions (Must be outside IIFE for inline handlers) ---
-window.toggleDropdown = function (id) {
-    const dropdown = document.getElementById(id);
-    // Close all other dropdowns and multiselects
-    document.querySelectorAll('.custom-dropdown, .custom-multiselect').forEach(d => {
-        if (d.id !== id) d.classList.remove('active');
-    });
-
-    if (dropdown) {
-        dropdown.classList.toggle('active');
-    }
-
-    if (window.event) window.event.stopPropagation();
-};
+// NOTE: toggleDropdown is now in uicomponents.js (single source of truth)
 
 window.updateSelectedCount = function () {
     const checkboxes = document.querySelectorAll('input[name="PERMISOS[]"]:checked');
@@ -32,28 +20,291 @@ window.updateSelectedCount = function () {
     }
 };
 
-window.selectOption = function (dropdownId, value, display, type) {
-    const dropdown = document.getElementById(dropdownId);
-    const input = document.getElementById('input_' + type);
-    const label = document.getElementById('label_' + type);
-    const searchInput = document.getElementById('filterSearchInput');
-    const searchInputTipo = document.getElementById('filterTipoSearchInput');
+// NOTE: selectOption is now in uicomponents.js (single source of truth)
 
-    if (input) input.value = value;
-    if (label) label.innerText = display;
+// --- RESTORED: Custom Form Autocomplete Logic (Requested by User) ---
+// --- RESTORED & UPGRADED: Custom Form Autocomplete Logic ---
+window.showFormDropdown = function (input) {
+    const container = input.closest('.custom-form-autocomplete');
+    if (!container) return;
+    const dropdown = container.querySelector('.dropdown-list');
+    if (!dropdown) return;
 
-    if (type === 'frente_filter' && searchInput) searchInput.placeholder = display;
-    if (type === 'tipo_filter' && searchInputTipo) searchInputTipo.placeholder = display;
+    // Show dropdown
+    dropdown.style.display = 'block';
 
-    if (dropdown) dropdown.classList.remove('active');
-
-    if (input) {
-        const event = new Event('change', { bubbles: true });
-        input.dispatchEvent(event);
+    // Reset filter (show all) if input is empty
+    if (input.value.trim() === '') {
+        const items = dropdown.querySelectorAll('.dropdown-item');
+        items.forEach(item => item.style.display = 'block');
+    } else {
+        // Trigger filter to match current value
+        window.filterFormDropdown(input);
     }
 
-    window.dispatchEvent(new CustomEvent('dropdown-selection', { detail: { type: type, value: value } }));
+    // Load models dynamically if this is the modelo field
+    if ((input.id === 'modelo' || input.id === 'MODELO') && dropdown.children.length === 0 && window.loadModelsList) {
+        window.loadModelsList();
+    }
+
+    // Load brands dynamically if this is the marca field
+    if ((input.id === 'marca' || input.id === 'MARCA') && dropdown.children.length === 0 && window.loadBrandsList) {
+        window.loadBrandsList();
+    }
+
+    // Safety check: specific logic for Years if empty
+    if ((input.id === 'ANIO' || input.id === 'ANIO_ESPEC') && dropdown.children.length === 0 && window.updateYearsList) {
+        const modelInput = document.getElementById('MODELO') || document.getElementById('modelo');
+        if (modelInput && modelInput.value) {
+            window.updateYearsList(modelInput.value);
+        }
+    }
 };
+
+window.hideFormDropdownDelayed = function (input) {
+    setTimeout(() => {
+        const container = input.closest('.custom-form-autocomplete');
+        if (!container) return; // Safety check
+        const dropdown = container.querySelector('.dropdown-list');
+        if (dropdown) dropdown.style.display = 'none';
+    }, 200);
+};
+
+window.filterFormDropdown = function (input) {
+    const container = input.closest('.custom-form-autocomplete');
+    if (!container) return; // Safety check
+    const dropdown = container.querySelector('.dropdown-list');
+    if (!dropdown) return; // Safety check
+    const items = dropdown.querySelectorAll('.dropdown-item');
+    const query = input.value.toUpperCase();
+
+    items.forEach(item => {
+        const text = item.textContent.trim().toUpperCase();
+        if (text.includes(query)) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+};
+
+window.selectDropdownItem = function (element, value) {
+    const container = element.closest('.custom-form-autocomplete');
+    const input = container.querySelector('input[type="text"]');
+    const dropdown = container.querySelector('.dropdown-list');
+
+    input.value = value;
+    dropdown.style.display = 'none';
+
+    // Trigger generic change/blur events
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    input.dispatchEvent(new Event('blur', { bubbles: true }));
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    // Trigger custom event for legacy support
+    input.dispatchEvent(new CustomEvent('dropdown-selection', {
+        bubbles: true,
+        detail: { value: value, id: input.id }
+    }));
+
+    // TRIGGER DYNAMIC YEAR UPDATE
+    if ((input.id === 'MODELO' || input.id === 'modelo') && window.updateYearsList) {
+        window.updateYearsList(value);
+    }
+};
+
+
+// --- Dynamic Dropdown Data Loading (Consolidated from form_selects.js) ---
+
+
+// --- Dynamic Dropdown Data Loading (Consolidated from form_selects.js) ---
+
+window.updateYearsList = function (model) {
+    const anioInput = document.getElementById('ANIO_ESPEC') || document.getElementById('anio') || document.getElementById('ANIO');
+    if (!anioInput || !model) return;
+
+    const container = anioInput.closest('.custom-form-autocomplete');
+    if (!container) return;
+
+    const dropdown = container.querySelector('.dropdown-list');
+    if (!dropdown) return;
+
+    dropdown.innerHTML = '<div class="dropdown-item" style="color: #ecc94b; font-style: italic;">Cargando años...</div>';
+
+    fetch(`/admin/catalogo/years-from-equipos?model=${encodeURIComponent(model)}`)
+        .then(response => response.json())
+        .then(years => {
+            dropdown.innerHTML = '';
+
+            if (!years || years.length === 0) {
+                dropdown.innerHTML = '<div class="dropdown-item" style="color: #a0aec0; font-style: italic;">Sin registros previos</div>';
+            } else {
+                years.forEach(anio => {
+                    const div = document.createElement('div');
+                    div.className = 'dropdown-item';
+                    div.textContent = anio;
+                    div.onmousedown = function () { window.selectDropdownItem(this, anio); };
+                    dropdown.appendChild(div);
+                });
+            }
+        })
+        .catch(err => {
+            console.error('Error loading years:', err);
+            dropdown.innerHTML = '<div class="dropdown-item" style="color: #e53e3e;">Error cargando años</div>';
+        });
+};
+
+window.loadBrandsList = function () {
+    const marcaInput = document.getElementById('marca') || document.getElementById('MARCA');
+    if (!marcaInput) return;
+
+    const container = marcaInput.closest('.custom-form-autocomplete');
+    if (!container) return;
+
+    const dropdown = container.querySelector('.dropdown-list');
+    // Only load if not already loaded
+    if (!dropdown || dropdown.dataset.loaded === 'true') return;
+
+    dropdown.innerHTML = '<div class="dropdown-item" style="color: #ecc94b; font-style: italic;">Cargando marcas...</div>';
+
+    fetch('/admin/catalogo/brands-from-equipos')
+        .then(response => response.json())
+        .then(brands => {
+            dropdown.innerHTML = '';
+            if (!brands || brands.length === 0) {
+                dropdown.innerHTML = '<div class="dropdown-item" style="color: #a0aec0; font-style: italic;">Sin marcas registradas</div>';
+            } else {
+                brands.forEach(marca => {
+                    if (!marca || marca.trim() === '') return;
+                    const div = document.createElement('div');
+                    div.className = 'dropdown-item';
+                    div.textContent = marca;
+                    div.onmousedown = function () { window.selectDropdownItem(this, marca); };
+                    dropdown.appendChild(div);
+                });
+                dropdown.dataset.loaded = 'true';
+            }
+        })
+        .catch(err => {
+            dropdown.innerHTML = '<div class="dropdown-item" style="color: #e53e3e;">Error cargando marcas</div>';
+        });
+};
+
+window.loadModelsList = function () {
+    const modeloInput = document.getElementById('modelo') || document.getElementById('MODELO');
+    if (!modeloInput) return;
+
+    const container = modeloInput.closest('.custom-form-autocomplete');
+    if (!container) return;
+
+    const dropdown = container.querySelector('.dropdown-list');
+    if (!dropdown || dropdown.dataset.loaded === 'true') return;
+
+    dropdown.innerHTML = '<div class="dropdown-item" style="color: #ecc94b; font-style: italic;">Cargando modelos...</div>';
+
+    fetch('/admin/catalogo/models-from-equipos')
+        .then(response => response.json())
+        .then(models => {
+            dropdown.innerHTML = '';
+            if (!models || models.length === 0) {
+                dropdown.innerHTML = '<div class="dropdown-item" style="color: #a0aec0; font-style: italic;">Sin modelos registrados</div>';
+            } else {
+                models.forEach(modelo => {
+                    if (!modelo || modelo.trim() === '') return;
+                    const div = document.createElement('div');
+                    div.className = 'dropdown-item';
+                    div.textContent = modelo;
+                    div.onmousedown = function () { window.selectDropdownItem(this, modelo); };
+                    dropdown.appendChild(div);
+                });
+                dropdown.dataset.loaded = 'true';
+            }
+        })
+        .catch(err => {
+            dropdown.innerHTML = '<div class="dropdown-item" style="color: #e53e3e;">Error cargando modelos</div>';
+        });
+};
+
+// --- Initialization Logic ---
+function initFormItems() {
+    const form = document.getElementById('equipoForm') || document.getElementById('userForm');
+
+    // UNIVERSAL GUARD: Prevent multiple initializations
+    if (form && form.dataset.logicInitialized === 'true') {
+        console.log('⏭️ Form already initialized, skipping');
+        return;
+    }
+
+    console.log('✅ Initializing form items...');
+
+    // 1. Initialize Dropdowns (Pre-fill years if model exists)
+    const modelInput = document.getElementById('MODELO') || document.getElementById('modelo');
+    if (modelInput && modelInput.value) {
+        const anioInput = document.getElementById('ANIO_ESPEC') || document.getElementById('anio') || document.getElementById('ANIO');
+        if (anioInput) {
+            const container = anioInput.closest('.custom-form-autocomplete');
+            const dropdown = container ? container.querySelector('.dropdown-list') : null;
+            if (dropdown && dropdown.children.length === 0) {
+                window.updateYearsList(modelInput.value);
+            }
+        }
+    }
+
+    // 2. Initialize PDF/Image logic if needed
+    // (Existing logic is handled by inline events or other bindings, but we can double check here)
+
+    // Mark as initialized
+    if (form) {
+        form.dataset.logicInitialized = 'true';
+    }
+}
+
+// ROBUST INITIALIZATION: Listen for SPA content changes via MutationObserver
+// This ensures that whenever the form is injected, we initialize it.
+const formObserver = new MutationObserver((mutations) => {
+    const form = document.getElementById('equipoForm') || document.getElementById('userForm'); // Check for main form
+    if (form && form.dataset.logicInitialized !== 'true') {
+        initFormItems();
+        form.dataset.logicInitialized = 'true';
+    }
+});
+
+formObserver.observe(document.body, { childList: true, subtree: true });
+
+// Global Click Listener for closing dropdowns (One-time setup)
+if (!window.dropdownClickListenerAttached) {
+    document.addEventListener('click', function (e) {
+        const dropdowns = document.querySelectorAll('.custom-form-autocomplete');
+        dropdowns.forEach(container => {
+            if (!container.contains(e.target)) {
+                const dropdown = container.querySelector('.dropdown-list');
+                if (dropdown) dropdown.style.display = 'none';
+            }
+        });
+    });
+    window.dropdownClickListenerAttached = true;
+}
+
+// Standard Init
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initFormItems);
+} else {
+    initFormItems();
+}
+
+// Explicit SPA Event: Reset flags and re-init
+window.addEventListener('spa:contentLoaded', function () {
+    console.log('🔄 SPA Event: Resetting form flags');
+
+    // Reset form flag so it can be re-initialized
+    const form = document.getElementById('equipoForm') || document.getElementById('userForm');
+    if (form) {
+        form.dataset.logicInitialized = 'false';
+    }
+
+    // Re-init after small delay
+    setTimeout(initFormItems, 100);
+});
 
 (function () {
     // Helper function to update PDF button with loading animation
@@ -82,7 +333,7 @@ window.selectOption = function (dropdownId, value, display, type) {
             setTimeout(() => {
                 // 2. Success State (Green Circle Check)
                 wrapper.innerHTML = `
-                    <label for="${input.id}" title="${file.name}" style="width: 100%; height: 100%; border-radius: 50%; background: #2c7a7b; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; animation: popIn 0.3s ease;">
+                    <label for="${input.id}" title="${file.name}" style="width: 100%; height: 100%; border-radius: 50%; background: #2c7a7b; color: white; display: flex; align-items: center; justify-content: center; border: none; animation: popIn 0.3s ease;">
                         <i class="material-icons" style="font-size: 18px;">check</i>
                     </label>
                 `;
@@ -317,30 +568,7 @@ window.selectOption = function (dropdownId, value, display, type) {
         setTimeout(initFormLogic, 50);
     });
 
-    window.filterDropdownOptions = function (input) {
-        const filter = input.value.toLowerCase();
-        const dropdown = input.closest('.custom-dropdown');
-        if (!dropdown) return;
-        const items = dropdown.querySelectorAll('.dropdown-item');
 
-        items.forEach(item => {
-            const text = item.textContent || item.innerText;
-            if (text.toLowerCase().indexOf(filter) > -1) {
-                item.style.display = "";
-            } else {
-                item.style.display = "none";
-            }
-        });
-    };
-
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', function (e) {
-        if (!e.target.closest('.custom-dropdown')) {
-            document.querySelectorAll('.custom-dropdown').forEach(d => {
-                d.classList.remove('active');
-            });
-        }
-    });
 
     let specsTimeout = null;
     window.searchSpecs = function (input) {

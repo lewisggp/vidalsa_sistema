@@ -3,10 +3,18 @@
 @section('title', 'Tablero de Control')
 
 @section('content')
-<!-- Styles moved to top to prevent FOUC -->
 
 
-<div class="dashboard-container" style="padding: 10px 20px;">
+
+<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;">
+    <svg viewBox="0 0 1440 900" preserveAspectRatio="xMinYMin slice" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
+        <path d="M0 900 V 400 Q 150 750 600 850 T 1440 900 Z" fill="#00004d" />
+        <path d="M1440 0 V 400 Q 1300 350 1200 0 Z" fill="#00004d" />
+        <path d="M1440 900 V 500 Q 1350 650 1440 800 Z" fill="#00004d" opacity="0.9" />
+    </svg>
+</div>
+
+<div class="dashboard-container" style="padding: 10px 20px; position: relative; z-index: 1;">
     
     <!-- Header -->
     <section class="page-title-card" style="text-align: left; margin: 0 0 10px 0;">
@@ -22,105 +30,158 @@
         <div class="card-section" style="grid-column: span 12;">
             <div class="cards-wrapper">
                 
-
-                <!-- Card 3: Movilizaciones -->
-                <div class="dashboard-card card-purple">
-                    <div class="icon-wrapper">
-                        <i class="material-icons">today</i>
-                    </div>
-                    <div class="card-content">
-                        <span class="card-label">Movilizaciones Hoy</span>
-                        <div class="card-value-row">
-                            <span class="card-value">{{ $movilizacionesHoy }}</span>
-                        </div>
-                        <span class="card-subtext">{{ $pendientes }} Por Confirmar</span>
-                    </div>
-                </div>
-
-                <!-- Card 4: Alertas -->
-                <div class="dashboard-card card-red">
-                    <div class="icon-wrapper">
-                        <i class="material-icons">warning</i>
-                    </div>
-                    <div class="card-content">
-                        <span class="card-label">Alertas Documentos</span>
-                        <div class="card-value-row">
-                            <span class="card-value">{{ $totalAlerts }}</span>
-                        </div>
-                        <span class="card-subtext">Documentos Vencidos</span>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- Row 2 -->
-        <div class="grid-row-2">
-            
-
-            <!-- Última Actividad -->
-            <div class="content-card activity-card">
-                <h3 class="card-title">Movilizaciones Pendientes</h3>
-                <div class="activity-list">
-                    @forelse($recentActivity as $activity)
-                    <div class="activity-item">
-                        <div class="activity-icon">
+                <!-- MOVILIZACIONES SECTION -->
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <!-- Card 3: Movilizaciones -->
+                    <div class="dashboard-card card-blue" onclick="togglePendingMovs()">
+                        <div class="icon-wrapper">
                             <i class="material-icons">local_shipping</i>
                         </div>
-                        <div class="activity-info">
-                            <p class="activity-text">
-                                <strong>{{ $activity->equipo->SERIAL_CHASIS ?? 'Equipo' }}</strong> → {{ $activity->frenteDestino->NOMBRE_FRENTE ?? 'Destino' }}
-                            </p>
-                            <span class="activity-time">{{ $activity->created_at->diffForHumans() }}</span>
-                        </div>
-                    </div>
-                    @empty
-                    <div class="empty-state">
-                        <i class="material-icons">inbox</i>
-                        <p>No hay movilizaciones por confirmar.</p>
-                    </div>
-                    @endforelse
-                </div>
-            </div>
-
-            <!-- Documentos Vencidos (Polizas, ROTC, RACDA) -->
-            <div class="content-card policies-card">
-                <h3 class="card-title" style="color: #ef4444;">Documentos Vencidos</h3>
-                <div class="activity-list">
-                    @forelse($expiredList as $alert)
-                    <div class="activity-item" style="cursor: default;" onclick="openPdfPreview('{{ $alert->current_link }}', '{{ $alert->type_key }}', '{{ $alert->label }}', {{ $alert->equipo->ID_EQUIPO }})">
-                        <div class="activity-icon" style="background: #fee2e2; color: #991b1b;">
-                            <i class="material-icons">warning</i>
-                        </div>
-                        <div class="activity-info">
-                            <p class="activity-text">
-                                <strong>{{ $alert->equipo->tipo->nombre ?? 'Equipo' }} {{ $alert->equipo->MARCA }} {{ $alert->equipo->MODELO }}</strong>
-                                <br>
-                                <span style="font-size: 0.9em; font-weight: normal; color: #64748b;">
-                                    {{ $alert->equipo->SERIAL_CHASIS ?? $alert->equipo->PLACA ?? '' }}
-                                </span>
-                            </p>
-                            <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
-                                <span class="activity-time" style="color: #ef4444; font-weight: 600;">
-                                    {{ $alert->label }}: {{ ucfirst(\Carbon\Carbon::parse($alert->fecha)->locale('es')->diffForHumans()) }}
-                                </span>
-                                <i class="material-icons" style="font-size: 16px; color: #94a3b8;">edit</i>
+                        <div class="card-content">
+                            <span class="card-label">Movilizaciones Hoy</span>
+                            <div class="card-value-row">
+                                <span class="card-value">{{ $movilizacionesHoy }}</span>
+                                <span class="card-subtext-inline">| {{ $pendientes }} Por Confirmar</span>
                             </div>
                         </div>
                     </div>
-                    @empty
-                    <div class="empty-state">
-                        <i class="material-icons" style="color: #cbd5e0;">check_circle</i>
-                        <p>Todos los documentos están vigentes.</p>
+
+                    <!-- Movilizaciones Pendientes List -->
+                    <div class="content-card activity-card" id="pendingMovsContainer" style="display: none;">
+                        <h3 class="card-title">Equipos Por Confirmar Recepción</h3>
+                        <div class="activity-list">
+                            @forelse($recentActivity as $activity)
+                            @php
+                                // Obtener permisos del usuario actual
+                                $usuario = auth()->user();
+                                $usuarioFrenteId = $usuario->ID_FRENTE_ASIGNADO;
+                                $esGlobal = ($usuario->NIVEL_ACCESO == 1);
+                                
+                                // Determinar si puede recibir (destinatario o global)
+                                $esDestinatario = ($usuarioFrenteId == $activity->ID_FRENTE_DESTINO);
+                                $puedeRecibir = $esDestinatario || $esGlobal;
+                            @endphp
+                            
+                            <div class="activity-item" style="display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #f1f5f9;">
+                                <div class="activity-icon">
+                                    <i class="material-icons">local_shipping</i>
+                                </div>
+                                <div class="activity-info" style="flex: 1; min-width: 0;">
+                                    <p class="activity-text" style="margin: 0 0 4px 0;">
+                                        <strong>{{ $activity->equipo->tipo->nombre ?? 'Equipo' }}</strong> - {{ $activity->equipo->SERIAL_CHASIS ?? 'N/A' }} → {{ $activity->frenteDestino->NOMBRE_FRENTE ?? 'Destino' }}
+                                    </p>
+                                    <span class="activity-time">{{ $activity->created_at->locale('es')->diffForHumans() }}</span>
+                                </div>
+                                
+                                <!-- Botón de Recibir -->
+                                <div class="activity-actions" style="display: flex; gap: 6px; flex-shrink: 0;">
+                                    @if($puedeRecibir)
+                                        <form action="{{ route('movilizaciones.updateStatus', $activity->ID_MOVILIZACION) }}" method="POST" style="margin: 0;">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="status" value="RECIBIDO">
+                                            <button type="submit" 
+                                                class="btn-recibir-dashboard"
+                                                title="Confirmar recepción en {{ $activity->frenteDestino->NOMBRE_FRENTE }}">
+                                                <i class="material-icons">check_circle</i>
+                                                <span>RECIBIR</span>
+                                            </button>
+                                        </form>
+                                    @else
+                                        {{-- Sin permisos para recibir --}}
+                                        <div class="btn-sin-acceso-dashboard"
+                                            title="No tienes permisos para recibir este equipo">
+                                            <i class="material-icons">block</i>
+                                            <span>Sin Acceso</span>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                            @empty
+                            <div class="empty-state">
+                                <i class="material-icons">inbox</i>
+                                <p>No hay movilizaciones por confirmar.</p>
+                            </div>
+                            @endforelse
+                        </div>
                     </div>
-                    @endforelse
                 </div>
+
+                <!-- ALERTAS SECTION -->
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <!-- Card 4: Alertas -->
+                    <div class="dashboard-card card-yellow" onclick="toggleExpiredDocs()">
+                        <div class="icon-wrapper">
+                            <i class="material-icons {{ $totalAlerts > 0 ? 'bell-shake' : '' }}">notifications</i>
+                        </div>
+                        <div class="card-content">
+                            <span class="card-label">Alertas Documentos</span>
+                            <div class="card-value-row">
+                                <span class="card-value">{{ $totalAlerts }}</span>
+                                <span class="card-subtext-inline">| Vencidos</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Documentos Vencidos y Por Vencer List -->
+                    <div class="content-card policies-card" id="expiredDocsContainer" style="display: none;">
+                        <h3 class="card-title" style="color: #000;">Alertas de Documentos</h3>
+                        <div class="activity-list">
+                            <div id="dashboardAlertsList">
+                                @include('partials.dashboard_alerts')
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
-
-
-
         </div>
 
+    </div>
+    </div>
+    
+    
+    <!-- User Floating Panel (Bottom Left) -->
+    <style>
+        @media (max-width: 768px) {
+            #userFloatingPanel {
+                display: none !important;
+            }
+        }
+    </style>
+    <div id="userFloatingPanel" style="position: fixed; bottom: 20px; left: 20px; z-index: 0; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 10px 20px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 12px; transition: transform 0.3s ease;">
+        <div style="width: 35px; height: 35px; background: var(--maquinaria-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">
+            {{ substr(auth()->user()->NOMBRE_COMPLETO ?? 'U', 0, 1) }}
+        </div>
+        <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 14px; color: #1e293b; font-weight: 700;">{{ auth()->user()->NOMBRE_COMPLETO ?? 'Usuario' }}</span>
+            <span style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">{{ auth()->user()->rol->NOMBRE_ROL ?? 'Sin Rol' }}</span>
+        </div>
+    </div>
+    
+    <!-- Feature Cards (Above Machinery) -->
+    <div class="features-floating-wrapper" style="position: fixed; bottom: 280px; right: 350px; z-index: 2; pointer-events: auto;">
+        <div class="features-container">
+            <div class="feature-card">
+                <i class="material-icons feature-card-icon">description</i>
+                <span class="feature-text">Acceso a Documentación</span>
+            </div>
+            <div class="feature-card">
+                <i class="material-icons feature-card-icon">location_on</i>
+                <span class="feature-text">Estado y Ubicación</span>
+            </div>
+            <div class="feature-card">
+                <i class="material-icons feature-card-icon">engineering</i>
+                <span class="feature-text">Control de Mantenimiento</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Machinery Image (Reused from Login - Big & Impactful) -->
+    <div class="machinery-fixed-bottom" style="position: fixed; bottom: 0; right: 0; width: 45%; min-width: 380px; max-width: 1000px; pointer-events: none; z-index: 0;">
+        <div class="machinery-wrapper" style="width: 100%; height: auto;">
+            <img src="{{ asset('images/maquinaria_login_new.webp') }}" alt="Maquinaria Vidalsa" style="width: 100%; height: auto; display: block; filter: drop-shadow(-10px -10px 20px rgba(0, 0, 0, 0.15));">
+        </div>
     </div>
 </div>
 
@@ -128,4 +189,40 @@
 
 
 
+    <!-- Partial Modal for Equipment Details (Used by Alerts) -->
+    @include('admin.equipos.partials.equipment_details_modal')
+
+@section('scripts')
+    <!-- Inject Scripts for Equipment Modal Logic on Dashboard -->
+    <script src="{{ asset('js/maquinaria/uicomponents.js') }}"></script>
+    <script src="{{ asset('js/maquinaria/equipos_index.js') }}"></script>
+    <script>
+        // Ensure functions are available globally if needed, though uicomponents.js should handle it
+        console.log('Dashboard scripts loaded for alerts.');
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Intercept all forms with the receive button
+            const receiveForms = document.querySelectorAll('form'); 
+            
+            receiveForms.forEach(form => {
+                if(form.querySelector('.btn-recibir-dashboard')) {
+                    form.addEventListener('submit', function(e) {
+                        const btn = this.querySelector('.btn-recibir-dashboard');
+                         // Prevent multiple clicks if already disabled
+                        if (btn.disabled) return;
+
+                        // Show Global Preloader
+                        const preloader = document.getElementById('preloader');
+                        if (preloader) {
+                            preloader.style.display = 'flex';
+                        }
+                        
+                        // Disable button to prevent double submit
+                        btn.disabled = true;
+                    });
+                }
+            });
+        });
+    </script>
+@endsection
 @endsection

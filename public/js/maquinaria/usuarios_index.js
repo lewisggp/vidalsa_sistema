@@ -4,21 +4,8 @@
 // Window-level functions for dropdown interaction
 window.clearUsuariosFilter = function (filterName) {
     if (filterName === 'id_frente' || filterName === 'frente_filter') {
-        const input = document.getElementById('filterSearchInput');
-        if (input) {
-            input.value = '';
-            input.placeholder = 'Filtrar Frente...';
-        }
-        const hiddenInput = document.getElementById('input_frente_filter');
-        if (hiddenInput) hiddenInput.value = '';
-
-        const clearBtn = document.getElementById('btn_clear_frente');
-        if (clearBtn) clearBtn.style.display = 'none';
-
-        document.querySelectorAll('#frenteFilterSelect .dropdown-item').forEach(el => {
-            el.classList.remove('selected');
-        });
-        document.querySelector('#frenteFilterSelect .dropdown-item')?.classList.add('selected');
+        // Use the new generic function from uicomponents.js
+        window.clearDropdownFilter('frenteFilterSelect');
     } else if (filterName === 'search') {
         const input = document.getElementById('searchInput');
         if (input) input.value = '';
@@ -37,7 +24,7 @@ window.loadUsuarios = function (url = null) {
 
     let baseUrl = url || window.location.pathname;
     const searchInput = document.getElementById('searchInput');
-    const frenteInput = document.getElementById('input_frente_filter');
+    const frenteInput = document.querySelector('input[name="id_frente"]');
 
     // Unified Filter Object (Single Source of Truth)
     const filters = {
@@ -64,6 +51,40 @@ window.loadUsuarios = function (url = null) {
         } catch (e) {
             console.error('URL parsing error:', e);
         }
+    }
+
+    // OPTIMIZATION: Check if there are any meaningful filters
+    // Strategy: Only skip server request if EVERYTHING is null/empty (truly no input from user)
+    const hasAnyInput = Object.values(filters).some(value => {
+        if (value === null || value === '' || value === undefined) return false;
+        if (typeof value === 'string' && value.trim() === '') return false;
+        if (value === 'all') return true; // 'all' is a valid filter
+        return true; // Any non-empty value means user provided input
+    });
+
+    // If truly no input at all, clear UI without server request
+    if (!hasAnyInput) {
+        console.log('No active filters detected - clearing UI without server request');
+
+        // Clear table with friendly message
+        tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #94a3b8; font-style: italic;">SELECCIONE UN FILTRO PARA VISUALIZAR LOS USUARIOS</td></tr>';
+        tableBody.style.opacity = '1';
+
+        // Clear pagination
+        const paginationContainer = document.getElementById('usuariosPagination');
+        if (paginationContainer) paginationContainer.innerHTML = '';
+
+        // Clear user count badge
+        const badgeText = document.getElementById('user-count-text');
+        const badge = document.getElementById('user-count-badge');
+        if (badgeText) badgeText.innerText = '0';
+        if (badge) badge.innerText = '0';
+
+        // Update URL to reflect empty state
+        window.history.pushState(null, '', window.location.pathname);
+        if (window.hidePreloader) window.hidePreloader();
+
+        return Promise.resolve();
     }
 
     const finalUrl = baseUrl + '?' + params.toString();
@@ -111,7 +132,7 @@ window.loadUsuarios = function (url = null) {
 
 // Event Listener for Dropdown Selection (Decoupled architecture)
 window.addEventListener('dropdown-selection', function (e) {
-    if (e.detail.type === 'frente_filter' && document.getElementById('usuariosTableBody')) {
+    if (e.detail.inputName === 'frente_filter' && document.getElementById('usuariosTableBody')) {
         const clearBtn = document.getElementById('btn_clear_frente');
         if (clearBtn) {
             clearBtn.style.display = e.detail.value ? 'block' : 'none';
@@ -165,42 +186,11 @@ if (typeof ModuleManager !== 'undefined') {
     );
 }
 
-// Custom Delete Modal Logic
-window.confirmDelete = function (userId, userName) {
-    const modal = document.getElementById('deleteModal');
-    const nameSpan = document.getElementById('deleteModalUserName');
-    const confirmBtn = document.getElementById('confirmDeleteBtn');
-    const form = document.getElementById('delete-form-global');
-
-    if (modal && nameSpan && confirmBtn && form) {
-        nameSpan.innerText = userName;
-        form.action = `/admin/usuarios/${userId}`;
-
-        confirmBtn.onclick = function () {
-            window.closeDeleteModal();
-            if (window.showPreloader) {
-                window.showPreloader();
-            }
-            form.submit();
-        };
-
-        modal.style.display = 'flex';
-        requestAnimationFrame(() => {
-            modal.classList.add('active');
-            modal.style.opacity = '1';
-        });
-    } else {
-        console.error('Modal elements not found for delete confirmation');
+// Listen for SPA navigation to reinitialize module
+window.addEventListener('spa:contentLoaded', function () {
+    if (document.getElementById('usuariosTableBody')) {
+        initUsuarios();
     }
-};
+});
 
-window.closeDeleteModal = function () {
-    const modal = document.getElementById('deleteModal');
-    if (modal) {
-        modal.classList.remove('active');
-        modal.style.opacity = '0';
-        setTimeout(() => {
-            modal.style.display = 'none';
-        }, 300);
-    }
-};
+// confirmDelete and closeDeleteModal removed - using global versions in uicomponents.js

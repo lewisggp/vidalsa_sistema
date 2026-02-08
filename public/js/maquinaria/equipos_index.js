@@ -29,7 +29,7 @@ function updateSelectionUI() {
 
     if (bar && text) {
         if (count > 0) {
-            text.innerText = `${count} equipo${count > 1 ? 's' : ''} seleccionado${count > 1 ? 's' : ''}`;
+            text.innerText = `${count} seleccionado${count > 1 ? 's' : ''}`;
             bar.classList.add('active');
         } else {
             bar.classList.remove('active');
@@ -73,7 +73,7 @@ function handleRowDblClick(e) {
     const id = btnDetails.dataset.equipoId;
     const code = btnDetails.dataset.codigo;
 
-    if (window.selectedEquipos[id]) {
+    if (id in window.selectedEquipos) {
         delete window.selectedEquipos[id];
         row.classList.remove('selected-row-maquinaria');
     } else {
@@ -84,50 +84,40 @@ function handleRowDblClick(e) {
     updateSelectionUI();
 }
 
-// Attach Global Events Once
-if (!window.equiposListenersAttached) {
-    document.addEventListener('dblclick', handleRowDblClick);
+// Global Event Listeners (Always attach via delegation - safe to re-run)
+// NOTE: Event delegation to document allows these to work even after DOM changes
+document.addEventListener('dblclick', handleRowDblClick);
 
-    document.addEventListener('click', function (e) {
-        // Close status dropdowns when clicking outside
-        if (!e.target.closest('.custom-dropdown')) {
-            document.querySelectorAll('.status-dropdown-menu').forEach(menu => {
-                menu.style.display = 'none';
-            });
-        }
+document.addEventListener('click', function (e) {
+    // Close status dropdowns when clicking outside
+    if (!e.target.closest('.custom-dropdown')) {
+        document.querySelectorAll('.status-dropdown-menu').forEach(menu => {
+            menu.style.display = 'none';
+        });
+    }
 
-        // 1. Advanced Filter Selection (Model, Year)
-        const filterItem = e.target.closest('[data-advanced-filter]');
-        if (filterItem) {
-            e.preventDefault();
-            e.stopPropagation();
-            window.selectAdvancedFilter(filterItem.dataset.key, filterItem.dataset.value);
-            return;
-        }
 
-        // 2. Clear Advanced Filters Button
-        const clearBtn = e.target.closest('[data-action="clear-advanced-filters"]');
-        if (clearBtn) {
-            e.preventDefault();
-            e.stopPropagation();
-            window.clearAdvancedFilters();
-            return;
-        }
+    // 2. Clear Advanced Filters Button
+    const clearBtn = e.target.closest('[data-action="clear-advanced-filters"]');
+    if (clearBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.clearAdvancedFilters();
+        return;
+    }
 
-        // 3. Clear Specific Filter (Generic)
-        const clearSpecific = e.target.closest('[data-clear-target]');
-        if (clearSpecific) {
-            e.preventDefault();
-            e.stopPropagation();
-            const target = clearSpecific.dataset.clearTarget; // 'id_frente' or 'modelo' etc
+    // 3. Clear Specific Filter (Generic)
+    const clearSpecific = e.target.closest('[data-clear-target]');
+    if (clearSpecific) {
+        e.preventDefault();
+        e.stopPropagation();
+        const target = clearSpecific.dataset.clearTarget; // 'id_frente' or 'modelo' etc
 
-            // All filters now use selectAdvancedFilter
-            window.selectAdvancedFilter(target, '');
-        }
-    });
+        // All filters now use selectAdvancedFilter
+        window.selectAdvancedFilter(target, '');
+    }
+});
 
-    window.equiposListenersAttached = true;
-}
 
 window.enlargeImage = function (src) {
     const overlay = document.getElementById('imageOverlay');
@@ -143,14 +133,18 @@ window.toggleDocFilter = function (type) {
 
 window.loadEquipos = function (url = null, silent = false) {
     const tableBody = document.getElementById('equiposTableBody');
-    if (!tableBody) return;
+    if (!tableBody) return Promise.resolve();
 
     let baseUrl = url || window.location.pathname;
     const searchInput = document.getElementById('searchInput');
-    const frenteInput = document.getElementById('input_frente_filter');
-    const tipoInput = document.getElementById('input_tipo_filter');
-    const modeloInput = document.getElementById('searchModelInput');
-    const anioInput = document.getElementById('input_anio_filter');
+    const frenteInput = document.querySelector('input[name="id_frente"]');
+    const tipoInput = document.querySelector('input[name="id_tipo"]');
+    const advancedPanel = document.getElementById('advancedFilterPanel');
+
+    // Prioritize inputs within the Advanced Filter Panel if it exists
+    const modeloInput = advancedPanel ? advancedPanel.querySelector('input[name="modelo"]') : document.querySelector('input[name="modelo"]');
+    const anioInput = advancedPanel ? advancedPanel.querySelector('input[name="anio"]') : document.querySelector('input[name="anio"]');
+    const marcaInput = advancedPanel ? advancedPanel.querySelector('input[name="marca"]') : document.querySelector('input[name="marca"]');
 
     // Unified Filter Object (Single Source of Truth)
     const filters = {
@@ -158,7 +152,7 @@ window.loadEquipos = function (url = null, silent = false) {
         id_frente: (frenteInput?.value !== '') ? frenteInput?.value : null,
         id_tipo: (tipoInput?.value !== '') ? tipoInput?.value : null,
         modelo: (modeloInput?.value !== '') ? modeloInput?.value : null,
-        marca: (document.getElementById('searchMarcaInput')?.value !== '') ? document.getElementById('searchMarcaInput')?.value : null,
+        marca: (marcaInput?.value !== '') ? marcaInput?.value : null,
         anio: (anioInput?.value !== '') ? anioInput?.value : null,
         filter_propiedad: document.getElementById('chk_propiedad')?.checked ? 'true' : null,
         filter_poliza: document.getElementById('chk_poliza')?.checked ? 'true' : null,
@@ -177,14 +171,52 @@ window.loadEquipos = function (url = null, silent = false) {
         }
     });
 
-    console.log('Loading Equipos with standardized params:', params.toString());
+
+
+    // OPTIMIZATION: Check if there are any meaningful filters
+    // Strategy: Only skip server request if EVERYTHING is null/empty (truly no input from user)
+    const hasAnyInput = Object.entries(filters).some(([key, value]) => {
+        if (value === null || value === '' || value === undefined) return false;
+        if (typeof value === 'string' && value.trim() === '') return false;
+        return true; // Any non-empty value means user provided input
+    });
+
+    // If truly no input at all, clear UI without server request
+    if (!hasAnyInput) {
+        console.log('No active filters detected - clearing UI without server request');
+
+        // Clear table with friendly message
+        tableBody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px; color: #94a3b8; font-style: italic;">SELECCIONE UN FILTRO PARA VISUALIZAR LOS EQUIPOS</td></tr>';
+        tableBody.style.opacity = '1';
+
+        // Clear statistics
+        const statsTotal = document.getElementById('stats_total');
+        const statsInactivos = document.getElementById('stats_inactivos');
+        const statsMantenimiento = document.getElementById('stats_mantenimiento');
+        if (statsTotal) statsTotal.textContent = '0';
+        if (statsInactivos) statsInactivos.textContent = '0';
+        if (statsMantenimiento) statsMantenimiento.textContent = '0';
+
+        // Clear distribution stats
+        const distroContainer = document.getElementById('distributionStatsContainer');
+        if (distroContainer) distroContainer.innerHTML = '';
+
+        // Clear pagination
+        const paginationContainer = document.getElementById('equiposPagination');
+        if (paginationContainer) paginationContainer.innerHTML = '';
+
+        // Update URL to reflect empty state
+        window.history.pushState(null, '', window.location.pathname);
+
+        return Promise.resolve();
+    }
 
     const finalUrl = baseUrl + (baseUrl.includes('?') ? '&' : '?') + params.toString();
     tableBody.style.opacity = '0.5';
 
     if (!silent && window.showPreloader) window.showPreloader();
 
-    fetch(finalUrl, {
+    return fetch(finalUrl, {
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
             'Accept': 'application/json'
@@ -236,95 +268,12 @@ window.loadEquipos = function (url = null, silent = false) {
         });
 };
 
-window.selectAdvancedFilter = function (key, value) {
-    if (window.searchTimeout) clearTimeout(window.searchTimeout);
 
-    if (key === 'modelo') {
-        const input = document.getElementById('searchModelInput');
-        if (input) input.value = value;
-        const list = document.getElementById('modelList');
-        if (list) list.style.display = 'none';
-        const btn = document.getElementById('btn_clear_modelo');
-        if (btn) btn.style.display = value ? 'block' : 'none';
-    }
 
-    if (key === 'anio') {
-        const input = document.getElementById('input_anio_filter');
-        if (input) input.value = value;
-        const labelSpan = document.querySelector('#yearList')?.previousElementSibling?.querySelector('span');
-        if (labelSpan) labelSpan.innerText = value || 'Seleccionar Año';
-        const list = document.getElementById('yearList');
-        if (list) list.style.display = 'none';
-        const btn = document.getElementById('btn_clear_anio');
-        if (btn) btn.style.display = value ? 'block' : 'none';
-    }
-
-    if (key === 'frente') {
-        const input = document.getElementById('input_frente_filter');
-        if (input) input.value = value;
-        const searchInput = document.getElementById('filterSearchInput');
-        if (searchInput) searchInput.placeholder = value ? value : 'Filtrar Frente...';
-        const btn = document.getElementById('btn_clear_frente');
-        if (btn) btn.style.display = value ? 'block' : 'none';
-        const dropdown = document.getElementById('frenteFilterSelect');
-        if (dropdown) dropdown.classList.remove('active');
-    }
-
-    if (key === 'tipo') {
-        const input = document.getElementById('input_tipo_filter');
-        if (input) input.value = value;
-        const searchInput = document.getElementById('filterTipoSearchInput');
-        if (searchInput) searchInput.placeholder = value ? value : 'Filtrar Tipo...';
-        const btn = document.getElementById('btn_clear_tipo');
-        if (btn) btn.style.display = value ? 'block' : 'none';
-        const dropdown = document.getElementById('tipoFilterSelect');
-        if (dropdown) dropdown.classList.remove('active');
-    }
-
-    if (key === 'search') {
-        const input = document.getElementById('searchInput');
-        if (input) input.value = value;
-        const btn = document.getElementById('btn_clear_search');
-        if (btn) btn.style.display = value ? 'block' : 'none';
-    }
-
-    if (!value) {
-        // If clearing a filter, reload to show data based on other remaining filters
-        window.loadEquipos();
-        return;
-    }
-
-    window.loadEquipos();
-};
-
-window.clearAdvancedFilters = function () {
-    if (window.searchTimeout) clearTimeout(window.searchTimeout);
-
-    const modelInput = document.getElementById('searchModelInput');
-    if (modelInput) modelInput.value = '';
-    const modelBtn = document.getElementById('btn_clear_modelo');
-    if (modelBtn) modelBtn.style.display = 'none';
-
-    const anioInput = document.getElementById('input_anio_filter');
-    if (anioInput) anioInput.value = '';
-    const anioLabel = document.querySelector('#yearList')?.previousElementSibling?.querySelector('span');
-    if (anioLabel) anioLabel.innerText = 'Seleccionar Año';
-    const anioBtn = document.getElementById('btn_clear_anio');
-    if (anioBtn) anioBtn.style.display = 'none';
-
-    // Clear Doc Filters
-    ['chk_propiedad', 'chk_poliza', 'chk_rotc', 'chk_racda'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.checked = false;
-    });
-
-    // Must reload to reflect the cleared filters
-    window.loadEquipos();
-};
-
-window.filterList = function (inputId, listId) {
-    const input = document.getElementById(inputId);
-    const list = document.getElementById(listId);
+window.filterList = function (inputArg, listArg) {
+    // Support both element references and ID strings (backward compatible)
+    const input = typeof inputArg === 'string' ? document.getElementById(inputArg) : inputArg;
+    const list = typeof listArg === 'string' ? document.getElementById(listArg) : listArg;
     if (!input || !list) return;
 
     const filter = input.value.toUpperCase();
@@ -450,7 +399,7 @@ window.openBulkModal = function (event) {
             <i class="material-icons" style="color: #60a5fa;">local_shipping</i>
             <h2 style="margin: 0; font-size: 18px; font-weight: 700;">Movilización</h2>
         </div>
-        <button type="button" id="btnCloseDynamic" style="position: absolute; right: 20px; background: transparent; border: none; color: white; cursor: pointer;">
+        <button type="button" id="btnCloseDynamic" style="position: absolute; right: 20px; background: transparent; border: none; color: white;">
             <i class="material-icons">close</i>
         </button>
     `;
@@ -494,7 +443,7 @@ window.openBulkModal = function (event) {
                 </div>
             </div>
 
-            <button type="submit" style="width: 100%; height: 48px; border-radius: 10px; font-weight: 700; font-size: 15px; background: #0067b1; color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
+            <button type="submit" style="width: 100%; height: 48px; border-radius: 10px; font-weight: 700; font-size: 15px; background: #0067b1; color: white; border: none; display: flex; align-items: center; justify-content: center; gap: 10px;">
                 <i class="material-icons" style="font-size: 18px;">save</i> Confirmar
             </button>
         </form>
@@ -583,8 +532,12 @@ window.openBulkModal = function (event) {
 
                 overlay.remove();
                 window.clearSelection();
-                window.loadEquipos();
 
+                // CRITICAL: Wait for table to fully reload before showing success
+                return window.loadEquipos();
+            })
+            .then(function () {
+                // Now that table is reloaded, show success and cleanup
                 showModal({
                     type: 'success',
                     title: '¡Operación Exitosa!',
@@ -592,6 +545,10 @@ window.openBulkModal = function (event) {
                     confirmText: 'Aceptar',
                     hideCancel: true
                 });
+
+                // Focus/State Cleanup after everything is stable
+                if (document.activeElement) document.activeElement.blur();
+                document.querySelectorAll('.custom-dropdown.active').forEach(el => el.classList.remove('active'));
             })
             .catch(function (err) {
                 console.error(err);
@@ -599,7 +556,10 @@ window.openBulkModal = function (event) {
                 // Hide preloader
                 if (window.hidePreloader) window.hidePreloader();
 
-                // Restore button state
+                // Remove overlay to prevent UI blocking
+                overlay.remove();
+
+                // Restore button state (though overlay is gone, this variable reference persists)
                 btn.innerHTML = originalText;
                 btn.disabled = false;
                 btn.style.opacity = '1';
@@ -641,17 +601,69 @@ window.updateLocalStats = function (oldStatus, newStatus) {
 
 window.exportEquipos = function () {
     const searchInput = document.getElementById('searchInput');
-    const frenteInput = document.getElementById('input_frente_filter');
-    const tipoInput = document.getElementById('input_tipo_filter');
-    const modeloInput = document.getElementById('searchModelInput');
-    const anioInput = document.getElementById('input_anio_filter');
+    const frenteInput = document.querySelector('input[name="id_frente"]');
+    const tipoInput = document.querySelector('input[name="id_tipo"]');
+    const advancedPanel = document.getElementById('advancedFilterPanel');
+
+    // Prioritize inputs within the Advanced Filter Panel if it exists
+    const modeloInput = advancedPanel ? advancedPanel.querySelector('input[name="modelo"]') : document.querySelector('input[name="modelo"]');
+    const anioInput = advancedPanel ? advancedPanel.querySelector('input[name="anio"]') : document.querySelector('input[name="anio"]');
+    const marcaInput = advancedPanel ? advancedPanel.querySelector('input[name="marca"]') : document.querySelector('input[name="marca"]');
 
     const params = new URLSearchParams();
-    if (searchInput?.value) params.append('search_query', searchInput.value);
-    if (frenteInput?.value) params.append('id_frente', frenteInput.value);
-    if (tipoInput?.value) params.append('id_tipo', tipoInput.value);
-    if (modeloInput?.value) params.append('modelo', modeloInput.value);
-    if (anioInput?.value) params.append('anio', anioInput.value);
+
+    // Helper to append if valid
+    const appendIfValid = (key, value) => {
+        if (value && typeof value === 'string' && value.trim() !== '' && value.trim() !== 'all') {
+            params.append(key, value.trim());
+            return true;
+        }
+        return false;
+    };
+
+    // Track if we have any filter
+    let hasAnyFilter = false;
+
+    hasAnyFilter |= appendIfValid('search_query', searchInput?.value);
+    hasAnyFilter |= appendIfValid('id_frente', frenteInput?.value);
+    hasAnyFilter |= appendIfValid('id_tipo', tipoInput?.value);
+    hasAnyFilter |= appendIfValid('modelo', modeloInput?.value);
+    hasAnyFilter |= appendIfValid('marca', marcaInput?.value);
+    hasAnyFilter |= appendIfValid('anio', anioInput?.value);
+
+    // Documentation Boolean Filters
+    if (document.getElementById('chk_propiedad')?.checked) {
+        params.append('filter_propiedad', 'true');
+        hasAnyFilter = true;
+    }
+    if (document.getElementById('chk_poliza')?.checked) {
+        params.append('filter_poliza', 'true');
+        hasAnyFilter = true;
+    }
+    if (document.getElementById('chk_rotc')?.checked) {
+        params.append('filter_rotc', 'true');
+        hasAnyFilter = true;
+    }
+    if (document.getElementById('chk_racda')?.checked) {
+        params.append('filter_racda', 'true');
+        hasAnyFilter = true;
+    }
+
+    // Validate: At least one filter must be active
+    if (!hasAnyFilter) {
+        if (window.showModal) {
+            showModal({
+                type: 'warning',
+                title: 'Filtro Requerido',
+                message: 'Debe aplicar al menos un filtro antes de exportar datos. Esto previene la descarga masiva de toda la base de datos.',
+                confirmText: 'Entendido',
+                hideCancel: true
+            });
+        } else {
+            alert('Debe aplicar al menos un filtro antes de exportar datos.');
+        }
+        return;
+    }
 
     window.location.href = '/admin/equipos/export?' + params.toString();
 };
@@ -685,13 +697,15 @@ function initEquipos() {
     updateSelectionUI();
 }
 
-// Listen for SPA navigation to clear selections when leaving equipos page
+// Listen for SPA navigation to reinitialize module and clear selections if leaving
 window.addEventListener('spa:contentLoaded', function () {
-    // Check if we're NOT on the equipos page anymore
     const isOnEquiposPage = document.getElementById('equiposTableBody') !== null;
 
-    if (!isOnEquiposPage && window.selectedEquipos && Object.keys(window.selectedEquipos).length > 0) {
-        // Clear selections when navigating away
+    if (isOnEquiposPage) {
+        // Reinitialize module when navigating TO equipos
+        initEquipos();
+    } else if (window.selectedEquipos && Object.keys(window.selectedEquipos).length > 0) {
+        // Clear selections when navigating AWAY from equipos
         window.selectedEquipos = {};
         updateSelectionUI();
     }

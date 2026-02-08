@@ -17,7 +17,7 @@
 
 
 <div class="admin-card" style="width: 95%; max-width: 1600px; margin: 0 auto;">
-    <div class="filter-toolbar-container">
+    <div class="filter-toolbar-container" style="margin-bottom: 5px;">
         <!-- Search Filter -->
         <div class="filter-item aligned-filter responsive-filter-item">
             <form id="search-form" style="width: 100%;" onsubmit="event.preventDefault();">
@@ -35,41 +35,41 @@
 
         <!-- Frente Filter -->
         <div class="filter-item aligned-filter responsive-filter-item">
-            <div class="custom-dropdown" id="frenteFilterSelect" style="width: 100%;">
-                <input type="hidden" name="id_frente" id="input_frente_filter" value="{{ request('id_frente') }}">
+            <div class="custom-dropdown" id="frenteFilterSelect" data-filter-type="frente_filter" data-default-label="Filtrar Frente..." style="width: 100%;">
+                <input type="hidden" name="id_frente" data-filter-value value="{{ request('id_frente') }}">
                 
                 @php 
                     $currentFrente = $frentes->firstWhere('ID_FRENTE', request('id_frente'));
                 @endphp
 
-                <div class="dropdown-trigger" onclick="toggleDropdown('frenteFilterSelect')" style="background: {{ request('id_frente') ? '#e1effa' : '#fbfcfd' }}; border: 1px solid {{ request('id_frente') ? '#0067b1' : '#cbd5e0' }}; border-radius: 12px; height: 45px; display: flex; align-items: center; justify-content: space-between; padding: 0; width: 100%; overflow: hidden; cursor: pointer;">
+                <div class="dropdown-trigger {{ request('id_frente') ? 'filter-active' : '' }}" style="background: #fbfcfd; border: 1px solid #cbd5e0; border-radius: 12px; height: 45px; display: flex; align-items: center; justify-content: space-between; padding: 0; width: 100%; overflow: hidden;">
                     
                     <div style="padding: 0 10px; display: flex; align-items: center; color: var(--maquinaria-gray-text);">
                         <i class="material-icons" style="font-size: 18px;">search</i>
                     </div>
 
-                    <input type="text" id="filterSearchInput" 
+                    <input type="text" name="filter_search_dropdown" data-filter-search
                         placeholder="{{ $currentFrente ? $currentFrente->NOMBRE_FRENTE : 'Filtrar Frente...' }}" 
-                        style="width: 100%; border: none; background: transparent; padding: 10px 5px; font-size: 14px; outline: none; color: #4a5568; pointer-events: none;"
-                        autocomplete="off"
-                        readonly>
+                        style="width: 100%; border: none; background: transparent; padding: 10px 5px; font-size: 14px; outline: none; color: #4a5568;"
+                        onkeyup="window.filterDropdownOptions(this)"
+                        onfocus="this.closest('.custom-dropdown').classList.add('active')"
+                        autocomplete="off">
 
                     <div style="display: flex; align-items: center; padding-right: 10px;">
-                        <i id="btn_clear_frente" class="material-icons" 
-                           style="font-size: 18px; color: #a0aec0; margin-right: 5px; cursor: pointer; display: {{ request('id_frente') ? 'block' : 'none' }};" 
-                           onclick="event.stopPropagation(); clearUsuariosFilter('id_frente');"
+                        <i class="material-icons" data-clear-btn
+                           style="font-size: 18px; color: #a0aec0; margin-right: 5px; display: {{ request('id_frente') ? 'block' : 'none' }};" 
+                           onclick="event.stopPropagation(); clearDropdownFilter('frenteFilterSelect'); loadUsuarios();"
                            title="Limpiar filtro">close</i>
-                        <i class="material-icons" style="color: #a0aec0; cursor: pointer;">expand_more</i>
                     </div>
                 </div>
 
                 <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible;">
-                    <div class="dropdown-item-list" id="frenteItemsList" style="max-height: 250px; overflow-y: auto;">
-                        <div class="dropdown-item {{ !request('id_frente') ? 'selected' : '' }}" onclick="selectOption('frenteFilterSelect', '', 'Filtrar Frente...', 'frente_filter');">
-                            Todos los Frentes
+                    <div class="dropdown-item-list" style="max-height: 250px; overflow-y: auto;">
+                        <div class="dropdown-item {{ !request('id_frente') || request('id_frente') == 'all' ? 'selected' : '' }}" data-value="all" onclick="selectOption('frenteFilterSelect', 'all', 'TODOS LOS FRENTES');">
+                            TODOS LOS FRENTES
                         </div>
                         @foreach($frentes as $frente)
-                            <div class="dropdown-item {{ request('id_frente') == $frente->ID_FRENTE ? 'selected' : '' }}" onclick="selectOption('frenteFilterSelect', '{{ $frente->ID_FRENTE }}', '{{ $frente->NOMBRE_FRENTE }}', 'frente_filter');">
+                            <div class="dropdown-item {{ request('id_frente') == $frente->ID_FRENTE ? 'selected' : '' }}" data-value="{{ $frente->ID_FRENTE }}" onclick="selectOption('frenteFilterSelect', '{{ $frente->ID_FRENTE }}', '{{ $frente->NOMBRE_FRENTE }}');">
                                 {{ $frente->NOMBRE_FRENTE }}
                             </div>
                         @endforeach
@@ -127,8 +127,8 @@
                 ¿Estás seguro de que deseas eliminar a "<strong id="deleteModalUserName" style="color: #2d3748;"></strong>"? Esta acción no se puede deshacer.
             </p>
             <div class="modal-footer" style="display: flex; gap: 10px; justify-content: center;">
-                <button onclick="closeDeleteModal()" class="modal-btn modal-btn-cancel" style="padding: 10px 20px; border-radius: 6px; border: 1px solid #cbd5e0; background: white; color: #4a5568; font-weight: 600; cursor: pointer;">Cancelar</button>
-                <button id="confirmDeleteBtn" class="modal-btn modal-btn-confirm" style="padding: 10px 20px; border-radius: 6px; border: none; background: #e53e3e; color: white; font-weight: 600; cursor: pointer;">Eliminar</button>
+                <button onclick="closeDeleteModal()" class="modal-btn modal-btn-cancel" style="padding: 10px 20px; border-radius: 6px; border: 1px solid #cbd5e0; background: white; color: #4a5568; font-weight: 600;">Cancelar</button>
+                <button id="confirmDeleteBtn" class="modal-btn modal-btn-confirm" style="padding: 10px 20px; border-radius: 6px; border: none; background: #e53e3e; color: white; font-weight: 600;">Eliminar</button>
             </div>
         </div>
     </div>

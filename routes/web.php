@@ -28,12 +28,24 @@ Route::middleware(['auth'])->group(function () {
 
     Route::middleware(['password.change.check'])->group(function () {
         Route::get('/menu', [App\Http\Controllers\DashboardController::class, 'index'])->name('menu');
+        Route::post('/system/reset-cache', [App\Http\Controllers\DashboardController::class, 'resetCache'])->name('system.reset-cache');
+        Route::get('/dashboard/alerts-html', [App\Http\Controllers\DashboardController::class, 'getAlertsHtml'])->name('dashboard.alertsHtml');
 
         Route::prefix('admin')->group(function () {
             Route::resource('usuarios', App\Http\Controllers\UserController::class)->except(['show']);
             Route::get('frentes/buscar', [App\Http\Controllers\FrenteTrabajoController::class, 'search'])->name('frentes.search');
             Route::resource('frentes', App\Http\Controllers\FrenteTrabajoController::class)->except(['show']);
+
+            // Catalog Linking API Routes (Must be before resource to avoid ID conflict)
+            Route::get('equipos/all-models', [App\Http\Controllers\EquipoController::class, 'getAllModels'])->name('equipos.allModels');
+            Route::get('equipos/search-catalog', [App\Http\Controllers\EquipoController::class, 'searchCatalogMatch'])->name('equipos.searchCatalog');
+            Route::get('catalogo/brands-from-equipos', [App\Http\Controllers\CaracteristicaModeloController::class, 'getBrandsFromEquipos'])->name('catalogo.brandsFromEquipos');
+            Route::get('catalogo/models-from-equipos', [App\Http\Controllers\CaracteristicaModeloController::class, 'getModelsFromEquipos'])->name('catalogo.modelsFromEquipos');
+            Route::get('catalogo/years-from-equipos', [App\Http\Controllers\CaracteristicaModeloController::class, 'getYearsFromEquipos'])->name('catalogo.yearsFromEquipos');
             Route::patch('equipos/{id}/status', [App\Http\Controllers\EquipoController::class, 'changeStatus'])->name('equipos.changeStatus');
+            Route::get('catalogo/brands-from-equipos', [App\Http\Controllers\CaracteristicaModeloController::class, 'getBrandsFromEquipos'])->name('catalogo.brandsFromEquipos');
+            Route::get('catalogo/models-from-equipos', [App\Http\Controllers\CaracteristicaModeloController::class, 'getModelsFromEquipos'])->name('catalogo.modelsFromEquipos');
+            Route::get('catalogo/years-from-equipos', [App\Http\Controllers\CaracteristicaModeloController::class, 'getYearsFromEquipos'])->name('catalogo.yearsFromEquipos');
             Route::post('equipos/{id}/upload-doc', [App\Http\Controllers\EquipoController::class, 'uploadDoc'])->name('equipos.uploadDoc');
             Route::delete('equipos/{id}/delete-doc', [App\Http\Controllers\EquipoController::class, 'deleteDoc'])->name('equipos.deleteDoc');
             Route::get('equipos/export', [App\Http\Controllers\EquipoController::class, 'export'])->name('equipos.export');
@@ -46,6 +58,9 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('equipos', App\Http\Controllers\EquipoController::class);
             Route::resource('movilizaciones', App\Http\Controllers\MovilizacionController::class);
             Route::patch('movilizaciones/{id}/status', [App\Http\Controllers\MovilizacionController::class, 'updateStatus'])->name('movilizaciones.updateStatus');
+            
+
+            
             Route::resource('catalogo', App\Http\Controllers\CaracteristicaModeloController::class);
         });
     });
@@ -65,9 +80,14 @@ Route::middleware(['auth'])->get('storage/google/{path}', function ($path) {
             $path = \Illuminate\Support\Facades\Storage::disk('local')->path($cachePath);
             $mime = mime_content_type($path);
             
+            // Use version query param for cache busting
+            $version = request()->query('v', '0');
+            $etag = md5($fileId . '-' . $version);
+            
             return response()->file($path, [
                 'Content-Type' => $mime,
-                'Cache-Control' => 'public, max-age=2592000',
+                'Cache-Control' => 'public, max-age=2592000, must-revalidate',
+                'ETag' => '"' . $etag . '"',
                 'Pragma' => 'public',
                 'Expires' => gmdate('D, d M Y H:i:s \G\M\T', time() + 2592000),
             ]);
@@ -96,9 +116,14 @@ Route::middleware(['auth'])->get('storage/google/{path}', function ($path) {
         // 4. SERVE FROM LOCAL CACHE
         $localPath = \Illuminate\Support\Facades\Storage::disk('local')->path($cachePath);
         
+        // Use version query param for cache busting (if provided)
+        $version = request()->query('v', '0');
+        $etag = md5($fileId . '-' . $version);
+        
         return response()->file($localPath, [
             'Content-Type' => $metadata['mime'],
-            'Cache-Control' => 'public, max-age=2592000',
+            'Cache-Control' => 'public, max-age=2592000, must-revalidate',
+            'ETag' => '"' . $etag . '"',
             'Pragma' => 'public',
             'Expires' => gmdate('D, d M Y H:i:s \G\M\T', time() + 2592000),
         ]);

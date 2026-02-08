@@ -3,75 +3,7 @@
 @section('title', 'Gestión de Equipos')
 
 @section('content')
-<style>
-    .filter-option-item:hover {
-        background-color: #e1effa !important;
-        color: #0067b1 !important;
-        cursor: pointer;
-    }
 
-    /* Selection Styles for Row */
-    tr.selected-row-maquinaria {
-        background-color: #e1effa !important;
-        border-left: 4px solid #0067b1 !important;
-        transition: all 0.2s ease;
-    }
-    
-    tr.selected-row-maquinaria td {
-        color: #0067b1 !important;
-    }
-
-    /* Floating Bar Style */
-    .selection-floating-bar {
-        position: fixed;
-        bottom: 30px;
-        left: 50%;
-        transform: translateX(-50%) translateY(100px);
-        background: #1e293b;
-        color: white;
-        padding: 12px 25px;
-        border-radius: 50px;
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-        z-index: 1000;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        opacity: 0;
-    }
-
-    .selection-floating-bar.active {
-        transform: translateX(-50%) translateY(0);
-        opacity: 1;
-    }
-
-    .selection-counter {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-weight: 600;
-        font-size: 14px;
-    }
-
-    .btn-bulk-action {
-        background: #0067b1;
-        color: white;
-        border: none;
-        padding: 8px 18px;
-        border-radius: 25px;
-        font-weight: 700;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: 0.2s;
-    }
-
-    .btn-bulk-action:hover {
-        background: #005a9c;
-        transform: scale(1.05);
-    }
-</style>
 <section class="page-title-card" style="text-align: left; margin: 0 0 10px 0;">
     <h1 class="page-title">
         <span class="page-title-line2" style="color: #000;">Gestión de Equipos y Maquinaria</span>
@@ -81,37 +13,37 @@
 <div class="page-layout-grid" style="display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 40px; align-items: start; width: 100%;">
     
     <!-- Left Column: Table & Filters -->
-    <div class="admin-card" style="margin: 0; min-height: 80vh; min-width: 0; width: 100%;">
+    <div class="admin-card" data-page="equipos" style="margin: 0; min-height: 80vh; min-width: 0; width: 100%;">
     <div class="filter-toolbar-container" style="margin-bottom: 5px;">
         <!-- Frente Filter -->
         <div class="filter-item aligned-filter">
-            <div class="custom-dropdown" id="frenteFilterSelect">
-                <input type="hidden" name="id_frente" id="input_frente_filter" value="{{ request('id_frente') }}" form="search-form">
+            <div class="custom-dropdown" id="frenteFilterSelect" data-filter-type="id_frente" data-default-label="Filtrar Frente...">
+                <input type="hidden" name="id_frente" data-filter-value value="{{ request('id_frente') }}" form="search-form">
                 
                 @php 
                     $currentFrente = $frentes->firstWhere('ID_FRENTE', request('id_frente'));
                 @endphp
 
-                <div class="dropdown-trigger" style="padding: 0; display: flex; align-items: center; background: {{ request('id_frente') && request('id_frente') != 'all' ? '#e1effa' : '#fbfcfd' }}; overflow: hidden; border: 1px solid {{ request('id_frente') && request('id_frente') != 'all' ? '#0067b1' : '#cbd5e0' }}; border-radius: 12px; height: 45px;">
+                <div class="dropdown-trigger {{ request('id_frente') && request('id_frente') != 'all' ? 'filter-active' : '' }}" style="padding: 0; display: flex; align-items: center; background: #fbfcfd; overflow: hidden; border: 1px solid #cbd5e0; border-radius: 12px; height: 45px;">
                     <div style="padding: 0 10px; display: flex; align-items: center; color: var(--maquinaria-gray-text);">
                         <i class="material-icons" style="font-size: 18px;">search</i>
                     </div>
-                    <input type="text" id="filterSearchInput" 
+                    <input type="text" name="filter_search_dropdown" data-filter-search
                         placeholder="{{ $currentFrente ? $currentFrente->NOMBRE_FRENTE : 'Filtrar Frente...' }}" 
+                         aria-label="Filtrar Frente"
                         style="width: 100%; border: none; background: transparent; padding: 10px 5px; font-size: 14px; outline: none;"
-                        onkeyup="filterDropdownOptions(this)"
+                        oninput="window.filterDropdownOptions(this)"
                         autocomplete="off">
-                    <i id="btn_clear_frente" class="material-icons" style="padding: 0 5px; cursor: pointer; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_frente') && request('id_frente') != 'all' ? 'block' : 'none' }};" onclick="event.stopPropagation(); clearFilter('id_frente');">close</i>
-                    <i class="material-icons" style="padding: 0 10px; cursor: pointer; color: var(--maquinaria-gray-text);">expand_more</i>
+                    <i class="material-icons" data-clear-btn style="padding: 0 5px; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_frente') && request('id_frente') != 'all' ? 'block' : 'none' }};" onclick="event.stopPropagation(); clearDropdownFilter('frenteFilterSelect'); loadEquipos();">close</i>
                 </div>
 
-                <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible;">
-                    <div class="dropdown-item-list" id="frenteItemsList" style="max-height: 250px; overflow-y: auto;">
-                            <div class="dropdown-item {{ !request('id_frente') || request('id_frente') == 'all' ? 'selected' : '' }}" onclick="document.getElementById('input_frente_filter').value='all'; selectAdvancedFilter('frente', 'all'); document.getElementById('filterSearchInput').placeholder='Todos los Frentes';">
-                                Todos los Frentes
+                <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible; z-index: 1000;">
+                    <div class="dropdown-item-list" style="max-height: 250px; overflow-y: auto;">
+                            <div class="dropdown-item {{ !request('id_frente') || request('id_frente') == 'all' ? 'selected' : '' }}" data-value="all" onclick="selectOption('frenteFilterSelect', 'all', 'TODOS LOS FRENTES'); loadEquipos();">
+                                TODOS LOS FRENTES
                             </div>
                             @foreach($frentes as $frente)
-                                <div class="dropdown-item {{ request('id_frente') == $frente->ID_FRENTE ? 'selected' : '' }}" onclick="selectAdvancedFilter('frente', '{{ $frente->ID_FRENTE }}'); document.getElementById('filterSearchInput').placeholder='{{ $frente->NOMBRE_FRENTE }}';">
+                                <div class="dropdown-item {{ request('id_frente') == $frente->ID_FRENTE ? 'selected' : '' }}" data-value="{{ $frente->ID_FRENTE }}" onclick="selectOption('frenteFilterSelect', '{{ $frente->ID_FRENTE }}', '{{ $frente->NOMBRE_FRENTE }}'); loadEquipos();">
                                     {{ $frente->NOMBRE_FRENTE }}
                                 </div>
                             @endforeach
@@ -122,32 +54,35 @@
 
         <!-- Tipo Filter -->
         <div class="filter-item aligned-filter" style="flex: 1.5;">
-            <div class="custom-dropdown" id="tipoFilterSelect">
-                <input type="hidden" name="id_tipo" id="input_tipo_filter" value="{{ request('id_tipo') }}" form="search-form">
+            <div class="custom-dropdown" id="tipoFilterSelect" data-filter-type="id_tipo" data-default-label="Filtrar Tipo...">
+                <input type="hidden" name="id_tipo" data-filter-value value="{{ request('id_tipo') }}" form="search-form">
                 
                 @php 
                     $currentTipo = $allTipos->firstWhere('id', request('id_tipo'));
                 @endphp
 
-                <div class="dropdown-trigger" style="padding: 0; display: flex; align-items: center; background: {{ request('id_tipo') ? '#e1effa' : '#fbfcfd' }}; overflow: hidden; border: 1px solid {{ request('id_tipo') ? '#0067b1' : '#cbd5e0' }}; border-radius: 12px; height: 45px;">
+                <div class="dropdown-trigger {{ request('id_tipo') ? 'filter-active' : '' }}" style="padding: 0; display: flex; align-items: center; background: #fbfcfd; overflow: hidden; border: 1px solid #cbd5e0; border-radius: 12px; height: 45px;">
                     <div style="padding: 0 10px; display: flex; align-items: center; color: var(--maquinaria-gray-text);">
                         <i class="material-icons" style="font-size: 18px;">search</i>
                     </div>
-                    <input type="text" id="filterTipoSearchInput" 
+                    <input type="text" name="filter_search_dropdown" data-filter-search
                         placeholder="{{ $currentTipo ? $currentTipo->nombre : 'Filtrar Tipo...' }}" 
+                         aria-label="Filtrar Tipo"
                         style="width: 100%; border: none; background: transparent; padding: 10px 5px; font-size: 14px; outline: none;"
-                        onkeyup="filterDropdownOptions(this)"
+                        oninput="window.filterDropdownOptions(this)"
                         autocomplete="off">
-                    <i id="btn_clear_tipo" class="material-icons" 
-                       style="padding: 0 5px; cursor: pointer; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_tipo') ? 'block' : 'none' }};"
-                       onclick="event.preventDefault(); event.stopPropagation(); selectAdvancedFilter('tipo', ''); document.getElementById('input_tipo_filter').value=''; document.getElementById('filterTipoSearchInput').placeholder='Filtrar Tipo...';">close</i>
-                    <i class="material-icons" style="padding: 0 10px; cursor: pointer; color: var(--maquinaria-gray-text);">expand_more</i>
+                    <i class="material-icons" data-clear-btn
+                       style="padding: 0 5px; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_tipo') ? 'block' : 'none' }};"
+                       onclick="event.preventDefault(); event.stopPropagation(); clearDropdownFilter('tipoFilterSelect'); loadEquipos();">close</i>
                 </div>
 
-                <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible;">
-                    <div class="dropdown-item-list" id="tipoItemsList" style="max-height: 250px; overflow-y: auto;">
+                <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible; z-index: 1000;">
+                    <div class="dropdown-item-list" style="max-height: 250px; overflow-y: auto;">
+                        <div class="dropdown-item {{ !request('id_tipo') ? 'selected' : '' }}" data-value="" onclick="selectOption('tipoFilterSelect', '', 'Filtrar Tipo...'); loadEquipos();">
+                            TODOS LOS TIPOS
+                        </div>
                         @foreach($allTipos as $tipo)
-                            <div class="dropdown-item {{ request('id_tipo') == $tipo->id ? 'selected' : '' }}" onclick="selectAdvancedFilter('tipo', '{{ $tipo->id }}'); document.getElementById('filterTipoSearchInput').placeholder='{{ $tipo->nombre }}';">
+                            <div class="dropdown-item {{ request('id_tipo') == $tipo->id ? 'selected' : '' }}" data-value="{{ $tipo->id }}" onclick="selectOption('tipoFilterSelect', '{{ $tipo->id }}', '{{ $tipo->nombre }}'); loadEquipos();">
                                 {{ $tipo->nombre }}
                             </div>
                         @endforeach
@@ -165,6 +100,7 @@
                     <i class="material-icons search-icon">search</i>
                     <input type="text" id="searchInput" name="search_query" value="{{ request('search_query') }}" 
                         placeholder="Buscar Seriales" 
+                        aria-label="Search Serials"
                         class="search-input-field"
                         autocomplete="off"
                         onkeyup="if(this.value.length >= 4 || this.value.length == 0) { /* Debounce handled in script */ }">
@@ -184,90 +120,111 @@
                 <div id="advancedFilterPanel" style="display: none; position: absolute; top: 100%; right: 0; width: 300px; background: #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15); border: 1px solid #cbd5e1; z-index: 100; margin-top: 10px; padding: 15px;">
                     <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: 700; color: #334155; display: flex; justify-content: space-between; align-items: center;">
                         Filtros Avanzados
-                        <span style="font-size: 11px; color: #64748b; font-weight: 400; cursor: pointer; text-decoration: underline;" onclick="clearAdvancedFilters()">Limpiar Todo</span>
+                        <span style="font-size: 11px; color: #64748b; font-weight: 400; text-decoration: underline;" onclick="clearAdvancedFilters()">Limpiar Todo</span>
                     </h4>
 
-                    <!-- Model Filter (Collapsible Autocomplete) -->
+                    <!-- Modelo Filter (Rebuilt like Tipo) -->
                     <div style="margin-bottom: 15px;">
-                        <label for="searchModelInput" style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px;">Modelo</label>
-                        <div style="position: relative;">
-                            <div style="position: relative; margin-bottom: 5px;">
-                                <i class="material-icons" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 16px; color: #94a3b8;">search</i>
-                                <input type="text" id="searchModelInput" 
-                                    placeholder="{{ request('modelo') ?: 'Buscar modelo...' }}" 
-                                    value="{{ request('modelo') }}"
-                                    onkeyup="filterList('searchModelInput', 'modelList'); document.getElementById('modelList').style.display='block'; document.getElementById('btn_clear_modelo').style.display = this.value ? 'block' : 'none';" 
-                                    onfocus="document.getElementById('modelList').style.display='block'"
-                                    onblur="setTimeout(() => document.getElementById('modelList').style.display='none', 200)"
-                                    style="width: 100%; padding: 6px 30px 6px 30px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; outline: none; box-sizing: border-box;"
+                        <span style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px;">Modelo</span>
+                        <div class="custom-dropdown" id="modeloAdvFilter" data-filter-type="modelo" data-default-label="Seleccionar Modelo..." style="font-size: 12px;">
+                            <input type="hidden" name="modelo" data-filter-value value="{{ request('modelo') }}">
+                            
+                            <div class="dropdown-trigger" style="padding: 0; display: flex; align-items: center; background: {{ request('modelo') ? '#e1effa' : 'white' }}; border: 1px solid #e2e8f0; border-radius: 6px; height: 32px;">
+                                <div style="padding: 0 8px; display: flex; align-items: center; color: #94a3b8;">
+                                    <i class="material-icons" style="font-size: 16px;">search</i>
+                                </div>
+                                <input type="text" name="filter_search_dropdown" data-filter-search 
+                                    placeholder="{{ request('modelo') ?: 'Seleccionar Modelo...' }}" 
+                                    aria-label="Filtrar Modelo"
+                                    style="width: 100%; border: none; background: transparent; padding: 6px 5px; font-size: 12px; outline: none;"
+                                    oninput="window.filterDropdownOptions(this)"
                                     autocomplete="off">
-                                <i id="btn_clear_modelo" class="material-icons" 
-                                   style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 16px; color: #94a3b8; cursor: pointer; display: {{ request('modelo') ? 'block' : 'none' }}; z-index: 5;"
-                                   onclick="event.preventDefault(); event.stopPropagation(); selectAdvancedFilter('modelo', ''); document.getElementById('searchModelInput').value = '';">close</i>
+                                <i class="material-icons" data-clear-btn style="padding: 0 5px; color: #94a3b8; font-size: 16px; display: {{ request('modelo') ? 'block' : 'none' }};" 
+                                   onclick="event.stopPropagation(); clearDropdownFilter('modeloAdvFilter'); loadEquipos();">close</i>
                             </div>
-                            <div id="modelList" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; max-height: 150px; overflow-y: auto; background: white; border: 1px solid #e2e8f0; border-radius: 6px; z-index: 10; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
 
-                                @if(isset($availableModelos))
-                                    @foreach($availableModelos as $mod)
-                                        <div class="filter-option-item {{ request('modelo') == $mod ? 'selected' : '' }}" data-advanced-filter="true" data-key="modelo" data-value="{{ $mod }}">{{ $mod }}</div>
-                                    @endforeach
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Brand Filter (Collapsible Autocomplete) -->
-                    <div style="margin-bottom: 15px;">
-                        <label for="searchMarcaInput" style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px;">Marca</label>
-                        <div style="position: relative;">
-                            <div style="position: relative; margin-bottom: 5px;">
-                                <i class="material-icons" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 16px; color: #94a3b8;">search</i>
-                                <input type="text" id="searchMarcaInput" 
-                                    placeholder="{{ request('marca') ?: 'Buscar marca...' }}" 
-                                    value="{{ request('marca') }}"
-                                    onkeyup="filterList('searchMarcaInput', 'marcaList'); document.getElementById('marcaList').style.display='block'; document.getElementById('btn_clear_marca').style.display = this.value ? 'block' : 'none';" 
-                                    onfocus="document.getElementById('marcaList').style.display='block'"
-                                    onblur="setTimeout(() => document.getElementById('marcaList').style.display='none', 200)"
-                                    style="width: 100%; padding: 6px 30px 6px 30px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; outline: none; box-sizing: border-box;"
-                                    autocomplete="off">
-                                <i id="btn_clear_marca" class="material-icons" 
-                                   style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 16px; color: #94a3b8; cursor: pointer; display: {{ request('marca') ? 'block' : 'none' }}; z-index: 5;"
-                                   onclick="event.preventDefault(); event.stopPropagation(); selectAdvancedFilter('marca', ''); document.getElementById('searchMarcaInput').value = '';">close</i>
-                            </div>
-                            <div id="marcaList" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; max-height: 150px; overflow-y: auto; background: white; border: 1px solid #e2e8f0; border-radius: 6px; z-index: 10; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-
-                                @if(isset($availableMarcas))
-                                    @foreach($availableMarcas as $marca)
-                                        <div class="filter-option-item {{ request('marca') == $marca ? 'selected' : '' }}" data-advanced-filter="true" data-key="marca" data-value="{{ $marca }}">{{ $marca }}</div>
-                                    @endforeach
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Year Filter (Collapsible Dropdown) -->
-                    <div>
-                        <span id="yearLabel" style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px;">Año</span>
-                        <div style="position: relative;">
-                            <div class="dropdown-trigger" tabindex="0" 
-                                 onclick="const l = document.getElementById('yearList'); l.style.display = l.style.display === 'none' ? 'block' : 'none';"
-                                 onblur="setTimeout(() => document.getElementById('yearList').style.display='none', 200)"
-                                 style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; bg: white;">
-                                <span>{{ request('anio') ?: 'Seleccionar Año' }}</span>
-                                <div style="display: flex; align-items: center;">
-                                    <i id="btn_clear_anio" class="material-icons" 
-                                       style="font-size: 16px; color: #94a3b8; cursor: pointer; margin-right: 5px; display: {{ request('anio') ? 'block' : 'none' }};"
-                                       onclick="event.stopPropagation(); selectAdvancedFilter('anio', '');">close</i>
-                                    <i class="material-icons" style="font-size: 16px; color: #94a3b8;">expand_more</i>
+                            <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible; z-index: 1000;">
+                                <div class="dropdown-item-list" style="max-height: 150px; overflow-y: auto;">
+                                    <div class="dropdown-item {{ !request('modelo') ? 'selected' : '' }}" data-value="" onclick="selectOption('modeloAdvFilter', '', 'Todos'); loadEquipos();">Todos</div>
+                                    @if(isset($availableModelos))
+                                        @foreach($availableModelos as $mod)
+                                            @if(trim($mod) !== '')
+                                                <div class="dropdown-item {{ request('modelo') == $mod ? 'selected' : '' }}" data-value="{{ $mod }}" onclick="selectOption('modeloAdvFilter', '{{ $mod }}', '{{ $mod }}'); loadEquipos();">{{ $mod }}</div>
+                                            @endif
+                                        @endforeach
+                                    @endif
                                 </div>
                             </div>
-                            <div id="yearList" aria-labelledby="yearLabel" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; max-height: 120px; overflow-y: auto; background: white; border: 1px solid #e2e8f0; border-radius: 6px; z-index: 10; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                        </div>
+                    </div>
 
-                                @if(isset($availableAnios))
-                                    @foreach($availableAnios as $anio)
-                                        <div class="filter-option-item {{ request('anio') == $anio ? 'selected' : '' }}" data-advanced-filter="true" data-key="anio" data-value="{{ $anio }}">{{ $anio }}</div>
-                                    @endforeach
-                                @endif
+                    <!-- Marca Filter (Rebuilt like Tipo) -->
+                    <div style="margin-bottom: 15px;">
+                        <span style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px;">Marca</span>
+                        <div class="custom-dropdown" id="marcaAdvFilter" data-filter-type="marca" data-default-label="Seleccionar Marca..." style="font-size: 12px;">
+                            <input type="hidden" name="marca" data-filter-value value="{{ request('marca') }}">
+                            
+                            <div class="dropdown-trigger" style="padding: 0; display: flex; align-items: center; background: {{ request('marca') ? '#e1effa' : 'white' }}; border: 1px solid #e2e8f0; border-radius: 6px; height: 32px;">
+                                <div style="padding: 0 8px; display: flex; align-items: center; color: #94a3b8;">
+                                    <i class="material-icons" style="font-size: 16px;">search</i>
+                                </div>
+                                <input type="text" name="filter_search_dropdown" data-filter-search 
+                                    placeholder="{{ request('marca') ?: 'Seleccionar Marca...' }}" 
+                                    aria-label="Filtrar Marca"
+                                    style="width: 100%; border: none; background: transparent; padding: 6px 5px; font-size: 12px; outline: none;"
+                                    oninput="window.filterDropdownOptions(this)"
+                                    autocomplete="off">
+                                <i class="material-icons" data-clear-btn style="padding: 0 5px; color: #94a3b8; font-size: 16px; display: {{ request('marca') ? 'block' : 'none' }};" 
+                                   onclick="event.stopPropagation(); clearDropdownFilter('marcaAdvFilter'); loadEquipos();">close</i>
+                            </div>
+
+                            <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible; z-index: 1000;">
+                                <div class="dropdown-item-list" style="max-height: 150px; overflow-y: auto;">
+                                    <div class="dropdown-item {{ !request('marca') ? 'selected' : '' }}" data-value="" onclick="selectOption('marcaAdvFilter', '', 'Todos'); loadEquipos();">Todos</div>
+                                    @if(isset($availableMarcas))
+                                        @foreach($availableMarcas as $marca)
+                                            @if(trim($marca) !== '')
+                                                <div class="dropdown-item {{ request('marca') == $marca ? 'selected' : '' }}" data-value="{{ $marca }}" onclick="selectOption('marcaAdvFilter', '{{ $marca }}', '{{ $marca }}'); loadEquipos();">{{ $marca }}</div>
+                                            @endif
+                                        @endforeach
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- Año Filter (Rebuilt like Tipo) -->
+                    <div>
+                        <span style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px;">Año</span>
+                        <div class="custom-dropdown" id="anioAdvFilter" data-filter-type="anio" data-default-label="Seleccionar Año..." style="font-size: 12px;">
+                            <input type="hidden" name="anio" data-filter-value value="{{ request('anio') }}">
+                            
+                            <div class="dropdown-trigger" style="padding: 0; display: flex; align-items: center; background: {{ request('anio') ? '#e1effa' : 'white' }}; border: 1px solid #e2e8f0; border-radius: 6px; height: 32px;">
+                                <div style="padding: 0 8px; display: flex; align-items: center; color: #94a3b8;">
+                                    <i class="material-icons" style="font-size: 16px;">search</i>
+                                </div>
+                                <input type="text" name="filter_search_dropdown" data-filter-search 
+                                    placeholder="{{ request('anio') ?: 'Seleccionar Año...' }}" 
+                                    aria-label="Filtrar Año"
+                                    style="width: 100%; border: none; background: transparent; padding: 6px 5px; font-size: 12px; outline: none;"
+                                    oninput="window.filterDropdownOptions(this)"
+                                    autocomplete="off">
+                                <i class="material-icons" data-clear-btn style="padding: 0 5px; color: #94a3b8; font-size: 16px; display: {{ request('anio') ? 'block' : 'none' }};" 
+                                   onclick="event.stopPropagation(); clearDropdownFilter('anioAdvFilter'); loadEquipos();">close</i>
+                            </div>
+
+                            <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible; z-index: 1000;">
+                                <div class="dropdown-item-list" style="max-height: 120px; overflow-y: auto;">
+                                    <div class="dropdown-item {{ !request('anio') ? 'selected' : '' }}" data-value="" onclick="selectOption('anioAdvFilter', '', 'Todos'); loadEquipos();">Todos</div>
+                                    @if(isset($availableAnios))
+                                        @foreach($availableAnios as $anio)
+                                            @if(trim($anio) !== '')
+                                                <div class="dropdown-item {{ request('anio') == $anio ? 'selected' : '' }}" data-value="{{ $anio }}" onclick="selectOption('anioAdvFilter', '{{ $anio }}', '{{ $anio }}'); loadEquipos();">{{ $anio }}</div>
+                                            @endif
+                                        @endforeach
+                                    @endif
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -277,23 +234,23 @@
                         <span style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 8px;">Documentación Cargada</span>
                         
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                            <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; color: #334155;">
-                                <input type="checkbox" id="chk_propiedad" onchange="toggleDocFilter('propiedad')" {{ request('filter_propiedad') == 'true' ? 'checked' : '' }} style="margin-right: 8px; accent-color: #0067b1;">
+                            <label style="display: flex; align-items: center; font-size: 13px; color: #334155;">
+                                <input type="checkbox" id="chk_propiedad" onchange="toggleDocFilter('propiedad')" {{ request('filter_propiedad') == 'true' ? 'checked' : '' }} style="margin-right: 8px; accent-color: var(--maquinaria-blue);">
                                 Propiedad
                             </label>
 
-                            <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; color: #334155;">
-                                <input type="checkbox" id="chk_poliza" onchange="toggleDocFilter('poliza')" {{ request('filter_poliza') == 'true' ? 'checked' : '' }} style="margin-right: 8px; accent-color: #0067b1;">
+                            <label style="display: flex; align-items: center; font-size: 13px; color: #334155;">
+                                <input type="checkbox" id="chk_poliza" onchange="toggleDocFilter('poliza')" {{ request('filter_poliza') == 'true' ? 'checked' : '' }} style="margin-right: 8px; accent-color: var(--maquinaria-blue);">
                                 Póliza
                             </label>
 
-                            <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; color: #334155;">
-                                <input type="checkbox" id="chk_rotc" onchange="toggleDocFilter('rotc')" {{ request('filter_rotc') == 'true' ? 'checked' : '' }} style="margin-right: 8px; accent-color: #0067b1;">
+                            <label style="display: flex; align-items: center; font-size: 13px; color: #334155;">
+                                <input type="checkbox" id="chk_rotc" onchange="toggleDocFilter('rotc')" {{ request('filter_rotc') == 'true' ? 'checked' : '' }} style="margin-right: 8px; accent-color: var(--maquinaria-blue);">
                                 ROTC
                             </label>
 
-                            <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; color: #334155;">
-                                <input type="checkbox" id="chk_racda" onchange="toggleDocFilter('racda')" {{ request('filter_racda') == 'true' ? 'checked' : '' }} style="margin-right: 8px; accent-color: #0067b1;">
+                            <label style="display: flex; align-items: center; font-size: 13px; color: #334155;">
+                                <input type="checkbox" id="chk_racda" onchange="toggleDocFilter('racda')" {{ request('filter_racda') == 'true' ? 'checked' : '' }} style="margin-right: 8px; accent-color: var(--maquinaria-blue);">
                                 RACDA
                             </label>
                         </div>
@@ -308,7 +265,7 @@
         <div class="filter-item aligned-filter" style="position: relative; width: auto; flex: 0 0 auto; margin-left: auto;">
             
             <!-- Main Trigger Button -->
-            <button type="button" id="btnAcciones" class="btn-primary-maquinaria" style="padding: 0 15px; height: 45px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+            <button type="button" id="btnAcciones" class="btn-primary-maquinaria" style="padding: 0 15px; height: 45px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
                 <i class="material-icons">settings</i>
                 <span>Acciones</span>
                 <i class="material-icons" style="font-size: 18px; margin-left: 2px;">expand_more</i>
@@ -343,21 +300,20 @@
             </div>
         </div>
 
-        <!-- Hidden Input for Year Filter -->
-        <input type="hidden" name="anio" id="input_anio_filter" value="{{ request('anio') }}">
+        <!-- Year filter hidden input moved inside the dropdown container -->
 
         <!-- Advanced Filter Logic migrated to equipos_index.js -->
     </div>
     <div class="custom-scrollbar-container" style="margin-top: 5px;">
-        <table class="admin-table" style="width: 100%; min-width: 850px;">
+        <table class="admin-table table-equipos-mobile" style="width: 100%; border-collapse: separate; border-spacing: 0 10px;">
             <thead>
                 <tr class="table-row-header">
-                    <th class="table-header-custom" style="width: 160px;"></th> <!-- Foto -->
-                    <th class="table-header-custom" style="width: 170px;">Tipo</th>
-                    <th class="table-header-custom" style="width: 95px;">Marca / Modelo</th>
-                    <th class="table-header-custom" style="width: 160px;">Serials / Placa / ID</th>
-                    <th class="table-header-custom" style="width: 95px;">Estatus</th>
-                    <th class="table-cell-center" style="width: 20px; padding: 10px 5px;"></th>
+                    <th class="table-header-custom" style="width: 150px;"></th> <!-- Foto Fixed -->
+                    <th class="table-header-custom" style="width: 22%;">Tipo</th> <!-- Fluid (Wide) -->
+                    <th class="table-header-custom" style="width: 15%;">Marca / Modelo</th> <!-- Fluid (Narrower) -->
+                    <th class="table-header-custom" style="width: 25%;">Serials / Placa / ID</th> <!-- Fluid (Wide) -->
+                    <th class="table-header-custom" style="width: 110px;">Estatus</th> <!-- Fixed -->
+                    <th class="table-cell-center" style="width: 50px;"></th> <!-- Fixed -->
                 </tr>
             </thead>
             <tbody id="equiposTableBody" style="font-size: 15px;">
@@ -372,171 +328,7 @@
         </form>
     </div>
 
-    <!-- Improved Details Modal -->
-    <div id="detailsModal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 900px; padding: 0; border-radius: 16px; overflow: hidden; background: #f8fafc;">
-            <!-- Modal Header -->
-            <div style="background: var(--maquinaria-dark-blue); padding: 20px 25px; color: white; display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <div>
-                        <h2 id="modal_equipo_title" style="margin: 0; font-size: 20px; font-weight: 700;">Detalles del Equipo</h2>
-                        <p id="modal_equipo_subtitle" style="margin: 5px 0 0 0; opacity: 0.8; font-size: 13px;"></p>
-                    </div>
-                    <a id="modal_gps_btn" href="#" target="_blank" style="display: none; background: #10b981; color: white; padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; text-decoration: none; align-items: center; gap: 6px; transition: 0.2s; margin-right: 20px;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
-                        <i class="material-icons" style="font-size: 18px;">gps_fixed</i>
-                        GPS
-                    </a>
-                </div>
-                <button type="button" onclick="closeDetailsModal(event)" style="background: rgba(255,255,255,0.1); border: none; color: white; cursor: default; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">
-                    <i class="material-icons">close</i>
-                </button>
-            </div>
 
-            <!-- Modal Body -->
-            <div style="padding: 25px; max-height: 80vh; overflow-y: auto;">
-
-                <!-- Vertical Accordion Layout -->
-                <div style="display: flex; flex-direction: column; gap: 15px;">
-                    
-                    <!-- Section 1: Legal (First as requested) -->
-                    <details name="equipment_accordion" style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
-                        <summary style="padding: 15px 20px; font-weight: 700; color: #059669; cursor: pointer; display: flex; align-items: center; gap: 10px; background: #f0fdf4; list-style: none;">
-                            <i class="material-icons" style="font-size: 20px;">description</i> Documentación Legal y Soportes
-                        </summary>
-                        <div style="padding: 20px; border-top: 1px solid #e2e8f0;">
-                            <div style="display: flex; flex-direction: column; gap: 15px; font-size: 14px;">
-                            
-                                <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="color: #64748b; font-weight: 500;">Titular del Registro</span>
-                                    <strong id="d_titular" style="color: #1e293b; font-size: 14px;"></strong>
-                                </div>
-
-                                <!-- Placa -->
-                                <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="color: #64748b; font-weight: 500;">Placa Identificadora</span>
-                                    <strong id="d_placa" style="color: var(--maquinaria-blue); font-size: 15px; letter-spacing: 0.5px;"></strong>
-                                </div>
-
-                                <!-- Documento Propiedad (With Button) -->
-                                <div style="display: grid; grid-template-columns: 150px 1fr auto; gap: 15px; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="color: #64748b; font-weight: 500;">Nro. Documento</span>
-                                    <strong id="d_nro_doc" style="color: #1e293b;"></strong>
-                                    <div id="d_btn_propiedad"></div>
-                                </div>
-
-                                <!-- Seguro -->
-                                <div style="display: grid; grid-template-columns: 150px 1fr auto; gap: 15px; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="color: #64748b; font-weight: 500;">Póliza de Seguro</span>
-                                    <div>
-                                        <!-- Removed Insurance Name Display -->
-                                        <small id="d_venc_seguro" style="color: #ef4444; font-weight: 600; font-size: 13px;"></small>
-                                    </div>
-                                    <div id="d_btn_poliza"></div>
-                                </div>
-
-                                <!-- ROTC -->
-                                <div style="display: grid; grid-template-columns: 150px 1fr auto; gap: 15px; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="color: #64748b; font-weight: 500;">Registro ROTC</span>
-                                    <strong id="d_fecha_rotc" style="color: #1e293b;"></strong>
-                                    <div id="d_btn_rotc"></div>
-                                </div>
-
-                                <!-- RACDA -->
-                                <div style="display: grid; grid-template-columns: 150px 1fr auto; gap: 15px; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="color: #64748b; font-weight: 500;">Registro RACDA</span>
-                                    <strong id="d_fecha_racda" style="color: #1e293b;"></strong>
-                                    <div id="d_btn_racda"></div>
-                                </div>
-
-                            </div>
-                        </div>
-                    </details>
-
-                    <!-- Section 2: Info General (Second) -->
-                    <details name="equipment_accordion" style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
-                        <summary style="padding: 15px 20px; font-weight: 700; color: var(--maquinaria-blue); cursor: pointer; display: flex; align-items: center; gap: 10px; background: #f8fafc; list-style: none;">
-                            <i class="material-icons" style="font-size: 20px;">info</i> Información General
-                        </summary>
-                        <div style="padding: 20px; border-top: 1px solid #e2e8f0;">
-                            <div style="display: grid; grid-template-columns: 1fr; gap: 15px; font-size: 14px;">
-                                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px;">
-                                    <span style="color: #64748b;">Año de Fabricación:</span>
-                                    <strong id="d_anio" style="color: #1e293b;"></strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px;">
-                                    <span style="color: #64748b;">Categoría de Flota:</span>
-                                    <strong id="d_categoria" style="color: #1e293b;"></strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px;">
-                                    <span style="color: #64748b;">Serial de Motor:</span>
-                                    <strong id="d_motor_serial" style="color: #1e293b;"></strong>
-                                </div>
-                            </div>
-                        </div>
-                    </details>
-
-                    <!-- Section 3: Especificaciones (Third) -->
-                    <details name="equipment_accordion" style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
-                         <summary style="padding: 15px 20px; font-weight: 700; color: var(--maquinaria-blue); cursor: pointer; display: flex; align-items: center; gap: 10px; background: #f8fafc; list-style: none;">
-                            <i class="material-icons" style="font-size: 20px;">settings_applications</i> Especificaciones y Mantenimiento
-                        </summary>
-                        <div style="padding: 20px; border-top: 1px solid #e2e8f0;">
-                             <div style="font-size: 13px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                                <!-- Col 1 -->
-                                <div style="display: flex; flex-direction: column; gap: 15px;">
-                                    <!-- Mecánica -->
-                                    <div>
-                                        <strong style="display: block; color: #94a3b8; font-size: 11px; text-transform: uppercase; margin-bottom: 5px;">Mecánica</strong>
-                                        <div style="display: flex; flex-direction: column; gap: 8px;">
-                                            <div style="background: #f8fafc; padding: 8px; border-radius: 6px;">
-                                                <span style="display:block; color:#64748b; font-size: 10px;">Motor</span>
-                                                <strong id="d_motor_tech" style="color:#334155;"></strong>
-                                            </div>
-                                            <div style="background: #f8fafc; padding: 8px; border-radius: 6px;">
-                                                <span style="display:block; color:#64748b; font-size: 10px;">Capacidad</span>
-                                                <strong id="d_capacidad" style="color:#334155;"></strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Col 2 -->
-                                <div style="display: flex; flex-direction: column; gap: 15px;">
-                                    <!-- Combustible -->
-                                    <div>
-                                        <strong style="display: block; color: #94a3b8; font-size: 11px; text-transform: uppercase; margin-bottom: 5px;">Combustible & Sistema</strong>
-                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                                            <div style="background: #f8fafc; padding: 6px; border-radius: 4px;">
-                                                <span style="display:block; color:#64748b; font-size: 10px;">Tipo</span>
-                                                <strong id="d_combustible" style="color:#334155;"></strong>
-                                            </div>
-                                            <div style="background: #f8fafc; padding: 6px; border-radius: 4px;">
-                                                <span style="display:block; color:#64748b; font-size: 10px;">Consumo</span>
-                                                <strong id="d_consumo" style="color:#334155;"></strong>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                     <!-- Fluidos y Otros -->
-                                    <div>
-                                        <strong style="display: block; color: #94a3b8; font-size: 11px; text-transform: uppercase; margin-bottom: 5px;">Mantenimiento</strong>
-                                        <div style="display: grid; grid-template-columns: 1fr; gap: 5px;">
-                                            <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 2px;"><span style="color:#64748b;">Aceite Motor:</span> <strong id="d_aceite_m"></strong></div>
-                                            <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 2px;"><span style="color:#64748b;">Aceite Caja:</span> <strong id="d_aceite_c"></strong></div>
-                                            <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 2px;"><span style="color:#64748b;">Liga Freno:</span> <strong id="d_liga"></strong></div>
-                                            <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 2px;"><span style="color:#64748b;">Refrigerante:</span> <strong id="d_refrigerante"></strong></div>
-                                            <div style="display:flex; justify-content:space-between;"><span style="color:#64748b;">Batería:</span> <strong id="d_bateria"></strong></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </details>
-                </div>
-
-        </div>
-    </div>
-</div>
 
     <!-- Pagination removed as requested (Single list on filter) -->
     <div id="equiposPagination" style="margin-top: 25px;"></div>
@@ -594,61 +386,9 @@
 </div> <!-- End Page Layout Grid -->
 
 
-<!-- Loading Overlay -->
-<div id="exportLoader" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 10000; flex-direction: column; justify-content: center; align-items: center;">
-    <div class="spinner" style="border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite;"></div>
-    <div style="margin-top: 15px; font-weight: 600; color: #334155;">Preparando archivo excel...</div>
-</div>
 
-<style>
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-</style>
 
-<script>
-    document.addEventListener('click', function(e) {
-        if(e.target.closest('#btnExportar')) {
-            e.preventDefault();
-            exportData();
-        }
-    });
 
-    function exportData() {
-        const loader = document.getElementById('exportLoader');
-        loader.style.display = 'flex';
-
-        // Get current params
-        const params = new URLSearchParams(window.location.search);
-        const url = "{{ route('equipos.export') }}?" + params.toString();
-
-        fetch(url)
-            .then(response => {
-                if (!response.ok) throw new Error('Error en la descarga');
-                return response.blob();
-            })
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                // Generate filename (optional, server header usually handles it but we can force it)
-                a.download = 'equipos_export_' + new Date().toISOString().slice(0,10) + '.xls'; 
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            })
-            .catch(error => {
-                alert('Hubo un error al exportar los datos. Por favor intente de nuevo.');
-                console.error('Export Error:', error);
-            })
-            .finally(() => {
-                loader.style.display = 'none';
-            });
-    }
-</script>
 
 <!-- Image Overlay Modal -->
 <div id="imageOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; cursor: default;" onclick="this.style.display='none'">
@@ -661,16 +401,16 @@
         <div style="background: rgba(255,255,255,0.1); padding: 5px; border-radius: 50%; display: flex;">
             <i class="material-icons" style="font-size: 18px; color: #60a5fa;">inventory_2</i>
         </div>
-        <span id="bulkCountText">0 equipos seleccionados</span>
+        <span id="bulkCountText">0 seleccionados</span>
     </div>
     <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.2);"></div>
     <div style="display: flex; gap: 10px;">
-        <button type="button" onclick="clearSelection(event)" style="background: transparent; border: none; color: #94a3b8; cursor: pointer; font-size: 13px; font-weight: 600;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#94a3b8'">
+        <button type="button" onclick="clearSelection(event)" style="background: transparent; border: none; color: #94a3b8; font-size: 13px; font-weight: 600;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#94a3b8'">
             Limpiar
         </button>
         <button type="button" onclick="openBulkModal(event)" class="btn-bulk-action">
             <i class="material-icons" style="font-size: 18px;">local_shipping</i>
-            Movilizar
+            Asignar
         </button>
     </div>
 </div>
@@ -682,6 +422,7 @@
     @endforeach
 </datalist>
 
+    @include('admin.equipos.partials.equipment_details_modal')
 @endsection
 @section('extra_js')
     {{-- Replaced by Global Load in Layout --}}

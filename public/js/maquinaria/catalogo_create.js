@@ -8,25 +8,6 @@
         e.preventDefault();
         const form = e.target;
 
-        // Validate capacity unit
-        const capacidadInput = form.querySelector('[name="CAPACIDAD"]');
-        if (capacidadInput && capacidadInput.value.trim() !== '') {
-            if (/^[\d.,\s]+$/.test(capacidadInput.value)) {
-                if (window.showModal) {
-                    window.showModal({
-                        type: 'warning',
-                        title: 'Falta la Unidad',
-                        message: 'Indicar unidad (Kg, Ton, m³, Lts) en el campo Capacidad.',
-                        confirmText: 'Corregir'
-                    });
-                } else {
-                    alert('Indicar unidad (Kg, Ton, m³, Lts) en el campo Capacidad.');
-                }
-                capacidadInput.focus();
-                return;
-            }
-        }
-
         // Show global preloader IMMEDIATELY
         if (typeof window.showPreloader === 'function') {
             window.showPreloader();
@@ -42,7 +23,7 @@
             originalBtnContent = submitBtn.innerHTML;
             submitBtn.style.width = submitBtn.offsetWidth + 'px';
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner-mini"></span> Guardando...';
+            // submitBtn.innerHTML = '<div style="display: inline-flex; align-items: center; gap: 8px;"><div class="spinner-mini-white"></div><span>Guardando...</span></div>';
         }
 
         const formData = new FormData(form);
@@ -60,10 +41,20 @@
         })
             .then(response => {
                 if (!response.ok) {
-                    return response.json().then(errorData => {
-                        throw { status: response.status, body: errorData };
-                    }).catch(() => {
-                        throw { status: response.status, message: 'Error desconocido del servidor' };
+                    return response.text().then(text => {
+                        try {
+                            // Try parsing as JSON first
+                            const errorData = JSON.parse(text);
+                            throw { status: response.status, body: errorData };
+                        } catch (e) {
+                            // If parsing fails, it's likely an HTML error page (500, etc.)
+                            console.error('Raw Server Error Response:', text);
+                            throw {
+                                status: response.status,
+                                message: `Error del Servidor (${response.status}) - Ver consola para detalles.`,
+                                raw: text
+                            };
+                        }
                     });
                 }
                 return response.json();
@@ -145,6 +136,14 @@
         }
 
         newForm.addEventListener('submit', handleSubmit);
+
+        // Auto-fetch years when Model changes (Manual typing)
+        const modelInput = newForm.querySelector('#MODELO');
+        if (modelInput) {
+            modelInput.addEventListener('blur', function () {
+                if (window.checkCatalogMatch) window.checkCatalogMatch();
+            });
+        }
 
         // Re-attach preview logic since we cloned the form
         const fileInput = newForm.querySelector('#foto_referencial');

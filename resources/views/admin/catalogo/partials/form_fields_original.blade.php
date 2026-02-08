@@ -33,7 +33,7 @@
     <div>
         <div style="display: block; font-weight: 700; margin-bottom: 4px; color: var(--maquinaria-dark-blue); font-size: 13px;">Foto del Modelo</div>
         <div style="display: flex; gap: 8px; align-items: center; height: 38px;">
-            <label for="foto_referencial" id="preview_referencial" style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: white; border-radius: 8px; border: 1px solid #cbd5e0; flex-shrink: 0; cursor: pointer; transition: all 0.2s;" title="Foto del Modelo" onmouseover="this.style.borderColor='var(--maquinaria-blue)';" onmouseout="this.style.borderColor='#cbd5e0';">
+            <label for="foto_referencial" id="preview_referencial" style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: white; border-radius: 8px; border: 1px solid #cbd5e0; flex-shrink: 0; transition: all 0.2s;" title="Foto del Modelo" onmouseover="this.style.borderColor='var(--maquinaria-blue)';" onmouseout="this.style.borderColor='#cbd5e0';">
                 @if(isset($catalogo) && $catalogo->FOTO_REFERENCIAL)
                     <img src="{{ route('drive.file', ['path' => str_replace('/storage/google/', '', $catalogo->FOTO_REFERENCIAL)]) }}" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px;">
                 @else

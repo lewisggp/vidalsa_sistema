@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cambio de Contraseña Requerido</title>
+    <title>Cambio de Contraseña</title>
     <!-- Fonts -->
     <link href="{{ asset('css/fonts.css') }}" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
+            background-color: #dddcdcee;
             margin: 0;
             padding: 0;
             display: flex;
@@ -21,11 +21,12 @@
 
         .login-card {
             width: 100%;
-            max-width: 450px;
+            max-width: 400px;
             background: white;
             padding: 40px;
             border-radius: 12px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            /* border: none; (White/Invisible as requested) */
+            box-shadow: 0 0 25px -5px rgba(0, 0, 0, 0.25), 0 0 10px -5px rgba(0, 0, 0, 0.15); /* Sombra un poco más oscura */
         }
 
         .form-group { margin-bottom: 20px; }
@@ -51,14 +52,13 @@
             box-sizing: border-box;
             font-size: 15px;
             color: #1f2937;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            /* transition: border-color 0.2s; REMOVED FOR STABILITY */
             height: 48px;
         }
 
         .custom-input:focus { 
-            border-color: #2563eb; 
             outline: none; 
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); 
+            /* No border change on click */
         }
 
         /* Left Icon (Lock) */
@@ -80,7 +80,6 @@
             transform: translateY(-50%);
             background: none;
             border: none;
-            cursor: pointer;
             color: #9ca3af;
             padding: 4px; /* Hitbox increase */
             display: flex;
@@ -101,31 +100,55 @@
 
         .btn-primary {
             width: 100%;
-            background: #2563eb;
+            background: #00004d;
             color: white;
             border: none;
             padding: 14px;
             border-radius: 6px;
             font-weight: 600;
             font-size: 16px;
-            cursor: pointer;
             transition: background-color 0.2s;
             margin-top: 10px;
         }
         
-        .btn-primary:hover { background: #1d4ed8; }
+        .btn-primary:hover { background: #656565; }
 
         .btn-link {
             background: none;
             border: none;
             color: #6b7280;
             text-decoration: underline;
-            cursor: pointer;
             font-size: 14px;
             padding: 0;
             font-family: inherit;
         }
         .btn-link:hover { color: #374151; }
+
+        /* FORCE AUTOFILL STYLE OVERRIDE */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active{
+            -webkit-box-shadow: 0 0 0 30px white inset !important;
+            -webkit-text-fill-color: #1f2937 !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 480px) {
+            .login-card {
+                width: auto;
+                padding: 25px;
+                margin: 20px;
+            }
+            .custom-title {
+                font-size: 20px !important;
+            }
+            body {
+                align-items: flex-start;
+                padding-top: 40px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -134,9 +157,9 @@
         <div style="text-align: center; margin-bottom: 30px;">
             <img src="{{ asset('images/maquinaria/logo.webp') }}" alt="Logo Vidalsa" style="height: 60px; margin-bottom: 20px;">
             <br>
-            <h2 style="color: #111827; font-size: 24px; margin: 0; font-weight: 700;">Cambio de Contraseña Requerido</h2>
+            <h2 class="custom-title" style="color: #111827; font-size: 24px; margin: 0; font-weight: 700;">Cambio de Contraseña</h2>
             <p style="color: #6b7280; font-size: 14px; margin-top: 8px;">
-                Por motivos de seguridad, su cuenta requiere que actualice su contraseña antes de acceder al sistema.
+                Por motivos de seguridad, su cuenta requiere <br> que actualice su contraseña.
             </p>
         </div>
 
@@ -185,7 +208,7 @@
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
                 <button type="submit" class="btn-link">
-                    Cancelar y Cerrar Sesión
+                    Cerrar Sesión
                 </button>
             </form>
         </div>

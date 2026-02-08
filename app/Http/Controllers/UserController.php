@@ -33,7 +33,7 @@ class UserController extends Controller
         }
 
         // FILTER 2: Frente de Trabajo (independent)
-        if ($request->filled('id_frente')) {
+        if ($request->filled('id_frente') && $request->input('id_frente') !== 'all') {
             $query->where('ID_FRENTE_ASIGNADO', $request->input('id_frente'));
         }
 

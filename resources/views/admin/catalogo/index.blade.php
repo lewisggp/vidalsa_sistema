@@ -17,27 +17,28 @@
             
             <!-- Modelo Filter -->
             <div class="filter-item" style="flex: 0 1 300px; min-width: 100px;">
-                <div class="custom-dropdown" id="modeloFilterSelect">
-                    <input type="hidden" name="modelo" id="input_modelo_filter" value="{{ request('modelo') }}">
-                    <div class="dropdown-trigger" onclick="toggleDropdown('modeloFilterSelect')" style="padding: 0; display: flex; align-items: center; background: {{ request('modelo') ? '#e1effa' : '#fbfcfd' }}; border: 1px solid {{ request('modelo') ? '#0067b1' : '#cbd5e0' }}; border-radius: 12px; height: 45px; cursor: pointer; position: relative; overflow: hidden;">
+                <div class="custom-dropdown" id="modeloFilterSelect" data-filter-type="modelo" data-default-label="Buscar Modelo...">
+                    <input type="hidden" name="modelo" data-filter-value value="{{ request('modelo') }}">
+                    <div class="dropdown-trigger {{ request('modelo') ? 'filter-active' : '' }}" style="padding: 0; display: flex; align-items: center; background: #fbfcfd; border: 1px solid #cbd5e0; border-radius: 12px; height: 45px; position: relative; overflow: hidden;">
                         <div style="padding: 0 10px; display: flex; align-items: center; color: var(--maquinaria-gray-text);">
                             <i class="material-icons" style="font-size: 18px;">search</i>
                         </div>
                         <input type="text" placeholder="{{ request('modelo') ?: 'Buscar Modelo...' }}" 
-                            id="searchModeloInput"
+                            name="filter_search_dropdown"
+                            data-filter-search
                             style="width: 100%; border: none; background: transparent; padding: 10px 5px; font-size: 14px; outline: none;"
                             onkeyup="filterDropdownOptions(this);"
+                            onfocus="this.closest('.custom-dropdown').classList.add('active')"
                             autocomplete="off">
-                        <i id="btn_clear_modelo" class="material-icons" style="padding: 0 5px; cursor: pointer; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('modelo') ? 'block' : 'none' }};" onclick="event.stopPropagation(); clearCatalogoFilter('modelo');">close</i>
-                        <i class="material-icons" style="padding: 0 10px; cursor: pointer; color: var(--maquinaria-gray-text);">expand_more</i>
+                        <i class="material-icons" data-clear-btn style="padding: 0 5px; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('modelo') ? 'block' : 'none' }};" onclick="event.stopPropagation(); clearDropdownFilter('modeloFilterSelect'); loadCatalogo();">close</i>
                     </div>
                     <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible;">
-                        <div class="dropdown-item-list" id="modeloItemsList" style="max-height: 250px; overflow-y: auto;">
-                            <div class="dropdown-item {{ !request('modelo') ? 'selected' : '' }}" onclick="selectAdvancedOption('modelo', '')">
-                                Todos los Modelos
+                        <div class="dropdown-item-list" style="max-height: 250px; overflow-y: auto;">
+                            <div class="dropdown-item {{ !request('modelo') || request('modelo') == 'all' ? 'selected' : '' }}" data-value="all" onclick="selectOption('modeloFilterSelect', 'all', 'TODOS LOS MODELOS'); loadCatalogo();">
+                                TODOS LOS MODELOS
                             </div>
                             @foreach($availableModelos as $mod)
-                                <div class="dropdown-item {{ request('modelo') == $mod ? 'selected' : '' }}" onclick="selectAdvancedOption('modelo', '{{ $mod }}')">
+                                <div class="dropdown-item {{ request('modelo') == $mod ? 'selected' : '' }}" data-value="{{ $mod }}" onclick="selectOption('modeloFilterSelect', '{{ $mod }}', '{{ $mod }}'); loadCatalogo();">
                                     {{ $mod }}
                                 </div>
                             @endforeach
@@ -48,24 +49,28 @@
 
             <!-- Año Filter -->
             <div class="filter-item" style="flex: 0 0 190px;">
-                <div class="custom-dropdown" id="anioFilterSelect">
-                    <input type="hidden" name="anio" id="input_anio_filter" value="{{ request('anio') }}">
-                    <div class="dropdown-trigger" onclick="toggleDropdown('anioFilterSelect')" style="padding: 0; display: flex; align-items: center; background: {{ request('anio') ? '#e1effa' : '#fbfcfd' }}; border: 1px solid {{ request('anio') ? '#0067b1' : '#cbd5e0' }}; border-radius: 12px; height: 45px; cursor: pointer; position: relative; overflow: hidden;">
+                <div class="custom-dropdown" id="anioFilterSelect" data-filter-type="anio" data-default-label="Buscar Año...">
+                    <input type="hidden" name="anio" data-filter-value value="{{ request('anio') }}">
+                    <div class="dropdown-trigger {{ request('anio') ? 'filter-active' : '' }}" style="padding: 0; display: flex; align-items: center; background: #fbfcfd; border: 1px solid #cbd5e0; border-radius: 12px; height: 45px; position: relative; overflow: hidden;">
                         <div style="padding: 0 10px; display: flex; align-items: center; color: var(--maquinaria-gray-text);">
                             <i class="material-icons" style="font-size: 18px;">calendar_today</i>
                         </div>
                         <input type="text" placeholder="{{ request('anio') ?: 'Buscar Año...' }}" 
-                            id="searchAnioInput"
+                            name="filter_search_dropdown"
+                            data-filter-search
                             style="width: 100%; border: none; background: transparent; padding: 10px 5px; font-size: 14px; outline: none;"
                             onkeyup="filterDropdownOptions(this);"
+                            onfocus="this.closest('.custom-dropdown').classList.add('active')"
                             autocomplete="off">
-                        <i id="btn_clear_anio" class="material-icons" style="padding: 0 5px; cursor: pointer; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('anio') ? 'block' : 'none' }};" onclick="event.stopPropagation(); clearCatalogoFilter('anio');">close</i>
-                        <i class="material-icons" style="padding: 0 10px; cursor: pointer; color: var(--maquinaria-gray-text);">expand_more</i>
+                        <i class="material-icons" data-clear-btn style="padding: 0 5px; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('anio') ? 'block' : 'none' }};" onclick="event.stopPropagation(); clearDropdownFilter('anioFilterSelect'); loadCatalogo();">close</i>
                     </div>
                     <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible;">
-                        <div class="dropdown-item-list" id="anioItemsList" style="max-height: 250px; overflow-y: auto;">
+                        <div class="dropdown-item-list" style="max-height: 250px; overflow-y: auto;">
+                            <div class="dropdown-item {{ !request('anio') || request('anio') == 'all' ? 'selected' : '' }}" data-value="all" onclick="selectOption('anioFilterSelect', 'all', 'TODOS LOS AÑOS'); loadCatalogo();">
+                                TODOS LOS AÑOS
+                            </div>
                             @foreach($availableAnios as $a)
-                                <div class="dropdown-item {{ request('anio') == $a ? 'selected' : '' }}" onclick="selectAdvancedOption('anio', '{{ $a }}')">
+                                <div class="dropdown-item {{ request('anio') == $a ? 'selected' : '' }}" data-value="{{ $a }}" onclick="selectOption('anioFilterSelect', '{{ $a }}', '{{ $a }}'); loadCatalogo();">
                                     {{ $a }}
                                 </div>
                             @endforeach
@@ -86,13 +91,13 @@
     </div>
 
     <div class="custom-scrollbar-container" style="width: 100%; overflow-x: auto; margin-top: 5px;">
-        <table class="admin-table" style="width: 1040px; min-width: 60%; margin: 0; max-width: 100%;">
+        <!-- Added catalog-specific-table class for CSS isolation -->
+        <table class="admin-table catalog-specific-table" style="width: 1040px; min-width: 60%; margin: 0; max-width: 100%;">
             <thead>
                 <tr class="table-row-header">
                     <th class="table-header-custom table-cell-bordered" style="width: 160px;"></th> 
                     <th class="table-header-custom table-cell-bordered" style="width: 160px; text-align: center;">Modelo / Año</th>
-                    <th class="table-header-custom table-cell-bordered" style="width: 175px; text-align: center;">Motor y Energía</th>
-                    <th class="table-header-custom table-cell-bordered" style="width: 230px; text-align: center;">Capacidad / Consumo</th>
+                    <th class="table-header-custom table-cell-bordered" style="width: 250px; text-align: center;">Motor / Energía / Consumo</th>
                     <th class="table-header-custom table-cell-bordered" style="width: 290px; text-align: center;">Lubricantes y Fluidos</th>
                     <th class="table-header-custom" style="width: 25px; text-align: center !important; padding-left: 0; padding-right: 0;">Acciones</th>
                 </tr>
@@ -126,8 +131,8 @@
                 ¿Estás seguro de que deseas eliminar el modelo "<strong id="deleteModalUserName" style="color: #2d3748;"></strong>"? Esta acción no se puede deshacer.
             </p>
             <div class="modal-footer" style="display: flex; gap: 10px; justify-content: center;">
-                <button type="button" onclick="closeDeleteModal()" class="modal-btn modal-btn-cancel" style="padding: 10px 20px; border-radius: 6px; border: 1px solid #cbd5e0; background: white; color: #4a5568; font-weight: 600; cursor: pointer;">Cancelar</button>
-                <button id="confirmDeleteBtn" type="button" class="modal-btn modal-btn-confirm" style="padding: 10px 20px; border-radius: 6px; border: none; background: #e53e3e; color: white; font-weight: 600; cursor: pointer;">Eliminar</button>
+                <button type="button" onclick="closeDeleteModal()" class="modal-btn modal-btn-cancel" style="padding: 10px 20px; border-radius: 6px; border: 1px solid #cbd5e0; background: white; color: #4a5568; font-weight: 600;">Cancelar</button>
+                <button id="confirmDeleteBtn" type="button" class="modal-btn modal-btn-confirm" style="padding: 10px 20px; border-radius: 6px; border: none; background: #e53e3e; color: white; font-weight: 600;">Eliminar</button>
             </div>
         </div>
     </div>
