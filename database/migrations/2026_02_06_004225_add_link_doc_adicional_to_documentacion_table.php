@@ -10,14 +10,13 @@ return new class extends Migration
     {
         Schema::table('documentacion', function (Blueprint $table) {
             $table->text('LINK_DOC_ADICIONAL')->nullable()->after('LINK_RACDA');
-            $table->date('FECHA_DOC_ADICIONAL')->nullable()->after('LINK_DOC_ADICIONAL');
         });
     }
 
     public function down(): void
     {
         Schema::table('documentacion', function (Blueprint $table) {
-            $table->dropColumn(['LINK_DOC_ADICIONAL', 'FECHA_DOC_ADICIONAL']);
+            $table->dropColumn(['LINK_DOC_ADICIONAL']);
         });
     }
 };

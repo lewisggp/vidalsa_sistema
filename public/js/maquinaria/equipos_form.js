@@ -12,14 +12,19 @@ function initEquiposForm() {
         if (!input) return;
         input.classList.add('is-invalid');
 
-        // Custom Dropdown Support
-        const dropdown = input.closest('.custom-dropdown');
+        // Custom Dropdown & Autocomplete Support
+        const dropdown = input.closest('.custom-dropdown') || input.closest('.custom-form-autocomplete');
         if (dropdown) {
-            const trigger = dropdown.querySelector('.dropdown-trigger');
+            const trigger = dropdown.querySelector('.dropdown-trigger'); // Only applies to strict dropdowns
             if (trigger) trigger.style.borderColor = '#e53e3e';
         }
 
-        const parent = input.parentNode;
+        let parent = input.parentNode;
+        // If inside a custom wrapper, target the wrapper's parent (where Blade errors live)
+        if (dropdown) {
+            parent = dropdown.parentNode;
+        }
+
         if (!parent) return;
 
         // Remove existing
@@ -37,15 +42,20 @@ function initEquiposForm() {
         if (!input) return;
         input.classList.remove('is-invalid');
 
-        // Custom Dropdown Support
-        const dropdown = input.closest('.custom-dropdown');
+        // Custom Dropdown & Autocomplete Support
+        const dropdown = input.closest('.custom-dropdown') || input.closest('.custom-form-autocomplete');
         if (dropdown) {
-            dropdown.classList.remove('is-invalid'); // Fix: Remove class from container too
+            dropdown.classList.remove('is-invalid');
             const trigger = dropdown.querySelector('.dropdown-trigger');
             if (trigger) trigger.style.borderColor = '';
         }
 
-        const parent = input.parentNode;
+        let parent = input.parentNode;
+        // If inside a custom wrapper, target the wrapper's parent
+        if (dropdown) {
+            parent = dropdown.parentNode;
+        }
+
         if (parent) {
             const existing = parent.querySelectorAll('.error-message-inline');
             existing.forEach(el => el.remove());
@@ -87,16 +97,22 @@ function initEquiposForm() {
         // Loader
         let feedbackLoader = input.parentNode.querySelector('.validation-loader');
         if (!feedbackLoader) {
-            feedbackLoader = document.createElement('span');
             feedbackLoader.className = 'validation-loader';
             feedbackLoader.style.fontSize = '12px';
             feedbackLoader.style.color = '#0067b1';
-            feedbackLoader.style.marginLeft = '8px';
             feedbackLoader.style.fontWeight = '600';
+
+            // Layout Shift Fix: Absolute positioning
+            input.parentNode.style.position = 'relative';
+            feedbackLoader.style.position = 'absolute';
+            feedbackLoader.style.right = '10px';
+            feedbackLoader.style.bottom = '8px'; // Adjust based on input height
+            feedbackLoader.style.zIndex = '10';
+
             feedbackLoader.innerText = 'Verificando...';
             input.parentNode.appendChild(feedbackLoader);
         }
-        feedbackLoader.style.display = 'inline';
+        feedbackLoader.style.display = 'block';
 
         // Assuming endpoint exists
         fetch(`/admin/equipos/check-unique?field=${fieldName}&value=${encodeURIComponent(input.value.trim())}`)
@@ -213,7 +229,7 @@ function initEquiposForm() {
         let originalBtnContent = '';
 
         if (submitBtn) {
-            console.log('✅ Button found, disabling...');
+
             originalBtnContent = submitBtn.innerHTML;
             submitBtn.style.width = submitBtn.offsetWidth + 'px';
             submitBtn.disabled = true;
@@ -285,7 +301,7 @@ function initEquiposForm() {
                 } else if (status === 422) {
                     // DIAGNOSTIC LOGGING: Show exact server errors
                     console.error('❌ Validation Failed (422):', body.errors);
-                    console.table(body.errors); // Pretty table format
+
 
                     if (submitBtn) {
                         submitBtn.disabled = false;
@@ -315,13 +331,12 @@ function initEquiposForm() {
                         if (input) {
                             showFieldError(input, msgs[0]);
                             errorsDisplayed++;
-                            console.log(`✓ Error mapped: ${field} → #${input.id || input.name}`);
-                        } else {
-                            console.warn(`⚠️ Could not find input for field: ${field}`, msgs);
                         }
+
+
                     });
 
-                    console.log(`📊 Total errors: ${Object.keys(body.errors).length}, Displayed: ${errorsDisplayed}`);
+
                     showGlobalSummary();
                 } else {
                     throw new Error(body.message || 'Error desconocido.');
