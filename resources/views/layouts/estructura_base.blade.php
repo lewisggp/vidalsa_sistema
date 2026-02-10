@@ -833,7 +833,12 @@
                     }
                 } else {
                     revertUploadHTML(container, type, equipoId, containerId, label);
-                    showModal({ type: 'error', title: 'Error', message: 'Error al cargar el documento.', confirmText: 'Cerrar', hideCancel: true });
+                    let errMsg = 'Error al cargar el documento.';
+                    try {
+                        const errorData = JSON.parse(xhr.responseText);
+                        if (errorData.message) errMsg = errorData.message;
+                    } catch(e) {}
+                    showModal({ type: 'error', title: 'Error', message: errMsg, confirmText: 'Cerrar', hideCancel: true });
                 }
             };
 
