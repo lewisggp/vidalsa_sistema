@@ -700,14 +700,36 @@
                     el.style.fontWeight = '600';
                 }
             };
+            
+            // Helper function to format dates from YYYY-MM-DD to DD/MM/YYYY
+            const formatDateDisplay = (dateStr) => {
+                if (!dateStr || dateStr === 'N/A' || dateStr === 'undefined' || dateStr === '') {
+                    return null;
+                }
+                // Check if it's already in YYYY-MM-DD format
+                const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                if (match) {
+                    return `${match[3]}/${match[2]}/${match[1]}`;
+                }
+                return dateStr; // Return as-is if not in expected format
+            };
+            
             const fields = {
                 'd_anio': 'anio', 'd_categoria': 'categoria', 'd_motor_serial': 'motorSerial',
                 'd_combustible': 'combustible', 'd_consumo': 'consumo',
                 'd_titular': 'titular', 'd_nro_doc': 'nroDoc',
-                'd_placa': 'placa', 'd_seguro': 'seguro', 'd_venc_seguro': 'vencSeguro', 'd_fecha_rotc': 'fechaRotc',
-                'd_fecha_racda': 'fechaRacda'
+                'd_placa': 'placa', 'd_seguro': 'seguro'
             };
             Object.entries(fields).forEach(([id, key]) => setVal(id, d[key]));
+            
+            // Format date fields separately
+            const vencSeguro = formatDateDisplay(d.vencSeguro);
+            const fechaRotc = formatDateDisplay(d.fechaRotc);
+            const fechaRacda = formatDateDisplay(d.fechaRacda);
+            
+            setVal('d_venc_seguro', vencSeguro);
+            setVal('d_fecha_rotc', fechaRotc);
+            setVal('d_fecha_racda', fechaRacda);
 
 
             // PDF Buttons Generation (Updated with AJAX Upload & Internal Preview)

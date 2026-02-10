@@ -25,7 +25,7 @@
         </p>
         <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
             <span class="activity-time" style="color: {{ $textColor }}; font-weight: 600;">
-                {{ $alert->label }}: {{ ucfirst(\Carbon\Carbon::parse($alert->fecha)->locale('es')->diffForHumans()) }}
+                {{ $alert->label }}: {{ ucfirst(\Carbon\Carbon::parse($alert->fecha)->locale('es')->diffForHumans(null, true)) }}
             </span>
         </div>
     </div>

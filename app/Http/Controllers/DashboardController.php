@@ -117,7 +117,7 @@ class DashboardController extends Controller
      */
     public function generateAlertsList()
     {
-        $now = \Carbon\Carbon::now()->startOfDay();
+        $now = \Carbon\Carbon::now();
         $in30Days = $now->copy()->addDays(30);
         
         $equipos = Equipo::whereHas('documentacion', function($q) use ($in30Days) {
@@ -135,7 +135,7 @@ class DashboardController extends Controller
             
             // Poliza
             if ($doc->FECHA_VENC_POLIZA) {
-                $fechaPoliza = \Carbon\Carbon::parse($doc->FECHA_VENC_POLIZA)->startOfDay();
+                $fechaPoliza = \Carbon\Carbon::parse($doc->FECHA_VENC_POLIZA);
                 if ($fechaPoliza->lt($now)) {
                     $alerts->push((object)[
                         'equipo' => $equipo,
@@ -159,7 +159,7 @@ class DashboardController extends Controller
 
             // ROTC
             if ($doc->FECHA_ROTC) {
-                $fechaRotc = \Carbon\Carbon::parse($doc->FECHA_ROTC)->startOfDay();
+                $fechaRotc = \Carbon\Carbon::parse($doc->FECHA_ROTC);
                 if ($fechaRotc->lt($now)) {
                     $alerts->push((object)[
                         'equipo' => $equipo,
@@ -183,7 +183,7 @@ class DashboardController extends Controller
 
             // RACDA
             if ($doc->FECHA_RACDA) {
-                $fechaRacda = \Carbon\Carbon::parse($doc->FECHA_RACDA)->startOfDay();
+                $fechaRacda = \Carbon\Carbon::parse($doc->FECHA_RACDA);
                 if ($fechaRacda->lt($now)) {
                     $alerts->push((object)[
                         'equipo' => $equipo,
