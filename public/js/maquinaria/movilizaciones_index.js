@@ -83,69 +83,29 @@ window.loadMovilizaciones = function (url = null) {
     const frenteInput = document.querySelector('input[name="id_frente"]');
     const tipoInput = document.querySelector('input[name="id_tipo"]');
 
+    // URL Construction
     const params = new URLSearchParams();
     if (searchInput?.value) params.append('search', searchInput.value);
 
-    // Handle 'all' logic for frente - SEND IT so server knows to load data (even if it's all)
-    if (frenteInput?.value) {
+    // Filter values
+    if (frenteInput?.value && frenteInput.value !== 'all') {
         params.append('id_frente', frenteInput.value);
     }
-
-    if (tipoInput?.value) params.append('id_tipo', tipoInput.value);
+    if (tipoInput?.value && tipoInput.value !== 'all') {
+        params.append('id_tipo', tipoInput.value);
+    }
 
     // Maintain pagination if just switching pages via URL click
     if (url && url.includes('page=')) {
         try {
             const urlObj = new URL(url, window.location.origin);
             const page = urlObj.searchParams.get('page');
-            if (page) params.append('page', page);
+            if (page) params.set('page', page);
             baseUrl = urlObj.pathname;
         } catch (e) { console.error(e); }
     }
 
-    // OPTIMIZATION: Check if there are any meaningful filters
-    // Strategy: Only skip server request if EVERYTHING is null/empty (truly no input from user)
-    const filters = {
-        search: searchInput?.value,
-        id_frente: frenteInput?.value,
-        id_tipo: tipoInput?.value
-    };
-
-    const hasAnyInput = Object.values(filters).some(value => {
-        if (value === null || value === '' || value === undefined) return false;
-        if (typeof value === 'string' && value.trim() === '') return false;
-        return true; // Any non-empty value means user provided input
-    });
-
-    // If truly no input at all, clear UI without server request
-    if (!hasAnyInput) {
-        console.log('No active filters detected - clearing UI without server request');
-
-        // Clear table with friendly message
-        tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8; font-style: italic;">SELECCIONE UN FILTRO PARA VISUALIZAR LAS MOVILIZACIONES</td></tr>';
-        tableBody.style.opacity = '1';
-
-        // Clear pagination
-        const paginationContainer = document.getElementById('movilizacionesPagination');
-        if (paginationContainer) paginationContainer.innerHTML = '';
-
-        // Clear stats
-        const statsContainer = document.getElementById('statusStatsContainer');
-        if (statsContainer) {
-            statsContainer.innerHTML = '<h4 style="margin: 0 0 15px 0; font-size: 13px; text-transform: uppercase; color: #64748b; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-weight: 700; display: flex; align-items: center; gap: 8px;"><i class="material-icons" style="font-size: 18px; color: #8b5cf6;">local_shipping</i>En Tránsito por Frente</h4><ul style="list-style: none; padding: 0; margin: 0;"><li style="padding: 15px; text-align: center; color: #94a3b8; font-style: italic; font-size: 13px;">No hay equipos en tránsito</li></ul>';
-        }
-
-        // Clear total count
-        const totalTransitoEl = document.getElementById('totalTransitoCount');
-        if (totalTransitoEl) totalTransitoEl.innerText = '0';
-
-        // Update URL to reflect empty state
-        window.history.pushState(null, '', window.location.pathname);
-
-        return Promise.resolve();
-    }
-
-    const finalUrl = baseUrl + '?' + params.toString();
+    const finalUrl = baseUrl + (baseUrl.includes('?') ? '&' : '?') + params.toString();
     tableBody.style.opacity = '0.5';
     if (window.showPreloader) window.showPreloader();
 
@@ -199,7 +159,7 @@ function initMovilizacionesListeners() {
 
             clearTimeout(window.searchTimeout);
             if (val.length >= 4 || val.length === 0) {
-                window.searchTimeout = setTimeout(() => window.loadMovilizaciones(), 600);
+                window.searchTimeout = setTimeout(() => window.loadMovilizaciones(), 1000);
             }
         });
     }

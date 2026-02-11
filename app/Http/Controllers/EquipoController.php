@@ -41,6 +41,14 @@ class EquipoController extends Controller
             $equipos->where('ANIO', $request->anio);
         }
 
+        if ($request->filled('categoria') && trim($request->categoria) !== '') {
+            $equipos->where('CATEGORIA_FLOTA', $request->categoria);
+        }
+
+        if ($request->filled('estado') && trim($request->estado) !== '') {
+            $equipos->where('ESTADO_OPERATIVO', $request->estado);
+        }
+
         if ($search) {
             // Smart Search: If hyphen detected, search only in CODIGO_PATIO (faster)
             if (strpos($search, '-') !== false) {
@@ -83,7 +91,6 @@ class EquipoController extends Controller
             });
         }
 
-
         $equipos->select('equipos.*')
                 ->leftJoin('tipo_equipos', 'equipos.id_tipo_equipo', '=', 'tipo_equipos.id')
                 ->with([
@@ -95,10 +102,8 @@ class EquipoController extends Controller
                 ->orderBy('tipo_equipos.nombre', 'asc')
                 ->orderBy('equipos.CODIGO_PATIO', 'asc');
 
-
-
         // Check if any filter is applied (with non-empty values)
-        $hasFilter = $request->filled('id_frente') || $request->filled('id_tipo') || $request->filled('search_query') || $request->filled('modelo') || $request->filled('marca') || $request->filled('anio') || $request->filled('filter_propiedad') || $request->filled('filter_poliza') || $request->filled('filter_rotc') || $request->filled('filter_racda');
+        $hasFilter = $request->filled('id_frente') || $request->filled('id_tipo') || $request->filled('search_query') || $request->filled('modelo') || $request->filled('marca') || $request->filled('anio') || $request->filled('categoria') || $request->filled('estado') || $request->filled('filter_propiedad') || $request->filled('filter_poliza') || $request->filled('filter_rotc') || $request->filled('filter_racda');
 
         if ($hasFilter) {
             $equipos = $equipos->get();
@@ -198,6 +203,8 @@ class EquipoController extends Controller
             || $request->filled('modelo')
             || $request->filled('marca')
             || $request->filled('anio')
+            || $request->filled('categoria')
+            || $request->filled('estado')
             || $request->filled('filter_propiedad') && $request->filter_propiedad === 'true'
             || $request->filled('filter_poliza') && $request->filter_poliza === 'true'
             || $request->filled('filter_rotc') && $request->filter_rotc === 'true'
@@ -226,6 +233,12 @@ class EquipoController extends Controller
         }
         if ($request->filled('anio')) {
             $equipos->where('ANIO', $request->anio);
+        }
+        if ($request->filled('categoria')) {
+            $equipos->where('CATEGORIA_FLOTA', $request->categoria);
+        }
+        if ($request->filled('estado')) {
+            $equipos->where('ESTADO_OPERATIVO', $request->estado);
         }
 
         // --- Documentation Filters ---

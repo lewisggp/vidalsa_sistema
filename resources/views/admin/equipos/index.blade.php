@@ -145,7 +145,6 @@
 
                             <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible; z-index: 1000;">
                                 <div class="dropdown-item-list" style="max-height: 150px; overflow-y: auto;">
-                                    <div class="dropdown-item {{ !request('modelo') ? 'selected' : '' }}" data-value="" onclick="selectOption('modeloAdvFilter', '', 'Todos'); loadEquipos();">Todos</div>
                                     @if(isset($availableModelos))
                                         @foreach($availableModelos as $mod)
                                             @if(trim($mod) !== '')
@@ -180,7 +179,6 @@
 
                             <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible; z-index: 1000;">
                                 <div class="dropdown-item-list" style="max-height: 150px; overflow-y: auto;">
-                                    <div class="dropdown-item {{ !request('marca') ? 'selected' : '' }}" data-value="" onclick="selectOption('marcaAdvFilter', '', 'Todos'); loadEquipos();">Todos</div>
                                     @if(isset($availableMarcas))
                                         @foreach($availableMarcas as $marca)
                                             @if(trim($marca) !== '')
@@ -216,7 +214,6 @@
 
                             <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible; z-index: 1000;">
                                 <div class="dropdown-item-list" style="max-height: 120px; overflow-y: auto;">
-                                    <div class="dropdown-item {{ !request('anio') ? 'selected' : '' }}" data-value="" onclick="selectOption('anioAdvFilter', '', 'Todos'); loadEquipos();">Todos</div>
                                     @if(isset($availableAnios))
                                         @foreach($availableAnios as $anio)
                                             @if(trim($anio) !== '')
@@ -224,6 +221,68 @@
                                             @endif
                                         @endforeach
                                     @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Categoría Flota Filter -->
+                    <div style="margin-top: 15px;">
+                        <span style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px;">Categoría Flota</span>
+                        <div class="custom-dropdown" id="categoriaAdvFilter" data-filter-type="categoria" data-default-label="Seleccionar Categoría..." style="font-size: 12px;">
+                            <input type="hidden" name="categoria" data-filter-value value="{{ request('categoria') }}">
+                            
+                            <div class="dropdown-trigger" style="padding: 0; display: flex; align-items: center; background: {{ request('categoria') ? '#e1effa' : 'white' }}; border: 1px solid #e2e8f0; border-radius: 6px; height: 32px;">
+                                <div style="padding: 0 8px; display: flex; align-items: center; color: #94a3b8;">
+                                    <i class="material-icons" style="font-size: 16px;">local_shipping</i>
+                                </div>
+                                <input type="text" readonly
+                                    id="filter_display_categoria"
+                                    name="filter_display_categoria"
+                                    placeholder="{{ request('categoria') ?: 'Seleccionar Categoría...' }}" 
+                                    aria-label="Filtrar Categoría"
+                                    style="width: 100%; border: none; background: transparent; padding: 6px 5px; font-size: 12px; outline: none;"
+                                    onclick="this.closest('.custom-dropdown').classList.toggle('active')">
+                                <i class="material-icons" data-clear-btn style="padding: 0 5px; color: #94a3b8; font-size: 16px; display: {{ request('categoria') ? 'block' : 'none' }};" 
+                                   onclick="event.stopPropagation(); clearDropdownFilter('categoriaAdvFilter'); loadEquipos();">close</i>
+                            </div>
+
+                            <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible; z-index: 1000;">
+                                <div class="dropdown-item-list">
+                                    <div class="dropdown-item {{ request('categoria') == 'FLOTA LIVIANA' ? 'selected' : '' }}" data-value="FLOTA LIVIANA" onclick="selectOption('categoriaAdvFilter', 'FLOTA LIVIANA', 'FLOTA LIVIANA'); loadEquipos();">FLOTA LIVIANA</div>
+                                    <div class="dropdown-item {{ request('categoria') == 'FLOTA PESADA' ? 'selected' : '' }}" data-value="FLOTA PESADA" onclick="selectOption('categoriaAdvFilter', 'FLOTA PESADA', 'FLOTA PESADA'); loadEquipos();">FLOTA PESADA</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Estado Operativo Filter -->
+                    <div style="margin-top: 15px;">
+                        <span style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px;">Estado Operativo</span>
+                        <div class="custom-dropdown" id="estadoAdvFilter" data-filter-type="estado" data-default-label="Seleccionar Estado..." style="font-size: 12px;">
+                            <input type="hidden" name="estado" data-filter-value value="{{ request('estado') }}">
+                            
+                            <div class="dropdown-trigger" style="padding: 0; display: flex; align-items: center; background: {{ request('estado') ? '#e1effa' : 'white' }}; border: 1px solid #e2e8f0; border-radius: 6px; height: 32px;">
+                                <div style="padding: 0 8px; display: flex; align-items: center; color: #94a3b8;">
+                                    <i class="material-icons" style="font-size: 16px;">info</i>
+                                </div>
+                                <input type="text" readonly
+                                    id="filter_display_estado"
+                                    name="filter_display_estado"
+                                    placeholder="{{ request('estado') ?: 'Seleccionar Estado...' }}" 
+                                    aria-label="Filtrar Estado Operativo"
+                                    style="width: 100%; border: none; background: transparent; padding: 6px 5px; font-size: 12px; outline: none;"
+                                    onclick="this.closest('.custom-dropdown').classList.toggle('active')">
+                                <i class="material-icons" data-clear-btn style="padding: 0 5px; color: #94a3b8; font-size: 16px; display: {{ request('estado') ? 'block' : 'none' }};" 
+                                   onclick="event.stopPropagation(); clearDropdownFilter('estadoAdvFilter'); loadEquipos();">close</i>
+                            </div>
+
+                            <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible; z-index: 1000;">
+                                <div class="dropdown-item-list">
+                                    <div class="dropdown-item {{ request('estado') == 'OPERATIVO' ? 'selected' : '' }}" data-value="OPERATIVO" onclick="selectOption('estadoAdvFilter', 'OPERATIVO', 'OPERATIVO'); loadEquipos();">OPERATIVO</div>
+                                    <div class="dropdown-item {{ request('estado') == 'INOPERATIVO' ? 'selected' : '' }}" data-value="INOPERATIVO" onclick="selectOption('estadoAdvFilter', 'INOPERATIVO', 'INOPERATIVO'); loadEquipos();">INOPERATIVO</div>
+                                    <div class="dropdown-item {{ request('estado') == 'EN MANTENIMIENTO' ? 'selected' : '' }}" data-value="EN MANTENIMIENTO" onclick="selectOption('estadoAdvFilter', 'EN MANTENIMIENTO', 'EN MANTENIMIENTO'); loadEquipos();">EN MANTENIMIENTO</div>
+                                    <div class="dropdown-item {{ request('estado') == 'DESINCORPORADO' ? 'selected' : '' }}" data-value="DESINCORPORADO" onclick="selectOption('estadoAdvFilter', 'DESINCORPORADO', 'DESINCORPORADO'); loadEquipos();">DESINCORPORADO</div>
                                 </div>
                             </div>
                         </div>

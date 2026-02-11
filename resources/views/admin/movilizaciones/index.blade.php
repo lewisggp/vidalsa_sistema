@@ -31,9 +31,9 @@
                         </div>
                         <input type="text" name="filter_search_dropdown" data-filter-search
                             placeholder="{{ $currentFrente ? $currentFrente->NOMBRE_FRENTE : 'Filtrar Frente...' }}" 
+                             aria-label="Filtrar Frente"
                             style="width: 100%; border: none; background: transparent; padding: 10px 5px; font-size: 14px; outline: none;"
-                            onkeyup="filterDropdownOptions(this)"
-                            onfocus="this.closest('.custom-dropdown').classList.add('active')"
+                            oninput="window.filterDropdownOptions(this)"
                             autocomplete="off">
                         <i class="material-icons" data-clear-btn style="padding: 0 5px; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_frente') && request('id_frente') != 'all' ? 'block' : 'none' }};" onclick="event.stopPropagation(); clearDropdownFilter('frenteFilterSelect'); loadMovilizaciones();">close</i>
                     </div>
@@ -68,9 +68,9 @@
                         </div>
                         <input type="text" name="filter_search_dropdown" data-filter-search
                             placeholder="{{ $currentTipo ? $currentTipo->nombre : 'Filtrar Tipo...' }}" 
+                             aria-label="Filtrar Tipo"
                             style="width: 100%; border: none; background: transparent; padding: 10px 5px; font-size: 14px; outline: none;"
-                            onkeyup="filterDropdownOptions(this)"
-                            onfocus="this.closest('.custom-dropdown').classList.add('active')"
+                            oninput="window.filterDropdownOptions(this)"
                             autocomplete="off">
                         <i class="material-icons" data-clear-btn style="padding: 0 5px; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_tipo') ? 'block' : 'none' }};" onclick="event.stopPropagation(); clearDropdownFilter('tipoFilterSelect'); loadMovilizaciones();">close</i>
                     </div>

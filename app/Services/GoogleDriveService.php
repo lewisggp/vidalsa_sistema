@@ -35,8 +35,8 @@ class GoogleDriveService
         $this->client->setClientSecret(config('filesystems.disks.google.clientSecret'));
 
         // GLOBAL FIX: Apply SSL bypass and timeout to ALL Google Client requests, not just token generation
-        // Timeout increased to 60s for very slow internet connections
-        $httpClient = new \GuzzleHttp\Client(['timeout' => 60, 'connect_timeout' => 15, 'verify' => false]);
+        // Timeout increased to 120s for very slow internet connections
+        $httpClient = new \GuzzleHttp\Client(['timeout' => 120, 'connect_timeout' => 15, 'verify' => false]);
         $this->client->setHttpClient($httpClient);
 
         // Cache the access token for 55 minutes

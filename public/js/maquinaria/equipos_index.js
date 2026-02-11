@@ -58,8 +58,8 @@ window.clearSelection = function (event) {
     updateSelectionUI();
 };
 
-// Row Double Click Logic (Delegated)
-function handleRowDblClick(e) {
+// Row Click Logic (Delegated)
+function handleRowClick(e) {
     // Look for target row in the equipos table
     const row = e.target.closest('#equiposTableBody tr');
     if (!row) return;
@@ -86,7 +86,7 @@ function handleRowDblClick(e) {
 
 // Global Event Listeners (Always attach via delegation - safe to re-run)
 // NOTE: Event delegation to document allows these to work even after DOM changes
-document.addEventListener('dblclick', handleRowDblClick);
+document.addEventListener('click', handleRowClick);
 
 document.addEventListener('click', function (e) {
     // Close status dropdowns when clicking outside
@@ -96,6 +96,8 @@ document.addEventListener('click', function (e) {
         });
     }
 
+    // 1. Identify specific clear actions
+    // (Search, Filter etc are handled by global selectors or inline)
 
     // 2. Clear Advanced Filters Button
     const clearBtn = e.target.closest('[data-action="clear-advanced-filters"]');
@@ -154,6 +156,8 @@ window.loadEquipos = function (url = null, silent = false) {
         modelo: (modeloInput?.value !== '') ? modeloInput?.value : null,
         marca: (marcaInput?.value !== '') ? marcaInput?.value : null,
         anio: (anioInput?.value !== '') ? anioInput?.value : null,
+        categoria: (advancedPanel ? advancedPanel.querySelector('input[name="categoria"]')?.value : null),
+        estado: (advancedPanel ? advancedPanel.querySelector('input[name="estado"]')?.value : null),
         filter_propiedad: document.getElementById('chk_propiedad')?.checked ? 'true' : null,
         filter_poliza: document.getElementById('chk_poliza')?.checked ? 'true' : null,
         filter_rotc: document.getElementById('chk_rotc')?.checked ? 'true' : null,
@@ -170,8 +174,6 @@ window.loadEquipos = function (url = null, silent = false) {
             params.append(key, value);
         }
     });
-
-
 
     // OPTIMIZATION: Check if there are any meaningful filters
     // Strategy: Only skip server request if EVERYTHING is null/empty (truly no input from user)
@@ -609,6 +611,8 @@ window.exportEquipos = function () {
     const modeloInput = advancedPanel ? advancedPanel.querySelector('input[name="modelo"]') : document.querySelector('input[name="modelo"]');
     const anioInput = advancedPanel ? advancedPanel.querySelector('input[name="anio"]') : document.querySelector('input[name="anio"]');
     const marcaInput = advancedPanel ? advancedPanel.querySelector('input[name="marca"]') : document.querySelector('input[name="marca"]');
+    const categoriaInput = advancedPanel ? advancedPanel.querySelector('input[name="categoria"]') : null;
+    const estadoInput = advancedPanel ? advancedPanel.querySelector('input[name="estado"]') : null;
 
     const params = new URLSearchParams();
 
@@ -630,6 +634,8 @@ window.exportEquipos = function () {
     hasAnyFilter |= appendIfValid('modelo', modeloInput?.value);
     hasAnyFilter |= appendIfValid('marca', marcaInput?.value);
     hasAnyFilter |= appendIfValid('anio', anioInput?.value);
+    hasAnyFilter |= appendIfValid('categoria', categoriaInput?.value);
+    hasAnyFilter |= appendIfValid('estado', estadoInput?.value);
 
     // Documentation Boolean Filters
     if (document.getElementById('chk_propiedad')?.checked) {
@@ -680,7 +686,7 @@ function initEquipos() {
 
             clearTimeout(window.searchTimeout);
             if (val.length >= 4 || val.length === 0) {
-                window.searchTimeout = setTimeout(() => window.loadEquipos(), 600);
+                window.searchTimeout = setTimeout(() => window.loadEquipos(), 1000);
             }
         });
     }

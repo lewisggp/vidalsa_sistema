@@ -3,7 +3,7 @@
     <div id="sessionTimeoutModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center; backdrop-filter: blur(4px);">
         <div style="background: white; padding: 30px; border-radius: 16px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
             <h3 style="margin: 0 0 10px; color: #1e293b; font-size: 20px; font-weight: 700;">Tu sesión está por expirar</h3>
-            <p style="margin: 0 0 25px; color: #64748b; font-size: 15px; line-height: 1.5;">Por seguridad, tu sesión se cerrará automáticamente en <strong id="sessionCountdown" style="color: #dc2626;">120</strong> segundos debido a inactividad.</p>
+            <p style="margin: 0 0 25px; color: #64748b; font-size: 15px; line-height: 1.5;">Por seguridad, tu sesión se cerrará automáticamente en <strong id="sessionCountdown" style="color: #dc2626;">60</strong> segundos debido a inactividad.</p>
             
             <div style="display: flex; flex-direction: column; gap: 10px;">
                 <button id="btnExtendSession" onclick="extendSession()" style="width: 100%; padding: 12px; background: var(--maquinaria-blue); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 15px; transition: background 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 103, 177, 0.3); cursor: default;">
@@ -21,7 +21,7 @@
         (function() {
             // Configuration
             const SESSION_LIFETIME_MINUTES = {{ config('session.lifetime') ?? 120 }};
-            const WARNING_DURATION_SECONDS = 120; // 2 minutes warning
+            const WARNING_DURATION_SECONDS = 60; // 1 minute warning
             const PING_INTERVAL_MS = 240000; // Ping server every 4 minutes of activity
             
             // State
