@@ -30,6 +30,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/menu', [App\Http\Controllers\DashboardController::class, 'index'])->name('menu');
         Route::post('/system/reset-cache', [App\Http\Controllers\DashboardController::class, 'resetCache'])->name('system.reset-cache');
         Route::get('/dashboard/alerts-html', [App\Http\Controllers\DashboardController::class, 'getAlertsHtml'])->name('dashboard.alertsHtml');
+        Route::post('/dashboard/iniciar-gestion', [App\Http\Controllers\DashboardController::class, 'iniciarGestion'])->name('dashboard.iniciarGestion');
+        Route::get('/dashboard/export-documents-pdf', [App\Http\Controllers\DashboardController::class, 'exportDocumentsPDF'])->name('dashboard.exportDocumentsPDF');
+
 
         Route::prefix('admin')->group(function () {
             Route::resource('usuarios', App\Http\Controllers\UserController::class)->except(['show']);
@@ -54,7 +57,14 @@ Route::middleware(['auth'])->group(function () {
             Route::get('equipos/check-unique', [App\Http\Controllers\EquipoController::class, 'checkUniqueness'])->name('equipos.checkUnique');
             Route::get('equipos/{id}/metadata', [App\Http\Controllers\EquipoController::class, 'metadata'])->name('equipos.metadata');
             Route::post('equipos/{id}/update-metadata', [App\Http\Controllers\EquipoController::class, 'updateMetadata'])->name('equipos.updateMetadata');
+            Route::get('equipos/fleet-stats', [App\Http\Controllers\EquipoController::class, 'fleetStats'])->name('equipos.fleetStats');
+            Route::get('equipos/fleet-export', [App\Http\Controllers\EquipoController::class, 'fleetExport'])->name('equipos.fleetExport');
+            Route::get('equipos/configuracion-flota', [App\Http\Controllers\EquipoController::class, 'configuracionFlota'])->name('equipos.configuracionFlota');
+            Route::post('equipos/configuracion-flota/vincular', [App\Http\Controllers\EquipoController::class, 'vincularEquipos'])->name('equipos.vincular');
+            Route::post('equipos/configuracion-flota/desvincular', [App\Http\Controllers\EquipoController::class, 'desvincularEquipos'])->name('equipos.desvincular');
             Route::post('equipos/bulk-mobilize', [App\Http\Controllers\MovilizacionController::class, 'bulkStore'])->name('equipos.bulkMobilize');
+            Route::post('equipos/check-anclaje-compatibility', [App\Http\Controllers\EquipoController::class, 'checkAnclajeCompatibility'])->name('equipos.checkAnclaje');
+            Route::post('equipos/process-anclaje', [App\Http\Controllers\EquipoController::class, 'processAnclaje'])->name('equipos.processAnclaje');
             Route::resource('equipos', App\Http\Controllers\EquipoController::class);
             Route::resource('movilizaciones', App\Http\Controllers\MovilizacionController::class);
             Route::patch('movilizaciones/{id}/status', [App\Http\Controllers\MovilizacionController::class, 'updateStatus'])->name('movilizaciones.updateStatus');

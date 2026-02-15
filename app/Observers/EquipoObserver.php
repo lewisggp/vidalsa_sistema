@@ -54,6 +54,6 @@ class EquipoObserver
         // When an equipment changes, invalidate expired documents caches
         // They will be regenerated on next dashboard load
         Cache::forget('dashboard_total_alerts');
-        Cache::forget('dashboard_expired_list_all');
+        Cache::forget('dashboard_expired_list_v3');
     }
 }

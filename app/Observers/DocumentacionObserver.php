@@ -63,6 +63,6 @@ class DocumentacionObserver
         $controller = app(\App\Http\Controllers\DashboardController::class);
         $expiredList = $controller->generateAlertsList();
         
-        Cache::put('dashboard_expired_list_v2', $expiredList, Carbon::now()->endOfDay());
+        Cache::put('dashboard_expired_list_v3', $expiredList, Carbon::now()->endOfDay());
     }
 }

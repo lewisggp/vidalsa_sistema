@@ -97,6 +97,7 @@ function initEquiposForm() {
         // Loader
         let feedbackLoader = input.parentNode.querySelector('.validation-loader');
         if (!feedbackLoader) {
+            feedbackLoader = document.createElement('span');
             feedbackLoader.className = 'validation-loader';
             feedbackLoader.style.fontSize = '12px';
             feedbackLoader.style.color = '#0067b1';
@@ -176,7 +177,7 @@ function initEquiposForm() {
     if (form.dataset.handlerAttached) return;
 
     // --- SUBMIT CORE LOGIC ---
-    const executeSubmission = () => {
+    const executeSubmission = (skipPreloader = false) => {
         // B. Clear Errors
         const summary = document.getElementById('errorSummary');
         if (summary) summary.style.display = 'none';
@@ -212,15 +213,15 @@ function initEquiposForm() {
             }
         });
 
-        const invalidInputs = form.querySelectorAll('.is-invalid'); // RESTORED
+        const invalidInputs = form.querySelectorAll('.is-invalid');
         if (hasEmpty || invalidInputs.length > 0) {
             if (window.hidePreloader) window.hidePreloader();
             showGlobalSummary();
             return;
         }
 
-        // D. Submit
-        if (typeof window.showPreloader === 'function') {
+        // D. Submit - Only show preloader if not already shown
+        if (!skipPreloader && typeof window.showPreloader === 'function') {
             window.showPreloader();
         }
 
@@ -229,11 +230,9 @@ function initEquiposForm() {
         let originalBtnContent = '';
 
         if (submitBtn) {
-
             originalBtnContent = submitBtn.innerHTML;
             submitBtn.style.width = submitBtn.offsetWidth + 'px';
             submitBtn.disabled = true;
-            // Removed inline spinner to show global preloader instead
         }
 
         const formData = new FormData(form);
@@ -243,7 +242,7 @@ function initEquiposForm() {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token\"]').getAttribute('content')
             },
             body: formData
         })
@@ -252,56 +251,80 @@ function initEquiposForm() {
                 if (window.hidePreloader) window.hidePreloader();
 
                 if (status === 200 || status === 201) {
-                    if (typeof window.showModal === 'function') {
-                        window.showModal({
-                            type: 'success',
-                            title: '¡Éxito!',
-                            message: body.message || 'Equipo registrado correctamente.',
-                            confirmText: 'Aceptar',
-                            hideCancel: true,
-                            onConfirm: () => {
-                                // DETECT MODE: If dragging/editing, redirect to index. If creating, reset form.
-                                const isEdit = form.querySelector('input[name="_method"][value="PUT"]');
+                    // DETECT MODE: If editing, redirect to index. If creating, reset form.
+                    const isEdit = form.querySelector('input[name="_method"][value="PUT"]');
 
-                                if (isEdit) {
+                    if (isEdit) {
+                        // Show success message and redirect
+                        if (typeof window.showModal === 'function') {
+                            window.showModal({
+                                type: 'success',
+                                title: '¡Éxito!',
+                                message: body.message || 'Equipo actualizado correctamente.',
+                                confirmText: 'Aceptar',
+                                hideCancel: true,
+                                onConfirm: () => {
                                     window.location.href = '/admin/equipos';
-                                    return;
                                 }
+                            });
+                        } else {
+                            window.location.href = '/admin/equipos';
+                        }
+                    } else {
+                        // CREATE MODE: Reset form immediately (before showing modal)
+                        // 1. Standard Form Reset
+                        form.reset();
 
-                                // 1. Standard Form Reset
-                                form.reset();
-
-                                // 2. Clear Visual Elements (Custom Dropdowns)
-                                form.querySelectorAll('.custom-dropdown').forEach(dropdown => {
-                                    const input = dropdown.querySelector('input[type="hidden"]');
-                                    const label = dropdown.querySelector('[data-filter-label]');
-                                    if (input) input.value = '';
-                                    if (label) label.innerText = 'SELECCIONE';
-                                    dropdown.classList.remove('active', 'is-invalid');
-                                });
-
-                                // 3. Ensure Text Inputs are Empty (Browser consistency)
-                                form.querySelectorAll('input[type="text"], textarea').forEach(input => input.value = '');
-
-                                // 4. Clear Validation Visuals
-                                form.querySelectorAll('.error-message-inline').forEach(el => el.remove());
-                                form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
-
-                                // Reset button
-                                if (submitBtn) {
-                                    submitBtn.disabled = false;
-                                    submitBtn.innerHTML = originalBtnContent;
-                                }
-
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }
+                        // 2. Clear Visual Elements (Custom Dropdowns)
+                        form.querySelectorAll('.custom-dropdown').forEach(dropdown => {
+                            const input = dropdown.querySelector('input[type="hidden"]');
+                            const label = dropdown.querySelector('[data-filter-label]');
+                            if (input) input.value = '';
+                            if (label) label.innerText = 'SELECCIONE';
+                            dropdown.classList.remove('active', 'is-invalid');
                         });
-                    }
-                    // No redirection/reload
-                } else if (status === 422) {
-                    // DIAGNOSTIC LOGGING: Show exact server errors
-                    console.error('❌ Validation Failed (422):', body.errors);
 
+                        // 3. Clear autocomplete inputs (Marca/Modelo)
+                        form.querySelectorAll('.custom-form-autocomplete input[type="text"]').forEach(input => {
+                            input.value = '';
+                        });
+
+                        // 4. Ensure Text Inputs are Empty (Browser consistency)
+                        form.querySelectorAll('input[type="text"], input[type="number"], textarea').forEach(input => {
+                            input.value = '';
+                        });
+
+                        // 5. Clear Validation Visuals
+                        form.querySelectorAll('.error-message-inline').forEach(el => el.remove());
+                        form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+
+                        // 6. Reset button
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalBtnContent;
+                        }
+
+                        // 7. Reset lastChecked data (for uniqueness validation)
+                        form.querySelectorAll('[data-last-checked]').forEach(input => {
+                            delete input.dataset.lastChecked;
+                            delete input.dataset.isDuplicate;
+                        });
+
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                        // Show success message AFTER reset
+                        if (typeof window.showModal === 'function') {
+                            window.showModal({
+                                type: 'success',
+                                title: '¡Éxito!',
+                                message: body.message || 'Equipo registrado correctamente.',
+                                confirmText: 'Aceptar',
+                                hideCancel: true
+                            });
+                        }
+                    }
+                } else if (status === 422) {
+                    console.error('❌ Validation Failed (422):', body.errors);
 
                     if (submitBtn) {
                         submitBtn.disabled = false;
@@ -318,7 +341,6 @@ function initEquiposForm() {
 
                     let errorsDisplayed = 0;
                     Object.entries(body.errors).forEach(([field, msgs]) => {
-                        // Try mapped ID first, then exact name, then bracket notation
                         const inputId = serverToClientMap[field] || field;
                         let input = document.getElementById(inputId) || form.querySelector(`[name="${field}"]`);
 
@@ -332,10 +354,7 @@ function initEquiposForm() {
                             showFieldError(input, msgs[0]);
                             errorsDisplayed++;
                         }
-
-
                     });
-
 
                     showGlobalSummary();
                 } else {
@@ -361,15 +380,15 @@ function initEquiposForm() {
         const pendingValidations = () => Array.from(form.querySelectorAll('.validation-loader')).filter(el => el.style.display !== 'none');
 
         if (pendingValidations().length > 0) {
-            // Show Preloader instead of Blocking Modal
+            // Show Preloader once
             if (typeof window.showPreloader === 'function') window.showPreloader();
 
             // Poll for completion
             const checkInterval = setInterval(() => {
                 if (pendingValidations().length === 0) {
                     clearInterval(checkInterval);
-                    // Proceed!
-                    executeSubmission();
+                    // Proceed with skipPreloader=true to avoid double show
+                    executeSubmission(true);
                 }
             }, 100);
             return;

@@ -7,7 +7,7 @@
     --maquinaria-red: #a91d28;
     --maquinaria-dark-blue: #00004d;
     --maquinaria-gray-text: #707070;
-    --maquinaria-gray-bg: #f1f1f4;
+    --maquinaria-gray-bg: #f0f0f5;
 
 }
 
@@ -725,6 +725,10 @@ body {
     transition: opacity 0.3s ease;
 }
 
+.modal-overlay-front {
+    z-index: 3000 !important;
+}
+
 .modal-overlay.active {
     display: flex;
     opacity: 1;
@@ -747,7 +751,7 @@ body {
 }
 
 .modal-icon {
-    font-size: 60px;
+    font-size: 80px;
     margin-bottom: 20px;
 }
 

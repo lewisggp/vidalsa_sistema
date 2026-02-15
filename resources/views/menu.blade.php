@@ -4,6 +4,13 @@
 
 @section('content')
 
+<style>
+    /* Forzar fondo blanco solo en el dashboard */
+    body, .main-viewport {
+        background-color: #ffffff !important;
+    }
+</style>
+
 
 
 <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;">
@@ -118,7 +125,7 @@
                             <span class="card-label">Alertas Documentos</span>
                             <div class="card-value-row">
                                 <span class="card-value">{{ $totalAlerts }}</span>
-                                <span class="card-subtext-inline">| Vencidos</span>
+                                <span class="card-subtext-inline" style="font-weight: 800; color: #000000;">| Por Renovar</span>
                             </div>
                         </div>
                     </div>
@@ -126,7 +133,23 @@
                     <!-- Documentos Vencidos y Por Vencer List -->
                     <div class="content-card policies-card" id="expiredDocsContainer" style="display: none;">
                         <h3 class="card-title" style="color: #000;">Alertas de Documentos</h3>
-                        <div class="activity-list">
+                        <div style="padding: 10px 15px; border-bottom: 1px solid #e5e7eb; background: white; display: flex; align-items: center; gap: 10px;">
+                            <input type="text" id="alertSearch" placeholder="Buscar por placa, serial, chasis..." 
+                                   style="flex: 1; box-sizing: border-box; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; outline: none; transition: border 0.2s;"
+                                   onfocus="this.style.borderColor='#3b82f6'"
+                                   onblur="this.style.borderColor='#d1d5db'"
+                                   onkeyup="filterDashboardAlerts()">
+                            <a href="{{ route('dashboard.exportDocumentsPDF') }}"
+                               data-no-spa="true"
+                               class="btn-export-pdf"
+                               title="Descargar Reporte PDF"
+                               style="display: inline-flex; align-items: center; justify-content: center; padding: 8px; background: transparent; color: #94a3b8; border: none; text-decoration: none; transition: all 0.2s; cursor: default;"
+                               onmouseover="this.style.color='#ef4444'"
+                               onmouseout="this.style.color='#94a3b8'">
+                                <i class="material-icons" style="font-size: 20px;">file_download</i>
+                            </a>
+                        </div>
+                        <div class="activity-list" style="max-height: 400px; overflow-y: auto;">
                             <div id="dashboardAlertsList">
                                 @include('partials.dashboard_alerts')
                             </div>
@@ -160,7 +183,7 @@
     </div>
     
     <!-- Feature Cards (Above Machinery) -->
-    <div class="features-floating-wrapper" style="position: fixed; bottom: 280px; right: 350px; z-index: 2; pointer-events: auto;">
+    <div class="features-floating-wrapper">
         <div class="features-container">
             <div class="feature-card">
                 <i class="material-icons feature-card-icon">description</i>
@@ -178,7 +201,7 @@
     </div>
     
     <!-- Machinery Image (Reused from Login - Big & Impactful) -->
-    <div class="machinery-fixed-bottom" style="position: fixed; bottom: 0; right: 0; width: 45%; min-width: 380px; max-width: 1000px; pointer-events: none; z-index: 0;">
+    <div class="machinery-fixed-bottom">
         <div class="machinery-wrapper" style="width: 100%; height: auto;">
             <img src="{{ asset('images/maquinaria_login_new.webp') }}" alt="Maquinaria Vidalsa" style="width: 100%; height: auto; display: block; filter: drop-shadow(-10px -10px 20px rgba(0, 0, 0, 0.15));">
         </div>

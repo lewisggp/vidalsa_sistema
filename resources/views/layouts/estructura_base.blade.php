@@ -6,7 +6,7 @@
     <title>@yield('title', 'Sistema de Gestión')</title>
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <!-- CSS -->
-    <link rel="stylesheet" href="{{ asset('css/maquinaria/estilos_globales.css') }}?v=13.3">
+    <link rel="stylesheet" href="{{ asset('css/maquinaria/estilos_globales.css') }}?v=13.4">
     <link rel="stylesheet" href="{{ asset('css/maquinaria/menu.css') }}?v=10.3">
     <link rel="stylesheet" href="{{ asset('css/maquinaria/catalogo.css') }}?v=2.3">
     <!-- Local Fonts Optimization -->
@@ -100,9 +100,11 @@
                     <i class="material-icons" style="font-size: 16px;">expand_more</i>
                 </a>
                 <div class="nav-dropdown-content">
+                    @if(auth()->check() && in_array('super.admin', auth()->user()->PERMISOS ?? []))
                     <a href="{{ route('usuarios.index') }}" class="nav-dropdown-link {{ request()->is('admin/usuarios*') ? 'active' : '' }}">
                         <i class="material-icons">people</i> Usuarios
                     </a>
+                    @endif
                     <a href="{{ route('frentes.index') }}" class="nav-dropdown-link {{ request()->is('admin/frentes*') ? 'active' : '' }}">
                         <i class="material-icons">business</i> Frentes de trabajo
                     </a>
@@ -155,9 +157,11 @@
                 <i class="material-icons chevron">expand_more</i>
             </div>
             <div class="mobile-nav-group-content">
+                @if(auth()->check() && in_array('super.admin', auth()->user()->PERMISOS ?? []))
                 <a href="{{ route('usuarios.index') }}" class="mobile-nav-link {{ request()->is('admin/usuarios*') ? 'active' : '' }}">
                     <i class="material-icons">people</i> Usuarios
                 </a>
+                @endif
                 <a href="{{ route('frentes.index') }}" class="mobile-nav-link {{ request()->is('admin/frentes*') ? 'active' : '' }}">
                     <i class="material-icons">business</i> Frentes de trabajo
                 </a>
@@ -204,31 +208,17 @@
         @yield('content')
     </main>
 
-    <!-- Standardized Reusable Modal -->
-    <div id="standardModal" class="modal-overlay" style="z-index: 3000;">
-        <div class="modal-card">
-            <i id="modalIcon" class="material-icons modal-icon" style="color: var(--maquinaria-blue);">help_outline</i>
-            <h3 id="modalTitle" class="modal-title">¿Confirmar Acción?</h3>
-            <p id="modalMessage" class="modal-message">¿Estás seguro de que deseas realizar esta acción?</p>
-            <div class="modal-footer">
-                <button id="modalCancelBtn" onclick="closeModal()" class="modal-btn modal-btn-cancel">Cancelar</button>
-                <button id="modalConfirmBtn" class="modal-btn modal-btn-confirm">Confirmar</button>
-            </div>
-        </div>
-    </div>
+
 
     <!-- PDF Preview Modal -->
-    <div id="pdfPreviewModal" class="modal-overlay">
+    <div id="pdfPreviewModal" class="modal-overlay modal-overlay-front">
         <div class="modal-content" style="width: 95%; height: 95vh; max-width: none; padding: 0; display: flex; flex-direction: column; background: #2d3748;">
             <!-- Header (Optimized - Lightweight) -->
             <div style="background: #2d3748; padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #4a5568;">
                 <h3 id="pdfPreviewTitle" style="margin: 0; color: white; font-size: 14px; font-weight: 600;">Documento</h3>
                 
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <!-- Metadata Edit Button (New) -->
-                    <button id="pdfEditMetaBtn" onclick="toggleMetadataPanel()" style="background: #eab308; border: none; padding: 6px 12px; font-size: 12px; display: flex; align-items: center; gap: 5px; color: black; border-radius: 4px; font-weight: 600;">
-                        <i class="material-icons" style="font-size: 16px;">edit</i> Editar
-                    </button>
+
 
                     <button id="pdfDownloadBtn" onclick="downloadPdfDirect(this.dataset.url, this.dataset.label)" style="background: #3182ce; border: none; padding: 6px 12px; font-size: 12px; display: flex; align-items: center; gap: 5px; color: white; border-radius: 4px;">
                         <i class="material-icons" style="font-size: 16px;">download</i> Descargar
@@ -248,7 +238,6 @@
             <!-- Viewer Container -->
             <div style="flex: 1; background: #4a5568; position: relative; display: flex; overflow: hidden;">
                 
-                <!-- Main PDF Viewer -->
                 <div style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center;">
                     <!-- Loading Indicator (Same as global preloader) -->
                     <div id="pdfViewerLoader" style="position: absolute; display: flex; flex-direction: column; align-items: center; gap: 15px; z-index: 50;">
@@ -270,7 +259,7 @@
                     <iframe id="pdfPreviewFrame" src="" style="width: 100%; height: 100%; border: none; opacity: 0; transition: opacity 0.3s; position: relative; z-index: 20;" allowfullscreen></iframe>
                 </div>
 
-                <!-- Metadata Side Panel (Hidden by default) -->
+                <!-- Metadata Side Panel (Restored) -->
                 <div id="pdfMetadataPanel" style="width: 0; background: #2d3748; border-left: 1px solid #4a5568; transition: width 0.3s ease; overflow: hidden; display: flex; flex-direction: column;">
                     <div style="padding: 12px; width: 300px; color: white; box-sizing: border-box;">
                         <h4 style="margin: 0 0 15px 0; font-size: 15px; border-bottom: 1px solid #4a5568; padding-bottom: 8px;">Editar Datos del Documento</h4>
@@ -289,6 +278,21 @@
                         </form>
                     </div>
                 </div>
+
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Standardized Reusable Modal (Moved to End for stacking context) -->
+    <div id="standardModal" class="modal-overlay" style="z-index: 10000 !important;">
+        <div class="modal-card">
+            <i id="modalIcon" class="material-icons modal-icon" style="color: var(--maquinaria-blue);">help_outline</i>
+            <h3 id="modalTitle" class="modal-title">¿Confirmar Acción?</h3>
+            <p id="modalMessage" class="modal-message">¿Estás seguro de que deseas realizar esta acción?</p>
+            <div class="modal-footer">
+                <button id="modalCancelBtn" onclick="closeModal()" class="modal-btn modal-btn-cancel">Cancelar</button>
+                <button id="modalConfirmBtn" class="modal-btn modal-btn-confirm">Confirmar</button>
             </div>
         </div>
     </div>
@@ -419,7 +423,7 @@
     
     {{-- Core Scripts (Always Loaded) --}}
     <script src="{{ asset('js/maquinaria/module_manager.js') }}"></script>
-    <script src="{{ asset('js/maquinaria/uicomponents.js') }}?v=12.0"></script>
+    <script src="{{ asset('js/maquinaria/uicomponents.js') }}?v=15.5"></script>
     <script src="{{ asset('js/maquinaria/navegacion.js') }}?v=10.0"></script>
     <script src="{{ asset('js/maquinaria/form_logic.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/maquinaria/equipo_catalog_linking.js') }}?v={{ time() }}"></script>
@@ -434,6 +438,8 @@
     <script src="{{ asset('js/maquinaria/catalogo_index.js') }}?v=3.6"></script>
     <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=3.0"></script>
     <script src="{{ asset('js/maquinaria/usuarios_index.js') }}?v=10.0"></script>
+    <script src="{{ asset('js/maquinaria/fleet_dashboard.js') }}?v=103.3"></script>
+
 
     <script src="{{ asset('js/maquinaria/frentes_spa.js') }}?v={{ time() }}"></script>
     <script>
@@ -776,114 +782,6 @@
         };
 
         // AJAX Upload Handler (with Progress)
-        window.uploadDocument = function(input, type, equipoId, containerId, label) {
-            if (!input.files || !input.files[0]) return;
-            const file = input.files[0];
-            const container = document.getElementById(containerId);
-            
-            // Show Spinner with Progress Text
-             container.innerHTML = `
-                <div class="spinner-container-mini" style="flex-direction: column; gap: 5px;">
-                     <div class="spinner-mini"></div>
-                     <span style="font-size: 11px; color: #64748b; font-weight: 600;" id="upload_progress_${type}">0%</span>
-                </div>
-            `;
-
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('doc_type', type);
-
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', `/admin/equipos/${equipoId}/upload-doc`, true);
-            xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-            xhr.setRequestHeader('Accept', 'application/json');
-
-            // Progress tracking
-            xhr.upload.onprogress = function(e) {
-                if (e.lengthComputable) {
-                    const percentComplete = Math.round((e.loaded / e.total) * 100);
-                    const progressText = document.getElementById(`upload_progress_${type}`);
-                    if (progressText) {
-                        if (percentComplete === 100) {
-                            progressText.innerText = 'Guardando...';
-                            progressText.style.color = '#059669'; // Green color for saving phase
-                        } else {
-                            progressText.innerText = percentComplete + '%';
-                        }
-                    }
-                }
-            };
-
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    try {
-                        const data = JSON.parse(xhr.responseText);
-                        if (data.success) {
-                             if (window.activeEquipoButton) {
-                                const d = window.activeEquipoButton.dataset;
-                                if (type === 'propiedad') d.linkPropiedad = data.link;
-                                if (type === 'poliza') d.linkSeguro = data.link;
-                                if (type === 'rotc') d.linkRotc = data.link;
-                                if (type === 'racda') d.linkRacda = data.link;
-                             }
-                             
-                             container.innerHTML = `
-                                <div class="pdf-btn-container">
-                                    <button type="button" 
-                                        onclick="openPdfPreview('${data.link}', '${type}', '${label}', '${equipoId}')" 
-                                        style="width: 36px; height: 36px; border-radius: 8px; background: #fee2e2; border: 1px solid #fecaca; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"
-                                        onmouseover="this.style.background='#fecaca'" 
-                                        onmouseout="this.style.background='#fee2e2'"
-                                        title="Ver PDF: ${label}">
-                                        <i class="material-icons" style="font-size: 20px; color: #dc2626;">picture_as_pdf</i>
-                                    </button>
-                                </div>
-                             `;
-                             showModal({ type: 'success', title: '¡Cargado!', message: 'Documento subido correctamente.', confirmText: 'OK', hideCancel: true });
-                             
-                             // Refresh Dashboard Alerts if function exists
-                             if (typeof window.refreshDashboardAlerts === 'function') {
-                                 window.refreshDashboardAlerts();
-                             }
-                        } else {
-                            throw new Error(data.message);
-                        }
-                    } catch (e) {
-                         console.error(e);
-                         revertUploadHTML(container, type, equipoId, containerId, label);
-                         showModal({ type: 'error', title: 'Error', message: 'Respuesta inválida del servidor.', confirmText: 'Cerrar', hideCancel: true });
-                    }
-                } else {
-                    revertUploadHTML(container, type, equipoId, containerId, label);
-                    let errMsg = 'Error al cargar el documento.';
-                    try {
-                        const errorData = JSON.parse(xhr.responseText);
-                        if (errorData.message) errMsg = errorData.message;
-                    } catch(e) {}
-                    showModal({ type: 'error', title: 'Error', message: errMsg, confirmText: 'Cerrar', hideCancel: true });
-                }
-            };
-
-            xhr.onerror = function() {
-                revertUploadHTML(container, type, equipoId, containerId, label);
-                showModal({ type: 'error', title: 'Error', message: 'Error de red.', confirmText: 'Cerrar', hideCancel: true });
-            };
-            
-            xhr.send(formData);
-        };
-        
-        function revertUploadHTML(container, type, equipoId, containerId, label) {
-             const iId = `input_upload_${type}_${equipoId}`;
-             container.innerHTML = `
-                 <div class="upload-placeholder-mini" style="border-radius: 50%;">
-                    <input type="file" id="${iId}" accept="application/pdf" style="display: none;" onchange="uploadDocument(this, '${type}', '${equipoId}', '${containerId}', '${label}')">
-                    <label for="${iId}" title="Cargar ${label}" style="border-radius: 50%; border-style: solid; border-width: 2px;">
-                        <i class="material-icons" style="font-size: 18px;">add</i>
-                    </label>
-                </div>
-            `;
-        }
-
 
         window.closeDetailsModal = function(e) {
             if(e) e.preventDefault();
@@ -969,22 +867,39 @@
                 }
             }
             
-            // Tighter timeout for modern connections - hide loader if taking too long
+            // Track timing to ensure loader shows for minimum duration
+            const loaderStartTime = Date.now();
+            const minimumLoaderDuration = 800; // Minimum time (ms) to show loader
+            
+            // Fallback timeout (max wait time)
             const loaderTimeout = setTimeout(() => {
                 if(loader) loader.style.display = 'none';
                 if(iframe) iframe.style.opacity = '1';
-            }, 5000); 
+            }, 5000);
+            
+            // Hide loader only when BOTH conditions are met:
+            // 1. iframe.onload has fired
+            // 2. Minimum duration has elapsed
+            const hideLoaderWhenReady = () => {
+                const elapsed = Date.now() - loaderStartTime;
+                const remainingTime = Math.max(0, minimumLoaderDuration - elapsed);
+                
+                setTimeout(() => {
+                    clearTimeout(loaderTimeout);
+                    if(loader) {
+                        loader.style.opacity = '0';
+                        setTimeout(() => { 
+                            if(loader) loader.style.display = 'none'; 
+                        }, 200); // Smooth fade out
+                    }
+                    if(iframe) iframe.style.opacity = '1';
+                }, remainingTime);
+            };
             
             // Set source and setup load listener
             if(iframe) {
                 iframe.onload = function() {
-                    clearTimeout(loaderTimeout);
-                    if(loader) {
-                        loader.style.opacity = '0';
-                        // Use a tiny delay only for visual smoothness, removed 300ms lag
-                        setTimeout(() => { loader.style.display = 'none'; }, 50); 
-                    }
-                    iframe.style.opacity = '1';
+                    hideLoaderWhenReady();
                 };
                 
                 iframe.onerror = function() {
@@ -1017,12 +932,18 @@
             // Allow metadata editing - store current context
             window.currentPdfContext = { equipoId, docType, label };
             
-            // Reset Panel (start closed)
+            // AUTO-OPEN metadata panel on first load for better UX
             const panel = document.getElementById('pdfMetadataPanel');
-            if(panel) panel.style.width = '0';
+            if(panel) {
+                // Open panel automatically for review
+                setTimeout(() => {
+                    panel.style.width = '300px';
+                    loadMetadata();
+                }, 400); // Small delay to let modal animate in
+            }
         };
 
-        // --- Metadata Side Panel Logic ---
+        // --- Metadata Side Panel Logic (Restored) ---
         window.toggleMetadataPanel = function() {
             const panel = document.getElementById('pdfMetadataPanel');
             if (!panel) return;
@@ -1245,6 +1166,9 @@
             }
         };
 
+        // --- Metadata Side Panel Logic ---
+
+
         window.closePdfPreview = function() {
             const modal = document.getElementById('pdfPreviewModal');
             const iframe = document.getElementById('pdfPreviewFrame');
@@ -1367,15 +1291,15 @@
                                 `;
                             }
 
-                            // Auto-open metadata panel after successful upload
+
+
+                            // Auto-open metadata panel after successful upload (Restored)
                             setTimeout(() => {
                                 const panel = document.getElementById('pdfMetadataPanel');
                                 if (panel && panel.style.width !== '300px') {
                                     toggleMetadataPanel();
                                 }
                             }, 800); // Small delay to ensure iframe is loaded
-
-                            // Show success notification
                             showModal({ type: 'success', title: 'Actualizado', message: 'Documento actualizado exitosamente.', confirmText: 'OK', hideCancel: true });
                             
                             // Refresh Dashboard Alerts if function exists

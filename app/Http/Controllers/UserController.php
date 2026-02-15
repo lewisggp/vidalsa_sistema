@@ -73,7 +73,15 @@ class UserController extends Controller
     {
         $roles = Role::select('ID_ROL', 'NOMBRE_ROL')->get();
         $frentes = FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')->select('ID_FRENTE', 'NOMBRE_FRENTE')->get();
-        $available_permissions = ['VER', 'EDT', 'DOC', 'LOG', 'OPS', 'ADM'];
+        $available_permissions = [
+            'user.create'       => 'Registrar Usuarios',
+            'user.edit'         => 'Actualizar Información',
+            'user.delete'       => 'Eliminar Usuarios',
+            'equipos.create'    => 'Registrar Equipos',
+            'equipos.edit'      => 'Actualizar Equipos',
+            'equipos.assign'    => 'Asignar Equipos',
+            'super.admin'       => 'Acceso Total (Super Admin)',
+        ];
         
         return view('admin.usuarios.formulario', compact('roles', 'frentes', 'available_permissions'));
     }
@@ -97,7 +105,7 @@ class UserController extends Controller
             'NIVEL_ACCESO' => 'required|integer|in:1,2',
             'ESTATUS' => 'required|in:ACTIVO,INACTIVO',
             'PERMISOS' => 'required|array',
-            'PERMISOS.*' => 'in:VER,EDT,DOC,LOG,OPS,ADM',
+            'PERMISOS.*' => 'in:user.create,user.edit,user.delete,equipos.create,equipos.edit,equipos.assign,super.admin',
         ], [
             'NOMBRE_COMPLETO.required' => 'El nombre completo es obligatorio.',
             'CORREO_ELECTRONICO.required' => 'El correo electrónico es obligatorio.',
@@ -145,7 +153,15 @@ class UserController extends Controller
         $user = Usuario::findOrFail($id);
         $roles = Role::select('ID_ROL', 'NOMBRE_ROL')->get();
         $frentes = FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')->select('ID_FRENTE', 'NOMBRE_FRENTE')->get();
-        $available_permissions = ['VER', 'EDT', 'DOC', 'LOG', 'OPS', 'ADM'];
+        $available_permissions = [
+            'user.create'       => 'Registrar Usuarios',
+            'user.edit'         => 'Actualizar Información',
+            'user.delete'       => 'Eliminar Usuarios',
+            'equipos.create'    => 'Registrar Equipos',
+            'equipos.edit'      => 'Actualizar Equipos',
+            'equipos.assign'    => 'Asignar Equipos',
+            'super.admin'       => 'Acceso Total (Super Admin)',
+        ];
 
         return view('admin.usuarios.formulario', compact('user', 'roles', 'frentes', 'available_permissions'));
     }
@@ -171,7 +187,7 @@ class UserController extends Controller
             'NIVEL_ACCESO' => 'required|integer|in:1,2',
             'ESTATUS' => 'required|in:ACTIVO,INACTIVO',
             'PERMISOS' => 'required|array',
-            'PERMISOS.*' => 'in:VER,EDT,DOC,LOG,OPS,ADM',
+            'PERMISOS.*' => 'in:user.create,user.edit,user.delete,equipos.create,equipos.edit,equipos.assign,super.admin',
         ], [
             'NOMBRE_COMPLETO.required' => 'El nombre completo es obligatorio.',
             'CORREO_ELECTRONICO.required' => 'El correo electrónico es obligatorio.',

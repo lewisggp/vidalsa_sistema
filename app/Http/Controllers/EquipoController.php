@@ -95,7 +95,7 @@ class EquipoController extends Controller
                 ->leftJoin('tipo_equipos', 'equipos.id_tipo_equipo', '=', 'tipo_equipos.id')
                 ->with([
                     'documentacion.seguro', 
-                    'especificaciones:ID_ESPEC,COMBUSTIBLE,CONSUMO_PROMEDIO,FOTO_REFERENCIAL', // ID_ESPEC is the foreign key
+                    'especificaciones:ID_ESPEC,COMBUSTIBLE,CONSUMO_PROMEDIO,FOTO_REFERENCIAL', 
                     'tipo', 
                     'frenteActual'
                 ])
@@ -106,31 +106,36 @@ class EquipoController extends Controller
         $hasFilter = $request->filled('id_frente') || $request->filled('id_tipo') || $request->filled('search_query') || $request->filled('modelo') || $request->filled('marca') || $request->filled('anio') || $request->filled('categoria') || $request->filled('estado') || $request->filled('filter_propiedad') || $request->filled('filter_poliza') || $request->filled('filter_rotc') || $request->filled('filter_racda');
 
         if ($hasFilter) {
-            $equipos = $equipos->get();
+            $equipos = $equipos->paginate(50)->appends($request->all());
         } else {
-             // Return empty collection to open the interface without showing any records initially
-             $equipos = collect([]); 
+             // Return empty paginator to open the interface without showing any records initially
+             $equipos = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 50);
         }
         
         $frentes = FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')->orderBy('NOMBRE_FRENTE', 'asc')->get();
         $allTipos = TipoEquipo::orderBy('nombre', 'asc')->get();
         
-        // Advanced Filter Lists (Optimized with cache: Only needed for initial page load, not AJAX)
-        $availableModelos = [];
-        $availableMarcas = [];
-        $availableAnios = [];
-        if (!$request->wantsJson()) {
+            // Advanced Filter Lists (Optimized with cache: Only needed for initial page load, not AJAX)
             // Cache these lists for 1 hour to avoid repeated DB queries
             $availableModelos = \Illuminate\Support\Facades\Cache::remember('equipos_modelos_dropdown', 3600, function() {
-                return Equipo::distinct()->whereNotNull('MODELO')->where('MODELO', '!=', '')->orderBy('MODELO', 'asc')->pluck('MODELO');
+                return Equipo::distinct()
+                    ->whereNotNull('MODELO')
+                    ->where('MODELO', '!=', '')
+                    ->orderBy('MODELO', 'asc')
+                    ->pluck('MODELO');
             });
+            
             $availableMarcas = \Illuminate\Support\Facades\Cache::remember('equipos_marcas_dropdown', 3600, function() {
-                return Equipo::distinct()->whereNotNull('MARCA')->where('MARCA', '!=', '')->orderBy('MARCA', 'asc')->pluck('MARCA');
+                return Equipo::distinct()
+                    ->whereNotNull('MARCA')
+                    ->where('MARCA', '!=', '')
+                    ->orderBy('MARCA', 'asc')
+                    ->pluck('MARCA');
             });
+            
             $availableAnios = \Illuminate\Support\Facades\Cache::remember('equipos_anios_dropdown', 3600, function() {
                 return Equipo::distinct()->whereNotNull('ANIO')->orderBy('ANIO', 'desc')->pluck('ANIO');
             });
-        }
         
         $stats = ['total' => 0, 'activos' => 0, 'inactivos' => 0, 'mantenimiento' => 0];
         $tiposStats = collect([]);
@@ -1003,16 +1008,46 @@ class EquipoController extends Controller
             $timestamp = time();
             $fullUrl = '/storage/google/' . $driveFile->id . '?v=' . $timestamp;
 
-            // 3. UPDATE DATABASE
+            // 3. UPDATE DATABASE (Including user tracking)
             $updateData = [$dbColumn => $fullUrl];
+            
+            // Add expiration date if applicable
             if ($dateColumn && $request->filled('expiration_date')) {
                 $updateData[$dateColumn] = $request->input('expiration_date');
             }
+            
+            // CRITICAL FIX: Register who uploaded and when (EMAIL instead of ID)
+            $uploadedBy = auth()->user()->CORREO_ELECTRONICO ?? 'Usuario sin correo';
+            $uploadedAt = now();
+            
+            switch ($type) {
+                case 'propiedad':
+                    $updateData['PROPIEDAD_SUBIDO_POR'] = $uploadedBy;
+                    $updateData['PROPIEDAD_FECHA_SUBIDA'] = $uploadedAt;
+                    break;
+                case 'poliza':
+                    $updateData['POLIZA_SUBIDO_POR'] = $uploadedBy;
+                    $updateData['POLIZA_FECHA_SUBIDA'] = $uploadedAt;
+                    break;
+                case 'rotc':
+                    $updateData['ROTC_SUBIDO_POR'] = $uploadedBy;
+                    $updateData['ROTC_FECHA_SUBIDA'] = $uploadedAt;
+                    break;
+                case 'racda':
+                    $updateData['RACDA_SUBIDO_POR'] = $uploadedBy;
+                    $updateData['RACDA_FECHA_SUBIDA'] = $uploadedAt;
+                    break;
+            }
 
-            if ($equipo->documentacion) $equipo->documentacion->update($updateData);
-            else {
+            Log::info('UploadDoc - Update Data', ['data' => $updateData]);
+
+            if ($equipo->documentacion) {
+                $equipo->documentacion->update($updateData);
+                Log::info('UploadDoc - Updated existing documentacion');
+            } else {
                 $updateData['ID_EQUIPO'] = $equipo->ID_EQUIPO;
                 Documentacion::create($updateData);
+                Log::info('UploadDoc - Created new documentacion');
             }
 
             // 4. DELETE OLD FILE (Only after success)
@@ -1025,7 +1060,7 @@ class EquipoController extends Controller
 
             // Clear Dashboard Cache to update alerts immediately
             \Illuminate\Support\Facades\Cache::forget('dashboard_total_alerts');
-            \Illuminate\Support\Facades\Cache::forget('dashboard_expired_list_all');
+            \Illuminate\Support\Facades\Cache::forget('dashboard_expired_list_v3');
 
             if (ob_get_length()) ob_end_clean();
             return response()->json(['success' => true, 'link' => $fullUrl, 'message' => 'Documento actualizado correctamente']);
@@ -1108,41 +1143,48 @@ class EquipoController extends Controller
      */
     public function metadata(Request $request, $id)
     {
-        $equipo = Equipo::with('documentacion.seguro')->findOrFail($id);
-        $type = $request->input('type');
+        $equipo = Equipo::with(['documentacion.seguro'])->findOrFail($id);
         
+        $type = $request->input('type');
+        $doc = $equipo->documentacion;
         $data = [];
         
-        switch ($type) {
-            case 'propiedad':
-                $data = [
-                    'nro_documento' => $equipo->documentacion->NRO_DE_DOCUMENTO ?? '',
-                    'titular' => $equipo->documentacion->NOMBRE_DEL_TITULAR ?? '',
-                    'placa' => $equipo->documentacion->PLACA ?? '',
-                    'serial_chasis' => $equipo->SERIAL_CHASIS ?? '',
-                    'serial_motor' => $equipo->SERIAL_DE_MOTOR ?? '',
-                ];
-                break;
+        if ($doc) {
+            switch ($type) {
+                case 'propiedad':
+                    $data = [
+                        'nro_documento' => $doc->NRO_DE_DOCUMENTO ?? '',
+                        'titular' => $doc->NOMBRE_DEL_TITULAR ?? '',
+                        'placa' => $doc->PLACA ?? '',
+                        'serial_chasis' => $equipo->SERIAL_CHASIS ?? '',
+                        'serial_motor' => $equipo->SERIAL_DE_MOTOR ?? ''
+                    ];
+                    break;
+                    
+                case 'poliza':
+                    $data = [
+                        'fecha_vencimiento' => $doc->FECHA_VENC_POLIZA ?? '',
+                        'id_seguro' => $doc->ID_SEGURO ?? null,
+                        'insurers' => CatalogoSeguro::orderBy('NOMBRE_ASEGURADORA', 'asc')->get()
+                    ];
+                    break;
+                    
+                case 'rotc':
+                    $data = [
+                        'fecha_vencimiento' => $doc->FECHA_ROTC ?? ''
+                    ];
+                    break;
+                    
+                case 'racda':
+                    $data = [
+                        'fecha_vencimiento' => $doc->FECHA_RACDA ?? ''
+                    ];
+                    break;
                 
-            case 'poliza':
-                $data = [
-                    'fecha_vencimiento' => $equipo->documentacion->FECHA_VENC_POLIZA ?? '',
-                    'id_seguro' => $equipo->documentacion->ID_SEGURO ?? null,
-                    'insurers' => CatalogoSeguro::orderBy('NOMBRE_ASEGURADORA', 'asc')->get(),
-                ];
-                break;
-                
-            case 'rotc':
-                $data = [
-                    'fecha_vencimiento' => $equipo->documentacion->FECHA_ROTC ?? '',
-                ];
-                break;
-                
-            case 'racda':
-                $data = [
-                    'fecha_vencimiento' => $equipo->documentacion->FECHA_RACDA ?? '',
-                ];
-                break;
+                case 'adicional':
+                    $data = [];
+                    break;
+            }
         }
         
         return response()->json(['success' => true, 'data' => $data]);
@@ -1182,6 +1224,15 @@ class EquipoController extends Controller
                     'FECHA_VENC_POLIZA' => $request->input('fecha_vencimiento'),
                 ];
                 
+                // Clear management if new date is in future
+                if ($request->filled('fecha_vencimiento')) {
+                    $newDate = \Carbon\Carbon::parse($request->input('fecha_vencimiento'));
+                    if ($newDate->isFuture()) {
+                        $updateData['poliza_gestion_frente_id'] = null;
+                        $updateData['poliza_gestion_fecha'] = null;
+                    }
+                }
+                
                 // Handle insurance name (create if new)
                 if ($request->filled('nombre_aseguradora')) {
                     $seguro = CatalogoSeguro::firstOrCreate([
@@ -1195,12 +1246,26 @@ class EquipoController extends Controller
                 $updateData = [
                     'FECHA_ROTC' => $request->input('fecha_vencimiento'),
                 ];
+                if ($request->filled('fecha_vencimiento')) {
+                    $newDate = \Carbon\Carbon::parse($request->input('fecha_vencimiento'));
+                    if ($newDate->isFuture()) {
+                        $updateData['rotc_gestion_frente_id'] = null;
+                        $updateData['rotc_gestion_fecha'] = null;
+                    }
+                }
                 break;
                 
             case 'racda':
                 $updateData = [
                     'FECHA_RACDA' => $request->input('fecha_vencimiento'),
                 ];
+                if ($request->filled('fecha_vencimiento')) {
+                    $newDate = \Carbon\Carbon::parse($request->input('fecha_vencimiento'));
+                    if ($newDate->isFuture()) {
+                        $updateData['racda_gestion_frente_id'] = null;
+                        $updateData['racda_gestion_fecha'] = null;
+                    }
+                }
                 break;
         }
         
@@ -1213,7 +1278,7 @@ class EquipoController extends Controller
         
         // Clear Dashboard Cache to update alerts immediately
         \Illuminate\Support\Facades\Cache::forget('dashboard_total_alerts');
-        \Illuminate\Support\Facades\Cache::forget('dashboard_expired_list_all');
+        \Illuminate\Support\Facades\Cache::forget('dashboard_expired_list_v3');
         
         return response()->json(['success' => true, 'message' => 'Datos actualizados correctamente']);
     }
@@ -1296,5 +1361,451 @@ class EquipoController extends Controller
         $allModels = $equiposModels->merge($catalogModels)->unique()->sort()->values();
 
         return response()->json($allModels);
+    }
+
+    /**
+     * Get Fleet Statistics for Dashboard (Cross-Analysis with Frente Filter)
+     */
+    public function fleetStats(Request $request)
+    {
+        try {
+            $frenteId = $request->input('frente_id');
+            
+            // Base query builder for filtering
+            $baseQuery = Equipo::query();
+            if ($frenteId && $frenteId !== 'all') {
+                $baseQuery->where('ID_FRENTE_ACTUAL', $frenteId);
+            }
+
+            // Basic Stats
+            $total = (clone $baseQuery)->count();
+            $fleetNew = (clone $baseQuery)->where('ANIO', '>=', 2025)->count();
+            $fleetOld = (clone $baseQuery)->where('ANIO', '<', 2025)->count();
+
+            // Calculate Estimated Daily Consumption
+            // Join with caracteristicas_modelo to access CONSUMO_PROMEDIO
+            $totalConsumption = (clone $baseQuery)
+                ->join('caracteristicas_modelo', 'equipos.ID_ESPEC', '=', 'caracteristicas_modelo.ID_ESPEC')
+                ->sum(DB::raw('CAST(caracteristicas_modelo.CONSUMO_PROMEDIO AS DECIMAL(10,2))'));
+
+            // --- 1. ESTADO OPERATIVO ---
+            $byStatusRaw = (clone $baseQuery)
+                ->select('ESTADO_OPERATIVO', DB::raw('count(*) as total'))
+                ->whereNotNull('ESTADO_OPERATIVO')
+                ->groupBy('ESTADO_OPERATIVO')
+                ->orderBy('total', 'desc')
+                ->get();
+
+            $statuses = $byStatusRaw->pluck('ESTADO_OPERATIVO')->toArray();
+            $statusCounts = $byStatusRaw->pluck('total')->toArray();
+
+            // --- 2. FLOTA NUEVA VS VIEJA POR TIPO ---
+            $ageByTypeRaw = (clone $baseQuery)
+                ->select(
+                    'id_tipo_equipo',
+                    DB::raw('SUM(CASE WHEN ANIO >= 2025 THEN 1 ELSE 0 END) as new_count'),
+                    DB::raw('SUM(CASE WHEN ANIO < 2025 THEN 1 ELSE 0 END) as old_count')
+                )
+                ->with('tipo:id,nombre')
+                ->whereNotNull('id_tipo_equipo')
+                ->groupBy('id_tipo_equipo')
+                ->get();
+
+            $tiposForAge = $ageByTypeRaw->pluck('tipo.nombre')->toArray();
+            $newFleetData = $ageByTypeRaw->pluck('new_count')->toArray();
+            $oldFleetData = $ageByTypeRaw->pluck('old_count')->toArray();
+
+            $ageByTypeDatasets = [
+                ['label' => 'Flota Nueva (≥2025)', 'data' => $newFleetData],
+                ['label' => 'Flota Vieja (<2025)', 'data' => $oldFleetData]
+            ];
+
+            // --- 3. FLOTA PESADA VS LIVIANA POR TIPO ---
+            $categoryByTypeRaw = (clone $baseQuery)
+                ->select(
+                    'id_tipo_equipo',
+                    DB::raw("SUM(CASE WHEN CATEGORIA_FLOTA = 'PESADA' THEN 1 ELSE 0 END) as pesada_count"),
+                    DB::raw("SUM(CASE WHEN CATEGORIA_FLOTA = 'LIVIANA' THEN 1 ELSE 0 END) as liviana_count")
+                )
+                ->with('tipo:id,nombre')
+                ->whereNotNull('id_tipo_equipo')
+                ->whereNotNull('CATEGORIA_FLOTA')
+                ->groupBy('id_tipo_equipo')
+                ->get();
+
+            $tiposForCategory = $categoryByTypeRaw->pluck('tipo.nombre')->toArray();
+            $pesadaData = $categoryByTypeRaw->pluck('pesada_count')->toArray();
+            $livianaData = $categoryByTypeRaw->pluck('liviana_count')->toArray();
+
+            $categoryByTypeDatasets = [
+                ['label' => 'Pesada', 'data' => $pesadaData],
+                ['label' => 'Liviana', 'data' => $livianaData]
+            ];
+
+            return response()->json([
+                'success' => true,
+                'stats' => [
+                    'total' => $total,
+                    'fleet_new' => $fleetNew,
+                    'fleet_old' => $fleetOld,
+                    'total_consumption' => number_format($totalConsumption, 2)
+                ],
+                'byStatus' => [
+                    'labels' => $statuses,
+                    'values' => $statusCounts
+                ],
+                'ageByType' => [
+                    'labels' => $tiposForAge,
+                    'datasets' => $ageByTypeDatasets
+                ],
+                'categoryByType' => [
+                    'labels' => $tiposForCategory,
+                    'datasets' => $categoryByTypeDatasets
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Fleet Stats Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener estadísticas'
+            ], 500);
+        }
+    }
+    /**
+     * Export Fleet Stats to CSV (Excel compatible)
+     */
+    public function fleetExport(Request $request)
+    {
+        try {
+            $frenteId = $request->input('frente_id');
+            $frenteNombre = 'Todos los Frentes';
+            
+            // Base query builder
+            $baseQuery = Equipo::query();
+            if ($frenteId && $frenteId !== 'all') {
+                $baseQuery->where('ID_FRENTE_ACTUAL', $frenteId);
+                $frenteObj = FrenteTrabajo::find($frenteId);
+                if ($frenteObj) {
+                    $frenteNombre = $frenteObj->NOMBRE_FRENTE;
+                }
+            }
+
+            // --- 1. DATA FOR "FLOTA NUEVA VS VIEJA" ---
+            $ageData = (clone $baseQuery)
+                ->select(
+                    'id_tipo_equipo',
+                    DB::raw('SUM(CASE WHEN ANIO >= 2025 THEN 1 ELSE 0 END) as new_count'),
+                    DB::raw('SUM(CASE WHEN ANIO < 2025 THEN 1 ELSE 0 END) as old_count')
+                )
+                ->with('tipo:id,nombre')
+                ->groupBy('id_tipo_equipo')
+                ->get();
+
+            // --- 2. DATA FOR "PESADA VS LIVIANA" ---
+            $categoryData = (clone $baseQuery)
+                ->select(
+                    'id_tipo_equipo',
+                    DB::raw("SUM(CASE WHEN CATEGORIA_FLOTA = 'PESADA' THEN 1 ELSE 0 END) as pesada_count"),
+                    DB::raw("SUM(CASE WHEN CATEGORIA_FLOTA = 'LIVIANA' THEN 1 ELSE 0 END) as liviana_count")
+                )
+                ->with('tipo:id,nombre')
+                ->groupBy('id_tipo_equipo')
+                ->get();
+
+            $headers = [
+                "Content-type" => "text/csv; charset=UTF-8",
+                "Content-Disposition" => "attachment; filename=reporte_flota_" . date('Y-m-d') . ".csv",
+                "Pragma" => "no-cache",
+                "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+                "Expires" => "0"
+            ];
+
+            $callback = function() use ($ageData, $categoryData, $frenteNombre) {
+                $file = fopen('php://output', 'w');
+                
+                // Add BOM for Excel UTF-8 compatibility
+                fputs($file, "\xEF\xBB\xBF"); 
+
+                // Metadata Header
+                fputcsv($file, ['REPORTE DE FLOTA - SISTEMA SFS']);
+                fputcsv($file, ['Frente:', $frenteNombre]);
+                fputcsv($file, ['Fecha:', date('d/m/Y H:i')]);
+                fputcsv($file, []);
+
+                // SECTION 1: FLOTA NUEVA VS VIEJA
+                fputcsv($file, ['=== FLOTA NUEVA VS VIEJA ===']);
+                fputcsv($file, ['Tipo de Equipo', 'Nuevo', 'Viejo', 'Total']);
+                fputcsv($file, ['', '', '', '']); // Separator for table borders
+                
+                foreach ($ageData as $row) {
+                    $tipoName = $row->tipo ? $row->tipo->nombre : 'Sin Tipo';
+                    $total = $row->new_count + $row->old_count;
+                    if ($total > 0) {
+                        fputcsv($file, [
+                            $tipoName, 
+                            $row->new_count, 
+                            $row->old_count,
+                            $total
+                        ]);
+                    }
+                }
+                fputcsv($file, []);
+                fputcsv($file, []); 
+
+                // SECTION 2: PESADA VS LIVIANA
+                fputcsv($file, ['=== FLOTA PESADA VS LIVIANA ===']);
+                fputcsv($file, ['Tipo de Equipo', 'Pesada', 'Liviana', 'Total']);
+                fputcsv($file, ['', '', '', '']); // Separator
+
+                foreach ($categoryData as $row) {
+                    $tipoName = $row->tipo ? $row->tipo->nombre : 'Sin Tipo';
+                    $total = $row->pesada_count + $row->liviana_count;
+                    if ($total > 0) {
+                        fputcsv($file, [
+                            $tipoName,
+                            $row->pesada_count,
+                            $row->liviana_count,
+                            $total
+                        ]);
+                    }
+                }
+
+                fclose($file);
+            };
+
+            return response()->stream($callback, 200, $headers);
+
+        } catch (\Exception $e) {
+            Log::error('Fleet Export Error: ' . $e->getMessage());
+            return response()->json(['error' => 'Error generating report'], 500);
+        }
+    }
+
+    /**
+     * Valida la selección de equipos para anclaje masivo y devuelve candidatos compatibles.
+     */
+    public function checkAnclajeCompatibility(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        
+        if (empty($ids)) {
+            return response()->json(['message' => 'No se seleccionaron equipos.'], 400);
+        }
+
+        $equipos = Equipo::with('tipo')->whereIn('ID_EQUIPO', $ids)->get();
+
+        if ($equipos->isEmpty()) {
+            return response()->json(['message' => 'Equipos no encontrados.'], 404);
+        }
+
+        // Analizar Roles de la selección
+        // Asume propiedad ROL_ANCLAJE o helper
+        // Si no existe, default NEUTRO
+        
+        // Check ALL selected items share same role
+        $firstRole = $equipos->first()->tipo ? $equipos->first()->tipo->ROL_ANCLAJE : 'NEUTRO';
+        
+        foreach($equipos as $e) {
+            $r = $e->tipo ? $e->tipo->ROL_ANCLAJE : 'NEUTRO';
+            if ($r !== $firstRole) {
+                return response()->json(['message' => 'Selección mixta detectada. Por favor seleccione solo equipos del mismo rol de anclaje (Solo Remolcadores o Solo Remolcables).'], 422);
+            }
+        }
+
+        if ($firstRole === 'NEUTRO') {
+            return response()->json(['message' => 'Los equipos seleccionados (Tipo: NEUTRO) no soportan anclaje.'], 422);
+        }
+
+        $response = [
+            'mode' => '',
+            'candidates' => [],
+            'selected_info' => $equipos->count() . ' equipo(s) seleccionados (' . $firstRole . ')'
+        ];
+
+        // LOGICA DE NEGOCIO:
+        // Si seleccioné REMOLCABLES (Hijos) -> Busco REMOLCADORES (Padres)
+        // Si seleccioné REMOLCADORES (Padres) -> Busco REMOLCABLES (Hijos)
+
+        if ($firstRole === 'REMOLCABLE') {
+            $response['mode'] = 'assign_parent'; // Asignar un Padre a estos Hijos
+            $response['selected_info'] = $equipos->count() . ' equipo(s) remolcable(s) buscando Padre';
+            
+            // Buscar Padres Disponibles (Remolcadores)
+            $candidatos = Equipo::whereHas('tipo', function($q) {
+                $q->where('ROL_ANCLAJE', 'REMOLCADOR');
+            })
+            ->where('ESTADO_OPERATIVO', 'OPERATIVO') // Solo operativos?
+            ->orderBy('CODIGO_PATIO', 'asc')
+            ->get();
+
+        } else { // REMOLCADOR
+            $response['mode'] = 'assign_children'; // Asignar un Hijo a este Padre
+            $response['selected_info'] = $equipos->count() . ' equipo(s) remolcador(es) buscando Hijo';
+            
+            // Buscar Hijos Disponibles (Remolcables) que NO estén anclados ya
+            $candidatos = Equipo::whereHas('tipo', function($q) {
+                $q->where('ROL_ANCLAJE', 'REMOLCABLE');
+            })
+            ->whereNull('ID_ANCLAJE') // Solo libres
+            ->where('ESTADO_OPERATIVO', 'OPERATIVO')
+            ->orderBy('CODIGO_PATIO', 'asc')
+            ->get();
+        }
+
+        $response['candidates'] = $candidatos->map(function($c) {
+            return [
+                'id' => $c->ID_EQUIPO,
+                'codigo' => $c->CODIGO_PATIO,
+                'descripcion' => $c->MARCA . ' ' . $c->MODELO . ($c->documentacion ? ' (' . $c->documentacion->PLACA . ')' : '')
+            ];
+        });
+
+        return response()->json($response);
+    }
+
+    /**
+     * Procesa la asignación masiva de anclaje.
+     */
+    public function processAnclaje(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        $targetId = $request->input('target_id'); // ID del Padre o Hijo seleccionado
+        $mode = $request->input('mode'); // assign_parent o assign_children
+        $detach = $request->input('detach', false); // Booleano para desanclar
+
+        if (empty($ids)) return response()->json(['message' => 'Sin selección'], 400);
+
+        try {
+            DB::transaction(function() use ($ids, $targetId, $mode, $detach) {
+                
+                if ($detach) {
+                    // Desvincular seleccionados
+                    if ($mode === 'assign_parent') {
+                        // Selección: Hijos. Acción: Quitarles su Padre.
+                        Equipo::whereIn('ID_EQUIPO', $ids)->update(['ID_ANCLAJE' => null]);
+                    } else {
+                        // Selección: Padres. Acción: Liberar a sus Hijos actuales.
+                        Equipo::whereIn('ID_ANCLAJE', $ids)->update(['ID_ANCLAJE' => null]);
+                    }
+                } else {
+                    // Vincular
+                    if ($mode === 'assign_parent') {
+                        // Selección: Hijos. Acción: Asignarles el Padre targetId.
+                        // Validar que el Padre exista
+                        $padre = Equipo::findOrFail($targetId);
+                        
+                        // LOGIC: Multiple children linked to ONE parent. Correct.
+                        Equipo::whereIn('ID_EQUIPO', $ids)->update(['ID_ANCLAJE' => $padre->ID_EQUIPO]);
+                    } else {
+                        // Selección: Padres. Acción: Asignarles el Hijo targetId.
+                        // LOGIC: Multiple Parents linked to ONE child? IMPOSSIBLE.
+                        // A child can only have one parent (ID_ANCLAJE).
+                        
+                        if (count($ids) > 1) {
+                            throw new \Exception("No se puede asignar un mismo componente a múltiples equipos remolcadores simultáneamente. Seleccione un solo equipo Padre.");
+                        }
+
+                        // Tengo 1 Padre (ids[0]) y quiero asignarle 1 Hijo (targetId)
+                        $padreId = $ids[0];
+                        $hijo = Equipo::findOrFail($targetId);
+                        
+                        // Set the child's parent to be this selected father
+                        $hijo->ID_ANCLAJE = $padreId;
+                        $hijo->save();
+                    }
+                }
+            });
+
+            return response()->json(['success' => true]);
+
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+    /**
+     * Módulo de Configuración de Flota (Anclajes Visuales)
+     */
+    public function configuracionFlota(Request $request)
+    {
+        $frenteId = $request->input('id_frente');
+
+        // Obtener Frentes para el selector (Asumiendo que existe el modelo Frente o la tabla frentes)
+        // Como no tengo el modelo Frente importado aquí, usaré DB facade si es necesario, o lo más simple: Equipo::select('ID_FRENTE')->distinct()...
+        // Mejor uso una consulta simple de frentes activos ligados a equipos.
+        // Obtener Frentes directamente de la base de datos (tabla: frentes_trabajo)
+        $frentes = \DB::table('frentes_trabajo')->select('ID_FRENTE', 'NOMBRE_FRENTE')->orderBy('NOMBRE_FRENTE')->get();
+        
+        // Base Query Builder
+        $queryRemolcadores = Equipo::whereHas('tipo', function($q) {
+                $q->where('ROL_ANCLAJE', 'REMOLCADOR');
+            })
+            ->with(['tipo', 'equiposAnclados.tipo', 'equiposAnclados.documentacion', 'documentacion']) 
+            ->whereIn('ESTADO_OPERATIVO', ['OPERATIVO', 'EN MANTENIMIENTO']);
+
+        $queryRemolcables = Equipo::whereHas('tipo', function($q) {
+                $q->where('ROL_ANCLAJE', 'REMOLCABLE');
+            })
+            ->whereNull('ID_ANCLAJE')
+            ->with(['tipo', 'documentacion'])
+            ->whereIn('ESTADO_OPERATIVO', ['OPERATIVO', 'EN MANTENIMIENTO']);
+
+        // Filter by Frente if present (Correct column: ID_FRENTE_ACTUAL)
+        if ($frenteId) {
+            $queryRemolcadores->where('ID_FRENTE_ACTUAL', $frenteId);
+            $queryRemolcables->where('ID_FRENTE_ACTUAL', $frenteId);
+        }
+
+        $remolcadores = $queryRemolcadores->orderBy('CODIGO_PATIO', 'asc')->get();
+        $remolcablesLibres = $queryRemolcables->orderBy('CODIGO_PATIO', 'asc')->get();
+
+        return view('admin.equipos.configuracion_flota', compact('remolcadores', 'remolcablesLibres', 'frentes'));
+    }
+
+    public function vincularEquipos(Request $request) 
+    {
+        $padreId = $request->input('padre_id');
+        $hijoId = $request->input('hijo_id');
+
+        try {
+            DB::transaction(function() use ($padreId, $hijoId) {
+                $hijo = Equipo::findOrFail($hijoId);
+                $padre = Equipo::findOrFail($padreId); // Load Parent to check its Front
+
+                // Validar que el hijo sea Remolcable
+                if (!$hijo->tipo || $hijo->tipo->ROL_ANCLAJE !== 'REMOLCABLE') {
+                    throw new \Exception("El equipo {$hijo->CODIGO_PATIO} no es remolcable.");
+                }
+
+                // Validar que pertenezcan al mismo frente (CONSISTENCIA LOGÍSTICA CRÍTICA)
+                if ($hijo->ID_FRENTE_ACTUAL !== $padre->ID_FRENTE_ACTUAL) {
+                    throw new \Exception("Error Crítico: No se puede vincular equipos de diferentes frentes de trabajo ({$padre->CODIGO_PATIO} vs {$hijo->CODIGO_PATIO}).");
+                }
+
+                // Asignar
+                $hijo->ID_ANCLAJE = $padreId;
+                $hijo->save();
+            });
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function desvincularEquipos(Request $request)
+    {
+        $hijoId = $request->input('hijo_id');
+
+        try {
+            DB::transaction(function() use ($hijoId) {
+                $hijo = Equipo::findOrFail($hijoId);
+                $hijo->ID_ANCLAJE = null;
+                $hijo->save();
+            });
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
     }
 }

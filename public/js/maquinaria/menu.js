@@ -37,16 +37,17 @@ window.togglePendingMovs = function () {
 console.log('✅ Menu Dashboard Functions Loaded (Global Scope)');
 
 // Function to refresh alerts list via AJAX without page reload
-window.refreshDashboardAlerts = async function() {
+window.refreshDashboardAlerts = async function () {
     const listContainer = document.getElementById('dashboardAlertsList');
     if (!listContainer) return;
 
     try {
-        const response = await fetch('/dashboard/alerts-html');
+        // Add timestamp to prevent browser caching
+        const response = await fetch(`/dashboard/alerts-html?t=${Date.now()}`);
         if (!response.ok) throw new Error('Network response was not ok');
-        
+
         const data = await response.json();
-        
+
         // Update List HTML
         if (data.html) {
             listContainer.innerHTML = data.html;
@@ -59,16 +60,125 @@ window.refreshDashboardAlerts = async function() {
         }
 
         // Update Total Badge (if exists)
-        // Assuming there might be a badge with id 'totalAlertsBadge' or similar in the sidebar layout
-        // access it safely
-        const totalBadge = document.querySelector('.sidebar-badge-alerts'); // Generic selector example
+        const totalBadge = document.querySelector('.card-yellow .card-value');
         if (totalBadge && data.totalAlerts !== undefined) {
             totalBadge.innerText = data.totalAlerts;
-            totalBadge.style.display = data.totalAlerts > 0 ? 'inline-block' : 'none';
         }
-        
+
     } catch (error) {
         console.error('Failed to refresh dashboard alerts:', error);
     }
 };
+
+// Function to filter dashboard alerts by search input
+window.filterDashboardAlerts = function () {
+    const input = document.getElementById('alertSearch');
+    if (!input) return;
+
+    const normalizeStr = str => str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : '';
+    const filter = normalizeStr(input.value);
+
+    const list = document.getElementById('dashboardAlertsList');
+    if (!list) return;
+
+    const items = list.querySelectorAll('.alert-card');
+    let hasVisibleItems = false;
+
+    items.forEach(item => {
+        const textToSearch = [
+            item.getAttribute('data-placa'),
+            item.getAttribute('data-chasis'),
+            item.getAttribute('data-motor-serial'),
+            item.getAttribute('data-marca'),
+            item.getAttribute('data-modelo'),
+            item.innerText
+        ].map(normalizeStr).join(' ');
+
+        if (textToSearch.indexOf(filter) > -1) {
+            item.style.display = "";
+            hasVisibleItems = true;
+        } else {
+            item.style.display = "none";
+        }
+    });
+
+    let emptyState = document.getElementById('search-empty-state');
+    if (!hasVisibleItems && filter.length > 0) {
+        if (!emptyState) {
+            emptyState = document.createElement('div');
+            emptyState.id = 'search-empty-state';
+            emptyState.style.padding = '20px';
+            emptyState.style.textAlign = 'center';
+            emptyState.style.color = '#64748b';
+            emptyState.innerHTML = `<p>No se encontraron resultados.</p>`;
+            list.appendChild(emptyState);
+        } else {
+            emptyState.style.display = 'block';
+        }
+    } else if (emptyState) {
+        emptyState.style.display = 'none';
+    }
+};
+
+// Function to start management (replacing tomarResponsabilidad)
+window.iniciarGestion = function (equipoId, docType) {
+    // Check if modal system exists
+    if (typeof showModal === 'function') {
+        showModal({
+            type: 'info',
+            title: 'Iniciar Gestión',
+            message: '¿Confirma que su frente comenzará a gestionar este documento? <br><small>Se registrará su frente como responsable de la renovación.</small>',
+            confirmText: 'Aceptar',
+            cancelText: 'Cancelar',
+            onConfirm: async () => {
+                await ejecutarIniciarGestion(equipoId, docType);
+            }
+        });
+    } else {
+        if (confirm('¿Confirma que comenzará a gestionar este documento?')) {
+            ejecutarIniciarGestion(equipoId, docType);
+        }
+    }
+};
+
+async function ejecutarIniciarGestion(equipoId, docType) {
+    // Show global preloader
+    const preloader = document.getElementById('preloader');
+    if (preloader) preloader.style.display = 'flex';
+
+    try {
+        const response = await fetch('/dashboard/iniciar-gestion', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                equipo_id: equipoId,
+                doc_type: docType
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            await refreshDashboardAlerts();
+            // Hide preloader after refresh
+            if (preloader) preloader.style.display = 'none';
+        } else {
+            if (preloader) preloader.style.display = 'none';
+            throw new Error(data.message || 'Error al iniciar gestión');
+        }
+    } catch (error) {
+        if (preloader) preloader.style.display = 'none';
+        console.error('Error:', error);
+        if (typeof showModal === 'function') {
+            showModal({ type: 'error', title: 'Error', message: error.message });
+        } else {
+            alert(error.message);
+        }
+    }
+};
+
+
 

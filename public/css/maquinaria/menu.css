@@ -769,6 +769,25 @@
 }
 
 /* Feature Cards (Reused from Login) */
+.features-floating-wrapper {
+    position: fixed;
+    bottom: 280px;
+    right: 350px;
+    z-index: 2;
+    pointer-events: auto;
+}
+
+.machinery-fixed-bottom {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 45%;
+    min-width: 380px;
+    max-width: 1000px;
+    pointer-events: none;
+    z-index: 0;
+}
+
 .features-container {
     margin-bottom: 20px;
     display: flex;
@@ -790,7 +809,7 @@
     color: #ffffff;
     font-family: 'Nunito', sans-serif;
     font-size: 0.9rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    /* box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); REMOVED */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     width: fit-content;
     min-width: 215px;
@@ -800,7 +819,7 @@
 .feature-card:hover {
     transform: translateX(12px) scale(1.02);
     background: linear-gradient(135deg, rgba(48, 25, 52, 0.95) 0%, rgba(75, 0, 130, 0.95) 100%);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    /* box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4); REMOVED */
 }
 
 .feature-card-icon {
@@ -914,5 +933,18 @@
         padding: 8px !important;
         min-width: 36px;
         justify-content: center !important;
+    }
+}
+
+/* Ocultar decoraciones pesadas en pantallas medianas/pequeñas para evitar solapamiento */
+@media (max-width: 1457px) {
+    .features-floating-wrapper {
+        display: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .machinery-fixed-bottom {
+        display: none !important;
     }
 }

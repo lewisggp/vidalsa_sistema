@@ -38,7 +38,7 @@ class DashboardController extends Controller
 
         // 4. Alerts List (Cached Daily) - Expired AND Expiring Soon (30 days)
         // UPDATED TO v2 for consistency with AJAX endpoint and Observer
-        $expiredList = \Illuminate\Support\Facades\Cache::remember('dashboard_expired_list_v2', Carbon::now()->endOfDay(), function() {
+        $expiredList = \Illuminate\Support\Facades\Cache::remember('dashboard_expired_list_v3', Carbon::now()->endOfDay(), function() {
             return $this->generateAlertsList();
         });
 
@@ -74,7 +74,7 @@ class DashboardController extends Controller
             \Illuminate\Support\Facades\Cache::forget('dashboard_total_alerts');
             \Illuminate\Support\Facades\Cache::forget('dashboard_movilizaciones_hoy');
             \Illuminate\Support\Facades\Cache::forget('dashboard_pendientes');
-            \Illuminate\Support\Facades\Cache::forget('dashboard_expired_list_v2'); // Corrected key
+            \Illuminate\Support\Facades\Cache::forget('dashboard_expired_list_v3'); // Corrected key
             \Illuminate\Support\Facades\Cache::forget('dashboard_recent_activity');
 
             return back()->with('success', 'Sistema reiniciado correctamente. Las conexiones han sido restablecidas.');
@@ -86,25 +86,10 @@ class DashboardController extends Controller
 
     public function getAlertsHtml()
     {
-        // 5. Alerts List (Reuse existing cache logic)
-        // Since DocumentacionObserver updates this cache on change, we just need to fetch it.
-        // KEY UPDATED TO v2 TO FORCE REFRESH AFTER STRUCTURE CHANGE
-        $expiredList = \Illuminate\Support\Facades\Cache::remember('dashboard_expired_list_v2', \Carbon\Carbon::now()->endOfDay(), function() {
-            return $this->generateAlertsList();
-        });
-
-        // Recalculate total count as well for sidebar badge if needed
-        $now = \Carbon\Carbon::now();
-        $in30Days = $now->copy()->addDays(30);
-        $totalAlerts = \Illuminate\Support\Facades\Cache::remember('dashboard_total_alerts', $now->copy()->endOfDay(), function() use ($now, $in30Days) {
-             $stats = \App\Models\Documentacion::selectRaw("
-                COUNT(CASE WHEN FECHA_VENC_POLIZA < ? THEN 1 END) as poliza,
-                COUNT(CASE WHEN FECHA_ROTC < ? THEN 1 END) as rotc,
-                COUNT(CASE WHEN FECHA_RACDA < ? THEN 1 END) as racda
-            ", [$in30Days, $in30Days, $in30Days])->first();
-            return ($stats->poliza ?? 0) + ($stats->rotc ?? 0) + ($stats->racda ?? 0);
-        });
-
+        // NO CACHE - Direct fetch to ensure real-time updates for "Take Responsibility"
+        $expiredList = $this->generateAlertsList();
+        $totalAlerts = $expiredList->count();
+        
         return response()->json([
             'html' => view('partials.dashboard_alerts', compact('expiredList'))->render(),
             'totalAlerts' => $totalAlerts
@@ -125,7 +110,13 @@ class DashboardController extends Controller
               ->orWhere('FECHA_ROTC', '<', $in30Days)
               ->orWhere('FECHA_RACDA', '<', $in30Days);
         })
-        ->with(['documentacion', 'tipo'])
+        ->with([
+            'documentacion.frenteGestionPoliza',
+            'documentacion.frenteGestionRotc',
+            'documentacion.frenteGestionRacda',
+            'tipo',
+            'frenteActual'
+        ])
         ->get();
 
         $alerts = collect();
@@ -136,23 +127,20 @@ class DashboardController extends Controller
             // Poliza
             if ($doc->FECHA_VENC_POLIZA) {
                 $fechaPoliza = \Carbon\Carbon::parse($doc->FECHA_VENC_POLIZA);
-                if ($fechaPoliza->lt($now)) {
+                
+                // Determine Status
+                $status = $fechaPoliza->lt($now) ? 'expired' : ($fechaPoliza->lt($in30Days) ? 'warning' : 'valid');
+                
+                if ($status !== 'valid') {
                     $alerts->push((object)[
                         'equipo' => $equipo,
                         'type_key' => 'poliza',
-                        'label' => 'Póliza Vencida',
+                        'label' => $status === 'expired' ? 'Póliza Vencida' : 'Póliza Por Vencer',
                         'fecha' => $doc->FECHA_VENC_POLIZA,
                         'current_link' => $doc->LINK_POLIZA_SEGURO,
-                        'status' => 'expired'
-                    ]);
-                } elseif ($fechaPoliza->lt($in30Days)) {
-                    $alerts->push((object)[
-                        'equipo' => $equipo,
-                        'type_key' => 'poliza',
-                        'label' => 'Póliza Por Vencer',
-                        'fecha' => $doc->FECHA_VENC_POLIZA,
-                        'current_link' => $doc->LINK_POLIZA_SEGURO,
-                        'status' => 'warning'
+                        'status' => $status,
+                        'gestionado_por' => $doc->frenteGestionPoliza ? $doc->frenteGestionPoliza->NOMBRE_FRENTE : null,
+                        'fecha_gestion' => $doc->poliza_gestion_fecha
                     ]);
                 }
             }
@@ -160,23 +148,18 @@ class DashboardController extends Controller
             // ROTC
             if ($doc->FECHA_ROTC) {
                 $fechaRotc = \Carbon\Carbon::parse($doc->FECHA_ROTC);
-                if ($fechaRotc->lt($now)) {
+                $status = $fechaRotc->lt($now) ? 'expired' : ($fechaRotc->lt($in30Days) ? 'warning' : 'valid');
+                
+                if ($status !== 'valid') {
                     $alerts->push((object)[
                         'equipo' => $equipo,
                         'type_key' => 'rotc',
-                        'label' => 'ROTC Vencido',
+                        'label' => $status === 'expired' ? 'ROTC Vencido' : 'ROTC Por Vencer',
                         'fecha' => $doc->FECHA_ROTC,
                         'current_link' => $doc->LINK_ROTC,
-                        'status' => 'expired'
-                    ]);
-                } elseif ($fechaRotc->lt($in30Days)) {
-                    $alerts->push((object)[
-                        'equipo' => $equipo,
-                        'type_key' => 'rotc',
-                        'label' => 'ROTC Por Vencer',
-                        'fecha' => $doc->FECHA_ROTC,
-                        'current_link' => $doc->LINK_ROTC,
-                        'status' => 'warning'
+                        'status' => $status,
+                        'gestionado_por' => $doc->frenteGestionRotc ? $doc->frenteGestionRotc->NOMBRE_FRENTE : null,
+                        'fecha_gestion' => $doc->rotc_gestion_fecha
                     ]);
                 }
             }
@@ -184,33 +167,177 @@ class DashboardController extends Controller
             // RACDA
             if ($doc->FECHA_RACDA) {
                 $fechaRacda = \Carbon\Carbon::parse($doc->FECHA_RACDA);
-                if ($fechaRacda->lt($now)) {
+                $status = $fechaRacda->lt($now) ? 'expired' : ($fechaRacda->lt($in30Days) ? 'warning' : 'valid');
+                
+                if ($status !== 'valid') {
                     $alerts->push((object)[
                         'equipo' => $equipo,
                         'type_key' => 'racda',
-                        'label' => 'RACDA Vencido',
+                        'label' => $status === 'expired' ? 'RACDA Vencido' : 'RACDA Por Vencer',
                         'fecha' => $doc->FECHA_RACDA,
                         'current_link' => $doc->LINK_RACDA,
-                        'status' => 'expired'
-                    ]);
-                } elseif ($fechaRacda->lt($in30Days)) {
-                    $alerts->push((object)[
-                        'equipo' => $equipo,
-                        'type_key' => 'racda',
-                        'label' => 'RACDA Por Vencer',
-                        'fecha' => $doc->FECHA_RACDA,
-                        'current_link' => $doc->LINK_RACDA,
-                        'status' => 'warning'
+                        'status' => $status,
+                        'gestionado_por' => $doc->frenteGestionRacda ? $doc->frenteGestionRacda->NOMBRE_FRENTE : null,
+                        'fecha_gestion' => $doc->racda_gestion_fecha
                     ]);
                 }
             }
         }
 
         // Separate expired from warnings
-        $expired = $alerts->where('status', 'expired')->sortBy('fecha')->values()->take(20);
-        $warnings = $alerts->where('status', 'warning')->sortBy('fecha')->values()->take(20);
+        $expired = $alerts->where('status', 'expired')->sortBy('fecha')->values();
+        $warnings = $alerts->where('status', 'warning')->sortBy('fecha')->values();
         
         // Combine: warnings first (upcoming), then expired
         return $warnings->concat($expired)->values();
+    }
+
+    /**
+     * Start management of a document
+     */
+    public function iniciarGestion(Request $request)
+    {
+        $request->validate([
+            'equipo_id' => 'required|exists:equipos,ID_EQUIPO',
+            'doc_type' => 'required|in:poliza,rotc,racda'
+        ]);
+
+        $user = auth()->user();
+        if (!$user->ID_FRENTE_ASIGNADO) {
+            return response()->json(['success' => false, 'message' => 'Debe pertenecer a un frente para iniciar gestión'], 403);
+        }
+
+        $doc = \App\Models\Documentacion::where('ID_EQUIPO', $request->equipo_id)->first();
+        if (!$doc) return response()->json(['success' => false, 'message' => 'Documentación no encontrada'], 404);
+
+        $frenteField = $request->doc_type . '_gestion_frente_id';
+        $fechaField = $request->doc_type . '_gestion_fecha';
+
+        $doc->$frenteField = $user->ID_FRENTE_ASIGNADO;
+        $doc->$fechaField = now();
+        $doc->save();
+
+        // Clear Cache
+        \Illuminate\Support\Facades\Cache::forget('dashboard_total_alerts');
+        \Illuminate\Support\Facades\Cache::forget('dashboard_expired_list_v3');
+
+        return response()->json(['success' => true]);
+    }
+    
+    /**
+     * Generate PDF Report of Expired & Expiring Documents
+     */
+    public function exportDocumentsPDF()
+    {
+        try {
+            // Get current user info
+            $user = auth()->user();
+            $nombreUsuario = $user->NOMBRE_USUARIO ?? 'Sistema';
+            $nombreFrente = $user->frenteAsignado ? $user->frenteAsignado->NOMBRE_FRENTE : 'Sin Frente Asignado';
+            $fechaEmision = \Carbon\Carbon::now()->locale('es')->isoFormat('DD [de] MMMM [de] YYYY - HH:mm');
+
+            // Get alerts list
+            $alertsList = $this->generateAlertsList();
+            
+            // Separate by status and Sort by Equipment Type for grouping
+            $vencidos = $alertsList->filter(function($alert) {
+                return $alert->status === 'expired';
+            })->sortBy('equipo.tipo.nombre')->values();
+            
+            $proximos = $alertsList->filter(function($alert) {
+                return $alert->status === 'warning';
+            })->sortBy('equipo.tipo.nombre')->values();
+
+            // Calculate totals
+            $totalVencidos = $vencidos->count();
+            $totalProximos = $proximos->count();
+            
+            // Get unique equipment count
+            $totalEquipos = $alertsList->pluck('equipo.ID_EQUIPO')->unique()->count();
+
+            // MANUAL LOADING OF TCPDF (Emergency Mode)
+            // If the package is physically present but not autoloaded yet
+            if (!class_exists('TCPDF')) {
+                $tcpdfPath = base_path('vendor/tecnickcom/tcpdf/tcpdf.php');
+                if (file_exists($tcpdfPath)) {
+                    require_once($tcpdfPath);
+                }
+            }
+
+            // Render View to HTML
+            $html = view('reports.documentos_vencidos_pdf', compact(
+                'vencidos',
+                'proximos',
+                'nombreUsuario',
+                'nombreFrente',
+                'fechaEmision',
+                'totalVencidos',
+                'totalProximos',
+                'totalEquipos'
+            ))->render();
+
+            if (class_exists('TCPDF')) {
+                $pdf = new ReportePDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+                
+                // Set document information
+                $pdf->SetCreator('Sistema de Gestión');
+                $pdf->SetAuthor($nombreUsuario);
+                $pdf->SetTitle('Reporte de Documentos Vencidos');
+
+                // Configuración de Márgenes (2cm)
+                // Configuración de Márgenes
+                $pdf->setPrintHeader(true); 
+                $pdf->setPrintFooter(true); 
+                $pdf->SetMargins(25, 40, 25); // Margen superior 4cm para bajar el contenido y no chocar con el header grande
+                $pdf->SetHeaderMargin(10); // Header a 1cm del borde
+                $pdf->SetAutoPageBreak(TRUE, 25);
+                
+                // Add a page
+                $pdf->AddPage();
+                
+                // Write HTML
+                $pdf->writeHTML($html, true, false, true, false, '');
+                
+                // Download
+                $filename = 'Reporte_Documentos_' . \Carbon\Carbon::now()->format('Y-m-d_His') . '.pdf';
+                
+                return response($pdf->Output($filename, 'S')) // S = Return as string
+                    ->header('Content-Type', 'application/pdf')
+                    ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+            } else {
+                 throw new \Exception('La librería TCPDF no se encuentra instalada correctamente.');
+            }
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('PDF Export Error: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Error al generar PDF: ' . $e->getMessage()]);
+        }
+    }
+}
+
+// Clase para personalizar el pie de página del PDF
+if (class_exists('TCPDF') && !class_exists('ReportePDF')) {
+    class ReportePDF extends \TCPDF {
+        public function Header() {
+            // Imagen a 1cm (10mm) del borde superior y 2.5cm (25mm) del izquierdo
+            $image_file = public_path('img/imagen_uno.jpg');
+            // Image(file, x, y, w, h) -> h=25mm (Más grande)
+            if (file_exists($image_file)) {
+                $this->Image($image_file, 25, 10, 0, 25, 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
+            }
+
+            // Texto a la derecha, alineado con la base de la foto (Y=27 aprox para base en 35)
+            $this->SetFont('helvetica', '', 8.5);
+            $html = '<div style="text-align: right;"><strong>FECHA DE EMISIÓN:</strong> ' . \Carbon\Carbon::now()->format('d/m/Y') . '<br>EMITIDO POR SISTEMA DE GESTIÓN DE FLOTA</div>';
+            
+            // Renderizar HTML Cell
+            $this->writeHTMLCell(0, 0, 25, 27, $html, 0, 1, 0, true, 'R', true);
+        }
+
+        public function Footer() {
+            $this->SetY(-15);
+            $this->SetFont('helvetica', '', 8.5); // Sin cursiva y tamaño 8.5
+            $this->Cell(0, 10, 'Página '.$this->getAliasNumPage().'/'.$this->getAliasNbPages(), 0, false, 'R', 0, '', 0, false, 'T', 'M');
+        }
     }
 }

@@ -160,10 +160,10 @@
                     </div>
                     <div class="multiselect-content" id="multiselectContent">
                         @php $user_perms = old('PERMISOS', $user->PERMISOS ?? []); @endphp
-                        @foreach($available_permissions as $index => $perm)
-                            <label class="multiselect-item" for="perm_{{ $index }}">
-                                <input type="checkbox" id="perm_{{ $index }}" name="PERMISOS[]" value="{{ $perm }}" {{ in_array($perm, $user_perms) ? 'checked' : '' }} onchange="updateSelectedCount()">
-                                <span>{{ $perm }}</span>
+                        @foreach($available_permissions as $key => $label)
+                            <label class="multiselect-item" for="perm_{{ $loop->index }}">
+                                <input type="checkbox" id="perm_{{ $loop->index }}" name="PERMISOS[]" value="{{ $key }}" {{ in_array($key, $user_perms) ? 'checked' : '' }} onchange="updateSelectedCount()">
+                                <span>{{ $label }}</span>
                             </label>
                         @endforeach
                     </div>

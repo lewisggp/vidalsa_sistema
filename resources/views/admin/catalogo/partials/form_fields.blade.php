@@ -104,7 +104,7 @@
             <input type="text" id="MODELO" name="MODELO"
                    class="form-input-custom @error('MODELO') is-invalid @enderror" 
                    value="{{ old('MODELO', $catalogo->MODELO ?? '') }}" 
-                   placeholder="Escriba o seleccione..." 
+                   placeholder="Escriba..." 
                    required 
                    oninput="this.value = this.value.toUpperCase(); filterFormDropdown(this)"
                    onfocus="showFormDropdown(this)"

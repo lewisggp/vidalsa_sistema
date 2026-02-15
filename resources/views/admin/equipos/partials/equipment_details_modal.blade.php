@@ -32,9 +32,9 @@
                     <div style="padding: 20px; border-top: 1px solid #e2e8f0;">
                         <div style="display: flex; flex-direction: column; gap: 15px; font-size: 14px;">
                         
-                            <div class="detail-row-basic">
-                                <span style="color: #64748b; font-weight: 500;">Titular del Registro</span>
-                                <strong id="d_titular" style="color: #1e293b; font-size: 14px;"></strong>
+                            <div class="detail-row-basic" style="display: flex; flex-direction: column; align-items: flex-start; gap: 0;">
+                                <span style="color: #64748b; font-weight: 500; margin-bottom: 2px;">Titular del Registro</span>
+                                <strong id="d_titular" style="color: #1e293b; font-size: 14px; line-height: 1.3; width: 100%; word-wrap: break-word;"></strong>
                             </div>
 
                             <!-- Placa -->

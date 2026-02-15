@@ -11,7 +11,7 @@ class MovilizacionController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Movilizacion::with(['equipo.tipo', 'frenteOrigen', 'frenteDestino', 'usuario']);
+        $query = Movilizacion::with(['equipo.tipo', 'equipo.especificaciones', 'equipo.documentacion', 'frenteOrigen', 'frenteDestino', 'usuario']);
 
         // Smart Search Filters (Pattern-Based Optimization)
         if ($request->filled('search')) {

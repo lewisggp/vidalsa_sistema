@@ -29,7 +29,7 @@ function updateSelectionUI() {
 
     if (bar && text) {
         if (count > 0) {
-            text.innerText = `${count} seleccionado${count > 1 ? 's' : ''}`;
+            text.innerText = count;
             bar.classList.add('active');
         } else {
             bar.classList.remove('active');
@@ -600,6 +600,10 @@ window.updateLocalStats = function (oldStatus, newStatus) {
     if (newStatus === 'INOPERATIVO' || newStatus === 'DESINCORPORADO') adjust(elInop, 1);
     if (newStatus === 'EN MANTENIMIENTO') adjust(elMant, 1);
 };
+
+
+
+
 
 window.exportEquipos = function () {
     const searchInput = document.getElementById('searchInput');

@@ -386,14 +386,15 @@ window.filterDropdownOptions = function (input) {
     const dropdown = input.closest('.custom-dropdown');
     if (!dropdown) return;
 
+
+
+    // Standard Client-Side Filtering (Original Logic) for small lists (Frente, Tipo, etc.)
     // Normalize helper: lowercase and remove accents
     const normalize = (str) => {
         return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     };
 
     const filter = normalize(input.value);
-
-    // Fix: Support both standard dropdown items and catalog filter items
     const items = dropdown.querySelectorAll('.dropdown-item, .filter-option-item');
 
     items.forEach(item => {
@@ -885,14 +886,13 @@ window.uploadDocument = function (input, type, equipoId, containerId, label) {
     xhr.setRequestHeader('Accept', 'application/json');
 
     xhr.onload = function () {
-        if (window.hidePreloader) window.hidePreloader();
+        // Note: preloader is now hidden conditionally after PDF modal opens (see below)
+        // This prevents visual gap during transition
 
         if (xhr.status === 200) {
             try {
                 const data = JSON.parse(xhr.responseText);
                 if (data.success) {
-                    if (window.showModal) showModal({ type: 'success', title: 'Cargado', message: 'Documento cargado correctamente.', confirmText: 'OK', hideCancel: true });
-
                     // Update UI
                     const container = document.getElementById(containerId);
                     if (container) {
@@ -922,13 +922,37 @@ window.uploadDocument = function (input, type, equipoId, containerId, label) {
                         window.refreshDashboardAlerts();
                     }
 
+                    // Auto-Open PDF Preview (Serves as success confirmation)
+                    console.log('✅ Upload successful, attempting to open PDF preview...');
+                    console.log('📄 PDF Link:', data.link);
+                    console.log('🔍 openPdfPreview available?', typeof window.openPdfPreview);
+
+                    if (typeof window.openPdfPreview === 'function') {
+                        // Small delay to ensure DOM is ready and preloader has shown
+                        setTimeout(() => {
+                            console.log('🚀 Opening PDF modal...');
+                            window.openPdfPreview(data.link, type, label, equipoId);
+
+                            // Hide global preloader AFTER opening PDF modal (smooth transition)
+                            setTimeout(() => {
+                                if (window.hidePreloader) window.hidePreloader();
+                            }, 150);
+                        }, 50);
+                    } else {
+                        console.error('❌ openPdfPreview function not found!');
+                        if (window.hidePreloader) window.hidePreloader();
+                    }
+
                 } else {
+                    if (window.hidePreloader) window.hidePreloader();
                     if (window.showModal) showModal({ type: 'error', title: 'Error', message: data.message || 'Error al cargar.', confirmText: 'Cerrar', hideCancel: true });
                 }
             } catch (e) {
                 console.error(e);
+                if (window.hidePreloader) window.hidePreloader();
             }
         } else {
+            if (window.hidePreloader) window.hidePreloader();
             if (window.showModal) showModal({ type: 'error', title: 'Error', message: 'Error de red.', confirmText: 'Cerrar', hideCancel: true });
         }
     };
@@ -939,4 +963,38 @@ window.uploadDocument = function (input, type, equipoId, containerId, label) {
     };
 
     xhr.send(formData);
+};
+
+/**
+ * Global Preloader Management
+ * Reuses the existing #preloader element from estructura_base.blade.php
+ * to avoid DOM duplication and maintain consistency.
+ */
+window.showPreloader = function () {
+    const preloader = document.getElementById('preloader');
+    if (preloader) {
+        // Remove fade-out class if present
+        preloader.classList.remove('fade-out');
+
+        // Make visible immediately
+        preloader.style.display = 'flex';
+        preloader.style.opacity = '1';
+        preloader.style.visibility = 'visible';
+        preloader.style.zIndex = '99999';
+    }
+};
+
+window.hidePreloader = function () {
+    const preloader = document.getElementById('preloader');
+    if (preloader) {
+        // Add fade-out class for smooth transition
+        preloader.classList.add('fade-out');
+
+        // Hide after transition completes (500ms as defined in CSS)
+        setTimeout(() => {
+            if (preloader.classList.contains('fade-out')) {
+                preloader.style.display = 'none';
+            }
+        }, 500);
+    }
 };
