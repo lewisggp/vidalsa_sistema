@@ -2,9 +2,46 @@
     <tr>
         <!-- 1. Foto -->
         <td class="table-cell-custom table-cell-center" style="padding-left: 5px; padding-right: 5px;">
-            <!-- Frente Info -->
-            <div style="font-size: 13px; color: #000000; margin-bottom: 5px; line-height: 1.1; font-weight: 600; text-align: center; width: 100%; word-wrap: break-word;" title="{{ $equipo->frenteActual->NOMBRE_FRENTE ?? 'Sin Asignar' }}">
+            <!-- Frente Info (Con Burbuja Personalizada) -->
+            <div class="tooltip-wrapper" style="font-size: 13px; color: #000000; margin-bottom: 5px; line-height: 1.3; font-weight: 600; text-align: center; width: 100%; word-wrap: break-word; position: relative; cursor: default;">
+                
                 {{ $equipo->frenteActual->NOMBRE_FRENTE ?? 'Sin Asignar' }}
+                
+                @if($equipo->DETALLE_UBICACION_ACTUAL)
+                    {{-- Burbuja Tooltip --}}
+                    <div class="tooltip-bubble" style="
+                        pointer-events: none;
+                        opacity: 0;
+                        visibility: hidden;
+                        position: absolute;
+                        bottom: 100%;
+                        left: 50%;
+                        transform: translateX(-50%) translateY(5px);
+                        background-color: #1e293b;
+                        color: #fff;
+                        padding: 6px 10px;
+                        border-radius: 6px;
+                        font-size: 11px;
+                        font-weight: 500;
+                        white-space: nowrap;
+                        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                        transition: all 0.2s ease-in-out;
+                        z-index: 50;
+                        margin-bottom: 5px;
+                    ">
+                        📍 {{ $equipo->DETALLE_UBICACION_ACTUAL }}
+                        {{-- Flechita --}}
+                        <div style="
+                            position: absolute;
+                            top: 100%;
+                            left: 50%;
+                            margin-left: -4px;
+                            border-width: 4px;
+                            border-style: solid;
+                            border-color: #1e293b transparent transparent transparent;
+                        "></div>
+                    </div>
+                @endif
             </div>
 
             @if($equipo->especificaciones && $equipo->especificaciones->FOTO_REFERENCIAL)

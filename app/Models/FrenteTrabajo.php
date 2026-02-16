@@ -10,14 +10,16 @@ class FrenteTrabajo extends Model
     protected $primaryKey = 'ID_FRENTE';
 
     protected $fillable = [
+        'ID_FRENTE',
         'NOMBRE_FRENTE',
         'UBICACION',
         'TIPO_FRENTE',
         'ESTATUS_FRENTE',
+        'SUBDIVISIONES',   // Nueva columna de texto para hijos
         'RESP_1_NOM',
         'RESP_1_CAR',
         'RESP_2_NOM',
-        'RESP_2_CAR'
+        'RESP_2_CAR',
     ];
 
     public function usuarios()

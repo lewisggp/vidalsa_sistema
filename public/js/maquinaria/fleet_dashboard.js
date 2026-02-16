@@ -7,16 +7,13 @@ let currentFrenteId = ''; // Track selected frente
 // Color palettes
 const CHART_COLORS = {
     status: {
-        'OPERATIVO': '#4472C4',      // PowerPoint Blue
-        'MANTENIMIENTO': '#7f7f7f',  // Gray
-        'INACTIVO': '#ef4444',       // Red
-        'REPARACIÓN': '#ef4444',     // Red
-        'EN REPARACIÓN': '#ef4444',  // Red
-        'INOPERATIVO': '#ef4444',    // Red (Added Explicitly)
-        'DISPONIBLE': '#4472C4'      // Blue
+        'OPERATIVO': '#1b0d95ff',      // Operativo
+        'MANTENIMIENTO': '#7b7b7bff',    // Mantenimiento
+        'INOPERATIVO': '#a31616ff',    // Inoperativo
+        'DESINCORPORADO': '#07090aff'    // Desincorporado
     },
-    age: ['#0067b1', '#b91c1c'], // New (Brand Blue), Old (Dark Red)
-    category: ['#0067b1', '#4472C4'] // Pesada (Brand Blue), Liviana (Light Blue)
+    age: ['#1b0d95ff', '#a31616ff'], // New (Brand Blue), Old (Dark Red)
+    category: ['#a31616ff', '#1b0d95ff', '#94a3b8'] // Pesada, Liviana, Sin Asignar (Gris)
 };
 
 /**

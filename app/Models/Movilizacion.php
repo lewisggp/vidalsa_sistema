@@ -17,6 +17,8 @@ class Movilizacion extends Model
         'ID_EQUIPO',
         'ID_FRENTE_ORIGEN',
         'ID_FRENTE_DESTINO',
+        'ID_FRENTE_RECEPCION', // Agregado
+        'DETALLE_UBICACION',   // Patio/Subdivisión específica de recepción
         'FECHA_DESPACHO',
         'FECHA_RECEPCION',
         'ESTADO_MVO', // TRANSITO, RECIBIDO, RETORNADO
@@ -49,6 +51,11 @@ class Movilizacion extends Model
     public function frenteDestino()
     {
         return $this->belongsTo(FrenteTrabajo::class, 'ID_FRENTE_DESTINO', 'ID_FRENTE');
+    }
+
+    public function frenteRecepcion()
+    {
+        return $this->belongsTo(FrenteTrabajo::class, 'ID_FRENTE_RECEPCION', 'ID_FRENTE');
     }
 
     public function usuario()

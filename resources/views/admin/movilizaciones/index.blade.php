@@ -5,9 +5,17 @@
 @section('content')
 <section class="page-title-card" style="text-align: left; margin: 0 0 10px 0;">
     <h1 class="page-title">
-        <span class="page-title-line2" style="color: #000;">Historial de Movilización</span>
+        <span class="page-title-line2" style="color: #000;">Control de Recepción</span>
     </h1>
 </section>
+
+<style>
+    /* Quitar manito de las filas */
+    #movilizacionesTableBody tr, 
+    #movilizacionesTableBody td {
+        cursor: default !important;
+    }
+</style>
 
 <div class="page-layout-grid" style="display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 40px; align-items: start; width: 100%;">
     
@@ -104,6 +112,13 @@
                     </div>
                 </form>
             </div>
+
+            <!-- Botón Filtro Avanzado (Fechas) -->
+            <button type="button" id="btnAdvancedFilter" class="btn-primary-maquinaria" 
+                style="height: 45px; width: 45px; padding: 0; display: flex; align-items: center; justify-content: center; background: white; border: 1px solid #cbd5e0; color: #64748b; box-shadow: none; border-radius: 12px; cursor: pointer; margin-left: left;"
+                onclick="alert('Funcionalidad de filtro por fechas pendiente.');">
+                <i class="material-icons">filter_list</i>
+            </button>
         </div>
 
         <!-- Table Container -->
@@ -170,11 +185,93 @@
     </div>
 
 </div>
-@endsection
 
 <!-- Image Overlay Modal -->
 <div id="imageOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; cursor: default;" onclick="this.style.display='none'">
     <img id="enlargedImg" style="max-width: 90%; max-height: 90%; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); transition: transform 0.3s ease;">
 </div>
 
+<!-- Modal de Recepción con Sub-Ubicación -->
+<div id="recepcionModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; justify-content: center; align-items: center;">
+    <div style="background: white; width: 90%; max-width: 450px; border-radius: 16px; padding: 25px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); animation: slideIn 0.3s ease-out;">
+        
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div style="width: 50px; height: 50px; background: #e0eff8; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto;">
+                <i class="material-icons" style="font-size: 30px; color: #0067b1;">check_circle</i>
+            </div>
+            <h3 style="font-size: 18px; font-weight: 800; color: #1e293b; margin: 0;">Confirmar Recepción</h3>
+            <p style="font-size: 14px; color: #64748b; margin-top: 5px;">
+                El equipo ha llegado a <strong id="modalFrenteNombre" style="color: #0f172a;"></strong>
+            </p>
+        </div>
 
+        <form id="formRecepcion" action="" method="POST">
+            @csrf
+            @method('PATCH')
+            <input type="hidden" name="status" value="RECIBIDO">
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px;">
+                    Seleccione Ubicación Específica / Patio
+                    <span style="color: #ef4444;">*</span>
+                </label>
+                <div class="custom-dropdown" id="patioSelect">
+                    <input type="hidden" name="DETALLE_UBICACION" id="input_patio" required>
+                    <div class="dropdown-trigger" onclick="toggleDropdown('patioSelect', event)" style="background: #f8fafc; border: 1px solid #cbd5e0;">
+                        <span id="label_patio">Seleccione Patio...</span>
+                        <i class="material-icons">expand_more</i>
+                    </div>
+                    <div class="dropdown-content" id="patioList">
+                        <!-- Options populated by JS -->
+                    </div>
+                </div>
+
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button type="button" onclick="document.getElementById('recepcionModal').style.display='none'" 
+                    style="flex: 1; padding: 10px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 600; color: #64748b; cursor: pointer; transition: all 0.2s;"
+                    onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='white'">
+                    Cancelar
+                </button>
+                <button type="submit" id="btnConfirmarRecepcion"
+                    style="flex: 1; padding: 10px; background: #0067b1; border: none; border-radius: 8px; font-weight: 700; color: white; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 103, 177, 0.2);"
+                    onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 8px -1px rgba(0, 103, 177, 0.3)'" 
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0, 103, 177, 0.2)'">
+                    Confirmar Ubicación
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Confirmación Simple (sin subdivisiones) -->
+<div id="confirmacionModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; justify-content: center; align-items: center;">
+    <div style="background: white; width: 90%; max-width: 420px; border-radius: 16px; padding: 25px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); animation: slideIn 0.3s ease-out;">
+        
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div style="width: 50px; height: 50px; background: #e0eff8; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto;">
+                <i class="material-icons" style="font-size: 30px; color: #0067b1;">check_circle</i>
+            </div>
+            <h3 style="font-size: 18px; font-weight: 800; color: #1e293b; margin: 0;">Confirmar Recepción</h3>
+            <p style="font-size: 14px; color: #64748b; margin-top: 8px;">
+                ¿Confirmar que el equipo ha llegado a <strong id="confirmFrenteNombre" style="color: #0f172a;"></strong>?
+            </p>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button type="button" onclick="document.getElementById('confirmacionModal').style.display='none'" 
+                style="flex: 1; padding: 12px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 600; color: #64748b; cursor: pointer; transition: all 0.2s;"
+                onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='white'">
+                Cancelar
+            </button>
+            <button type="button" id="btnConfirmarSimple"
+                style="flex: 1; padding: 12px; background: #0067b1; border: none; border-radius: 8px; font-weight: 700; color: white; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 103, 177, 0.2);"
+                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 8px -1px rgba(0, 103, 177, 0.3)'" 
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0, 103, 177, 0.2)'">
+                Confirmar Recepción
+            </button>
+        </div>
+    </div>
+</div>
+@endsection

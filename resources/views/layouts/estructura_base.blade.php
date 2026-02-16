@@ -90,7 +90,7 @@
                 <i class="material-icons" style="font-size: 18px; margin-right: 5px;">agriculture</i>Vehículo
             </a>
             <a href="{{ route('movilizaciones.index') }}" class="nav-link {{ request()->is('admin/movilizaciones*') ? 'active' : '' }}" style="display: flex; align-items: center;">
-                <i class="material-icons" style="font-size: 18px; margin-right: 5px;">local_shipping</i>Movilizaciones
+                <i class="material-icons" style="font-size: 18px; margin-right: 5px;">local_shipping</i>Recepción
             </a>
 
             <!-- Configuraciones Dropdown -->
@@ -144,7 +144,7 @@
             <i class="material-icons">agriculture</i> Vehículo
         </a>
         <a href="{{ route('movilizaciones.index') }}" class="mobile-nav-link {{ request()->is('admin/movilizaciones*') ? 'active' : '' }}">
-            <i class="material-icons">local_shipping</i> Movilizaciones
+            <i class="material-icons">local_shipping</i> Recepción
         </a>
 
         <!-- Mobile Group -->
@@ -434,9 +434,9 @@
     {{-- from navegacion.js when switching between pages without reload --}}
     <script src="{{ asset('js/maquinaria/menu.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/maquinaria/catalogo_create.js') }}?v=12.0"></script>
-    <script src="{{ asset('js/maquinaria/equipos_index.js') }}?v=19.0"></script>
+    <script src="{{ asset('js/maquinaria/equipos_index.js') }}?v=20.0"></script>
     <script src="{{ asset('js/maquinaria/catalogo_index.js') }}?v=3.6"></script>
-    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=3.0"></script>
+    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=5.1"></script>
     <script src="{{ asset('js/maquinaria/usuarios_index.js') }}?v=10.0"></script>
     <script src="{{ asset('js/maquinaria/fleet_dashboard.js') }}?v=103.3"></script>
 

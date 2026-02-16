@@ -12,10 +12,10 @@ class FrenteTrabajoController extends Controller
      */
     public function index(Request $request)
     {
+        // El usuario prefiere trabajar exclusivamente desde el formulario de creación/edición
+        // con el buscador integrado. Redirigimos siempre a CREATE.
         return redirect()->route('frentes.create');
     }
-
-
 
     /**
      * Show the form for creating a new resource.
@@ -28,12 +28,15 @@ class FrenteTrabajoController extends Controller
             count(case when ESTATUS_FRENTE = 'FINALIZADO' then 1 end) as finalizados
         ")->first();
 
-        // Pre-load for Search Dropdown
+        // Pre-load for Search Dropdown (Simple list)
         $allFrentes = FrenteTrabajo::select('ID_FRENTE', 'NOMBRE_FRENTE')
             ->orderBy('NOMBRE_FRENTE')
             ->get();
 
-        return view('admin.frentes.formulario', compact('stats', 'allFrentes'));
+        // Create empty frente instance for the form
+        $frente = new FrenteTrabajo();
+
+        return view('admin.frentes.formulario', compact('frente', 'stats', 'allFrentes'));
     }
 
     /**
@@ -46,6 +49,7 @@ class FrenteTrabajoController extends Controller
         $request->merge([
             'NOMBRE_FRENTE' => mb_strtoupper($request->input('NOMBRE_FRENTE')),
             'UBICACION' => mb_strtoupper($request->input('UBICACION')),
+            'SUBDIVISIONES' => $request->filled('SUBDIVISIONES') ? mb_strtoupper($request->input('SUBDIVISIONES')) : null,
             'RESP_1_NOM' => mb_strtoupper($request->input('RESP_1_NOM')),
             'RESP_1_CAR' => mb_strtoupper($request->input('RESP_1_CAR')),
             'RESP_2_NOM' => mb_strtoupper($request->input('RESP_2_NOM')),
@@ -57,6 +61,7 @@ class FrenteTrabajoController extends Controller
             'UBICACION' => 'required|string|max:100',
             'TIPO_FRENTE' => 'required|in:OPERACION,RESGUARDO',
             'ESTATUS_FRENTE' => 'required|in:ACTIVO,FINALIZADO',
+            'SUBDIVISIONES' => 'nullable|string',
             'RESP_1_NOM' => 'required|string|max:60',
             'RESP_1_CAR' => 'required|string|max:40',
             'RESP_2_NOM' => 'nullable|string|max:60',
@@ -121,6 +126,7 @@ class FrenteTrabajoController extends Controller
         $request->merge([
             'NOMBRE_FRENTE' => mb_strtoupper($request->input('NOMBRE_FRENTE')),
             'UBICACION' => mb_strtoupper($request->input('UBICACION')),
+            'SUBDIVISIONES' => $request->filled('SUBDIVISIONES') ? mb_strtoupper($request->input('SUBDIVISIONES')) : null,
             'RESP_1_NOM' => mb_strtoupper($request->input('RESP_1_NOM')),
             'RESP_1_CAR' => mb_strtoupper($request->input('RESP_1_CAR')),
             'RESP_2_NOM' => mb_strtoupper($request->input('RESP_2_NOM')),
@@ -132,6 +138,7 @@ class FrenteTrabajoController extends Controller
             'UBICACION' => 'required|string|max:100',
             'TIPO_FRENTE' => 'required|in:OPERACION,RESGUARDO',
             'ESTATUS_FRENTE' => 'required|in:ACTIVO,FINALIZADO',
+            'SUBDIVISIONES' => 'nullable|string',
             'RESP_1_NOM' => 'required|string|max:60',
             'RESP_1_CAR' => 'required|string|max:40',
             'RESP_2_NOM' => 'nullable|string|max:60',

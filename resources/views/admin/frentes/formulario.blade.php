@@ -5,7 +5,7 @@
 @section('content')
 <section class="page-title-card" style="text-align: center; margin: 0 auto 10px auto;">
     <h1 class="page-title">
-        <span class="page-title-line2" style="color: #000; font-size: 28px;" id="formTitle">{{ isset($frente) ? 'Edición de Frente de Trabajo' : 'Registro de Frente de Trabajo' }}</span>
+        <span class="page-title-line2" style="color: #000; font-size: 28px;" id="formTitle">{{ (isset($frente) && $frente->exists) ? 'Edición de Frente de Trabajo' : 'Registro de Frente de Trabajo' }}</span>
     </h1>
 </section>
 
@@ -59,12 +59,12 @@
 
         </div>
     </div>
-    <form action="{{ isset($frente) ? route('frentes.update', $frente->ID_FRENTE) : route('frentes.store') }}" 
+    <form action="{{ (isset($frente) && $frente->exists) ? route('frentes.update', $frente->ID_FRENTE) : route('frentes.store') }}" 
           method="POST" 
           id="frenteForm"
           onsubmit="if(window.showPreloader) window.showPreloader();">
         @csrf
-        @if(isset($frente)) @method('PUT') @endif
+        @if(isset($frente) && $frente->exists) @method('PUT') @endif
         <input type="hidden" id="ID_FRENTE" name="ID_FRENTE" value="{{ $frente->ID_FRENTE ?? '' }}">
 
         <div class="form-grid">
@@ -141,8 +141,8 @@
 
 
             <button type="submit" class="btn-primary-maquinaria" style="padding: 12px 30px; font-size: 14px; height: auto;">
-                <i class="material-icons" style="font-size: 20px;" id="submitBtnIcon">{{ isset($frente) ? 'save' : 'add_circle' }}</i>
-                <span id="submitBtnText">{{ isset($frente) ? 'Guardar Cambios' : 'Registrar' }}</span>
+                <i class="material-icons" style="font-size: 20px;" id="submitBtnIcon">{{ (isset($frente) && $frente->exists) ? 'save' : 'add_circle' }}</i>
+                <span id="submitBtnText">{{ (isset($frente) && $frente->exists) ? 'Guardar Cambios' : 'Registrar' }}</span>
             </button>
         </div>
     </form>
@@ -152,6 +152,55 @@
     @endif
 </div>
 @endsection
+
+<script>
+    // Script eliminado temporalmente para debugging
+
+
+    // --- Funciones Globales para el Buscador ---
+
+    window.clearFrentesSearchSPA = function() {
+        const input = document.getElementById('filterSearchInput');
+        if(input) input.value = '';
+        
+        const btn = document.getElementById('btn_clear_search_frente');
+        if(btn) btn.style.display = 'none';
+        
+        const items = document.querySelectorAll('.search-result-item');
+        items.forEach(item => item.style.display = 'block');
+        
+        const msg = document.getElementById('no-results-msg');
+        if(msg) msg.style.display = 'none';
+    };
+    
+    window.filterFrentesDropdown = function(input) {
+        const filter = input.value.toUpperCase();
+        const btnClear = document.getElementById('btn_clear_search_frente');
+        const items = document.querySelectorAll('.search-result-item');
+        let visibleCount = 0;
+
+        if(btnClear) btnClear.style.display = filter.length > 0 ? 'block' : 'none';
+
+        items.forEach(item => {
+            const txt = item.getAttribute('data-name').toUpperCase();
+            if (txt.includes(filter)) {
+                item.style.display = 'block';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+
+        const msg = document.getElementById('no-results-msg');
+        if(msg) msg.style.display = visibleCount === 0 ? 'block' : 'none';
+    };
+
+    window.selectFrenteSPA = function(id) {
+        if(window.showPreloader) window.showPreloader();
+        // Redirección directa para cargar los datos del frente seleccionado
+        window.location.href = `/admin/frentes/${id}/edit`;
+    };
+</script>
 
 <!-- Custom Delete Modal -->
 

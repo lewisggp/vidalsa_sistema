@@ -99,72 +99,22 @@
                     @endphp
 
                     <div style="display: flex; flex-direction: column; gap: 4px; width: 100%;">
-                        @if($puedeRecibir && $puedeRetornar && $esGlobal)
-                            {{-- Usuario GLOBAL: Mostrar AMBOS botones --}}
-                            <form action="{{ route('movilizaciones.updateStatus', $mov->ID_MOVILIZACION) }}" method="POST" style="margin: 0;">
-                                @csrf
-                                @method('PATCH')
-                                <input type="hidden" name="status" value="RECIBIDO">
-                                <button type="submit" class="btn-details-mini" 
-                                    style="background: #10b981; color: white; border: none; padding: 4px 8px; height: 26px; width: 100%; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 11px; font-weight: 600; transition: all 0.2s;" 
-                                    title="Confirmar recepción en {{ $mov->frenteDestino->NOMBRE_FRENTE }}"
-                                    onmouseover="this.style.background='#059669'"
-                                    onmouseout="this.style.background='#10b981'">
-                                    <i class="material-icons" style="font-size: 14px;">check_circle</i>
-                                    <span>Recibir</span>
-                                </button>
-                            </form>
-                            
-                            <form action="{{ route('movilizaciones.updateStatus', $mov->ID_MOVILIZACION) }}" method="POST" style="margin: 0;">
-                                @csrf
-                                @method('PATCH')
-                                <input type="hidden" name="status" value="RETORNADO">
-                                <button type="submit" class="btn-details-mini" 
-                                    style="background: #f59e0b; color: white; border: none; padding: 4px 8px; height: 26px; width: 100%; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 11px; font-weight: 600; transition: all 0.2s;" 
-                                    title="Confirmar retorno a {{ $mov->frenteOrigen->NOMBRE_FRENTE }}"
-                                    onmouseover="this.style.background='#d97706'"
-                                    onmouseout="this.style.background='#f59e0b'">
-                                    <i class="material-icons" style="font-size: 14px;">keyboard_return</i>
-                                    <span>Retornar</span>
-                                </button>
-                            </form>
-                            
-                        @elseif($puedeRecibir)
-                            {{-- Usuario está en el FRENTE DESTINO (o es GLOBAL) → Puede RECIBIR --}}
-                            <form action="{{ route('movilizaciones.updateStatus', $mov->ID_MOVILIZACION) }}" method="POST" style="margin: 0;">
-                                @csrf
-                                @method('PATCH')
-                                <input type="hidden" name="status" value="RECIBIDO">
-                                <button type="submit" class="btn-details-mini" 
-                                    style="background: #10b981; color: white; border: none; padding: 6px 10px; min-height: 32px; width: 100%; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px; font-weight: 700; transition: all 0.2s;" 
-                                    title="Confirmar recepción en {{ $mov->frenteDestino->NOMBRE_FRENTE }}"
-                                    onmouseover="this.style.background='#059669'; this.style.transform='scale(1.05)'"
-                                    onmouseout="this.style.background='#10b981'; this.style.transform='scale(1)'">
-                                    <i class="material-icons" style="font-size: 16px;">check_circle</i>
-                                    <span>RECIBIR</span>
-                                </button>
-                            </form>
-                            
-                        @elseif($puedeRetornar)
-                            {{-- Usuario está en el FRENTE ORIGEN (o es GLOBAL) → Puede procesar RETORNO --}}
-                            <form action="{{ route('movilizaciones.updateStatus', $mov->ID_MOVILIZACION) }}" method="POST" style="margin: 0;">
-                                @csrf
-                                @method('PATCH')
-                                <input type="hidden" name="status" value="RETORNADO">
-                                <button type="submit" class="btn-details-mini" 
-                                    style="background: #f59e0b; color: white; border: none; padding: 6px 10px; min-height: 32px; width: 100%; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px; font-weight: 700; transition: all 0.2s;" 
-                                    title="Confirmar retorno a {{ $mov->frenteOrigen->NOMBRE_FRENTE }}"
-                                    onmouseover="this.style.background='#d97706'; this.style.transform='scale(1.05)'"
-                                    onmouseout="this.style.background='#f59e0b'; this.style.transform='scale(1)'">
-                                    <i class="material-icons" style="font-size: 16px;">keyboard_return</i>
-                                    <span>RETORNAR</span>
-                                </button>
-                            </form>
+                        @if($puedeRecibir)
+                            {{-- Usuario tiene permiso para RECIBIR --}}
+                            <button type="button" class="btn-details-mini" 
+                                onclick='iniciarRecepcion({{ $mov->ID_MOVILIZACION }}, "{{ $mov->frenteDestino->NOMBRE_FRENTE }}", "{{ $mov->frenteDestino->SUBDIVISIONES ?? "" }}")'
+                                style="background: #10b981; color: white; border: none; padding: 6px 10px; min-height: 32px; width: 100%; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px; font-weight: 700; cursor: default; transition: all 0.2s;" 
+                                title="Confirmar recepción en {{ $mov->frenteDestino->NOMBRE_FRENTE }}"
+                                onmouseover="this.style.background='#059669'; this.style.transform='scale(1.05)'"
+                                onmouseout="this.style.background='#10b981'; this.style.transform='scale(1)'">
+                                <i class="material-icons" style="font-size: 16px;">check_circle</i>
+                                <span>RECIBIR</span>
+                            </button>
                             
                         @else
-                            {{-- Usuario NO está en ninguno de los frentes involucrados --}}
+                            {{-- Usuario NO tiene permisos en este trayecto --}}
                             <div style="background: #f1f5f9; color: #94a3b8; border: 1px dashed #cbd5e0; padding: 6px 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 3px; font-size: 10px; font-weight: 600; min-height: 32px;" 
-                                title="No tienes permisos en este trayecto ({{ $mov->frenteOrigen->NOMBRE_FRENTE }} → {{ $mov->frenteDestino->NOMBRE_FRENTE }})">
+                                title="No tienes permisos para recibir en {{ $mov->frenteDestino->NOMBRE_FRENTE }}">
                                 <i class="material-icons" style="font-size: 14px;">block</i>
                                 <span>Sin Acceso</span>
                             </div>
@@ -173,9 +123,19 @@
                     
                 @elseif($mov->ESTADO_MVO == 'RECIBIDO')
                     {{-- Estado final: RECIBIDO en destino --}}
-                    <div style="background: #d1fae5; color: #065f46; border: 1px solid #10b981; padding: 6px 8px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 11px; font-weight: 700; min-height: 36px;">
-                        <i class="material-icons" style="font-size: 16px;">done_all</i>
-                        <span>COMPLETADO</span>
+                    <div style="display: flex; flex-direction: column; width: 100%; gap: 2px;">
+                        <div style="background: #d1fae5; color: #065f46; border: 1px solid #10b981; padding: 4px 6px; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 11px; font-weight: 700;">
+                            <i class="material-icons" style="font-size: 14px;">done_all</i>
+                            <span>COMPLETADO</span>
+                        </div>
+                        
+                        {{-- Mostrar detalle de ubicación si existe --}}
+                        @if($mov->DETALLE_UBICACION)
+                            <div style="font-size: 10px; color: #047857; text-align: center; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 2px;">
+                                <i class="material-icons" style="font-size: 10px;">place</i>
+                                {{ $mov->DETALLE_UBICACION }}
+                            </div>
+                        @endif
                     </div>
                     
                 @elseif($mov->ESTADO_MVO == 'RETORNADO')

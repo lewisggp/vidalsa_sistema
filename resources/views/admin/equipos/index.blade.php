@@ -3,6 +3,15 @@
 @section('title', 'Gestión de Equipos')
 
 @section('content')
+<style>
+    /* Tooltip Burbuja para Subdivisión */
+    .tooltip-wrapper:hover .tooltip-bubble {
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: translateX(-50%) translateY(0) !important;
+    }
+</style>
+
 
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <h1 class="page-title">

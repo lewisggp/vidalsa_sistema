@@ -23,6 +23,7 @@ class Equipo extends Model
         'LINK_GPS',
         'FOTO_EQUIPO',
         'ID_FRENTE_ACTUAL',
+        'DETALLE_UBICACION_ACTUAL',  // Patio/Subdivisión específica
         'CONFIRMADO_EN_SITIO',
         'ESTADO_OPERATIVO',
         'ID_ANCLAJE'

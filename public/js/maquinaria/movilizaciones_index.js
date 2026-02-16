@@ -1,5 +1,6 @@
 // movilizaciones_index.js - Movilizaciones Module Logic
-// Version: 3.0 - Robust Equipos-Style Filtering
+// Version: 5.1 - Robust Equipos-Style Filtering
+console.log('[MOVILIZACIONES] Script v5.1 cargado e inicializado');
 
 // Global Filter Handler (Isolated from Equipos)
 window.selectMovilizacionFilter = function (type, value) {
@@ -144,12 +145,147 @@ window.loadMovilizaciones = function (url = null) {
         });
 };
 
+// ===========================================
+// RECEPCIÓN DE MOVILIZACIONES
+// ===========================================
+
+// Función AJAX General para Confirmar (Recibir o Retornar)
+window.confirmarMovilizacion = function (idMovilizacion, status, detalleUbicacion = null) {
+    document.body.style.cursor = 'wait';
+
+    const url = `/admin/movilizaciones/${idMovilizacion}/status`;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+    const formData = new FormData();
+    formData.append('_token', csrfToken);
+    formData.append('_method', 'PATCH');
+    formData.append('status', status);
+    if (detalleUbicacion) {
+        formData.append('DETALLE_UBICACION', detalleUbicacion);
+    }
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        },
+        body: formData
+    })
+        .then(response => {
+            if (response.ok) {
+                // Cerrar modales
+                const recepcionModal = document.getElementById('recepcionModal');
+                const confirmacionModal = document.getElementById('confirmacionModal');
+                if (recepcionModal) recepcionModal.style.display = 'none';
+                if (confirmacionModal) confirmacionModal.style.display = 'none';
+
+                // Recargar tabla
+                if (typeof window.loadMovilizaciones === 'function') {
+                    window.loadMovilizaciones();
+                } else {
+                    window.location.reload();
+                }
+            } else {
+                return response.text().then(text => { throw new Error(text) });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Ocurrió un error: ' + error.message);
+        })
+        .finally(() => {
+            document.body.style.cursor = 'default';
+        });
+};
+
+window.iniciarRecepcion = function (idMovilizacion, nombreFrente, subdivisiones) {
+    // Modal sin subdivisiones (simple)
+    if (!subdivisiones || subdivisiones.trim() === '') {
+        const modal = document.getElementById('confirmacionModal');
+        const labelFrente = document.getElementById('confirmFrenteNombre');
+        const btnConfirmar = document.getElementById('btnConfirmarSimple');
+
+        if (!modal || !labelFrente || !btnConfirmar) {
+            console.error('Elementos del modal no encontrados');
+            return;
+        }
+
+        labelFrente.textContent = nombreFrente;
+        btnConfirmar.onclick = function () {
+            if (btnConfirmar.disabled) return;
+            btnConfirmar.disabled = true;
+            btnConfirmar.innerHTML = '<i class="material-icons spin">sync</i> Procesando...';
+            confirmarMovilizacion(idMovilizacion, 'RECIBIDO');
+            modal.style.display = 'none';
+            setTimeout(() => {
+                btnConfirmar.disabled = false;
+                btnConfirmar.innerHTML = 'Confirmar Recepción';
+            }, 1000);
+        };
+
+        modal.style.display = 'flex';
+        return;
+    }
+
+    // Modal con subdivisiones (selector de patio)
+    const modal = document.getElementById('recepcionModal');
+    const form = document.getElementById('formRecepcion');
+    const labelFrente = document.getElementById('modalFrenteNombre');
+    const patioList = document.getElementById('patioList');
+    const inputPatio = document.getElementById('input_patio');
+    const labelPatio = document.getElementById('label_patio');
+
+    if (!modal || !form || !labelFrente || !patioList || !inputPatio || !labelPatio) {
+        console.error('Elementos del modal de recepción no encontrados');
+        return;
+    }
+
+    form.onsubmit = function (e) {
+        e.preventDefault();
+        const ubicacion = inputPatio.value;
+        if (!ubicacion) {
+            alert('Debe seleccionar una ubicación');
+            return;
+        }
+
+        const btn = document.getElementById('btnConfirmarRecepcion');
+        if (btn) {
+            if (btn.disabled) return;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="material-icons spin">sync</i> Procesando...';
+        }
+
+        confirmarMovilizacion(idMovilizacion, 'RECIBIDO', ubicacion);
+    };
+
+    labelFrente.textContent = nombreFrente;
+    inputPatio.value = '';
+    labelPatio.textContent = 'Seleccione Patio...';
+    labelPatio.style.color = '#94a3b8';
+
+    patioList.innerHTML = '';
+    const listaPatios = subdivisiones.split(',');
+    listaPatios.forEach(patio => {
+        patio = patio.trim();
+        if (patio.length > 0) {
+            const item = document.createElement('div');
+            item.className = 'dropdown-item';
+            item.textContent = patio;
+            item.onclick = function () {
+                if (typeof selectOption === 'function') {
+                    selectOption('patioSelect', patio, patio, 'patio');
+                }
+            };
+            patioList.appendChild(item);
+        }
+    });
+
+    modal.style.display = 'flex';
+};
+
 // Global Event Listeners (SPA Safe)
 function initMovilizacionesListeners() {
-    // NOTE: Dropdown toggles now handled by global delegation in uicomponents.js
-    // No need to manually attach onclick to .dropdown-trigger elements
-
-    // Search Input Auto-Search (module-specific logic)
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.addEventListener('keyup', function () {

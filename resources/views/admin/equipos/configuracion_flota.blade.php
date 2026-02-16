@@ -25,7 +25,7 @@
                 <select name="id_frente" onchange="this.form.submit()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 14px; color: #334155; font-weight: 600; min-width: 200px; cursor: pointer;">
                     <option value="">-- Todos los Frentes --</option>
                     @foreach($frentes as $frente)
-                        <option value="{{ $frente->ID_FRENTE }}" {{ request('id_frente') == $frente->ID_FRENTE ? 'selected' : '' }}>
+                        <option value="{{ $frente->ID_FRENTE }}" {{ ($frenteId == $frente->ID_FRENTE) ? 'selected' : '' }}>
                             {{ $frente->NOMBRE_FRENTE }}
                         </option>
                     @endforeach
@@ -35,7 +35,7 @@
     </div>
 
     <!-- MAIN WORKSPACE -->
-    <div style="flex: 1; display: grid; grid-template-columns: 350px 1fr 300px; gap: 20px; min-height: 0;">
+    <div style="flex: 1; display: grid; grid-template-columns: 350px 1fr; gap: 20px; min-height: 0;">
 
         <!-- COLUMN 1: HIJOS DISPONIBLES (Remolcables) -->
         <div class="panel-section" style="background: white; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
@@ -54,16 +54,19 @@
                         @endphp
                         <div class="card-item draggable-hijo" draggable="true" data-id="{{ $hijo->ID_EQUIPO }}" ondragstart="drag(event)">
                             <div style="display: flex; gap: 10px; align-items: center;">
-                                <div style="background: #e0f2fe; color: #0369a1; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; flex-shrink: 0;">
-                                    <i class="material-icons" style="font-size: 20px;">local_shipping</i>
+                                <div style="width: 42px; height: 42px; background: #f1f5f9; border-radius: 8px; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+                                    @if($hijo->foto)
+                                        <img src="{{ $hijo->foto }}" alt="{{ $hijo->tipo->nombre ?? 'Equipo' }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                    @else
+                                        <i class="material-icons" style="color: #0369a1; font-size: 20px;">local_shipping</i>
+                                    @endif
                                 </div>
                                 <div style="flex: 1; overflow: hidden;">
-                                    <div style="font-weight: 800; color: #1e293b; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                        {{ $identificador }}
+                                    <div style="font-weight: 800; color: #0f766e; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        {{ $hijo->tipo->nombre ?? 'Sin Tipo' }}
                                     </div>
-                                    <div style="font-size: 11px; color: #64748b; display: flex; justify-content: space-between;">
-                                        <span>{{ $hijo->tipo->nombre ?? 'N/A' }}</span>
-                                    </div>
+                                    <div style="font-size: 11px; color: #1e293b; font-weight: 600;">{{ $hijo->MARCA }}</div>
+                                    <div style="font-size: 10px; color: #64748b;">{{ $identificador }}</div>
                                 </div>
                                 <button onclick="selectHijo(this, '{{ $hijo->ID_EQUIPO }}')" class="btn-action-small">
                                     <i class="material-icons">arrow_forward</i>
@@ -81,7 +84,7 @@
         <div class="panel-section" style="background: white; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 2px solid #e2e8f0;">
              <div style="padding: 15px; border-bottom: 2px solid #f1f5f9; background: #fff;">
                 <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a; text-align: center;">
-                    CONFIGURACIÓN ACTUAL (CONVOYS)
+                    EQUIPOS REMOLCADORES Y SUS COMPONENTES
                 </h3>
             </div>
             
@@ -96,12 +99,17 @@
                             <!-- HEADER DEL PADRE -->
                             <div class="convoy-header">
                                 <div style="display: flex; align-items: center; gap: 12px;">
-                                    <div class="icon-box-padre">
-                                        <i class="material-icons">local_shipping</i>
+                                    <div class="icon-box-padre" style="width: 42px; height: 42px; background: #f1f5f9; border-radius: 8px; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+                                        @if($padre->foto)
+                                            <img src="{{ $padre->foto }}" alt="{{ $padre->tipo->nombre ?? 'Equipo' }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                        @else
+                                            <i class="material-icons" style="color: #94a3b8; font-size: 22px;">local_shipping</i>
+                                        @endif
                                     </div>
-                                    <div>
-                                        <div class="convoy-title">{{ $identificadorPadre }}</div>
-                                        <div class="convoy-subtitle">{{ $padre->MARCA }} {{ $padre->MODELO }}</div>
+                                    <div style="flex: 1; overflow: hidden;">
+                                        <div class="convoy-title" style="font-size: 13px; font-weight: 800; color: #0f766e;">{{ $padre->tipo->nombre ?? 'Sin Tipo' }}</div>
+                                        <div class="convoy-subtitle" style="font-size: 12px; color: #1e293b; font-weight: 600;">{{ $padre->MARCA }}</div>
+                                        <div style="font-size: 10px; color: #64748b;">{{ $identificadorPadre }}</div>
                                     </div>
                                 </div>
                                 <div class="status-indicator {{ count($padre->equiposAnclados) > 0 ? 'active' : 'idle' }}">
@@ -117,11 +125,12 @@
                                             $identificadorHijo = $hijo->documentacion->PLACA ?? ($hijo->SERIAL_CHASIS ?? $hijo->CODIGO_PATIO);
                                         @endphp
                                         <div class="hijo-anchored-item">
-                                            <div style="display: flex; gap: 10px; align-items: center;">
-                                                <i class="material-icons" style="font-size: 16px; color: #64748b;">link</i>
-                                                <div>
-                                                    <span style="font-weight: 700; color: #334155;">{{ $identificadorHijo }}</span>
-                                                    <span style="font-size: 11px; color: #64748b; margin-left: 5px;">{{ $hijo->tipo->nombre ?? '' }}</span>
+                                            <div style="display: flex; gap: 10px; align-items: center; flex: 1;">
+                                                <i class="material-icons" style="font-size: 16px; color: #0f766e;">link</i>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 700; color: #0f766e; font-size: 12px;">{{ $hijo->tipo->nombre ?? 'Sin Tipo' }}</div>
+                                                    <div style="font-size: 11px; color: #334155; font-weight: 600;">{{ $hijo->MARCA }}</div>
+                                                    <div style="font-size: 10px; color: #64748b;">{{ $identificadorHijo }}</div>
                                                 </div>
                                             </div>
                                             <button onclick="desvincular('{{ $hijo->ID_EQUIPO }}')" class="btn-unlink" title="Desvincular">
@@ -143,28 +152,7 @@
         </div>
 
         <!-- COLUMN 3: FILTROS O INFO EXTRA -->
-        <div class="panel-section" style="background: white; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-             <div style="padding: 15px; border-bottom: 2px solid #f1f5f9; background: #f8fafc; border-top-left-radius: 12px; border-top-right-radius: 12px;">
-                <h3 style="margin: 0; font-size: 14px; font-weight: 700; color: #64748b;">
-                    AYUDA RÁPIDA
-                </h3>
-            </div>
-            <div style="padding: 20px;">
-                <p style="font-size: 13px; color: #64748b; line-height: 1.5;">
-                    Seleccione un <strong>Frente Operativo</strong> arriba para filtrar los equipos.
-                </p>
-                <p style="font-size: 13px; color: #64748b; line-height: 1.5;">
-                    Arrastre los componentes desde la izquierda hacia los remolcadores disponibles.
-                </p>
-                
-                <div style="margin-top: 20px; padding: 15px; background: #f0fdf4; border-radius: 8px; border: 1px solid #bbf7d0;">
-                    <div style="font-weight: 700; color: #166534; font-size: 13px; margin-bottom: 5px;">Nota Importante</div>
-                    <div style="font-size: 12px; color: #15803d;">
-                        Solo se muestran los equipos en estado OPERATIVO o EN MANTENIMIENTO. Los equipos Inoperativos no pueden ser configurados.
-                    </div>
-                </div>
-            </div>
-        </div>
+
 
     </div>
 </div>
@@ -198,7 +186,7 @@
     .card-item:active { cursor: grabbing; }
 
     .btn-action-small {
-        background: transparent; border: none; color: #cbd5e1; cursor: pointer; padding: 5px; border-radius: 4px;
+        background: transparent; border: none; color: #cbd5e1; cursor: default; padding: 5px; border-radius: 4px;
     }
     .btn-action-small:hover { background: #f1f5f9; color: #0f766e; }
 

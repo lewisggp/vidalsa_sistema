@@ -1424,22 +1424,25 @@ class EquipoController extends Controller
             $categoryByTypeRaw = (clone $baseQuery)
                 ->select(
                     'id_tipo_equipo',
-                    DB::raw("SUM(CASE WHEN CATEGORIA_FLOTA = 'PESADA' THEN 1 ELSE 0 END) as pesada_count"),
-                    DB::raw("SUM(CASE WHEN CATEGORIA_FLOTA = 'LIVIANA' THEN 1 ELSE 0 END) as liviana_count")
+                    DB::raw("SUM(CASE WHEN CATEGORIA_FLOTA = 'FLOTA PESADA' THEN 1 ELSE 0 END) as pesada_count"),
+                    DB::raw("SUM(CASE WHEN CATEGORIA_FLOTA = 'FLOTA LIVIANA' THEN 1 ELSE 0 END) as liviana_count"),
+                    DB::raw("SUM(CASE WHEN CATEGORIA_FLOTA IS NULL OR CATEGORIA_FLOTA = '' THEN 1 ELSE 0 END) as sin_asignar_count")
                 )
                 ->with('tipo:id,nombre')
                 ->whereNotNull('id_tipo_equipo')
-                ->whereNotNull('CATEGORIA_FLOTA')
+                // ->whereNotNull('CATEGORIA_FLOTA')  <-- REMOVIDO para mostrar todo
                 ->groupBy('id_tipo_equipo')
                 ->get();
 
             $tiposForCategory = $categoryByTypeRaw->pluck('tipo.nombre')->toArray();
             $pesadaData = $categoryByTypeRaw->pluck('pesada_count')->toArray();
             $livianaData = $categoryByTypeRaw->pluck('liviana_count')->toArray();
+            $sinAsignarData = $categoryByTypeRaw->pluck('sin_asignar_count')->toArray();
 
             $categoryByTypeDatasets = [
-                ['label' => 'Pesada', 'data' => $pesadaData],
-                ['label' => 'Liviana', 'data' => $livianaData]
+                ['label' => 'Flota Pesada', 'data' => $pesadaData],
+                ['label' => 'Flota Liviana', 'data' => $livianaData],
+                ['label' => 'Sin Asignar', 'data' => $sinAsignarData]
             ];
 
             return response()->json([
@@ -1506,8 +1509,9 @@ class EquipoController extends Controller
             $categoryData = (clone $baseQuery)
                 ->select(
                     'id_tipo_equipo',
-                    DB::raw("SUM(CASE WHEN CATEGORIA_FLOTA = 'PESADA' THEN 1 ELSE 0 END) as pesada_count"),
-                    DB::raw("SUM(CASE WHEN CATEGORIA_FLOTA = 'LIVIANA' THEN 1 ELSE 0 END) as liviana_count")
+                    DB::raw("SUM(CASE WHEN CATEGORIA_FLOTA = 'FLOTA PESADA' THEN 1 ELSE 0 END) as pesada_count"),
+                    DB::raw("SUM(CASE WHEN CATEGORIA_FLOTA = 'FLOTA LIVIANA' THEN 1 ELSE 0 END) as liviana_count"),
+                    DB::raw("SUM(CASE WHEN CATEGORIA_FLOTA IS NULL OR CATEGORIA_FLOTA = '' THEN 1 ELSE 0 END) as sin_asignar_count")
                 )
                 ->with('tipo:id,nombre')
                 ->groupBy('id_tipo_equipo')
@@ -1555,17 +1559,18 @@ class EquipoController extends Controller
 
                 // SECTION 2: PESADA VS LIVIANA
                 fputcsv($file, ['=== FLOTA PESADA VS LIVIANA ===']);
-                fputcsv($file, ['Tipo de Equipo', 'Pesada', 'Liviana', 'Total']);
-                fputcsv($file, ['', '', '', '']); // Separator
+                fputcsv($file, ['Tipo de Equipo', 'Pesada', 'Liviana', 'Sin Asignar', 'Total']); // Updated Header
+                fputcsv($file, ['', '', '', '', '']); // Separator
 
                 foreach ($categoryData as $row) {
                     $tipoName = $row->tipo ? $row->tipo->nombre : 'Sin Tipo';
-                    $total = $row->pesada_count + $row->liviana_count;
+                    $total = $row->pesada_count + $row->liviana_count + $row->sin_asignar_count; // Updated Total
                     if ($total > 0) {
                         fputcsv($file, [
                             $tipoName,
                             $row->pesada_count,
                             $row->liviana_count,
+                            $row->sin_asignar_count, // Added Value
                             $total
                         ]);
                     }
@@ -1728,11 +1733,16 @@ class EquipoController extends Controller
      */
     public function configuracionFlota(Request $request)
     {
+        // Si no se especifica frente, usar el frente del usuario autenticado
         $frenteId = $request->input('id_frente');
+        
+        if (!$frenteId) {
+            $usuario = auth()->user();
+            if ($usuario && $usuario->ID_FRENTE) {
+                $frenteId = $usuario->ID_FRENTE;
+            }
+        }
 
-        // Obtener Frentes para el selector (Asumiendo que existe el modelo Frente o la tabla frentes)
-        // Como no tengo el modelo Frente importado aquí, usaré DB facade si es necesario, o lo más simple: Equipo::select('ID_FRENTE')->distinct()...
-        // Mejor uso una consulta simple de frentes activos ligados a equipos.
         // Obtener Frentes directamente de la base de datos (tabla: frentes_trabajo)
         $frentes = \DB::table('frentes_trabajo')->select('ID_FRENTE', 'NOMBRE_FRENTE')->orderBy('NOMBRE_FRENTE')->get();
         
@@ -1740,14 +1750,14 @@ class EquipoController extends Controller
         $queryRemolcadores = Equipo::whereHas('tipo', function($q) {
                 $q->where('ROL_ANCLAJE', 'REMOLCADOR');
             })
-            ->with(['tipo', 'equiposAnclados.tipo', 'equiposAnclados.documentacion', 'documentacion']) 
+            ->with(['tipo', 'especificaciones', 'equiposAnclados.tipo', 'equiposAnclados.especificaciones', 'equiposAnclados.documentacion', 'documentacion']) 
             ->whereIn('ESTADO_OPERATIVO', ['OPERATIVO', 'EN MANTENIMIENTO']);
 
         $queryRemolcables = Equipo::whereHas('tipo', function($q) {
                 $q->where('ROL_ANCLAJE', 'REMOLCABLE');
             })
             ->whereNull('ID_ANCLAJE')
-            ->with(['tipo', 'documentacion'])
+            ->with(['tipo', 'especificaciones', 'documentacion'])
             ->whereIn('ESTADO_OPERATIVO', ['OPERATIVO', 'EN MANTENIMIENTO']);
 
         // Filter by Frente if present (Correct column: ID_FRENTE_ACTUAL)
@@ -1759,7 +1769,7 @@ class EquipoController extends Controller
         $remolcadores = $queryRemolcadores->orderBy('CODIGO_PATIO', 'asc')->get();
         $remolcablesLibres = $queryRemolcables->orderBy('CODIGO_PATIO', 'asc')->get();
 
-        return view('admin.equipos.configuracion_flota', compact('remolcadores', 'remolcablesLibres', 'frentes'));
+        return view('admin.equipos.configuracion_flota', compact('remolcadores', 'remolcablesLibres', 'frentes', 'frenteId'));
     }
 
     public function vincularEquipos(Request $request) 

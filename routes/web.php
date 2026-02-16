@@ -68,6 +68,7 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('equipos', App\Http\Controllers\EquipoController::class);
             Route::resource('movilizaciones', App\Http\Controllers\MovilizacionController::class);
             Route::patch('movilizaciones/{id}/status', [App\Http\Controllers\MovilizacionController::class, 'updateStatus'])->name('movilizaciones.updateStatus');
+            Route::get('movilizaciones/{id}/acta-traslado', [App\Http\Controllers\MovilizacionController::class, 'generarActaTraslado'])->name('movilizaciones.actaTraslado');
             
 
             

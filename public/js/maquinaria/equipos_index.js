@@ -536,19 +536,63 @@ window.openBulkModal = function (event) {
                 window.clearSelection();
 
                 // CRITICAL: Wait for table to fully reload before showing success
-                return window.loadEquipos();
+                return window.loadEquipos().then(() => data); // Pasar data al siguiente then
             })
-            .then(function () {
-                // Now that table is reloaded, show success and cleanup
-                showModal({
-                    type: 'success',
-                    title: '¡Operación Exitosa!',
-                    message: 'Movilización masiva completada con éxito.',
-                    confirmText: 'Aceptar',
-                    hideCancel: true
-                });
+            .then(function (data) {
+                if (!data) return;
 
-                // Focus/State Cleanup after everything is stable
+                // 1. Iniciar Descarga Automática (Si hay ID)
+                const firstId = (data.movilizacion_ids && data.movilizacion_ids.length > 0) ? data.movilizacion_ids[0] : null;
+
+                if (firstId) {
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = `/admin/movilizaciones/${firstId}/acta-traslado`;
+                    downloadLink.target = '_blank';
+                    downloadLink.style.display = 'none';
+                    document.body.appendChild(downloadLink);
+
+                    // Pequeño delay para asegurar que el DOM lo procese
+                    setTimeout(() => {
+                        downloadLink.click();
+                        setTimeout(() => document.body.removeChild(downloadLink), 1000);
+                    }, 100);
+                }
+
+                // 2. Mostrar Modal Informativo (Sin botones de acción extra)         
+                const actasModal = document.createElement('div');
+                actasModal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; justify-content: center; align-items: center;';
+
+                actasModal.innerHTML = `
+                    <div style="background: white; width: 90%; max-width: 500px; border-radius: 16px; padding: 30px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); text-align: center; animation: slideIn 0.3s ease-out;">
+                        <div style="width: 70px; height: 70px; background: #d1fae5; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto;">
+                            <i class="material-icons" style="font-size: 40px; color: #16a34a;">check_circle</i>
+                        </div>
+                        <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 10px 0;">¡Operación Exitosa!</h3>
+                        <p style="font-size: 14px; color: #64748b; margin-bottom: 20px;">
+                            Se generaron ${data.count} traslados exitosamente.<br>
+                            <strong>Descargando Acta de Traslado...</strong>
+                        </p>
+                        
+                        <div style="margin-top: 20px;">
+                            <button onclick="this.closest('div[style*=\'position: fixed\']').remove();"
+                                style="padding: 10px 25px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 600; color: #475569; cursor: pointer; transition: all 0.2s;"
+                                onmouseover="this.style.background='#e2e8f0'; this.style.color='#1e293b'" 
+                                onmouseout="this.style.background='#f1f5f9'; this.style.color='#475569'">
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                document.body.appendChild(actasModal);
+
+                // Auto-cerrar el modal después de 3 segundos
+                setTimeout(() => {
+                    if (document.body.contains(actasModal)) {
+                        actasModal.remove();
+                    }
+                }, 4000);
+
                 if (document.activeElement) document.activeElement.blur();
                 document.querySelectorAll('.custom-dropdown.active').forEach(el => el.classList.remove('active'));
             })

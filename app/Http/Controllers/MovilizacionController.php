@@ -57,7 +57,10 @@ class MovilizacionController extends Controller
         }
 
         if ($request->filled('id_frente') && $request->id_frente !== 'all') {
-            $query->where('ID_FRENTE_DESTINO', $request->id_frente);
+            $query->where(function($q) use ($request) {
+                $q->where('ID_FRENTE_DESTINO', $request->id_frente)
+                  ->orWhere('ID_FRENTE_ORIGEN', $request->id_frente);
+            });
         }
 
         if ($request->filled('id_tipo') && $request->id_tipo !== 'all') {
@@ -217,8 +220,14 @@ class MovilizacionController extends Controller
             }
 
             // 4. Batch Insert (One Query)
+            $movilizacionIds = [];
             if (!empty($insertData)) {
                 Movilizacion::insert($insertData);
+                
+                // Obtener los IDs de las movilizaciones recién creadas
+                $movilizacionIds = Movilizacion::where('CODIGO_CONTROL', $nextId)
+                    ->pluck('ID_MOVILIZACION')
+                    ->toArray();
             }
 
             // 5. Batch Update Equipment Status (One Query)
@@ -229,7 +238,11 @@ class MovilizacionController extends Controller
 
             DB::commit();
 
-            return response()->json(['success' => true]);
+            return response()->json([
+                'success' => true,
+                'movilizacion_ids' => $movilizacionIds,
+                'count' => count($movilizacionIds)
+            ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -245,7 +258,8 @@ class MovilizacionController extends Controller
             $usuario = auth()->user();
             
             $request->validate([
-                'status' => 'required|in:RECIBIDO,RETORNADO'
+                'status' => 'required|in:RECIBIDO,RETORNADO',
+                'DETALLE_UBICACION' => 'nullable|string|max:150'
             ]);
             
             // Validar autorización
@@ -271,22 +285,36 @@ class MovilizacionController extends Controller
             // 1. Actualizar movilización
             $mov->update([
                 'ESTADO_MVO' => $request->status,
-                'FECHA_RECEPCION' => now()
+                'FECHA_RECEPCION' => now(),
+                'DETALLE_UBICACION' => $request->DETALLE_UBICACION // Guardar nombre del patio (Ej: Patio 1)
             ]);
 
             // 2. Actualizar tabla equipos según el estado
             if ($request->status == 'RECIBIDO') {
-                // RECIBIDO en DESTINO → Actualizar al frente destino
+                // RECIBIDO en DESTINO
+                // El equipo pasa a estar en el FRENTE DESTINO (Padre)
+                // Y actualizamos su detalle de ubicación
+                
                 $mov->equipo->update([
                     'ID_FRENTE_ACTUAL' => $mov->ID_FRENTE_DESTINO,
+                    'DETALLE_UBICACION_ACTUAL' => $request->DETALLE_UBICACION,
                     'CONFIRMADO_EN_SITIO' => 1
                 ]);
-                $message = 'Equipo recibido exitosamente en ' . $mov->frenteDestino->NOMBRE_FRENTE;
+
+                // Mensaje personalizado
+                $nombreUbicacion = $mov->frenteDestino->NOMBRE_FRENTE;
+                if ($request->filled('DETALLE_UBICACION')) {
+                    $nombreUbicacion .= ' (' . $request->DETALLE_UBICACION . ')';
+                }
+
+                $message = 'Equipo recibido exitosamente en ' . $nombreUbicacion;
             } 
             elseif ($request->status == 'RETORNADO') {
                 // RETORNADO → Volver al frente ORIGEN
+                // Limpiamos el detalle porque vuelve al origen general (o se podría pedir detalle de retorno, pero por ahora general)
                 $mov->equipo->update([
                     'ID_FRENTE_ACTUAL' => $mov->ID_FRENTE_ORIGEN,
+                    'DETALLE_UBICACION_ACTUAL' => null, 
                     'CONFIRMADO_EN_SITIO' => 1
                 ]);
                 $message = 'Equipo retornado exitosamente a ' . $mov->frenteOrigen->NOMBRE_FRENTE;
@@ -300,5 +328,129 @@ class MovilizacionController extends Controller
             \Log::error('Error en updateStatus: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Error al actualizar: ' . $e->getMessage()]);
         }
+    }
+
+    /**
+     * Generar PDF del Acta de Traslado
+     */
+    /**
+     * Generar PDF del Acta de Traslado (Agrupado por CODIGO_CONTROL)
+     */
+    public function generarActaTraslado($id)
+    {
+        try {
+            // 1. Cargar la movilización base para obtener la REFERENCIA (CODIGO_CONTROL)
+            $baseMov = Movilizacion::findOrFail($id);
+
+            // 2. Buscar TODAS las movilizaciones que comparten ese código de control (el mismo lote de traslado)
+            $movilizaciones = Movilizacion::with([
+                'equipo.tipo',
+                'equipo.documentacion',
+                'equipo.especificaciones', // Para la marca si es necesaria
+                'frenteOrigen',
+                'frenteDestino',
+                'usuario'
+            ])
+            ->where('CODIGO_CONTROL', $baseMov->CODIGO_CONTROL)
+            ->get();
+
+            if ($movilizaciones->isEmpty()) {
+                return back()->withErrors(['error' => 'No se encontraron registros para esta movilización.']);
+            }
+
+            // Tomamos la primera para datos generales
+            $movilizacion = $movilizaciones->first();
+
+            // Obtener el frente de ORIGEN con sus responsables (Quienes firman la salida)
+            $frenteOrigen = FrenteTrabajo::find($movilizacion->ID_FRENTE_ORIGEN);
+            
+            // Obtener el frente de DESTINO (Para indicar hacia donde va)
+            $frenteDestino = FrenteTrabajo::find($movilizacion->ID_FRENTE_DESTINO);
+
+            if (!$frenteDestino) {
+                return back()->withErrors(['error' => 'No se encontró el frente de destino']);
+            }
+
+            // Generar PDF usando nuestra clase personalizada con Header
+            $pdf = new ActaTrasladoPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+            
+            // Asignar el código de control para que aparezca en el Header
+            $pdf->codigoControl = $movilizacion->CODIGO_CONTROL;
+            
+            // Configuración del documento
+            $pdf->SetTitle('Acta de Traslado - ' . $movilizacion->CODIGO_CONTROL);
+            
+            // Márgenes: Arriba 35mm para dejar espacio al Header gráfico, Abajo 15mm
+            $pdf->SetMargins(15, 35, 15); 
+            $pdf->SetHeaderMargin(10);
+            $pdf->SetAutoPageBreak(true, 15);
+            
+            // Habilitar Header y Footer personalizados
+            $pdf->setPrintHeader(true);
+            $pdf->setPrintFooter(true);
+            
+            $pdf->AddPage();
+
+            // Renderizar vista pasando la COLECCIÓN de movilizaciones y los frentes
+            $html = view('admin.movilizaciones.acta_traslado_pdf', compact('movilizaciones', 'movilizacion', 'frenteOrigen', 'frenteDestino'))->render();
+            $pdf->writeHTML($html, true, false, true, false, '');
+
+            // Nombre del archivo
+            $filename = 'Acta_Traslado_' . $movilizacion->CODIGO_CONTROL . '.pdf';
+
+            // Descargar PDF
+            return $pdf->Output($filename, 'D');
+
+        } catch (\Exception $e) {
+            \Log::error('Error generando Acta de Traslado: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Error al generar el acta: ' . $e->getMessage()]);
+        }
+    }
+}
+
+// Clase personalizada para el PDF con Header Gráfico Corporativo
+class ActaTrasladoPDF extends \TCPDF {
+    public $codigoControl = null;
+    
+    public function Header() {
+        // Imagen 'imagen_uno.jpg' corporativa (Usada en reporte de alertas)
+        $image_file = public_path('img/imagen_uno.jpg');
+        
+        // Logo a la izquierda (Coordenadas: X=15, Y=10, H=25)
+        if (file_exists($image_file)) {
+            $this->Image($image_file, 15, 10, 0, 25, 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
+        } else {
+             // Fallback si no existe la imagen_uno, buscamos logo.png
+             $logo_bkp = public_path('images/maquinaria/logo.png');
+             if(file_exists($logo_bkp)) {
+                 $this->Image($logo_bkp, 15, 10, 0, 20, 'PNG');
+             }
+        }
+        
+        // Título centrado: ACTA DE TRASLADO
+        $this->SetY(15);
+        $this->SetFont('helvetica', 'B', 14);
+        $this->Cell(0, 5, 'ACTA DE TRASLADO', 0, 1, 'C', 0, '', 0, false, 'T', 'M');
+        
+        // Bloque Informativo Derecha: N° Operación + Fecha + Emisor
+        $this->SetY(15);
+        $this->SetX(15);
+        $this->SetFont('helvetica', '', 9);
+        
+        $numeroOp = $this->codigoControl ? str_pad($this->codigoControl, 6, '0', STR_PAD_LEFT) : '---';
+        
+        $html = '<div style="text-align: right;">
+            <strong>N° OPERACIÓN: ' . $numeroOp . '</strong><br>
+            <strong>FECHA DE EMISIÓN:</strong> ' . \Carbon\Carbon::now()->format('d/m/Y') . '<br>
+            EMITIDO POR SISTEMA DE GESTIÓN DE FLOTA
+        </div>';
+        
+        $this->writeHTMLCell(0, 0, 15, 15, $html, 0, 0, 0, true, 'R', true);
+    }
+
+    public function Footer() {
+        $this->SetY(-15);
+        $this->SetFont('helvetica', 'I', 8);
+        $this->Cell(0, 10, 'Página '.$this->getAliasNumPage().'/'.$this->getAliasNbPages(), 0, 0, 'C');
     }
 }
