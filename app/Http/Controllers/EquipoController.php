@@ -933,6 +933,10 @@ class EquipoController extends Controller
                 }
             }
         });
+        
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Equipo actualizado correctamente.']);
+        }
 
         return redirect()->route('equipos.index')->with('success', 'Equipo actualizado.');
     }

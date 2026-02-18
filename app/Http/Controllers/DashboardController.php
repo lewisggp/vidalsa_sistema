@@ -199,10 +199,17 @@ class DashboardController extends Controller
     {
         $request->validate([
             'equipo_id' => 'required|exists:equipos,ID_EQUIPO',
-            'doc_type' => 'required|in:poliza,rotc,racda'
+            'doc_type' => 'required|in:poliza,rotc,racda',
+            'password' => 'required'
         ]);
 
         $user = auth()->user();
+        
+        // Validate Password for Security
+        if (!\Illuminate\Support\Facades\Hash::check($request->password, $user->PASSWORD_HASH)) {
+            return response()->json(['success' => false, 'message' => 'Contraseña incorrecta. Permiso denegado.'], 403);
+        }
+
         if (!$user->ID_FRENTE_ASIGNADO) {
             return response()->json(['success' => false, 'message' => 'Debe pertenecer a un frente para iniciar gestión'], 403);
         }

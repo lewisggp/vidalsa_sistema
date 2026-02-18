@@ -25,8 +25,8 @@
             <div style="display: flex; flex-direction: column; gap: 15px;">
                 
                 <details name="equipment_accordion" style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
-                    <summary style="padding: 15px 20px; font-weight: 700; color: #059669; display: flex; align-items: center; gap: 10px; background: #f0fdf4; list-style: none;">
-                        <i class="material-icons" style="font-size: 20px; color: #059669;">description</i> 
+                    <summary style="padding: 15px 20px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 10px; background: #f8fafc; list-style: none; cursor: default;">
+                        <i class="material-icons" style="font-size: 20px; color: #64748b;">description</i> 
                         <span style="color: #1e293b;">Documentación Legal y Soportes</span>
                     </summary>
                     <div style="padding: 20px; border-top: 1px solid #e2e8f0;">
@@ -87,8 +87,8 @@
 
                 <!-- Section 2: General Information -->
                 <details name="equipment_accordion" style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
-                    <summary style="padding: 15px 20px; font-weight: 700; color: var(--maquinaria-blue); display: flex; align-items: center; gap: 10px; background: #f8fafc; list-style: none;">
-                        <i class="material-icons" style="font-size: 20px; color: var(--maquinaria-blue);">info</i> 
+                    <summary style="padding: 15px 20px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 10px; background: #f8fafc; list-style: none; cursor: default;">
+                        <i class="material-icons" style="font-size: 20px; color: #64748b;">info</i> 
                         <span style="color: #1e293b;">Información General</span>
                     </summary>
                     <div style="padding: 20px; border-top: 1px solid #e2e8f0;">
