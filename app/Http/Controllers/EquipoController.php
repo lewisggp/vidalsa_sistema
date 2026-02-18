@@ -1030,7 +1030,7 @@ class EquipoController extends Controller
                 $updateData[$dateColumn] = $request->input('expiration_date');
             }
             
-            // CRITICAL FIX: Save ID_USUARIO (Integer) as required by DB columns
+            // COMPATIBILITY FIX: Save ID (Int) to match Server DB structure
             $uploadedBy = auth()->user()->ID_USUARIO;
             $uploadedAt = now();
             
