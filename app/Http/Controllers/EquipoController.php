@@ -672,6 +672,11 @@ class EquipoController extends Controller
                 }
                 unset($reqDoc['NOMBRE_SEGURO']); 
                 
+                // FIX: Remove ESTADO_POLIZA if present (calculated field, not in DB)
+                if (isset($reqDoc['ESTADO_POLIZA'])) {
+                    unset($reqDoc['ESTADO_POLIZA']);
+                } 
+                
                 // Merge Uploaded Links
                 $reqDoc = array_merge($reqDoc, $docDataUpdates);
 
@@ -879,6 +884,11 @@ class EquipoController extends Controller
                     $docData['ID_SEGURO'] = $seguro->ID_SEGURO;
                 }
                 unset($docData['NOMBRE_SEGURO']);
+
+                // FIX: Remove ESTADO_POLIZA if present
+                if (isset($docData['ESTADO_POLIZA'])) {
+                    unset($docData['ESTADO_POLIZA']);
+                }
                 $docData = array_filter($docData, function($value) { return !is_null($value) && $value !== ''; });
 
                 $docTypes = ['doc_propiedad' => 'LINK_DOC_PROPIEDAD', 'poliza_seguro' => 'LINK_POLIZA_SEGURO', 'doc_rotc' => 'LINK_ROTC', 'doc_racda' => 'LINK_RACDA'];

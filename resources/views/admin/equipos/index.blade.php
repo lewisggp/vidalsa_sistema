@@ -645,14 +645,14 @@
                 <!-- Stats Cards Row (Compressed) -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 0 0 25px 0; max-width: 900px;">
                     <!-- Total Equipment -->
-                    <div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #3b82f6;">
+                    <div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #08234dff;">
                         <div style="display: flex; align-items: center; justify-content: space-between;">
                             <div>
                                 <p style="margin: 0; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Total Equipos</p>
-                                <h3 id="stat_total" style="margin: 5px 0 0 0; font-size: 24px; color: #1e293b; font-weight: 800;">0</h3>
+                                <h3 id="stat_total" style="margin: 5px 0 0 0; font-size: 24px; color: #0d3370ff; font-weight: 800;">0</h3>
                             </div>
                             <div style="background: #eff6ff; padding: 8px; border-radius: 8px;">
-                                <i class="material-icons" style="font-size: 20px; color: #3b82f6;">inventory_2</i>
+                                <i class="material-icons" style="font-size: 20px; color: #0d3370ff;">inventory_2</i>
                             </div>
                         </div>
                     </div>
@@ -684,14 +684,14 @@
                     </div>
 
                     <!-- Estimated Consumption (New) -->
-                    <div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #ef4444;">
+                    <div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #7e1010ff;">
                         <div style="display: flex; align-items: center; justify-content: space-between;">
                             <div>
                                 <p style="margin: 0; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Consumo Est. (L/Día)</p>
                                 <h3 id="stat_consumption" style="margin: 5px 0 0 0; font-size: 24px; color: #1e293b; font-weight: 800;">0</h3>
                             </div>
                             <div style="background: #fef2f2; padding: 8px; border-radius: 8px;">
-                                <i class="material-icons" style="font-size: 20px; color: #ef4444;">local_gas_station</i>
+                                <i class="material-icons" style="font-size: 20px; color: #8f0b0bff;">local_gas_station</i>
                             </div>
                         </div>
                     </div>

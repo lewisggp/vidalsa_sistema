@@ -830,7 +830,12 @@ window.showDetailsImproved = function (target, event) {
             container.innerHTML = `
                 <div style="position: relative; width: 30px; height: 30px;">
                     <input type="file" id="${inputId}" accept="application/pdf" style="display: none;" onchange="uploadDocument(this, '${type}', '${equipoId}', '${containerId}', '${label}')">
-                    <label for="${inputId}" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #fbfcfd; color: #3b82f6; border: 1px dashed #3b82f6; border-radius: 6px; transition: 0.2s; cursor: pointer;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#fbfcfd'" title="Cargar ${label}">
+                    <label for="${inputId}" 
+                        onclick="if(typeof window.CAN_UPDATE_INFO !== 'undefined' && window.CAN_UPDATE_INFO === false) { event.preventDefault(); showModal({ type: 'error', title: 'Acceso Denegado', message: 'No tienes permisos para cargar documentos.', confirmText: 'Entendido', hideCancel: true }); return false; }"
+                        style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #fbfcfd; color: #3b82f6; border: 1px dashed #3b82f6; border-radius: 6px; transition: 0.2s; cursor: pointer;" 
+                        onmouseover="this.style.background='#eff6ff'" 
+                        onmouseout="this.style.background='#fbfcfd'" 
+                        title="Cargar ${label}">
                         <i class="material-icons" style="font-size: 18px;">cloud_upload</i>
                     </label>
                 </div>
@@ -869,6 +874,23 @@ window.closeDetailsModal = function (event) {
 };
 
 window.uploadDocument = function (input, type, equipoId, containerId, label) {
+    // PERMISSION CHECK (Defense in depth)
+    if (typeof window.CAN_UPDATE_INFO !== 'undefined' && window.CAN_UPDATE_INFO === false) {
+        input.value = ''; // Clear input
+        if (window.showModal) {
+            showModal({
+                type: 'error',
+                title: 'Acceso Denegado',
+                message: 'No tienes permisos para cargar documentos.',
+                confirmText: 'Entendido',
+                hideCancel: true
+            });
+        } else {
+            alert('Acceso Denegado: No tienes permisos.');
+        }
+        return;
+    }
+
     if (!input.files || !input.files[0]) return;
     const file = input.files[0];
 

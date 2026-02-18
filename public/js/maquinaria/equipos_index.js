@@ -7,6 +7,21 @@ window.selectedEquipos = window.selectedEquipos || {};
 // Global Status Dropdown Logic
 window.toggleStatusDropdown = function (trigger) {
     if (!trigger) return;
+
+    // PERMISSION CHECK
+    if (typeof window.CAN_UPDATE_INFO !== 'undefined' && window.CAN_UPDATE_INFO === false) {
+        if (window.showModal) {
+            showModal({
+                type: 'error',
+                title: 'Acceso Denegado',
+                message: 'No tienes permisos para cambiar el estatus.',
+                confirmText: 'Entendido',
+                hideCancel: true
+            });
+        }
+        return;
+    }
+
     document.querySelectorAll('.status-dropdown-menu').forEach(menu => {
         if (menu.previousElementSibling !== trigger) {
             menu.style.display = 'none';
@@ -290,6 +305,11 @@ window.filterList = function (inputArg, listArg) {
 };
 
 window.changeStatus = function (id, newStatus, url, element) {
+    // PERMISSION CHECK
+    if (typeof window.CAN_UPDATE_INFO !== 'undefined' && window.CAN_UPDATE_INFO === false) {
+        return; // Should be caught by toggleStatusDropdown, but double check
+    }
+
     if (!element) return;
     const dropdown = element.closest('.custom-dropdown');
     if (!dropdown) return;
@@ -350,6 +370,22 @@ window.openBulkModal = function (event) {
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
+    }
+
+    // PERMISSION CHECK
+    if (typeof window.CAN_UPDATE_INFO !== 'undefined' && window.CAN_UPDATE_INFO === false) {
+        if (window.showModal) {
+            showModal({
+                type: 'error',
+                title: 'Acceso Denegado',
+                message: 'No tienes permisos para movilizar equipos.',
+                confirmText: 'Entendido',
+                hideCancel: true
+            });
+        } else {
+            alert('Acceso Denegado: No tienes permisos.');
+        }
+        return;
     }
 
     // 1. Validation

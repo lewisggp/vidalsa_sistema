@@ -221,18 +221,27 @@ function initEquiposForm() {
         }
 
         // D. Submit - Only show preloader if not already shown
-        if (!skipPreloader && typeof window.showPreloader === 'function') {
-            window.showPreloader();
+        if (!skipPreloader) {
+            if (typeof window.showPreloader === 'function') {
+                window.showPreloader();
+            } else {
+                const preloader = document.getElementById('preloader');
+                if (preloader) preloader.style.display = 'flex';
+            }
         }
 
-        // Lock submit button
+        // Lock submit button & Add Spinner
         const submitBtn = form.querySelector('button[type="submit"]');
         let originalBtnContent = '';
 
         if (submitBtn) {
             originalBtnContent = submitBtn.innerHTML;
-            submitBtn.style.width = submitBtn.offsetWidth + 'px';
+            submitBtn.style.width = submitBtn.offsetWidth + 'px'; // Maintain width
             submitBtn.disabled = true;
+            submitBtn.innerHTML = `
+                <i class="material-icons" style="font-size: 18px; animation: spin 1s infinite linear; display: inline-block; vertical-align: middle; margin-right: 5px;">sync</i>
+                Procesando...
+            `;
         }
 
         const formData = new FormData(form);
@@ -375,6 +384,26 @@ function initEquiposForm() {
     form.addEventListener('submit', function (e) {
         e.preventDefault();
         e.stopPropagation();
+
+        // 0. Permission Check
+        const isEdit = form.querySelector('input[name="_method"][value="PUT"]');
+        const canSubmit = isEdit ? window.CAN_UPDATE_INFO : window.CAN_CREATE_EQUIPOS;
+
+        // Safety: If permission flag is somehow undefined, assume false for security
+        if (typeof canSubmit === 'undefined' || canSubmit === false) {
+            if (window.showModal) {
+                showModal({
+                    type: 'error',
+                    title: 'Acceso Denegado',
+                    message: isEdit ? 'No tienes permisos para actualizar esta información.' : 'No tienes permisos para registrar equipos.',
+                    confirmText: 'Entendido',
+                    hideCancel: true
+                });
+            } else {
+                alert('Acceso Denegado: No tienes permisos.');
+            }
+            return;
+        }
 
         // A. Pending Validation Check (Wait Mode)
         const pendingValidations = () => Array.from(form.querySelectorAll('.validation-loader')).filter(el => el.style.display !== 'none');

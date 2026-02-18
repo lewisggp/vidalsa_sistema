@@ -7,13 +7,13 @@ let currentFrenteId = ''; // Track selected frente
 // Color palettes
 const CHART_COLORS = {
     status: {
-        'OPERATIVO': '#1b0d95ff',      // Operativo
-        'MANTENIMIENTO': '#7b7b7bff',    // Mantenimiento
+        'OPERATIVO': '#110a50ff',      // Operativo
+        'MANTENIMIENTO': '#69696dff',    // Mantenimiento
         'INOPERATIVO': '#a31616ff',    // Inoperativo
         'DESINCORPORADO': '#07090aff'    // Desincorporado
     },
-    age: ['#1b0d95ff', '#a31616ff'], // New (Brand Blue), Old (Dark Red)
-    category: ['#a31616ff', '#1b0d95ff', '#94a3b8'] // Pesada, Liviana, Sin Asignar (Gris)
+    age: ['#110a50ff', '#a31616ff'], // New (Brand Blue), Old (Dark Red)
+    category: ['#a31616ff', '#110a50ff', '#69696dff'] // Pesada, Liviana, Sin Asignar (Gris)
 };
 
 /**
@@ -373,21 +373,7 @@ function createCleanStackedBarChart(canvasId, config) {
                         boxHeight: 14
                     }
                 },
-                tooltip: {
-                    callbacks: {
-                        footer: function (tooltipItems) {
-                            let total = 0;
-                            const dataIndex = tooltipItems[0].dataIndex;
-                            const datasets = tooltipItems[0].chart.data.datasets;
 
-                            datasets.forEach(dataset => {
-                                total += dataset.data[dataIndex] || 0;
-                            });
-
-                            return 'Total: ' + total;
-                        }
-                    }
-                },
                 datalabels: {
                     color: 'white',
                     font: { weight: 'bold', size: 12 },

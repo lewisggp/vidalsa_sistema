@@ -957,6 +957,21 @@
             }
         };
 
+        // Permission Flag (Global & Exposed to External Scripts)
+        // Permission Flag (Global & Exposed to External Scripts)
+        window.CAN_UPDATE_INFO = {{ auth()->user() && (auth()->user()->can('super.admin') || auth()->user()->can('equipos.edit') || auth()->user()->can('user.edit') || auth()->user()->can('Actualizar Información')) ? 'true' : 'false' }};
+        window.CAN_CREATE_EQUIPOS = {{ auth()->user() && (auth()->user()->can('super.admin') || auth()->user()->can('equipos.create') || auth()->user()->can('Registrar Equipos')) ? 'true' : 'false' }};
+        
+        console.group('🔍 Debug Permisos Sistema');
+        console.log('Usuario:', '{{ auth()->user()->NOMBRE_COMPLETO ?? "Invitado" }}');
+        console.log('Permisos Activos (DB):', @json(auth()->user()->PERMISOS ?? []));
+        console.log('Tiene Super Admin:', {{ auth()->user()->can('super.admin') ? 'true' : 'false' }});
+        console.log('Tiene Equipos Edit:', {{ auth()->user()->can('equipos.edit') ? 'true' : 'false' }});
+        console.log('Tiene Equipos Create:', {{ auth()->user()->can('equipos.create') ? 'true' : 'false' }});
+        console.log('RESULTADO FINAL (CAN_UPDATE_INFO):', window.CAN_UPDATE_INFO);
+        console.log('RESULTADO FINAL (CAN_CREATE_EQUIPOS):', window.CAN_CREATE_EQUIPOS);
+        console.groupEnd();
+
         window.loadMetadata = async function() {
             const ctx = window.currentPdfContext;
             if (!ctx) return;
@@ -977,31 +992,36 @@
                     let html = '';
 
                     // Compact styles for 300px panel
+                    // Compact styles for 300px panel
                     const commonInputStyle = "background: #4a5568; border: 1px solid #718096; color: white; padding: 6px 8px; border-radius: 4px; width: 100%; box-sizing: border-box; font-size: 13px; height: 32px;";
                     const labelStyle = "display: block; font-size: 12px; color: #cbd5e0; margin-bottom: 4px; font-weight: 600;";
                     const containerStyle = "margin-bottom: 12px;";
+                    
+                    // Helper to disable inputs if no permission (Uses window.CAN_UPDATE_INFO)
+                    // If disabled: Use SAME style but add transparency and disabled attribute
+                    const disabledAttr = !window.CAN_UPDATE_INFO ? `disabled style="${commonInputStyle} opacity: 0.7; cursor: not-allowed;"` : `style="${commonInputStyle}"`;
 
                     if (ctx.docType === 'propiedad') {
                         html += `
                             <div style="${containerStyle}">
                                 <label for="meta_nro_documento" style="${labelStyle}">Nro. Documento</label>
-                                <input type="text" id="meta_nro_documento" name="nro_documento" value="${info.nro_documento || ''}" style="${commonInputStyle}" autocomplete="off">
+                                <input type="text" id="meta_nro_documento" name="nro_documento" value="${info.nro_documento || ''}" ${disabledAttr} autocomplete="off">
                             </div>
                             <div style="${containerStyle}">
                                 <label for="meta_titular" style="${labelStyle}">Titular</label>
-                                <input type="text" id="meta_titular" name="titular" value="${info.titular || ''}" style="${commonInputStyle}" autocomplete="off">
+                                <input type="text" id="meta_titular" name="titular" value="${info.titular || ''}" ${disabledAttr} autocomplete="off">
                             </div>
                             <div style="${containerStyle}">
                                 <label for="meta_placa" style="${labelStyle}">Placa</label>
-                                <input type="text" id="meta_placa" name="placa" value="${info.placa || ''}" style="${commonInputStyle}" autocomplete="off">
+                                <input type="text" id="meta_placa" name="placa" value="${info.placa || ''}" ${disabledAttr} autocomplete="off">
                             </div>
                             <div style="${containerStyle}">
                                 <label for="meta_serial_chasis" style="${labelStyle}">Serial Chasis</label>
-                                <input type="text" id="meta_serial_chasis" name="serial_chasis" value="${info.serial_chasis || ''}" style="${commonInputStyle}" autocomplete="off">
+                                <input type="text" id="meta_serial_chasis" name="serial_chasis" value="${info.serial_chasis || ''}" ${disabledAttr} autocomplete="off">
                             </div>
                             <div style="${containerStyle}">
                                 <label for="meta_serial_motor" style="${labelStyle}">Serial Motor</label>
-                                <input type="text" id="meta_serial_motor" name="serial_motor" value="${info.serial_motor || ''}" style="${commonInputStyle}" autocomplete="off">
+                                <input type="text" id="meta_serial_motor" name="serial_motor" value="${info.serial_motor || ''}" ${disabledAttr} autocomplete="off">
                             </div>
                         `;
                     } else if (ctx.docType === 'poliza') {
@@ -1021,7 +1041,7 @@
                         html += `
                             <div style="${containerStyle}">
                                 <label for="meta_fecha_vencimiento" style="${labelStyle}">Fecha Vencimiento</label>
-                                <input type="date" id="meta_fecha_vencimiento" name="fecha_vencimiento" value="${info.fecha_vencimiento || ''}" style="${commonInputStyle}" autocomplete="off">
+                                <input type="date" id="meta_fecha_vencimiento" name="fecha_vencimiento" value="${info.fecha_vencimiento || ''}" ${disabledAttr} autocomplete="off">
                             </div>
                             <div style="${containerStyle}">
                                 <label for="meta_nombre_aseguradora" style="${labelStyle}">Aseguradora <small style="color: #94a3b8; font-weight: 400;">(Seleccionar o escribir nueva)</small></label>
@@ -1031,7 +1051,7 @@
                                        list="insurersList_${ctx.equipoId}" 
                                        value="${currentInsurerName || ''}" 
                                        placeholder="Escriba o seleccione una aseguradora..."
-                                       style="${commonInputStyle}" 
+                                       ${disabledAttr}
                                        autocomplete="off">
                                 <datalist id="insurersList_${ctx.equipoId}">
                                     ${datalistOptions}
@@ -1042,7 +1062,7 @@
                         html += `
                             <div style="${containerStyle}">
                                 <label for="meta_fecha_vencimiento_r" style="${labelStyle}">Fecha Vencimiento</label>
-                                <input type="date" id="meta_fecha_vencimiento_r" name="fecha_vencimiento" value="${info.fecha_vencimiento || ''}" style="${commonInputStyle}" autocomplete="off">
+                                <input type="date" id="meta_fecha_vencimiento_r" name="fecha_vencimiento" value="${info.fecha_vencimiento || ''}" ${disabledAttr} autocomplete="off">
                             </div>
                         `;
                     }
@@ -1060,6 +1080,19 @@
 
         window.saveMetadata = async function(e) {
             e.preventDefault();
+            
+            // PERMISSION CHECK
+            if (!window.CAN_UPDATE_INFO) {
+                showModal({ 
+                    type: 'error', 
+                    title: 'Acceso Denegado', 
+                    message: 'No tienes permisos para actualizar esta información.', 
+                    confirmText: 'Entendido', 
+                    hideCancel: true 
+                });
+                return;
+            }
+
             const ctx = window.currentPdfContext;
             const btn = document.getElementById('btnSaveMeta');
             const originalHTML = btn.innerHTML;
@@ -1180,6 +1213,19 @@
 
         // Special Upload Handler for Preview Modal (XMLHttpRequest for Progress)
         window.uploadDocumentFromPreview = function(input, type, equipoId, label) {
+            // PERMISSION CHECK
+            if (!window.CAN_UPDATE_INFO) {
+                input.value = ''; // Clear input
+                showModal({ 
+                    type: 'error', 
+                    title: 'Acceso Denegado', 
+                    message: 'No tienes permisos para actualizar documentos.', 
+                    confirmText: 'Entendido', 
+                    hideCancel: true 
+                });
+                return;
+            }
+
             if (!input.files || !input.files[0]) return;
             const file = input.files[0];
             
@@ -1357,6 +1403,18 @@
                 message: `¿Estás seguro de que deseas eliminar "${label}"? Esta acción no se puede deshacer.`,
                 confirmText: 'Eliminar',
                 onConfirm: async () => {
+                     // PERMISSION CHECK
+                     if (!window.CAN_UPDATE_INFO) {
+                        showModal({ 
+                            type: 'error', 
+                            title: 'Acceso Denegado', 
+                            message: 'No tienes permisos para eliminar documentos.', 
+                            confirmText: 'Entendido', 
+                            hideCancel: true 
+                        });
+                        return;
+                    }
+
                      try {
                         const response = await fetch(`/admin/equipos/${equipoId}/delete-doc`, {
                             method: 'DELETE',
@@ -1646,6 +1704,7 @@
     </script>
     {{-- Scripts de Formularios (Globales para soporte SPA) --}}
     <script src="{{ asset('js/maquinaria/module_manager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/maquinaria/uicomponents.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/maquinaria/form_selects.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/maquinaria/equipos_form.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/maquinaria/catalogo_create.js') }}?v={{ time() }}"></script>

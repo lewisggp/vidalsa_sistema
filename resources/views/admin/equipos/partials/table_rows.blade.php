@@ -45,7 +45,7 @@
             </div>
 
             @if($equipo->especificaciones && $equipo->especificaciones->FOTO_REFERENCIAL)
-                <div class="table-image-wrapper" style="cursor: default;" onclick="enlargeImage('{{ route('drive.file', ['path' => str_replace('/storage/google/', '', $equipo->especificaciones->FOTO_REFERENCIAL)]) }}')">
+                <div class="table-image-wrapper" style="cursor: default;">
                     <img src="{{ route('drive.file', ['path' => str_replace('/storage/google/', '', $equipo->especificaciones->FOTO_REFERENCIAL)]) }}" 
                          alt="Foto Modelo" 
                          loading="lazy"

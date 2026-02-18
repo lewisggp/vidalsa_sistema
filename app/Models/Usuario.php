@@ -106,4 +106,29 @@ class Usuario extends Authenticatable
         
         return $niveles[$this->NIVEL_ACCESO] ?? 'Desconocido';
     }
+    /**
+     * Determine if the entity has the given abilities.
+     *
+     * @param  iterable|string  $abilities
+     * @param  array|mixed  $arguments
+     * @return bool
+     */
+    public function can($abilities, $arguments = []): bool
+    {
+        // 1. Si es un permiso de nuestro sistema (string), verificar en columna PERMISOS
+        if (is_string($abilities)) {
+            $permisos = $this->PERMISOS; // Esto ya usa el accessor getPermisosAttribute (array)
+            
+            // Si tiene el permiso exacto
+            if (in_array($abilities, $permisos)) {
+                return true;
+            }
+            
+            // Si es Super Administrador (opcional, pero común)
+            // if ($this->ID_ROL === 1) return true;
+        }
+
+        // 2. Delegar al comportamiento estándar de Laravel (Gates/Policies)
+        return parent::can($abilities, $arguments);
+    }
 }

@@ -15,18 +15,19 @@
 
     <script>
         /**
-         * Robust Session Timeout Manager
-         * Uses absolute timestamps to prevent drift when tab is backgrounded/sleeping.
+         * Robust Session Timeout Manager (Fixed)
+         * - Prevents freezing with 5s timeout
+         * - Updates CSRF Token dynamically
+         * - Handles background tab throttling
          */
         (function() {
             // Configuration
-            const SESSION_LIFETIME_MINUTES = {{ config('session.lifetime') ?? 120 }};
-            const WARNING_DURATION_SECONDS = 60; // 1 minute warning
-            const PING_INTERVAL_MS = 240000; // Ping server every 4 minutes of activity
+            const SESSION_LIFETIME_MINUTES = {{ config('session.lifetime') ?? 20 }};
+            const WARNING_DURATION_SECONDS = 120; // Warn 2 minutes before expiration
+            const PING_INTERVAL_MS = 60000;       // Check activity every minute
             
             // State
             let sessionExpirationTime;
-            let lastServerPingTime = Date.now();
             let checkInterval;
             let isModalVisible = false;
 
@@ -34,6 +35,7 @@
                 updateExpirationTime();
                 startCheckInterval();
                 setupEventListeners();
+                console.log(`✅ Session Monitor: Started (Expires in ${SESSION_LIFETIME_MINUTES}m)`);
             }
 
             function updateExpirationTime() {
@@ -44,33 +46,32 @@
             function checkSessionStatus() {
                 const now = Date.now();
                 const msRemaining = sessionExpirationTime - now;
+                const secondsRemaining = Math.ceil(msRemaining / 1000);
 
-                if (msRemaining <= 0) {
-                    // Time is up!
+                // Debug log (optional, remove in prod)
+                // console.log('Session Check:', secondsRemaining, 's remaining');
+
+                if (secondsRemaining <= 0) {
                     performLogout();
-                } else if (msRemaining <= (WARNING_DURATION_SECONDS * 1000)) {
-                    // Enter Warning Zone
-                    showWarning(Math.ceil(msRemaining / 1000));
+                } else if (secondsRemaining <= WARNING_DURATION_SECONDS) {
+                    showWarning(secondsRemaining);
                 } else {
-                    // Safe Zone
                     if (isModalVisible) hideWarning();
                 }
             }
 
             function startCheckInterval() {
                 if (checkInterval) clearInterval(checkInterval);
-                // Check every second
-                checkInterval = setInterval(checkSessionStatus, 1000);
+                checkInterval = setInterval(checkSessionStatus, 1000); // Check every second
             }
 
             function showWarning(secondsRemaining) {
                 const modal = document.getElementById('sessionTimeoutModal');
                 const counter = document.getElementById('sessionCountdown');
                 
-                if (modal) {
+                if (modal && !isModalVisible) {
                     modal.style.display = 'flex';
-                    // Force high z-index
-                    modal.style.zIndex = '99999'; 
+                    modal.style.zIndex = '99999'; // Ensure it's on top
                     isModalVisible = true;
                 }
                 
@@ -86,63 +87,95 @@
                     isModalVisible = false;
                 }
                 
-                // Reset button state just in case it was left pending
                 const btn = document.getElementById('btnExtendSession');
                 if(btn) {
                     btn.disabled = false;
-                    btn.innerText = 'Mantener Sesión';
                     btn.style.opacity = '1';
+                    btn.innerHTML = 'Mantener Sesión';
                 }
             }
 
-            // Expose function to global scope for the button click
+            // --- CORE FIX: Extend Session with Timeout & Token Update ---
             window.extendSession = function() {
                 const btn = document.getElementById('btnExtendSession');
-                
-                // UX: Prevent double click
                 if(btn) {
                     btn.disabled = true;
                     btn.style.opacity = '0.7';
+                    btn.innerHTML = 'Renovando...';
                 }
 
-                // Show system preloader
-                if (typeof window.showPreloader === 'function') {
-                    window.showPreloader();
-                }
+                // 1. Force Preloader (if available)
+                if (typeof window.showPreloader === 'function') window.showPreloader();
 
-                fetch('/refresh-csrf', { method: 'GET' })
-                    .then(response => {
-                        if (response.ok) {
-                            // Success! Reset everything.
-                            updateExpirationTime();
-                            lastServerPingTime = Date.now();
-                            hideWarning();
-                        } else {
-                            // If ping fails (e.g. 401/419), we are likely already logged out
-                            window.location.reload(); 
+                // 2. Setup Timeout to prevent "Freezing"
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 seconds max
+
+                fetch('/refresh-csrf', { 
+                    method: 'GET',
+                    signal: controller.signal
+                })
+                .then(async response => {
+                    clearTimeout(timeoutId);
+                    
+                    if (response.ok) {
+                        // 3. CRITICAL: Get new token and update DOM
+                        const newToken = await response.text(); // Assuming route returns token string
+                        
+                        if (newToken && newToken.length > 10) {
+                            // Update Meta Tag
+                            const metaToken = document.querySelector('meta[name="csrf-token"]');
+                            if (metaToken) {
+                                metaToken.setAttribute('content', newToken);
+                                console.log('✅ CSRF Token Updated');
+                            }
+                            
+                            // Update Global Headers (if Axios/jQuery exists)
+                            // Note: This covers common libraries if used
+                            if (window.axios) window.axios.defaults.headers.common['X-CSRF-TOKEN'] = newToken;
+                            if (window.jQuery) window.jQuery.ajaxSetup({ headers: { 'X-CSRF-TOKEN': newToken } });
                         }
-                    })
-                    .catch(() => {
-                        // Network error or offline
-                         window.location.reload(); 
-                    })
-                    .finally(() => {
-                         // Hide system preloader
-                         if (typeof window.hidePreloader === 'function') {
-                             window.hidePreloader();
-                         }
-                    });
+
+                        // Reset Timers
+                        updateExpirationTime();
+                        hideWarning();
+                        
+                        // Notify User
+                        if (typeof window.showModal === 'function') {
+                            // Optional: Small toast, but maybe too intrusive? 
+                            // Better to just seamlessly continue.
+                        }
+                    } else {
+                        throw new Error('Server returned ' + response.status);
+                    }
+                })
+                .catch(error => {
+                    console.error('Session extension failed:', error);
+                    // Don't reload immediately, give user a chance to save manually if possible?
+                    // Or just warn them.
+                    alert('No se pudo renovar la sesión automáticamente. Por favor recarga la página para evitar errores.');
+                    
+                    // Fallback: Reload logic if we want to force it
+                    // window.location.reload(); 
+                })
+                .finally(() => {
+                    // 4. ALWAYS Hide Preloader
+                    if (typeof window.hidePreloader === 'function') window.hidePreloader();
+                    
+                    // Restore button if we didn't reload
+                    if(btn) {
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                        btn.innerHTML = 'Mantener Sesión';
+                    }
+                });
             };
 
             function performLogout() {
-                // Stop checking to prevent loops
                 clearInterval(checkInterval);
-                
-                // Create and submit logout form
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = '/logout';
-                
                 const csrfToken = document.querySelector('meta[name="csrf-token"]');
                 if(csrfToken) {
                     const csrf = document.createElement('input');
@@ -151,51 +184,31 @@
                     csrf.value = csrfToken.getAttribute('content');
                     form.appendChild(csrf);
                 }
-                
                 document.body.appendChild(form);
                 form.submit();
             }
 
             function handleActivity() {
-                // If the modal is visible, ONLY the button should extend the session.
-                // Ignore passive mouse movements.
                 if (isModalVisible) return;
-
-                // Update local expiration time so popup doesn't appear while working
-                updateExpirationTime();
-
-                // Throttle: Only ping server if 5 minutes (PING_INTERVAL_MS) have passed since last ping
-                const now = Date.now();
-                if (now - lastServerPingTime > PING_INTERVAL_MS) {
-                    lastServerPingTime = now;
-                    
-                    // Lightweight background ping to keep session alive on server
-                    fetch('/refresh-csrf', { method: 'GET' }).catch(() => {
-                        // Ignore errors in background ping (e.g. if offline)
-                    });
-                }
+                // Simple sliding expiration: activity pushes the deadline
+                // Only update internal timer, DON'T ping server every click (too heavy)
+                // The /refresh-csrf will happen only when the warning appears and user confirms.
+                updateExpirationTime(); 
             }
 
             function setupEventListeners() {
-                // Activity Listeners
-                const events = ['click', 'mousemove', 'keydown', 'scroll', 'touchstart'];
+                const events = ['click', 'keydown', 'scroll', 'touchstart'];
                 events.forEach(evt => {
                     document.addEventListener(evt, handleActivity, { passive: true });
                 });
-
-                // Tab Visibility Listener (The Key Fix for Sleeping Tabs)
+                
+                // Wake up check
                 document.addEventListener('visibilitychange', () => {
-                   if (!document.hidden) {
-                       // Immediately check status when tab wakes up
-                       checkSessionStatus();
-                       
-                       // Optional: If we woke up and it's been a long time, maybe force a ping?
-                       // But checkSessionStatus will handle logout if expired.
-                   }
+                   if (!document.hidden) checkSessionStatus();
                 });
             }
 
-            // Start
+            // Start everything
             initSession();
         })();
     </script>
