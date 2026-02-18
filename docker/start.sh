@@ -6,7 +6,7 @@ echo "=========================================="
 
 # Esperar a que la base de datos esté disponible
 echo "[1/6] Esperando conexión a la base de datos..."
-sleep 10
+sleep 20
 
 # Verificar conexión a la base de datos
 echo "[2/6] Verificando conexión a MySQL..."

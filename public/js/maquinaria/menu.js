@@ -122,32 +122,42 @@ window.filterDashboardAlerts = function () {
 
 // Function to start management (replacing tomarResponsabilidad)
 window.iniciarGestion = function (equipoId, docType) {
+    // CHECK PERMISSION FIRST
+    if (typeof window.CAN_UPDATE_INFO !== 'undefined' && window.CAN_UPDATE_INFO === false) {
+        if (typeof showModal === 'function') {
+            showModal({
+                type: 'error',
+                title: 'Acceso Denegado',
+                message: 'No tienes permisos para realizar esta acción (Actualizar Información).',
+                confirmText: 'Entendido',
+                hideCancel: true
+            });
+        } else {
+            alert('Acceso Denegado: No tienes permisos para actualizar información.');
+        }
+        return;
+    }
+
     // Check if modal system exists
     if (typeof showModal === 'function') {
         showModal({
             type: 'info',
-            title: 'Confirmación de Seguridad',
-            message: 'Para iniciar la gestión, ingrese su contraseña:<br><input type="password" id="auth_password_confirm" style="width: 100%; margin-top: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">',
-            confirmText: 'Confirmar',
+            title: 'Iniciar Gestión',
+            message: '¿Confirma que su frente comenzará a gestionar este documento? <br><small>Se registrará su frente como responsable de la renovación.</small>',
+            confirmText: 'Aceptar',
             cancelText: 'Cancelar',
             onConfirm: async () => {
-                const password = document.getElementById('auth_password_confirm').value;
-                if (!password) {
-                    alert('Debe ingresar su contraseña');
-                    return;
-                }
-                await ejecutarIniciarGestion(equipoId, docType, password);
+                await ejecutarIniciarGestion(equipoId, docType);
             }
         });
     } else {
-        const password = prompt('Por seguridad, ingrese su contraseña para confirmar:');
-        if (password) {
-            ejecutarIniciarGestion(equipoId, docType, password);
+        if (confirm('¿Confirma que comenzará a gestionar este documento?')) {
+            ejecutarIniciarGestion(equipoId, docType);
         }
     }
 };
 
-async function ejecutarIniciarGestion(equipoId, docType, password) {
+async function ejecutarIniciarGestion(equipoId, docType) {
     // Show global preloader
     const preloader = document.getElementById('preloader');
     if (preloader) preloader.style.display = 'flex';
@@ -162,8 +172,7 @@ async function ejecutarIniciarGestion(equipoId, docType, password) {
             },
             body: JSON.stringify({
                 equipo_id: equipoId,
-                doc_type: docType,
-                password: password
+                doc_type: docType
             })
         });
 

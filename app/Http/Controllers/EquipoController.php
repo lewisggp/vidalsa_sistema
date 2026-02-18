@@ -1030,8 +1030,8 @@ class EquipoController extends Controller
                 $updateData[$dateColumn] = $request->input('expiration_date');
             }
             
-            // CRITICAL FIX: Register who uploaded and when (EMAIL instead of ID)
-            $uploadedBy = auth()->user()->CORREO_ELECTRONICO ?? 'Usuario sin correo';
+            // CRITICAL FIX: Save ID_USUARIO (Integer) as required by DB columns
+            $uploadedBy = auth()->user()->ID_USUARIO;
             $uploadedAt = now();
             
             switch ($type) {
