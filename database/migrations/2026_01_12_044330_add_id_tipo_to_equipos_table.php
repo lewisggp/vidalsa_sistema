@@ -11,22 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Skip if already migrated (id_tipo_equipo exists and TIPO_EQUIPO is gone or already handled)
+        if (Schema::hasColumn('equipos', 'id_tipo_equipo')) {
+            return;
+        }
+
         Schema::table('equipos', function (Blueprint $table) {
             $table->unsignedBigInteger('id_tipo_equipo')->nullable()->after('TIPO_EQUIPO');
-            // $table->foreign('id_tipo_equipo')->references('id')->on('tipo_equipos')->onDelete('set null');
         });
 
         // Migrate data
         $equipos = DB::table('equipos')->whereNotNull('TIPO_EQUIPO')->get();
         foreach ($equipos as $equipo) {
-            // Find or create header type
-            $tipoId = DB::table('tipo_equipos')->insertGetId([
-                'nombre' => $equipo->TIPO_EQUIPO,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]); // This might fail on duplicate unique, so use updateOrInsert logic or check existence
-            
-            // Better logic:
             $existing = DB::table('tipo_equipos')->where('nombre', $equipo->TIPO_EQUIPO)->first();
             if (!$existing) {
                  $id = DB::table('tipo_equipos')->insertGetId([
@@ -41,9 +37,11 @@ return new class extends Migration
             DB::table('equipos')->where('ID_EQUIPO', $equipo->ID_EQUIPO)->update(['id_tipo_equipo' => $id]);
         }
 
-        Schema::table('equipos', function (Blueprint $table) {
-            $table->dropColumn('TIPO_EQUIPO');
-        });
+        if (Schema::hasColumn('equipos', 'TIPO_EQUIPO')) {
+            Schema::table('equipos', function (Blueprint $table) {
+                $table->dropColumn('TIPO_EQUIPO');
+            });
+        }
     }
 
     public function down(): void

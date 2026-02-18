@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('usuarios', function (Blueprint $table) {
-            $table->boolean('REQUIERE_CAMBIO_CLAVE')->default(0)->after('ESTATUS');
+            if (!Schema::hasColumn('usuarios', 'REQUIERE_CAMBIO_CLAVE')) {
+                $table->boolean('REQUIERE_CAMBIO_CLAVE')->default(0)->after('ESTATUS');
+            }
         });
     }
 

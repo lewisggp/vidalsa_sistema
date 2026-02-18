@@ -13,33 +13,44 @@ return new class extends Migration
     {
         Schema::table('documentacion', function (Blueprint $table) {
             // Poliza tracking
-            $table->unsignedBigInteger('POLIZA_SUBIDO_POR')->nullable();
-            $table->timestamp('POLIZA_FECHA_SUBIDA')->nullable();
+            if (!Schema::hasColumn('documentacion', 'POLIZA_SUBIDO_POR')) {
+                $table->unsignedBigInteger('POLIZA_SUBIDO_POR')->nullable();
+            }
+            if (!Schema::hasColumn('documentacion', 'POLIZA_FECHA_SUBIDA')) {
+                $table->timestamp('POLIZA_FECHA_SUBIDA')->nullable();
+            }
             
             // ROTC tracking
-            $table->unsignedBigInteger('ROTC_SUBIDO_POR')->nullable();
-            $table->timestamp('ROTC_FECHA_SUBIDA')->nullable();
+            if (!Schema::hasColumn('documentacion', 'ROTC_SUBIDO_POR')) {
+                $table->unsignedBigInteger('ROTC_SUBIDO_POR')->nullable();
+            }
+            if (!Schema::hasColumn('documentacion', 'ROTC_FECHA_SUBIDA')) {
+                $table->timestamp('ROTC_FECHA_SUBIDA')->nullable();
+            }
             
             // RACDA tracking
-            $table->unsignedBigInteger('RACDA_SUBIDO_POR')->nullable();
-            $table->timestamp('RACDA_FECHA_SUBIDA')->nullable();
+            if (!Schema::hasColumn('documentacion', 'RACDA_SUBIDO_POR')) {
+                $table->unsignedBigInteger('RACDA_SUBIDO_POR')->nullable();
+            }
+            if (!Schema::hasColumn('documentacion', 'RACDA_FECHA_SUBIDA')) {
+                $table->timestamp('RACDA_FECHA_SUBIDA')->nullable();
+            }
             
             // Propiedad tracking
-            $table->unsignedBigInteger('PROPIEDAD_SUBIDO_POR')->nullable();
-            $table->timestamp('PROPIEDAD_FECHA_SUBIDA')->nullable();
+            if (!Schema::hasColumn('documentacion', 'PROPIEDAD_SUBIDO_POR')) {
+                $table->unsignedBigInteger('PROPIEDAD_SUBIDO_POR')->nullable();
+            }
+            if (!Schema::hasColumn('documentacion', 'PROPIEDAD_FECHA_SUBIDA')) {
+                $table->timestamp('PROPIEDAD_FECHA_SUBIDA')->nullable();
+            }
             
             // Adicional tracking  
-            $table->unsignedBigInteger('ADICIONAL_SUBIDO_POR')->nullable();
-            $table->timestamp('ADICIONAL_FECHA_SUBIDA')->nullable();
-        });
-        
-        // Add foreign keys in separate statement to avoid conflicts
-        Schema::table('documentacion', function (Blueprint $table) {
-            $table->foreign('POLIZA_SUBIDO_POR')->references('ID_USUARIO')->on('usuarios')->onDelete('set null');
-            $table->foreign('ROTC_SUBIDO_POR')->references('ID_USUARIO')->on('usuarios')->onDelete('set null');
-            $table->foreign('RACDA_SUBIDO_POR')->references('ID_USUARIO')->on('usuarios')->onDelete('set null');
-            $table->foreign('PROPIEDAD_SUBIDO_POR')->references('ID_USUARIO')->on('usuarios')->onDelete('set null');
-            $table->foreign('ADICIONAL_SUBIDO_POR')->references('ID_USUARIO')->on('usuarios')->onDelete('set null');
+            if (!Schema::hasColumn('documentacion', 'ADICIONAL_SUBIDO_POR')) {
+                $table->unsignedBigInteger('ADICIONAL_SUBIDO_POR')->nullable();
+            }
+            if (!Schema::hasColumn('documentacion', 'ADICIONAL_FECHA_SUBIDA')) {
+                $table->timestamp('ADICIONAL_FECHA_SUBIDA')->nullable();
+            }
         });
     }
 

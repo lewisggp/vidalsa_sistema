@@ -12,8 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('movilizacion_historial', function (Blueprint $table) {
-            $table->unsignedBigInteger('ID_FRENTE_RECEPCION')->nullable()->after('ID_FRENTE_DESTINO');
-            $table->foreign('ID_FRENTE_RECEPCION')->references('ID_FRENTE')->on('frentes_trabajo')->onDelete('set null');
+            if (!Schema::hasColumn('movilizacion_historial', 'ID_FRENTE_RECEPCION')) {
+                $table->unsignedBigInteger('ID_FRENTE_RECEPCION')->nullable()->after('ID_FRENTE_DESTINO');
+                $table->foreign('ID_FRENTE_RECEPCION')->references('ID_FRENTE')->on('frentes_trabajo')->onDelete('set null');
+            }
         });
     }
 

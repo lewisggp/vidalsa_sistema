@@ -9,7 +9,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('documentacion', function (Blueprint $table) {
-            $table->text('LINK_DOC_ADICIONAL')->nullable()->after('LINK_RACDA');
+            if (!Schema::hasColumn('documentacion', 'LINK_DOC_ADICIONAL')) {
+                $table->text('LINK_DOC_ADICIONAL')->nullable()->after('LINK_RACDA');
+            }
         });
     }
 

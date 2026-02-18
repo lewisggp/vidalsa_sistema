@@ -12,10 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('tipo_equipos', function (Blueprint $table) {
-            $table->enum('ROL_ANCLAJE', ['NEUTRO', 'REMOLCADOR', 'REMOLCABLE'])
-                  ->default('NEUTRO')
-                  ->after('nombre') // Place it after the name for better structure
-                  ->comment('Define si el tipo de equipo remolca, es remolcado o es independiente');
+            if (!Schema::hasColumn('tipo_equipos', 'ROL_ANCLAJE')) {
+                $table->enum('ROL_ANCLAJE', ['NEUTRO', 'REMOLCADOR', 'REMOLCABLE'])
+                      ->default('NEUTRO')
+                      ->after('nombre')
+                      ->comment('Define si el tipo de equipo remolca, es remolcado o es independiente');
+            }
         });
     }
 

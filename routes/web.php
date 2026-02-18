@@ -2,21 +2,12 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    if (auth()->check()) {
-        return redirect()->route('menu');
-    }
-    return view('auth.inicio_sesion');
-})->name('login');
+Route::get('/', [App\Http\Controllers\SystemController::class, 'loginPage'])->name('login');
 
-Route::get('/login', function () {
-    return redirect()->route('login');
-});
+Route::get('/login', [App\Http\Controllers\SystemController::class, 'loginRedirect']);
 
 // Lightweight route to refresh CSRF token (Handshake)
-Route::get('/refresh-csrf', function () {
-    return csrf_token();
-});
+Route::get('/refresh-csrf', [App\Http\Controllers\SystemController::class, 'refreshCsrf']);
 
 Route::post('/', [App\Http\Controllers\Auth\LoginController::class, 'login'])->name('login.post');
 Route::redirect('/home', '/menu');
@@ -69,9 +60,7 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('movilizaciones', App\Http\Controllers\MovilizacionController::class);
             Route::patch('movilizaciones/{id}/status', [App\Http\Controllers\MovilizacionController::class, 'updateStatus'])->name('movilizaciones.updateStatus');
             Route::get('movilizaciones/{id}/acta-traslado', [App\Http\Controllers\MovilizacionController::class, 'generarActaTraslado'])->name('movilizaciones.actaTraslado');
-            
 
-            
             Route::resource('catalogo', App\Http\Controllers\CaracteristicaModeloController::class);
         });
     });
@@ -81,132 +70,9 @@ Route::middleware(['auth'])->group(function () {
 Route::post('/logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
 
 // Google Drive File Proxy (Extreme Optimization with Full Range Support)
-Route::middleware(['auth'])->get('storage/google/{path}', function ($path) {
-    try {
-        $fileId = $path;
-        $cachePath = 'google_cache/' . $fileId;
+Route::middleware(['auth'])->get('storage/google/{path}', [App\Http\Controllers\GoogleDriveController::class, 'proxy'])
+    ->where('path', '.*')
+    ->name('drive.file');
 
-        // 1. CHECK LOCAL CACHE (Fastest, Offline-capable)
-        if (\Illuminate\Support\Facades\Storage::disk('local')->exists($cachePath)) {
-            $path = \Illuminate\Support\Facades\Storage::disk('local')->path($cachePath);
-            $mime = mime_content_type($path);
-            
-            // Use version query param for cache busting
-            $version = request()->query('v', '0');
-            $etag = md5($fileId . '-' . $version);
-            
-            return response()->file($path, [
-                'Content-Type' => $mime,
-                'Cache-Control' => 'public, max-age=2592000, must-revalidate',
-                'ETag' => '"' . $etag . '"',
-                'Pragma' => 'public',
-                'Expires' => gmdate('D, d M Y H:i:s \G\M\T', time() + 2592000),
-            ]);
-        }
-
-        // 2. FETCH FROM GOOGLE (If not in cache)
-        $driveService = \App\Services\GoogleDriveService::getInstance();
-        
-        // Metadata (Cached for 1 day)
-        $metadata = \Illuminate\Support\Facades\Cache::remember('gdrive_meta_' . $fileId, 86400, function() use ($driveService, $fileId) {
-            $drive = $driveService->getDrive();
-            $file = $drive->files->get($fileId, [
-                'fields' => 'mimeType,size,modifiedTime',
-                'supportsAllDrives' => true
-            ]);
-            return [
-                'mime' => $file->getMimeType(),
-                'size' => $file->getSize() ?: 0,
-            ];
-        });
-
-        // 3. DOWNLOAD & SAVE TO LOCAL CACHE
-        $stream = $driveService->getStreamById($fileId);
-        \Illuminate\Support\Facades\Storage::disk('local')->put($cachePath, $stream);
-        
-        // 4. SERVE FROM LOCAL CACHE
-        $localPath = \Illuminate\Support\Facades\Storage::disk('local')->path($cachePath);
-        
-        // Use version query param for cache busting (if provided)
-        $version = request()->query('v', '0');
-        $etag = md5($fileId . '-' . $version);
-        
-        return response()->file($localPath, [
-            'Content-Type' => $metadata['mime'],
-            'Cache-Control' => 'public, max-age=2592000, must-revalidate',
-            'ETag' => '"' . $etag . '"',
-            'Pragma' => 'public',
-            'Expires' => gmdate('D, d M Y H:i:s \G\M\T', time() + 2592000),
-        ]);
-
-    } catch (\Exception $e) {
-        \Illuminate\Support\Facades\Log::error('Google Drive fetch error: ' . $e->getMessage());
-        
-        // If local cache failed or GDrive failed, return 404 image placeholder logic could go here
-        abort(404, 'Imagen no disponible');
-    }
-})->where('path', '.*')->name('drive.file');
-
-// RUTA DE EMERGENCIA: CREAR COLUMNAS FALTANTES MANUALMENTE
-Route::get('/system/force-fix-db/vidalsa123', function () {
-    $log = "<h2>Reparando Base de Datos...</h2><pre>";
-    
-    try {
-        \Illuminate\Support\Facades\Schema::table('documentacion', function (Illuminate\Database\Schema\Blueprint $table) use (&$log) {
-            
-            // 1. POLIZA 
-            if (!\Illuminate\Support\Facades\Schema::hasColumn('documentacion', 'poliza_gestion_frente_id')) {
-                $table->unsignedBigInteger('poliza_gestion_frente_id')->nullable();
-                $table->timestamp('poliza_gestion_fecha')->nullable();
-                $log .= "✅ Creadas columnas de gestión Póliza (ID/Fecha)\n";
-            }
-            if (!\Illuminate\Support\Facades\Schema::hasColumn('documentacion', 'poliza_status')) {
-                $table->enum('poliza_status', ['vigente', 'en_proceso', 'vencido'])->default('vigente');
-                $log .= "✅ Creada columna poliza_status\n";
-            }
-            if (!\Illuminate\Support\Facades\Schema::hasColumn('documentacion', 'poliza_frente_gestionando')) {
-                $table->unsignedBigInteger('poliza_frente_gestionando')->nullable();
-                $table->timestamp('poliza_fecha_inicio_gestion')->nullable();
-                $log .= "✅ Creadas columnas de gestión activa Póliza\n";
-            }
-
-            // 2. ROTC
-            if (!\Illuminate\Support\Facades\Schema::hasColumn('documentacion', 'rotc_gestion_frente_id')) {
-                $table->unsignedBigInteger('rotc_gestion_frente_id')->nullable();
-                $table->timestamp('rotc_gestion_fecha')->nullable();
-                $log .= "✅ Creadas columnas de gestión ROTC (ID/Fecha)\n";
-            }
-            if (!\Illuminate\Support\Facades\Schema::hasColumn('documentacion', 'rotc_status')) {
-                 $table->enum('rotc_status', ['vigente', 'en_proceso', 'vencido'])->default('vigente');
-                 $log .= "✅ Creada columna rotc_status\n";
-            }
-            if (!\Illuminate\Support\Facades\Schema::hasColumn('documentacion', 'rotc_frente_gestionando')) {
-                $table->unsignedBigInteger('rotc_frente_gestionando')->nullable();
-                $table->timestamp('rotc_fecha_inicio_gestion')->nullable();
-                $log .= "✅ Creadas columnas de gestión activa ROTC\n";
-            }
-
-            // 3. RACDA
-             if (!\Illuminate\Support\Facades\Schema::hasColumn('documentacion', 'racda_gestion_frente_id')) {
-                $table->unsignedBigInteger('racda_gestion_frente_id')->nullable();
-                $table->timestamp('racda_gestion_fecha')->nullable();
-                $log .= "✅ Creadas columnas de gestión RACDA (ID/Fecha)\n";
-            }
-            if (!\Illuminate\Support\Facades\Schema::hasColumn('documentacion', 'racda_status')) {
-                $table->enum('racda_status', ['vigente', 'en_proceso', 'vencido'])->default('vigente');
-                $log .= "✅ Creada columna racda_status\n";
-            }
-             if (!\Illuminate\Support\Facades\Schema::hasColumn('documentacion', 'racda_frente_gestionando')) {
-                $table->unsignedBigInteger('racda_frente_gestionando')->nullable();
-                $table->timestamp('racda_fecha_inicio_gestion')->nullable();
-                $log .= "✅ Creadas columnas de gestión activa RACDA\n";
-            }
-        });
-
-        $log .= "\n✨ PROCESO TERMINADO CON ÉXITO ✨</pre>";
-        return $log;
-
-    } catch (\Exception $e) {
-        return "<h1>ERROR CRÍTICO:</h1><pre>" . $e->getMessage() . "</pre>";
-    }
-});
+// RUTA DE EMERGENCIA: REPARAR Y TIPO LOCAL (ORDENAR COLUMNAS)
+Route::get('/system/force-fix-db/vidalsa123', [App\Http\Controllers\SystemController::class, 'forceFixDb']);

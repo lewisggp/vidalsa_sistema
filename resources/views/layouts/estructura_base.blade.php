@@ -752,11 +752,11 @@
                         <div class="pdf-btn-container">
                             <button type="button" 
                                 onclick="openPdfPreview('${doc.link}', '${docType}', '${doc.label}', '${d.equipoId}')" 
-                                style="width: 36px; height: 36px; border-radius: 8px; background: #fee2e2; border: 1px solid #fecaca; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"
-                                onmouseover="this.style.background='#fecaca'" 
-                                onmouseout="this.style.background='#fee2e2'"
+                                style="width: 36px; height: 36px; border-radius: 8px; background: #f8f9fa; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"
+                                onmouseover="this.style.background='#e9ecef'" 
+                                onmouseout="this.style.background='#f8f9fa'"
                                 title="Ver PDF: ${doc.label}">
-                                <i class="material-icons" style="font-size: 20px; color: #dc2626;">picture_as_pdf</i>
+                                <i class="material-icons" style="font-size: 20px; color: #6c757d;">picture_as_pdf</i>
                             </button>
                         </div>
                     `;
@@ -1327,11 +1327,11 @@
                                     <div class="pdf-btn-container">
                                         <button type="button" 
                                             onclick="openPdfPreview('${data.link}', '${type}', '${label}', '${equipoId}')" 
-                                            style="width: 36px; height: 36px; border-radius: 8px; background: #fee2e2; border: 1px solid #fecaca; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"
-                                            onmouseover="this.style.background='#fecaca'" 
-                                            onmouseout="this.style.background='#fee2e2'"
+                                            style="width: 36px; height: 36px; border-radius: 8px; background: #f8f9fa; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"
+                                            onmouseover="this.style.background='#e9ecef'" 
+                                            onmouseout="this.style.background='#f8f9fa'"
                                             title="Ver PDF: ${label}">
-                                            <i class="material-icons" style="font-size: 20px; color: #dc2626;">picture_as_pdf</i>
+                                            <i class="material-icons" style="font-size: 20px; color: #6c757d;">picture_as_pdf</i>
                                         </button>
                                     </div>
                                 `;
