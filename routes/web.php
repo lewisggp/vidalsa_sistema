@@ -146,3 +146,67 @@ Route::middleware(['auth'])->get('storage/google/{path}', function ($path) {
         abort(404, 'Imagen no disponible');
     }
 })->where('path', '.*')->name('drive.file');
+
+// RUTA DE EMERGENCIA: CREAR COLUMNAS FALTANTES MANUALMENTE
+Route::get('/system/force-fix-db/vidalsa123', function () {
+    $log = "<h2>Reparando Base de Datos...</h2><pre>";
+    
+    try {
+        \Illuminate\Support\Facades\Schema::table('documentacion', function (Illuminate\Database\Schema\Blueprint $table) use (&$log) {
+            
+            // 1. POLIZA 
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('documentacion', 'poliza_gestion_frente_id')) {
+                $table->unsignedBigInteger('poliza_gestion_frente_id')->nullable();
+                $table->timestamp('poliza_gestion_fecha')->nullable();
+                $log .= "✅ Creadas columnas de gestión Póliza (ID/Fecha)\n";
+            }
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('documentacion', 'poliza_status')) {
+                $table->enum('poliza_status', ['vigente', 'en_proceso', 'vencido'])->default('vigente');
+                $log .= "✅ Creada columna poliza_status\n";
+            }
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('documentacion', 'poliza_frente_gestionando')) {
+                $table->unsignedBigInteger('poliza_frente_gestionando')->nullable();
+                $table->timestamp('poliza_fecha_inicio_gestion')->nullable();
+                $log .= "✅ Creadas columnas de gestión activa Póliza\n";
+            }
+
+            // 2. ROTC
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('documentacion', 'rotc_gestion_frente_id')) {
+                $table->unsignedBigInteger('rotc_gestion_frente_id')->nullable();
+                $table->timestamp('rotc_gestion_fecha')->nullable();
+                $log .= "✅ Creadas columnas de gestión ROTC (ID/Fecha)\n";
+            }
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('documentacion', 'rotc_status')) {
+                 $table->enum('rotc_status', ['vigente', 'en_proceso', 'vencido'])->default('vigente');
+                 $log .= "✅ Creada columna rotc_status\n";
+            }
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('documentacion', 'rotc_frente_gestionando')) {
+                $table->unsignedBigInteger('rotc_frente_gestionando')->nullable();
+                $table->timestamp('rotc_fecha_inicio_gestion')->nullable();
+                $log .= "✅ Creadas columnas de gestión activa ROTC\n";
+            }
+
+            // 3. RACDA
+             if (!\Illuminate\Support\Facades\Schema::hasColumn('documentacion', 'racda_gestion_frente_id')) {
+                $table->unsignedBigInteger('racda_gestion_frente_id')->nullable();
+                $table->timestamp('racda_gestion_fecha')->nullable();
+                $log .= "✅ Creadas columnas de gestión RACDA (ID/Fecha)\n";
+            }
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('documentacion', 'racda_status')) {
+                $table->enum('racda_status', ['vigente', 'en_proceso', 'vencido'])->default('vigente');
+                $log .= "✅ Creada columna racda_status\n";
+            }
+             if (!\Illuminate\Support\Facades\Schema::hasColumn('documentacion', 'racda_frente_gestionando')) {
+                $table->unsignedBigInteger('racda_frente_gestionando')->nullable();
+                $table->timestamp('racda_fecha_inicio_gestion')->nullable();
+                $log .= "✅ Creadas columnas de gestión activa RACDA\n";
+            }
+        });
+
+        $log .= "\n✨ PROCESO TERMINADO CON ÉXITO ✨</pre>";
+        return $log;
+
+    } catch (\Exception $e) {
+        return "<h1>ERROR CRÍTICO:</h1><pre>" . $e->getMessage() . "</pre>";
+    }
+});
