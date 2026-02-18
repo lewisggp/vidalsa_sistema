@@ -221,13 +221,8 @@ function initEquiposForm() {
         }
 
         // D. Submit - Only show preloader if not already shown
-        if (!skipPreloader) {
-            if (typeof window.showPreloader === 'function') {
-                window.showPreloader();
-            } else {
-                const preloader = document.getElementById('preloader');
-                if (preloader) preloader.style.display = 'flex';
-            }
+        if (!skipPreloader && typeof window.showPreloader === 'function') {
+            window.showPreloader();
         }
 
         // Lock submit button & Add Spinner

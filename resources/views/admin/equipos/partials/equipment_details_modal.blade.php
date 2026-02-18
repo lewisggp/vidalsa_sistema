@@ -33,44 +33,44 @@
                         <div style="display: flex; flex-direction: column; gap: 15px; font-size: 14px;">
                         
                             <div class="detail-row-basic" style="display: flex; flex-direction: column; align-items: flex-start; gap: 0;">
-                                <span style="color: #64748b; font-weight: 500; margin-bottom: 2px;">Titular del Registro</span>
-                                <strong id="d_titular" style="color: #1e293b; font-size: 14px; line-height: 1.3; width: 100%; word-wrap: break-word;"></strong>
+                                <span style="color: #64748b;">Titular del Registro</span>
+                                <span id="d_titular" style="color: #333333; font-size: 14px; width: 100%; word-wrap: break-word;"></span>
                             </div>
 
                             <!-- Placa -->
                             <div class="detail-row-basic">
-                                <span style="color: #64748b; font-weight: 500;">Placa Identificadora</span>
-                                <strong id="d_placa" style="color: var(--maquinaria-blue); font-size: 15px; letter-spacing: 0.5px;"></strong>
+                                <span style="color: #64748b;">Placa Identificadora</span>
+                                <span id="d_placa" style="color: #333333; font-size: 14px;"></span>
                             </div>
 
                             <!-- Documento Propiedad (With Button) -->
                             <div class="detail-row-doc">
-                                <span style="color: #64748b; font-weight: 500;">Nro. Documento</span>
-                                <strong id="d_nro_doc" style="color: #1e293b;"></strong>
+                                <span style="color: #64748b;">Nro. Documento</span>
+                                <span id="d_nro_doc" style="color: #333333;"></span>
                                 <div id="d_btn_propiedad"></div>
                             </div>
 
                             <!-- Seguro -->
                             <div class="detail-row-doc">
-                                <span style="color: #64748b; font-weight: 500;">Póliza de Seguro</span>
+                                <span style="color: #64748b;">Póliza de Seguro</span>
                                 <div>
                                     <!-- Removed Insurance Name Display -->
-                                    <small id="d_venc_seguro" style="color: #ef4444; font-weight: 600; font-size: 13px;"></small>
+                                    <span id="d_venc_seguro" style="color: #333333; font-size: 13px;"></span>
                                 </div>
                                 <div id="d_btn_poliza"></div>
                             </div>
 
                             <!-- ROTC -->
                             <div class="detail-row-doc">
-                                <span style="color: #64748b; font-weight: 500;">Registro ROTC</span>
-                                <strong id="d_fecha_rotc" style="color: #1e293b;"></strong>
+                                <span style="color: #64748b;">Registro ROTC</span>
+                                <span id="d_fecha_rotc" style="color: #333333;"></span>
                                 <div id="d_btn_rotc"></div>
                             </div>
 
                             <!-- RACDA -->
                             <div class="detail-row-doc">
-                                <span style="color: #64748b; font-weight: 500;">Registro RACDA</span>
-                                <strong id="d_fecha_racda" style="color: #1e293b;"></strong>
+                                <span style="color: #64748b;">Registro RACDA</span>
+                                <span id="d_fecha_racda" style="color: #333333;"></span>
                                 <div id="d_btn_racda"></div>
                             </div>
 
@@ -97,31 +97,31 @@
                             <!-- Año -->
                             <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px;">
                                 <span style="color: #64748b;">Año de Fabricación:</span>
-                                <strong id="d_anio" style="color: #1e293b;"></strong>
+                                <span id="d_anio" style="color: #333333;"></span>
                             </div>
 
                             <!-- Categoría -->
                             <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px;">
                                 <span style="color: #64748b;">Categoría de Flota:</span>
-                                <strong id="d_categoria" style="color: #1e293b;"></strong>
+                                <span id="d_categoria" style="color: #333333;"></span>
                             </div>
 
                             <!-- Motor Serial -->
                             <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px;">
                                 <span style="color: #64748b;">Serial de Motor:</span>
-                                <strong id="d_motor_serial" style="color: #1e293b;"></strong>
+                                <span id="d_motor_serial" style="color: #333333;"></span>
                             </div>
 
                             <!-- Combustible -->
                             <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px;">
                                 <span style="color: #64748b;">Tipo de Combustible:</span>
-                                <strong id="d_combustible" style="color: #1e293b;"></strong>
+                                <span id="d_combustible" style="color: #333333;"></span>
                             </div>
 
                             <!-- Consumo -->
                             <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px;">
                                 <span style="color: #64748b;">Consumo Promedio:</span>
-                                <strong id="d_consumo" style="color: #1e293b;"></strong>
+                                <span id="d_consumo" style="color: #333333;"></span>
                             </div>
 
                         </div>

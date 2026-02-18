@@ -393,6 +393,10 @@ class MovilizacionController extends Controller
 
             // Renderizar vista pasando la COLECCIÓN de movilizaciones y los frentes
             $html = view('admin.movilizaciones.acta_traslado_pdf', compact('movilizaciones', 'movilizacion', 'frenteOrigen', 'frenteDestino'))->render();
+            
+            // CLEANUP: Eliminar script inyectado accidentalmente (posiblemente por herramientas de dev o extensiones) que aparece impreso
+            $html = str_replace("this.closest('div[style*='position: fixed']').remove();", "", $html);
+
             $pdf->writeHTML($html, true, false, true, false, '');
 
             // Nombre del archivo
