@@ -106,10 +106,21 @@ class EquipoController extends Controller
         $hasFilter = $request->filled('id_frente') || $request->filled('id_tipo') || $request->filled('search_query') || $request->filled('modelo') || $request->filled('marca') || $request->filled('anio') || $request->filled('categoria') || $request->filled('estado') || $request->filled('filter_propiedad') || $request->filled('filter_poliza') || $request->filled('filter_rotc') || $request->filled('filter_racda');
 
         if ($hasFilter) {
-            $equipos = $equipos->paginate(50)->appends($request->all());
+            // Get ALL records matching filters (no pagination limit)
+            $allResults = $equipos->get();
+            
+            // Wrap in Paginator to keep view compatibility, but page size is total count
+            $equipos = new \Illuminate\Pagination\LengthAwarePaginator(
+                $allResults, 
+                $allResults->count(), 
+                $allResults->count() > 0 ? $allResults->count() : 1, // perPage = total items
+                1 // current page always 1
+            );
+            $equipos->withPath($request->url())->appends($request->all());
+
         } else {
              // Return empty paginator to open the interface without showing any records initially
-             $equipos = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 50);
+             $equipos = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10);
         }
         
         $frentes = FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')->orderBy('NOMBRE_FRENTE', 'asc')->get();
@@ -146,13 +157,13 @@ class EquipoController extends Controller
             // OPTIMIZATION: Calculate stats from the already loaded collection instead of hitting DB again
             // This reduces DB queries from ~5 to 1.
             
-            $stats['total'] = $equipos->count();
-            $stats['activos'] = $equipos->where('ESTADO_OPERATIVO', 'OPERATIVO')->count();
-            $stats['inactivos'] = $equipos->whereIn('ESTADO_OPERATIVO', ['INOPERATIVO', 'DESINCORPORADO'])->count();
-            $stats['mantenimiento'] = $equipos->where('ESTADO_OPERATIVO', 'EN MANTENIMIENTO')->count();
+            $stats['total'] = $allResults->count();
+            $stats['activos'] = $allResults->where('ESTADO_OPERATIVO', 'OPERATIVO')->count();
+            $stats['inactivos'] = $allResults->where('ESTADO_OPERATIVO', 'INOPERATIVO')->count();
+            $stats['mantenimiento'] = $allResults->where('ESTADO_OPERATIVO', 'EN MANTENIMIENTO')->count();
 
             // Calculate Tipos Stats from Collection
-            $tiposStats = $equipos->groupBy('id_tipo_equipo')->map(function ($group) {
+            $tiposStats = $allResults->groupBy('id_tipo_equipo')->map(function ($group) {
                 // Get the first item to access relation (assuming eager loaded)
                 $first = $group->first();
                 return (object) [

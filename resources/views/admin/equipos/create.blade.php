@@ -28,4 +28,28 @@
     </form>
 </div>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('createEquipoForm');
+        
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                // If form is valid, show spinner
+                if (form.checkValidity()) {
+                    if (window.showPreloader) {
+                        window.showPreloader();
+                    }
+                    
+                    // Disable button to prevent double submit
+                    const btn = form.querySelector('button[type="submit"]');
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="material-icons" style="animation: spin 1s linear infinite;">sync</i> Procesando...';
+                    }
+                }
+            });
+        }
+    });
+</script>
+
 @endsection
