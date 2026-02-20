@@ -16,6 +16,14 @@ use Illuminate\Support\Facades\Log;
 
 class EquipoController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('can:equipos.create')->only(['store']);
+        $this->middleware('can:equipos.edit')->only(['edit', 'update', 'changeStatus']);
+        // Permission check for uploadDoc/updateMetadata handled inside methods to allow OR logic (delete or edit)
+    }
+
     public function index(Request $request)
     {
         $search = $request->input('search_query');
@@ -970,6 +978,9 @@ class EquipoController extends Controller
 
     public function uploadDoc(Request $request, $id)
     {
+        if (!auth()->user()->can('user.delete') && !auth()->user()->can('user.edit')) {
+            abort(403, 'No tiene permiso para realizar esta acción.');
+        }
         set_time_limit(600);
         ini_set('memory_limit', '512M');
         $request->validate([
@@ -1220,6 +1231,9 @@ class EquipoController extends Controller
      */
     public function updateMetadata(Request $request, $id)
     {
+        if (!auth()->user()->can('user.delete') && !auth()->user()->can('user.edit')) {
+            abort(403, 'No tiene permiso para realizar esta acción.');
+        }
         $equipo = Equipo::with('documentacion')->findOrFail($id);
         $type = $request->input('doc_type');
         

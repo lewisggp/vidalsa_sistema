@@ -224,10 +224,12 @@
                         <i class="material-icons" style="font-size: 16px;">download</i> Descargar
                     </button>
                     
+                    @canany(['user.delete', 'user.edit'])
                     <label id="pdfUpdateLabel" for="pdfUpdateInput" style="background: #059669; border: none; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: white; border-radius: 50%; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Actualizar Documento">
                         <i class="material-icons" style="font-size: 18px;">add</i>
                         <input type="file" id="pdfUpdateInput" accept="application/pdf" style="display: none;">
                     </label>
+                    @endcanany
 
                     <button onclick="closePdfPreview()" style="background: none; border: none; color: #cbd5e0; padding: 4px; display: flex; align-items: center;">
                         <i class="material-icons" style="font-size: 20px;">close</i>
@@ -272,9 +274,11 @@
                             <!-- Dynamic Content -->
                             <div id="metaFieldsContainer"></div>
 
+                            @canany(['user.delete', 'user.edit'])
                             <button type="submit" id="btnSaveMeta" style="margin-top: 8px; background: #3182ce; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; width: 100%; box-sizing: border-box;">
                                 <i class="material-icons" style="font-size: 16px;">save</i> Guardar Cambios
                             </button>
+                            @endcanany
                         </form>
                     </div>
                 </div>
@@ -285,7 +289,7 @@
     </div>
 
     <!-- Standardized Reusable Modal (Moved to End for stacking context) -->
-    <div id="standardModal" class="modal-overlay" style="z-index: 10000 !important;">
+    <div id="standardModal" class="modal-overlay" style="z-index: 1000001 !important;">
         <div class="modal-card">
             <i id="modalIcon" class="material-icons modal-icon" style="color: var(--maquinaria-blue);">help_outline</i>
             <h3 id="modalTitle" class="modal-title">¿Confirmar Acción?</h3>
@@ -308,7 +312,7 @@
                 // Force visibility properties to ensure it appears on top of everything
                 preloader.style.opacity = '1';
                 preloader.style.visibility = 'visible';
-                preloader.style.zIndex = '999999';
+                preloader.style.zIndex = '1000000';
             }
         };
 
@@ -423,7 +427,7 @@
     
     {{-- Core Scripts (Always Loaded) --}}
     <script src="{{ asset('js/maquinaria/module_manager.js') }}"></script>
-    <script src="{{ asset('js/maquinaria/uicomponents.js') }}?v=15.5"></script>
+    <script src="{{ asset('js/maquinaria/uicomponents.js') }}?v=15.6"></script>
     <script src="{{ asset('js/maquinaria/navegacion.js') }}?v=10.0"></script>
     <script src="{{ asset('js/maquinaria/form_logic.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/maquinaria/equipo_catalog_linking.js') }}?v={{ time() }}"></script>
@@ -436,7 +440,7 @@
     <script src="{{ asset('js/maquinaria/catalogo_create.js') }}?v=12.0"></script>
     <script src="{{ asset('js/maquinaria/equipos_index.js') }}?v=20.0"></script>
     <script src="{{ asset('js/maquinaria/catalogo_index.js') }}?v=3.6"></script>
-    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=5.1"></script>
+    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=7.3"></script>
     <script src="{{ asset('js/maquinaria/usuarios_index.js') }}?v=10.0"></script>
     <script src="{{ asset('js/maquinaria/fleet_dashboard.js') }}?v=103.3"></script>
 
@@ -562,7 +566,13 @@
 
             // Auto-close success modal after 3s (unless disabled)
             if (config.type === 'success' && !config.disableAutoClose) {
-                setTimeout(closeModal, 3000);
+                setTimeout(() => {
+                    const modalEl = document.getElementById('standardModal');
+                    if (modalEl && modalEl.classList.contains('active')) {
+                        const confirmBtn = document.getElementById('modalConfirmBtn');
+                        if (confirmBtn) confirmBtn.click();
+                    }
+                }, 3000);
             }
 
             // Handle confirm
@@ -661,7 +671,12 @@
             const subtitleEl = document.getElementById('modal_equipo_subtitle');
             const gpsBtn = document.getElementById('modal_gps_btn');
             
-            if(titleEl) titleEl.innerText = `${d.tipo}`;
+            if(titleEl) {
+                 // Force update title with type
+                 const typeText = button.getAttribute('data-tipo') || d.tipo || 'Equipo';
+                 titleEl.textContent = (typeText !== 'undefined' && typeText !== 'null') ? typeText : 'Equipo';
+                 titleEl.style.textTransform = 'uppercase';
+            }
             
             // Show Serial and Placa in Subtitle
             if(subtitleEl) {
@@ -761,14 +776,20 @@
                         </div>
                     `;
                 } else {
-                    container.innerHTML = `
-                        <div class="upload-placeholder-mini" style="border-radius: 50%;">
-                            ${inputHtml}
-                            <label for="${inputId}" title="Cargar ${doc.label}" style="border-radius: 50%; border-style: solid; border-width: 2px;">
-                                <i class="material-icons" style="font-size: 18px;">add</i>
-                            </label>
-                        </div>
-                    `;
+                    // Permission Check for New Uploads
+                    if (window.CAN_UPDATE_INFO) {
+                        container.innerHTML = `
+                            <div class="upload-placeholder-mini" style="border-radius: 50%;">
+                                ${inputHtml}
+                                <label for="${inputId}" title="Cargar ${doc.label}" style="border-radius: 50%; border-style: solid; border-width: 2px;">
+                                    <i class="material-icons" style="font-size: 18px;">add</i>
+                                </label>
+                            </div>
+                        `;
+                    } else {
+                         // Read Only - No Document
+                        container.innerHTML = `<span style="color: #94a3b8; font-size: 12px; font-style: italic; display: flex; align-items: center; justify-content: flex-end; height: 36px;">Sin Documento</span>`;
+                    }
                 }
             };
 
@@ -958,9 +979,10 @@
         };
 
         // Permission Flag (Global & Exposed to External Scripts)
-        // Permission Flag (Global & Exposed to External Scripts)
-        window.CAN_UPDATE_INFO = {{ auth()->user() && (auth()->user()->can('super.admin') || auth()->user()->can('equipos.edit') || auth()->user()->can('user.edit') || auth()->user()->can('Actualizar Información')) ? 'true' : 'false' }};
+        window.CAN_UPDATE_INFO = {{ auth()->user() && (auth()->user()->can('super.admin') || auth()->user()->can('user.delete') || auth()->user()->can('user.edit')) ? 'true' : 'false' }};
         window.CAN_CREATE_EQUIPOS = {{ auth()->user() && (auth()->user()->can('super.admin') || auth()->user()->can('equipos.create') || auth()->user()->can('Registrar Equipos')) ? 'true' : 'false' }};
+        window.CAN_ASSIGN_EQUIPOS = {{ auth()->user() && (auth()->user()->can('super.admin') || auth()->user()->can('equipos.assign')) ? 'true' : 'false' }};
+        window.CAN_CHANGE_STATUS = {{ auth()->user() && (auth()->user()->can('super.admin') || auth()->user()->can('equipos.edit')) ? 'true' : 'false' }};
         
         console.group('🔍 Debug Permisos Sistema');
         console.log('Usuario:', '{{ auth()->user()->NOMBRE_COMPLETO ?? "Invitado" }}');
@@ -991,7 +1013,6 @@
                     const info = data.data;
                     let html = '';
 
-                    // Compact styles for 300px panel
                     // Compact styles for 300px panel
                     const commonInputStyle = "background: #4a5568; border: 1px solid #718096; color: white; padding: 6px 8px; border-radius: 4px; width: 100%; box-sizing: border-box; font-size: 13px; height: 32px;";
                     const labelStyle = "display: block; font-size: 12px; color: #cbd5e0; margin-bottom: 4px; font-weight: 600;";

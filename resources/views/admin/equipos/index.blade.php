@@ -44,7 +44,7 @@
                         style="width: 100%; border: none; background: transparent; padding: 10px 5px; font-size: 14px; outline: none;"
                         oninput="window.filterDropdownOptions(this)"
                         autocomplete="off">
-                    <i class="material-icons" data-clear-btn style="padding: 0 5px; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_frente') && request('id_frente') != 'all' ? 'block' : 'none' }};" onclick="event.stopPropagation(); clearDropdownFilter('frenteFilterSelect'); loadEquipos();">close</i>
+                    <i class="material-icons" data-clear-btn style="padding: 0 5px; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_frente') && request('id_frente') != 'all' ? 'block' : 'none' }};" onclick="event.stopPropagation(); clearDropdownFilter('frenteFilterSelect'); clearAdvancedFilters(); loadEquipos();">close</i>
                 </div>
 
                 <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible; z-index: 1000;">
@@ -81,9 +81,9 @@
                         style="width: 100%; border: none; background: transparent; padding: 10px 5px; font-size: 14px; outline: none;"
                         oninput="window.filterDropdownOptions(this)"
                         autocomplete="off">
-                    <i class="material-icons" data-clear-btn
+                     <i class="material-icons" data-clear-btn
                        style="padding: 0 5px; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_tipo') ? 'block' : 'none' }};"
-                       onclick="event.preventDefault(); event.stopPropagation(); clearDropdownFilter('tipoFilterSelect'); loadEquipos();">close</i>
+                       onclick="event.preventDefault(); event.stopPropagation(); clearDropdownFilter('tipoFilterSelect'); clearAdvancedFilters(); loadEquipos();">close</i>
                 </div>
 
                 <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible; z-index: 1000;">
@@ -114,9 +114,9 @@
                         class="search-input-field"
                         autocomplete="off"
                         onkeyup="if(this.value.length >= 4 || this.value.length == 0) { /* Debounce handled in script */ }">
-                    <i id="btn_clear_search" class="material-icons clear-icon" 
+                     <i id="btn_clear_search" class="material-icons clear-icon" 
                        style="display: {{ request('search_query') ? 'block' : 'none' }};" 
-                       onclick="event.preventDefault(); event.stopPropagation(); selectAdvancedFilter('search', ''); document.getElementById('searchInput').value='';">close</i>
+                       onclick="event.preventDefault(); event.stopPropagation(); clearAdvancedFilters(); selectAdvancedFilter('search', ''); document.getElementById('searchInput').value='';">close</i>
                 </div>
             </form>
 
@@ -492,7 +492,6 @@
             Asignar
         </button>
     </div>
-    </div>
 </div>
 
 <!-- Hidden Datalist for Dynamic Modal (Autocomplete Source) -->
@@ -598,29 +597,29 @@
 
                             <!-- Filter (Redesigned to match main filters) -->
                             <div class="fleet-filter-container">
-                                <div class="custom-dropdown" id="fleetFrenteDropdown" style="width: 100%;">
-                                    <div class="dropdown-trigger" onclick="toggleFrenteDropdown()" style="padding: 0; display: flex; align-items: center; background: rgba(255,255,255,0.95); overflow: hidden; border: none; border-radius: 8px; height: 38px;">
+                                <div class="custom-dropdown" id="dashboardFrenteDropdown" style="width: 100%;">
+                                    <div class="dropdown-trigger" onclick="dashboardToggleFrente(event)" style="padding: 0; display: flex; align-items: center; background: rgba(255,255,255,0.95); overflow: hidden; border: none; border-radius: 8px; height: 38px;">
                                         <div style="padding: 0 10px; display: flex; align-items: center; color: #64748b;">
                                             <i class="material-icons" style="font-size: 18px;">search</i>
                                         </div>
-                                        <input type="text" id="frenteSearchInput" 
+                                        <input type="text" id="dashboardFrenteSearch" 
                                             placeholder="Buscar frente..." 
-                                            onkeyup="filterFrentes()" 
+                                            onkeyup="dashboardFilterFrentes()" 
                                             style="width: 100%; border: none; background: transparent; padding: 8px 5px; font-size: 13px; font-weight: 500; outline: none; color: #1e293b;"
                                             autocomplete="off">
                                         <i class="material-icons" style="padding: 0 8px; color: #64748b; font-size: 20px;">arrow_drop_down</i>
                                     </div>
 
                                     <!-- Custom Dropdown List -->
-                                    <div id="frenteDropdownList" style="display: none; position: absolute; top: 105%; left: 0; right: 0; max-height: 250px; overflow-y: auto; background: white; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 50; padding: 5px;">
+                                    <div id="dashboardFrenteList" style="display: none; position: absolute; top: 105%; left: 0; right: 0; max-height: 250px; overflow-y: auto; background: white; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 50; padding: 5px;">
                                         @foreach($frentes as $frente)
-                                            <div onclick="selectFrente('{{ $frente->ID_FRENTE }}', '{{ $frente->NOMBRE_FRENTE }}')" class="frente-option dropdown-item" style="padding: 8px 12px; cursor: default; border-radius: 6px; color: #1e293b; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                                            <div onclick="dashboardSelectFrente('{{ $frente->ID_FRENTE }}', '{{ $frente->NOMBRE_FRENTE }}', event)" class="dashboard-frente-option dropdown-item" style="padding: 8px 12px; cursor: default; border-radius: 6px; color: #1e293b; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
                                                 {{ $frente->NOMBRE_FRENTE }}
                                             </div>
                                         @endforeach
                                     </div>
-                                    <input type="hidden" id="selectedFrenteId" value="{{ $frentes->first()->ID_FRENTE ?? '' }}">
-                                    <input type="hidden" id="selectedFrenteNombre" value="{{ $frentes->first()->NOMBRE_FRENTE ?? '' }}">
+                                    <input type="hidden" id="dashboardSelectedFrenteId" value="{{ $frentes->first()->ID_FRENTE ?? '' }}">
+                                    <input type="hidden" id="dashboardSelectedFrenteNombre" value="{{ $frentes->first()->NOMBRE_FRENTE ?? '' }}">
                                 </div>
                             </div>
                         </div>
@@ -802,6 +801,12 @@
             }
         }
     </style>
+<script>
+    // Global Permission Flags injected from Backend
+    window.CAN_UPDATE_INFO = @json(Auth::user()->can('equipos.edit'));
+    window.CAN_CREATE_INFO = @json(Auth::user()->can('equipos.create'));
+    window.CREATE_URL = "{{ route('equipos.create') }}";
+</script>
 @endsection
 @section('extra_js')
     {{-- Replaced by Global Load in Layout --}}

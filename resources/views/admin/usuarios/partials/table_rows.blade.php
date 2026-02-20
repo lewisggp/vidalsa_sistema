@@ -22,10 +22,20 @@
                         </td>
                         <td style="padding: 4px 12px;">
                             <div style="display: flex; gap: 8px; justify-content: flex-start;">
-                                <a href="{{ route('usuarios.edit', $user->ID_USUARIO) }}" class="btn-action-maquinaria" style="color: var(--maquinaria-blue); background: #ebf4ff;" title="Editar">
+                                <a href="{{ route('usuarios.edit', $user->ID_USUARIO) }}" 
+                                   @cannot('super.admin') 
+                                   onclick="event.preventDefault(); showModal({ type: 'error', title: 'Acceso Denegado', message: 'No tienes permisos para editar usuarios.', confirmText: 'Entendido', hideCancel: true });" 
+                                   @endcannot
+                                   class="btn-action-maquinaria" 
+                                   style="color: var(--maquinaria-blue); background: #ebf4ff;" 
+                                   title="Editar">
                                     <i class="material-icons" style="font-size: 18px;">edit</i>
                                 </a>
-                                <button type="button" onclick="confirmDelete({{ $user->ID_USUARIO }}, '{{ addslashes($user->NOMBRE_COMPLETO) }}')" class="btn-action-maquinaria" style="color: var(--maquinaria-red); background: #fff5f5;" title="Eliminar">
+                                <button type="button" 
+                                    onclick="@can('super.admin') confirmDelete({{ $user->ID_USUARIO }}, '{{ addslashes($user->NOMBRE_COMPLETO) }}') @else showModal({ type: 'error', title: 'Acceso Denegado', message: 'No tienes permisos para eliminar usuarios.', confirmText: 'Entendido', hideCancel: true }); @endcan" 
+                                    class="btn-action-maquinaria" 
+                                    style="color: var(--maquinaria-red); background: #fff5f5;" 
+                                    title="Eliminar">
                                     <i class="material-icons" style="font-size: 18px;">delete</i>
                                 </button>
                             </div>

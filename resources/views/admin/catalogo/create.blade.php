@@ -20,7 +20,11 @@
                 <a href="{{ route('catalogo.index') }}" class="btn-primary-maquinaria btn-secondary">
                     Cancelar
                 </a>
-                <button type="submit" class="btn-primary-maquinaria">
+                <button type="submit" class="btn-primary-maquinaria"
+                    @cannot('equipos.create')
+                    onclick="event.preventDefault(); showModal({ type: 'error', title: 'Acceso Denegado', message: 'No tienes permiso para guardar este modelo.', confirmText: 'Entendido', hideCancel: true });"
+                    @endcannot
+                >
                     <i class="material-icons">save</i>
                     Guardar
                 </button>

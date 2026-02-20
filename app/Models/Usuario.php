@@ -115,20 +115,35 @@ class Usuario extends Authenticatable
      */
     public function can($abilities, $arguments = []): bool
     {
-        // 1. Si es un permiso de nuestro sistema (string), verificar en columna PERMISOS
+        // 1. Si es Super Administrador por ROL (ID 1), tiene acceso TOTAL.
+        if ($this->ID_ROL == 1) {
+            return true;
+        }
+
+        // Verificación robusta del nombre del rol (Super Admin)
+        if (strtoupper(optional($this->rol)->NOMBRE_ROL) === 'SUPER ADMIN') {
+            return true;
+        }
+
+        // 2. Lógica personalizada para nuestro sistema de permisos (Columna PERMISOS)
         if (is_string($abilities)) {
-            $permisos = $this->PERMISOS; // Esto ya usa el accessor getPermisosAttribute (array)
-            
-            // Si tiene el permiso exacto
-            if (in_array($abilities, $permisos)) {
+            // Obtener permisos y normalizar a minúsculas para evitar problemas de Case Sensitivity
+            $permisosRaw = $this->PERMISOS ?? []; // Array via Accessor
+            $permisos = array_map('strtolower', $permisosRaw);
+            $ability = strtolower($abilities);
+
+            // REGLA MAESTRA: Si tiene permiso 'super.admin' explícito
+            if (in_array('super.admin', $permisos)) {
                 return true;
             }
             
-            // Si es Super Administrador (opcional, pero común)
-            // if ($this->ID_ROL === 1) return true;
+            // Verificación del permiso específico solicitado
+            if (in_array($ability, $permisos)) {
+                return true;
+            }
         }
 
-        // 2. Delegar al comportamiento estándar de Laravel (Gates/Policies)
+        // 3. Delegar el resto al framework (para Gates/Policies estándar si se usan)
         return parent::can($abilities, $arguments);
     }
 }

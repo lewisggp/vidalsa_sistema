@@ -39,21 +39,24 @@ window.openFleetDashboard = async function () {
     if (!modal) return;
 
     modal.classList.add('active');
+    modal.style.display = 'flex'; // Ensure display is flex
 
     // Load Chart.js and Datalabels Plugin if not already loaded
     if (typeof Chart === 'undefined') {
         await loadChartJS();
     }
 
-    // Setup Dropdown Events
+    // Setup Dropdown Events (Close on outside click)
     setupDropdownEvents();
 
-    // Get first frente from hidden inputs
-    const firstFrenteId = document.getElementById('selectedFrenteId').value;
-    const firstFrenteName = document.getElementById('selectedFrenteNombre').value;
+    // Get first frente from hidden inputs (New IDs)
+    const firstFrenteId = document.getElementById('dashboardSelectedFrenteId')?.value || '';
+    const firstFrenteName = document.getElementById('dashboardSelectedFrenteNombre')?.value || '';
 
     // Set initial value in search input
-    document.getElementById('frenteSearchInput').value = firstFrenteName;
+    const searchInput = document.getElementById('dashboardFrenteSearch');
+    if (searchInput) searchInput.value = firstFrenteName;
+
     currentFrenteId = firstFrenteId;
 
     // Fetch and render data for first frente
@@ -64,7 +67,9 @@ window.openFleetDashboard = async function () {
  * Export Fleet Statistics to Excel (CSV)
  */
 window.exportFleetStats = function () {
-    const frenteId = document.getElementById('selectedFrenteId').value;
+    // Use current global or fallback to dom
+    const frenteId = currentFrenteId || document.getElementById('dashboardSelectedFrenteId')?.value;
+
     const url = new URL('/admin/equipos/fleet-export', window.location.origin);
     if (frenteId && frenteId !== 'all') {
         url.searchParams.set('frente_id', frenteId);
@@ -84,52 +89,42 @@ let dropdownEventsInitialized = false;
 function setupDropdownEvents() {
     if (dropdownEventsInitialized) return;
 
-    const input = document.getElementById('frenteSearchInput');
-    const dropdown = document.getElementById('frenteDropdownList');
-    const container = input ? input.parentElement : null;
+    const input = document.getElementById('dashboardFrenteSearch');
+    const dropdown = document.getElementById('dashboardFrenteList');
+    const container = document.getElementById('dashboardFrenteDropdown'); // Container
 
     if (!input || !dropdown || !container) return;
 
-    // Open dropdown on input click - REMOVED (Handled by onclick HTML)
-
-    // Open dropdown on input focus/keyup - REMOVED (Optional, but removed to simplify)
-
     // Close dropdown when clicking outside
     document.addEventListener('click', function (event) {
+        // If click is outside container, close it
         if (!container.contains(event.target)) {
             dropdown.style.display = 'none';
         }
     });
 
-    // Handle option selection click (delegation)
-    dropdown.addEventListener('click', function (e) {
-        if (e.target.classList.contains('frente-option')) {
-            // Already handled by onclick="selectFrente..." in HTML
-            // Just close the dropdown here
-            dropdown.style.display = 'none';
-        }
-    });
-
-    // Hover effects via CSS class ideally, but keeping JS for now if needed or remove
-    // (Removed manual hover listeners as CSS :hover is better and already present in blade style)
-
     dropdownEventsInitialized = true;
 }
 
 /**
- * Toggle Dropdown Visibility (Deprecated/Helper)
- * Kept if called from HTML, but logic moved to listeners above.
- * Can be used by the arrow icon if needed.
+ * Toggle Dropdown Visibility
  */
-window.toggleFrenteDropdown = function () {
-    const dropdown = document.getElementById('frenteDropdownList');
+window.dashboardToggleFrente = function (event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    const dropdown = document.getElementById('dashboardFrenteList');
     if (dropdown) {
         // Simple toggle
-        if (dropdown.style.display === 'block') {
-            dropdown.style.display = 'none';
-        } else {
-            dropdown.style.display = 'block';
-            document.getElementById('frenteSearchInput').focus();
+        const isHidden = (dropdown.style.display === 'none' || dropdown.style.display === '');
+        dropdown.style.display = isHidden ? 'block' : 'none';
+
+        if (isHidden) {
+            // Focus search logic
+            const search = document.getElementById('dashboardFrenteSearch');
+            if (search) setTimeout(() => search.focus(), 100);
         }
     }
 };
@@ -137,39 +132,44 @@ window.toggleFrenteDropdown = function () {
 /**
  * Filter Frentes List
  */
-window.filterFrentes = function () {
-    const input = document.getElementById('frenteSearchInput');
+window.dashboardFilterFrentes = function () {
+    const input = document.getElementById('dashboardFrenteSearch');
     const filter = input.value.toUpperCase();
-    const dropdown = document.getElementById('frenteDropdownList');
-    const options = dropdown.getElementsByClassName('frente-option');
-    let hasResults = false;
+    const dropdown = document.getElementById('dashboardFrenteList');
+    const options = dropdown.getElementsByClassName('dashboard-frente-option');
 
     for (let i = 0; i < options.length; i++) {
         const txtValue = options[i].textContent || options[i].innerText;
         if (txtValue.toUpperCase().indexOf(filter) > -1) {
             options[i].style.display = "";
-            hasResults = true;
         } else {
             options[i].style.display = "none";
         }
     }
-
     dropdown.style.display = 'block';
 };
 
 /**
  * Select a Frente
  */
-window.selectFrente = async function (id, name, loadData = true) {
-    document.getElementById('selectedFrenteId').value = id;
-    document.getElementById('frenteSearchInput').value = name;
-    document.getElementById('frenteDropdownList').style.display = 'none';
+window.dashboardSelectFrente = async function (id, name, event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    const hiddenId = document.getElementById('dashboardSelectedFrenteId');
+    if (hiddenId) hiddenId.value = id;
+
+    const search = document.getElementById('dashboardFrenteSearch');
+    if (search) search.value = name;
+
+    const list = document.getElementById('dashboardFrenteList');
+    if (list) list.style.display = 'none';
 
     currentFrenteId = id;
 
-    if (loadData) {
-        await loadFleetDashboardData(id);
-    }
+    await loadFleetDashboardData(id);
 };
 
 /**
@@ -179,6 +179,7 @@ window.closeFleetDashboard = function () {
     const modal = document.getElementById('fleetDashboardModal');
     if (modal) {
         modal.classList.remove('active');
+        modal.style.display = 'none';
     }
 
     // Destroy charts to free memory

@@ -347,6 +347,17 @@
         setTimeout(() => div.remove(), 3000);
     }
 
+    function resetFullState() {
+        matches = [];
+        currentIndex = 0;
+        linkedId = null;
+        lastSearchKey = ''; // Critical: Clear cache so identical consecutive searches work
+        const hiddenInput = document.getElementById(CONFIG.hiddenInputId);
+        if (hiddenInput) hiddenInput.value = '';
+        hideWidget();
+        console.log('🧹 Catalog System: Full Reset');
+    }
+
     // Expose to window for onclick handlers
     window.linkToCatalog = linkToCatalog;
     window.ignoreCatalogSuggestion = ignoreCatalog;
@@ -354,6 +365,7 @@
     window.catalogNext = nextMatch;
     window.searchCatalog = attemptSearch;
     window.catalogCleanup = cleanup; // Expose cleanup for SPA
+    window.catalogReset = resetFullState; // Expose full reset
 
     // ROBUST INITIALIZATION STRATEGY: MutationObserver
     // Instead of guessing WHEN the content arrives (timers/events), 

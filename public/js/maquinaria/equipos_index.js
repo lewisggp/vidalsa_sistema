@@ -9,7 +9,7 @@ window.toggleStatusDropdown = function (trigger) {
     if (!trigger) return;
 
     // PERMISSION CHECK
-    if (typeof window.CAN_UPDATE_INFO !== 'undefined' && window.CAN_UPDATE_INFO === false) {
+    if (typeof window.CAN_CHANGE_STATUS !== 'undefined' && window.CAN_CHANGE_STATUS === false) {
         if (window.showModal) {
             showModal({
                 type: 'error',
@@ -50,6 +50,24 @@ function updateSelectionUI() {
             bar.classList.remove('active');
         }
     }
+}
+
+// Re-apply blue highlight to all rows that are in selectedEquipos
+// Called after every table render to keep visual state in sync
+function reApplySelections() {
+    if (!window.selectedEquipos || Object.keys(window.selectedEquipos).length === 0) return;
+
+    const tableBody = document.getElementById('equiposTableBody');
+    if (!tableBody) return;
+
+    tableBody.querySelectorAll('tr').forEach(row => {
+        const btn = row.querySelector('.btn-details-mini');
+        if (!btn) return;
+        const id = String(btn.dataset.equipoId);
+        if (window.selectedEquipos.hasOwnProperty(id)) {
+            row.classList.add('selected-row-maquinaria');
+        }
+    });
 }
 
 // Global Selection Action
@@ -228,6 +246,9 @@ window.loadEquipos = function (url = null, silent = false) {
         return Promise.resolve();
     }
 
+    // NOTE: reApplySelections() is NOT called here because the table
+    // shows a "no filters" message with no real rows to highlight.
+
     const finalUrl = baseUrl + (baseUrl.includes('?') ? '&' : '?') + params.toString();
     tableBody.style.opacity = '0.5';
 
@@ -253,13 +274,9 @@ window.loadEquipos = function (url = null, silent = false) {
             tableBody.innerHTML = data.html;
             tableBody.style.opacity = '1';
 
-            // Re-apply selection highlighting
-            tableBody.querySelectorAll('tr').forEach(row => {
-                const btn = row.querySelector('.btn-details-mini');
-                if (btn && window.selectedEquipos[btn.dataset.equipoId]) {
-                    row.classList.add('selected-row-maquinaria');
-                }
-            });
+            // Re-apply blue highlight to all previously selected rows
+            // Uses dedicated function with String() cast to avoid int/string key mismatches
+            reApplySelections();
 
             const paginationContainer = document.getElementById('equiposPagination');
             if (paginationContainer) paginationContainer.innerHTML = '';
@@ -306,7 +323,7 @@ window.filterList = function (inputArg, listArg) {
 
 window.changeStatus = function (id, newStatus, url, element) {
     // PERMISSION CHECK
-    if (typeof window.CAN_UPDATE_INFO !== 'undefined' && window.CAN_UPDATE_INFO === false) {
+    if (typeof window.CAN_CHANGE_STATUS !== 'undefined' && window.CAN_CHANGE_STATUS === false) {
         return; // Should be caught by toggleStatusDropdown, but double check
     }
 
@@ -372,13 +389,13 @@ window.openBulkModal = function (event) {
         event.stopImmediatePropagation();
     }
 
-    // PERMISSION CHECK
-    if (typeof window.CAN_UPDATE_INFO !== 'undefined' && window.CAN_UPDATE_INFO === false) {
+    // PERMISSION CHECK (Specific to Assignment/Mobilization)
+    if (typeof window.CAN_ASSIGN_EQUIPOS !== 'undefined' && window.CAN_ASSIGN_EQUIPOS === false) {
         if (window.showModal) {
             showModal({
                 type: 'error',
                 title: 'Acceso Denegado',
-                message: 'No tienes permisos para movilizar equipos.',
+                message: 'No tienes permisos para movilizar (asignar) equipos.',
                 confirmText: 'Entendido',
                 hideCancel: true
             });
@@ -594,40 +611,21 @@ window.openBulkModal = function (event) {
                     }, 100);
                 }
 
-                // 2. Mostrar Modal Informativo (Sin botones de acción extra)         
-                const actasModal = document.createElement('div');
-                actasModal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; justify-content: center; align-items: center;';
-
-                actasModal.innerHTML = `
-                    <div style="background: white; width: 90%; max-width: 500px; border-radius: 16px; padding: 30px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); text-align: center; animation: slideIn 0.3s ease-out;">
-                        <div style="width: 70px; height: 70px; background: #d1fae5; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto;">
-                            <i class="material-icons" style="font-size: 40px; color: #16a34a;">check_circle</i>
-                        </div>
-                        <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 10px 0;">¡Operación Exitosa!</h3>
-                        <p style="font-size: 14px; color: #64748b; margin-bottom: 20px;">
-                            Se generaron ${data.count} traslados exitosamente.<br>
-                            <strong>Descargando Acta de Traslado...</strong>
-                        </p>
-                        
-                        <div style="margin-top: 20px;">
-                            <button onclick="this.closest('div[style*=\'position: fixed\']').remove();"
-                                style="padding: 10px 25px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 600; color: #475569; cursor: pointer; transition: all 0.2s;"
-                                onmouseover="this.style.background='#e2e8f0'; this.style.color='#1e293b'" 
-                                onmouseout="this.style.background='#f1f5f9'; this.style.color='#475569'">
-                                Cerrar
-                            </button>
-                        </div>
-                    </div>
-                `;
-
-                document.body.appendChild(actasModal);
-
-                // Auto-cerrar el modal después de 3 segundos
-                setTimeout(() => {
-                    if (document.body.contains(actasModal)) {
-                        actasModal.remove();
-                    }
-                }, 4000);
+                // 2. Mostrar Modal de Éxito usando el sistema global de la aplicación
+                if (window.showModal) {
+                    showModal({
+                        type: 'info',
+                        title: '¡Operación Exitosa!',
+                        message: `Se generaron ${data.count} traslados exitosamente.<br><strong>Descargando Acta de Traslado...</strong>`,
+                        confirmText: 'Aceptar',
+                        hideCancel: true
+                    });
+                    // Auto-cerrar después de 3 segundos (Manipulación directa del DOM para garantizar cierre)
+                    setTimeout(() => {
+                        const modalEl = document.getElementById('standardModal');
+                        if (modalEl) modalEl.classList.remove('active');
+                    }, 3000);
+                }
 
                 if (document.activeElement) document.activeElement.blur();
                 document.querySelectorAll('.custom-dropdown.active').forEach(el => el.classList.remove('active'));
@@ -800,6 +798,216 @@ window.addEventListener('spa:contentLoaded', function () {
         updateSelectionUI();
     }
 });
+
+
+// ==========================================
+// ADVANCED FILTER LOGIC (Restored)
+// ==========================================
+
+window.clearAdvancedFilters = function () {
+    // 1. Clear Advanced Panel Inputs
+    const panel = document.getElementById('advancedFilterPanel');
+    if (panel) {
+        panel.querySelectorAll('input[type="text"], input[type="hidden"]').forEach(el => el.value = '');
+        panel.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
+    }
+
+    // 2. Clear Global Inputs (if matched)
+    ['modelo', 'anio', 'marca'].forEach(name => {
+        const el = document.querySelector(`input[name="${name}"]`);
+        if (el) el.value = '';
+    });
+
+    // 3. Reset Dropdown Displays
+    document.querySelectorAll('.custom-dropdown').forEach(dd => {
+        const display = dd.querySelector('input[readonly]');
+        const label = dd.dataset.defaultLabel || 'Seleccionar...';
+        if (display) display.placeholder = label;
+
+        // Hide clear btn
+        const clearBtn = dd.querySelector('[data-clear-btn]');
+        if (clearBtn) clearBtn.style.display = 'none';
+
+        // Remove 'selected' class from options
+        dd.querySelectorAll('.dropdown-item.selected').forEach(opt => opt.classList.remove('selected'));
+
+        // Reset search inputs inside dropdowns
+        const searchInDD = dd.querySelector('[data-filter-search]');
+        if (searchInDD) {
+            searchInDD.value = '';
+            window.filterDropdownOptions(searchInDD); // Show all options
+        }
+    });
+
+    // 4. Reset Button Styles
+    const advBtn = document.getElementById('btnAdvancedFilter');
+    if (advBtn) {
+        advBtn.style.background = 'white';
+        advBtn.style.color = '#64748b';
+        advBtn.style.border = '1px solid #cbd5e0';
+    }
+
+    // 5. Hide Clear Search button
+    const clearSearch = document.getElementById('btn_clear_search');
+    if (clearSearch) clearSearch.style.display = 'none';
+};
+
+window.selectAdvancedFilter = function (type, value) {
+    // Generic setter if needed (mostly handled by inputs directly)
+    const input = document.querySelector(`input[name="${type}"]`);
+    if (input) input.value = value;
+};
+
+window.clearDropdownFilter = function (dropdownId) {
+    const dd = document.getElementById(dropdownId);
+    if (!dd) return;
+
+    const hiddenInput = dd.querySelector('[data-filter-value]');
+    if (hiddenInput) hiddenInput.value = '';
+
+    const searchInput = dd.querySelector('[data-filter-search]');
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.placeholder = dd.dataset.defaultLabel || 'Seleccionar...';
+        window.filterDropdownOptions(searchInput);
+    }
+
+    const displayInput = dd.querySelector('input[readonly]');
+    if (displayInput) {
+        displayInput.placeholder = dd.dataset.defaultLabel || 'Seleccionar...';
+    }
+
+    const clearBtn = dd.querySelector('[data-clear-btn]');
+    if (clearBtn) clearBtn.style.display = 'none';
+
+    dd.querySelectorAll('.dropdown-item.selected').forEach(el => el.classList.remove('selected'));
+
+    dd.classList.remove('active');
+};
+
+window.filterDropdownOptions = function (input) {
+    const filter = input.value.toUpperCase();
+    const list = input.closest('.custom-dropdown').querySelector('.dropdown-item-list');
+    if (!list) return;
+
+    const items = list.querySelectorAll('.dropdown-item');
+    items.forEach(item => {
+        const txt = item.dataset.value || item.textContent;
+        item.style.display = (txt.toUpperCase().indexOf(filter) > -1) ? "" : "none";
+    });
+};
+
+window.selectOption = function (dropdownId, value, displayLabel) {
+    const dd = document.getElementById(dropdownId);
+    if (!dd) return;
+
+    // Set Hidden Value
+    const hiddenInput = dd.querySelector('[data-filter-value]');
+    if (hiddenInput) hiddenInput.value = value;
+
+    // Update Display
+    const searchInput = dd.querySelector('[data-filter-search]');
+    if (searchInput) {
+        searchInput.value = ''; // Clear search
+        searchInput.placeholder = displayLabel;
+    }
+
+    const displayInput = dd.querySelector('input[readonly]');
+    if (displayInput) {
+        displayInput.placeholder = displayLabel;
+    }
+
+    // Show Clear Button
+    const clearBtn = dd.querySelector('[data-clear-btn]');
+    if (clearBtn) clearBtn.style.display = 'block';
+
+    // Mark Selected
+    dd.querySelectorAll('.dropdown-item').forEach(el => el.classList.remove('selected'));
+    const selectedItem = dd.querySelector(`.dropdown-item[data-value="${value}"]`);
+    if (selectedItem) selectedItem.classList.add('selected');
+
+    // Close Dropdown
+    dd.classList.remove('active');
+
+    // Highlight Advanced Button
+    const advBtn = document.getElementById('btnAdvancedFilter');
+    if (advBtn) {
+        advBtn.style.background = '#e1effa';
+        advBtn.style.color = '#0067b1';
+        advBtn.style.border = '1px solid #0067b1';
+    }
+};
+
+
+// ==========================================
+// FLEET DASHBOARD LOGIC (Restored)
+// ==========================================
+
+window.currentDashboardFrente = null;
+
+window.openFleetDashboard = function () {
+    const modal = document.getElementById('fleetDashboardModal');
+    if (modal) {
+        modal.classList.add('active'); // Use CSS class for visibility
+        // If your modal uses display:none/flex style directly:
+        modal.style.display = 'flex';
+
+        // Initialize if not loaded
+        window.loadFleetStats();
+    }
+};
+
+window.closeFleetDashboard = function () {
+    const modal = document.getElementById('fleetDashboardModal');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
+};
+
+// Permission Handler for Create Action
+window.handleCreateCheck = function (event) {
+    // 1. Check Permission
+    if (typeof window.CAN_CREATE_INFO !== 'undefined' && window.CAN_CREATE_INFO === false) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
+        if (window.showModal) {
+            showModal({
+                type: 'error',
+                title: 'Acceso Denegado',
+                message: 'No tienes permisos para crear nuevos equipos.',
+                confirmText: 'Entendido',
+                hideCancel: true
+            });
+        } else {
+            alert('Acceso Denegado: No tienes permisos para crear.');
+        }
+        return false;
+    }
+
+    // 2. SPA Navigation Strategy
+    // Instead of forcing location.href, we inject the URL into the link and let the event bubble.
+    // The global 'navegacion.js' script will catch the click, see the valid href, and perform SPA load.
+    if (event && window.CREATE_URL) {
+        const link = event.currentTarget || event.target.closest('a');
+        if (link) {
+            link.href = window.CREATE_URL;
+            // Do NOT preventDefault() here. Let it bubble to 'navegacion.js'.
+            return true;
+        }
+    }
+
+    // 3. Fallback (if called programmatically or something failed)
+    if (window.CREATE_URL) {
+        window.location.href = window.CREATE_URL;
+    }
+    return true;
+};
+
+// [End of dashboard cleanup]
 
 // Register with Module Manager for SPA compatibility
 ModuleManager.register('equipos',

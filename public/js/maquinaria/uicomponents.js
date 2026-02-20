@@ -769,9 +769,25 @@ window.showDetailsImproved = function (target, event) {
         if (el) el.innerText = val || 'N/A';
     };
 
+    // Helper to format date YYYY-MM-DD -> DD/MM/YYYY
+    const formatDate = (dateStr) => {
+        if (!dateStr || dateStr === 'N/A' || dateStr.trim() === '') return 'N/A';
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+        return dateStr;
+    };
+
+    // Header
     // Header
     // Header - Simplified (Original Style)
-    set('modal_equipo_title', 'Detalles del Equipo');
+    // FORCE UPDATE title with Type
+    const typeText = target.getAttribute('data-tipo') || d.tipo || 'Equipo';
+    const titleVal = (typeText !== 'undefined' && typeText !== 'null') ? typeText : 'Equipo';
+    set('modal_equipo_title', titleVal);
+    const titleEl = document.getElementById('modal_equipo_title');
+    if (titleEl) titleEl.style.textTransform = 'uppercase';
 
     const subtitleParts = [];
     if (d.placa && d.placa !== 'N/A') subtitleParts.push(`Placa: ${d.placa}`);
@@ -803,12 +819,12 @@ window.showDetailsImproved = function (target, event) {
 
     const vencSeguroEl = document.getElementById('d_venc_seguro');
     if (vencSeguroEl) {
-        vencSeguroEl.innerText = d.vencSeguro || 'N/A';
+        vencSeguroEl.innerText = formatDate(d.vencSeguro);
         // Add color logic if needed for expiration
     }
 
-    set('d_fecha_rotc', d.fechaRotc);
-    set('d_fecha_racda', d.fechaRacda);
+    set('d_fecha_rotc', formatDate(d.fechaRotc));
+    set('d_fecha_racda', formatDate(d.fechaRacda));
 
     // Document Action Buttons Generator
     const createDocBtn = (containerId, type, link, label, equipoId) => {
@@ -821,7 +837,7 @@ window.showDetailsImproved = function (target, event) {
                 <div class="pdf-btn-container">
                     <button type="button" 
                         onclick="openPdfPreview('${link}', '${type}', '${label}', '${equipoId}')" 
-                        style="width: 36px; height: 36px; border-radius: 8px; background: #f8f9fa; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"
+                        style="width: 36px; height: 36px; border-radius: 8px; background: #f8f9fa; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: pointer;"
                         onmouseover="this.style.background='#e9ecef'" 
                         onmouseout="this.style.background='#f8f9fa'"
                         title="Ver PDF: ${label}">
@@ -831,12 +847,17 @@ window.showDetailsImproved = function (target, event) {
             `;
         } else {
             // Upload Button
+            // Permission Check for New Uploads
+            if (typeof window.CAN_UPDATE_INFO !== 'undefined' && window.CAN_UPDATE_INFO === false) {
+                container.innerHTML = `<span style="color: #94a3b8; font-size: 12px; font-style: italic; display: flex; align-items: center; justify-content: flex-end; height: 36px;">Sin Documento</span>`;
+                return;
+            }
+
             const inputId = `input_upload_${type}_${equipoId}`;
             container.innerHTML = `
                 <div style="position: relative; width: 30px; height: 30px;">
                     <input type="file" id="${inputId}" accept="application/pdf" style="display: none;" onchange="uploadDocument(this, '${type}', '${equipoId}', '${containerId}', '${label}')">
                     <label for="${inputId}" 
-                        onclick="if(typeof window.CAN_UPDATE_INFO !== 'undefined' && window.CAN_UPDATE_INFO === false) { event.preventDefault(); showModal({ type: 'error', title: 'Acceso Denegado', message: 'No tienes permisos para cargar documentos.', confirmText: 'Entendido', hideCancel: true }); return false; }"
                         style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #fbfcfd; color: #3b82f6; border: 1px dashed #3b82f6; border-radius: 6px; transition: 0.2s; cursor: pointer;" 
                         onmouseover="this.style.background='#eff6ff'" 
                         onmouseout="this.style.background='#fbfcfd'" 
@@ -846,6 +867,7 @@ window.showDetailsImproved = function (target, event) {
                 </div>
              `;
         }
+
     };
 
     const eqId = d.equipoId;
@@ -927,7 +949,7 @@ window.uploadDocument = function (input, type, equipoId, containerId, label) {
                             <div class="pdf-btn-container">
                                 <button type="button" 
                                     onclick="openPdfPreview('${data.link}', '${type}', '${label}', '${equipoId}')" 
-                                    style="width: 36px; height: 36px; border-radius: 8px; background: #f8f9fa; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"
+                                    style="width: 36px; height: 36px; border-radius: 8px; background: #f8f9fa; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: pointer;"
                                     onmouseover="this.style.background='#e9ecef'" 
                                     onmouseout="this.style.background='#f8f9fa'"
                                     title="Ver PDF: ${label}">

@@ -57,9 +57,14 @@ Route::middleware(['auth'])->group(function () {
             Route::post('equipos/check-anclaje-compatibility', [App\Http\Controllers\EquipoController::class, 'checkAnclajeCompatibility'])->name('equipos.checkAnclaje');
             Route::post('equipos/process-anclaje', [App\Http\Controllers\EquipoController::class, 'processAnclaje'])->name('equipos.processAnclaje');
             Route::resource('equipos', App\Http\Controllers\EquipoController::class);
-            Route::resource('movilizaciones', App\Http\Controllers\MovilizacionController::class);
+            // Rutas específicas de Movilizaciones ANTES del resource (evita conflicto de wildcard)
+            Route::post('movilizaciones/recepcion-directa', [App\Http\Controllers\MovilizacionController::class, 'recepcionDirecta'])->name('movilizaciones.recepcionDirecta');
+            Route::get('movilizaciones/buscar-equipos-recepcion', [App\Http\Controllers\MovilizacionController::class, 'buscarEquiposParaRecepcion'])->name('movilizaciones.buscarEquipos');
+            Route::get('movilizaciones/subdivisiones/{id}', [App\Http\Controllers\MovilizacionController::class, 'getSubdivisiones'])->name('movilizaciones.subdivisiones');
             Route::patch('movilizaciones/{id}/status', [App\Http\Controllers\MovilizacionController::class, 'updateStatus'])->name('movilizaciones.updateStatus');
             Route::get('movilizaciones/{id}/acta-traslado', [App\Http\Controllers\MovilizacionController::class, 'generarActaTraslado'])->name('movilizaciones.actaTraslado');
+            // Resource route al final para que sus wildcards no capturen las rutas estáticas de arriba
+            Route::resource('movilizaciones', App\Http\Controllers\MovilizacionController::class);
 
             Route::resource('catalogo', App\Http\Controllers\CaracteristicaModeloController::class);
         });

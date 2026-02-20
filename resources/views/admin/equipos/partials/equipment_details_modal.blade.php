@@ -5,7 +5,7 @@
         <div style="background: var(--maquinaria-dark-blue); padding: 20px 25px; color: white; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 15px;">
                 <div>
-                    <h2 id="modal_equipo_title" style="margin: 0; font-size: 20px; font-weight: 700;">Detalles del Equipo</h2>
+                    <h2 id="modal_equipo_title" style="margin: 0; font-size: 20px; font-weight: 700;"></h2>
                     <p id="modal_equipo_subtitle" style="margin: 5px 0 0 0; opacity: 0.8; font-size: 13px;"></p>
                 </div>
                 <a id="modal_gps_btn" href="#" target="_blank" style="display: none; background: #10b981; color: white; padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; text-decoration: none; align-items: center; gap: 6px; transition: 0.2s; margin-right: 20px;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">

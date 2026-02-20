@@ -30,6 +30,35 @@ class AppServiceProvider extends ServiceProvider
         Paginator::useBootstrapFive();
         Schema::defaultStringLength(191);
         
+        // GLOBAL PERMISSION GATE - The definitive source of truth
+        \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
+            // 1. Super Admin Bypass (ID 1 OR 'SUPER ADMIN' Role Name)
+            // Use strict robust check to avoid PHP 8.1+ deprecation warnings on null
+            $roleName = optional($user->rol)->NOMBRE_ROL;
+            if ($user->ID_ROL == 1 || ($roleName && strtoupper($roleName) === 'SUPER ADMIN')) {
+                return true;
+            }
+
+            // 2. Specific Permission Check (PERMISOS column array)
+            // Ensure PERMISOS is treated as array (via accessor or manual explode)
+            $permisosRaw = $user->PERMISOS;
+            
+            if (is_string($permisosRaw)) {
+                $permisos = explode(',', $permisosRaw);
+            } elseif (is_array($permisosRaw)) {
+                $permisos = $permisosRaw;
+            } else {
+                $permisos = [];
+            }
+            
+            // Normalize for case-insensitivity safely (filter out non-strings)
+            $permisos = array_map('strtolower', array_filter($permisos, 'is_string'));
+            
+            if (in_array(strtolower($ability), $permisos)) {
+                return true;
+            }
+        });
+
         Equipo::observe(EquipoObserver::class);
         Movilizacion::observe(MovilizacionObserver::class);
         Documentacion::observe(DocumentacionObserver::class);

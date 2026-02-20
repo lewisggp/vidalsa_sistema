@@ -10,10 +10,14 @@
 </section>
 
 <style>
-    /* Quitar manito de las filas */
-    #movilizacionesTableBody tr, 
-    #movilizacionesTableBody td {
-        cursor: default !important;
+
+    @keyframes pulse-alert {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+    }
+    @keyframes slideIn {
+        from { transform: translateY(-20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
     }
 </style>
 
@@ -115,9 +119,19 @@
 
             <!-- Botón Filtro Avanzado (Fechas) -->
             <button type="button" id="btnAdvancedFilter" class="btn-primary-maquinaria" 
-                style="height: 45px; width: 45px; padding: 0; display: flex; align-items: center; justify-content: center; background: white; border: 1px solid #cbd5e0; color: #64748b; box-shadow: none; border-radius: 12px; cursor: pointer; margin-left: left;"
+                style="height: 45px; width: 45px; padding: 0; display: flex; align-items: center; justify-content: center; background: white; border: 1px solid #cbd5e0; color: #64748b; box-shadow: none; border-radius: 12px; cursor: pointer;"
                 onclick="alert('Funcionalidad de filtro por fechas pendiente.');">
                 <i class="material-icons">filter_list</i>
+            </button>
+
+            <!-- Botón Recepción Directa -->
+            <button type="button" id="btnRecepcionDirecta" 
+                style="height: 45px; padding: 0 16px; display: flex; align-items: center; gap: 6px; background: #0067b1; border: none; color: white; border-radius: 12px; font-weight: 700; font-size: 13px; box-shadow: 0 4px 6px -1px rgba(0, 103, 177, 0.3); transition: all 0.2s; white-space: nowrap;"
+                onmouseover="this.style.background='#005a9e'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 8px -1px rgba(0, 103, 177, 0.4)'"
+                onmouseout="this.style.background='#0067b1'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0, 103, 177, 0.3)'"
+                onclick="abrirRecepcionDirecta()">
+                <i class="material-icons" style="font-size: 18px;">input</i>
+                Recepción Directa
             </button>
         </div>
 
@@ -191,7 +205,7 @@
     <img id="enlargedImg" style="max-width: 90%; max-height: 90%; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); transition: transform 0.3s ease;">
 </div>
 
-<!-- Modal de Recepción con Sub-Ubicación -->
+<!-- Modal de Recepción con Sub-Ubicación (TODOS los frentes) -->
 <div id="recepcionModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; justify-content: center; align-items: center;">
     <div style="background: white; width: 90%; max-width: 450px; border-radius: 16px; padding: 25px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); animation: slideIn 0.3s ease-out;">
         
@@ -210,13 +224,13 @@
             @method('PATCH')
             <input type="hidden" name="status" value="RECIBIDO">
             
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px;">
-                    Seleccione Ubicación Específica / Patio
-                    <span style="color: #ef4444;">*</span>
-                </label>
+            {{-- Sección de subdivisiones (dropdown) --}}
+            <div id="seccionSubdivisiones" style="margin-bottom: 15px; display: none;">
+                <p style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px; margin-top: 0;">
+                    Seleccione Ubicación / Subdivisión
+                </p>
                 <div class="custom-dropdown" id="patioSelect">
-                    <input type="hidden" name="DETALLE_UBICACION" id="input_patio" required>
+                    <input type="hidden" name="" id="input_patio">
                     <div class="dropdown-trigger" onclick="toggleDropdown('patioSelect', event)" style="background: #f8fafc; border: 1px solid #cbd5e0;">
                         <span id="label_patio">Seleccione Patio...</span>
                         <i class="material-icons">expand_more</i>
@@ -225,53 +239,146 @@
                         <!-- Options populated by JS -->
                     </div>
                 </div>
+            </div>
+
+            {{-- Input libre para ubicación (siempre visible) --}}
+            <div style="margin-bottom: 20px;">
+                <label for="input_ubicacion_recepcion" style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px;">
+                    <i class="material-icons" style="font-size: 14px; vertical-align: middle;">place</i>
+                    Ubicación / Sección <span style="font-weight: 400; color: #94a3b8; font-size: 12px;">(Opcional)</span>
+                </label>
+                <input type="text" id="input_ubicacion_recepcion" name="DETALLE_UBICACION" 
+                    placeholder=""
+                    style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e0; border-radius: 10px; font-size: 14px; background: #f8fafc; outline: none; transition: border 0.2s; box-sizing: border-box;"
+                    onfocus="this.style.borderColor='#0067b1'" onblur="this.style.borderColor='#cbd5e0'">
 
             </div>
 
             <div style="display: flex; gap: 10px;">
                 <button type="button" onclick="document.getElementById('recepcionModal').style.display='none'" 
-                    style="flex: 1; padding: 10px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 600; color: #64748b; cursor: pointer; transition: all 0.2s;"
+                    style="flex: 1; padding: 10px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 600; color: #64748b; transition: all 0.2s;"
                     onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='white'">
                     Cancelar
                 </button>
                 <button type="submit" id="btnConfirmarRecepcion"
-                    style="flex: 1; padding: 10px; background: #0067b1; border: none; border-radius: 8px; font-weight: 700; color: white; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 103, 177, 0.2);"
+                    style="flex: 1; padding: 10px; background: #0067b1; border: none; border-radius: 8px; font-weight: 700; color: white; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 103, 177, 0.2);"
                     onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 8px -1px rgba(0, 103, 177, 0.3)'" 
                     onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0, 103, 177, 0.2)'">
-                    Confirmar Ubicación
+                    Confirmar Recepción
                 </button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Modal de Confirmación Simple (sin subdivisiones) -->
-<div id="confirmacionModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; justify-content: center; align-items: center;">
-    <div style="background: white; width: 90%; max-width: 420px; border-radius: 16px; padding: 25px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); animation: slideIn 0.3s ease-out;">
+<!-- ============================================== -->
+<!-- MODAL DE RECEPCIÓN DIRECTA                     -->
+<!-- ============================================== -->
+<div id="recepcionDirectaModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center;">
+    <div style="background: white; width: 95%; max-width: 580px; max-height: 92vh; border-radius: 16px; padding: 0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: slideIn 0.3s ease-out; display: flex; flex-direction: column; overflow: hidden;">
         
-        <div style="text-align: center; margin-bottom: 20px;">
-            <div style="width: 50px; height: 50px; background: #e0eff8; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto;">
-                <i class="material-icons" style="font-size: 30px; color: #0067b1;">check_circle</i>
+        {{-- Header --}}
+        <div style="background: linear-gradient(135deg, #0067b1, #004e8c); padding: 14px 18px; color: white; flex-shrink: 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="material-icons" style="font-size: 22px;">input</i>
+                    <div>
+                        <h3 style="margin: 0; font-size: 15px; font-weight: 800;">Recepción Directa</h3>
+                        <p style="margin: 0; font-size: 11px; opacity: 0.85;">Sin movilización previa</p>
+                    </div>
+                </div>
+                <button type="button" onclick="cerrarRecepcionDirecta()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <i class="material-icons" style="font-size: 18px;">close</i>
+                </button>
             </div>
-            <h3 style="font-size: 18px; font-weight: 800; color: #1e293b; margin: 0;">Confirmar Recepción</h3>
-            <p style="font-size: 14px; color: #64748b; margin-top: 8px;">
-                ¿Confirmar que el equipo ha llegado a <strong id="confirmFrenteNombre" style="color: #0f172a;"></strong>?
-            </p>
         </div>
 
-        <div style="display: flex; gap: 10px;">
-            <button type="button" onclick="document.getElementById('confirmacionModal').style.display='none'" 
-                style="flex: 1; padding: 12px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 600; color: #64748b; cursor: pointer; transition: all 0.2s;"
-                onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='white'">
+        {{-- Body --}}
+        <div style="padding: 20px 25px; overflow-y: auto; flex: 1;">
+            
+            {{-- PASO 1: Buscar equipos --}}
+            <div style="margin-bottom: 20px;">
+                <label for="rdSearchInput" style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px;">
+                    <span style="background: #0067b1; color: white; padding: 2px 8px; border-radius: 50%; font-size: 11px; font-weight: 800; margin-right: 6px;">1</span>
+                    Buscar Equipo (Serial, Placa o Código)
+                </label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="rdSearchInput" 
+                        placeholder="Buscar por serial, placa o código..." 
+                        style="flex: 1; padding: 10px 14px; border: 1px solid #cbd5e0; border-radius: 10px; font-size: 14px; background: #f8fafc; outline: none;"
+                        autocomplete="off"
+                        onfocus="this.style.borderColor='#0067b1'" onblur="this.style.borderColor='#cbd5e0'"
+                        onkeyup="if(event.key==='Enter') buscarEquiposRD()">
+                    <button type="button" onclick="buscarEquiposRD()" 
+                        style="padding: 10px 16px; background: #0067b1; border: none; border-radius: 10px; color: white; font-weight: 700; display: flex; align-items: center; gap: 4px; transition: background 0.2s;"
+                        onmouseover="this.style.background='#005a9e'" onmouseout="this.style.background='#0067b1'">
+                        <i class="material-icons" style="font-size: 18px;">search</i>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Resultados de búsqueda --}}
+            <div id="rdResultados" style="margin-bottom: 20px; display: none;">
+                <p style="font-size: 12px; font-weight: 600; color: #94a3b8; margin-bottom: 6px; margin-top: 0; text-transform: uppercase;">Resultados</p>
+                <div id="rdResultadosList" style="border: 1px solid #e2e8f0; border-radius: 10px; background: #fafbfc; overflow: hidden;">
+                    <!-- populated by JS -->
+                </div>
+            </div>
+
+            {{-- Equipos seleccionados --}}
+            <div id="rdSeleccionados" style="margin-bottom: 20px; display: none;">
+                <p style="font-size: 12px; font-weight: 600; color: #94a3b8; margin-bottom: 6px; margin-top: 0; text-transform: uppercase;">
+                    Equipos Seleccionados (<span id="rdContador">0</span>)
+                </p>
+                <div id="rdSeleccionadosList" style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    <!-- populated by JS -->
+                </div>
+            </div>
+
+            {{-- Frente receptor: hidden, siempre el del usuario --}}
+            <input type="hidden" id="rdFrenteInput" value="{{ auth()->user()->ID_FRENTE_ASIGNADO }}">
+
+            {{-- PASO 2: Ubicación específica (opcional) --}}
+            <div style="margin-bottom: 15px;">
+                <label for="rdUbicacionInput" style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px;">
+                    <span style="background: #0067b1; color: white; padding: 2px 8px; border-radius: 50%; font-size: 11px; font-weight: 800; margin-right: 6px;">2</span>
+                    Ubicación <span style="font-weight: 400; color: #94a3b8; font-size: 12px;">(Opcional)</span>
+                </label>
+                {{-- Subdivisiones dropdown (se llena dinámicamente) --}}
+                <div id="rdSubdivisionesContainer" style="display: none; margin-bottom: 8px;">
+                    <div class="custom-dropdown" id="rdPatioSelect">
+                        <input type="hidden" id="rdPatioInput">
+                        <div class="dropdown-trigger" onclick="toggleDropdown('rdPatioSelect', event)" style="background: #f8fafc; border: 1px solid #cbd5e0;">
+                            <span id="rdPatioLabel" style="color: #94a3b8;">Seleccionar subdivisión...</span>
+                            <i class="material-icons">expand_more</i>
+                        </div>
+                        <div class="dropdown-content" id="rdPatioList"></div>
+                    </div>
+                </div>
+                {{-- Input libre --}}
+                <input type="text" id="rdUbicacionInput" 
+                    placeholder=""
+                    style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e0; border-radius: 10px; font-size: 14px; background: #f8fafc; outline: none; box-sizing: border-box;"
+                    onfocus="this.style.borderColor='#0067b1'" onblur="this.style.borderColor='#cbd5e0'">
+
+            </div>
+        </div>
+
+        {{-- Footer --}}
+        <div style="padding: 15px 25px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; flex-shrink: 0; background: #fafbfc;">
+            <button type="button" onclick="cerrarRecepcionDirecta()" 
+                style="flex: 1; padding: 12px; background: white; border: 1px solid #e2e8f0; border-radius: 10px; font-weight: 600; color: #64748b;">
                 Cancelar
             </button>
-            <button type="button" id="btnConfirmarSimple"
-                style="flex: 1; padding: 12px; background: #0067b1; border: none; border-radius: 8px; font-weight: 700; color: white; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 103, 177, 0.2);"
-                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 8px -1px rgba(0, 103, 177, 0.3)'" 
-                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0, 103, 177, 0.2)'">
-                Confirmar Recepción
+            <button type="button" id="btnConfirmarRD" onclick="confirmarRecepcionDirecta()"
+                style="flex: 1; padding: 12px; background: #0067b1; border: none; border-radius: 10px; font-weight: 700; color: white; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 103, 177, 0.3);"
+                onmouseover="this.style.background='#005a9e'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 8px -1px rgba(0, 103, 177, 0.4)'"
+                onmouseout="this.style.background='#0067b1'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0, 103, 177, 0.3)'">
+                <i class="material-icons" style="font-size: 16px;">check_circle</i>
+                Confirmar
             </button>
         </div>
     </div>
 </div>
+
 @endsection

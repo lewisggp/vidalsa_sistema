@@ -21,10 +21,12 @@ window.confirmDeleteCatalogo = function (id, modelName) {
         confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
 
         // Handle confirm click (AJAX)
+        // Handle confirm click (AJAX)
         newBtn.onclick = async function () {
-            // UI Feedback
+            // UI Feedback - Show Global Preloader
+            if (typeof window.showPreloader === 'function') window.showPreloader();
             newBtn.disabled = true;
-            newBtn.innerText = 'Eliminando...';
+            // newBtn.innerText = 'Eliminado...'; // Removed as per request
 
             let targetUrl = '';
             // console.log('Attempting DELETE for ID:', id);
@@ -70,9 +72,10 @@ window.confirmDeleteCatalogo = function (id, modelName) {
                 console.error('Delete Error:', error);
                 alert('Error al eliminar: ' + error.message);
             } finally {
-                // Reset Button State
+                // Reset Button State & Hide Preloader
+                if (typeof window.hidePreloader === 'function') window.hidePreloader();
                 newBtn.disabled = false;
-                newBtn.innerText = 'Eliminar';
+                // newBtn.innerText = 'Eliminar';
             }
         };
 

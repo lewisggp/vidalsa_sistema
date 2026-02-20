@@ -314,6 +314,13 @@ function initEquiposForm() {
                             delete input.dataset.isDuplicate;
                         });
 
+                        // 8. Reset Catalog Linking Widget
+                        if (typeof window.catalogReset === 'function') {
+                            window.catalogReset();
+                        } else if (typeof window.ignoreCatalogSuggestion === 'function') {
+                            window.ignoreCatalogSuggestion();
+                        }
+
                         window.scrollTo({ top: 0, behavior: 'smooth' });
 
                         // Show success message AFTER reset

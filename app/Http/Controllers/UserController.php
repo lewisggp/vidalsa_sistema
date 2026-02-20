@@ -11,6 +11,12 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('can:super.admin')->only(['edit', 'update', 'destroy']);
+    }
+
     /**
      * Display a listing of the resource.
      */

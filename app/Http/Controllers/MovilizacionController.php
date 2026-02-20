@@ -9,6 +9,13 @@ use Illuminate\Support\Facades\DB;
 
 class MovilizacionController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        // Permiso para MOVER equipos (Crear movilizaciones o recibir directamente sin despacho)
+        $this->middleware('can:equipos.assign')->only(['create', 'store', 'bulkStore', 'recepcionDirecta']);
+    }
+
     public function index(Request $request)
     {
         $query = Movilizacion::with(['equipo.tipo', 'equipo.especificaciones', 'equipo.documentacion', 'frenteOrigen', 'frenteDestino', 'usuario']);
@@ -76,7 +83,6 @@ class MovilizacionController extends Controller
         $movilizaciones = $query->orderBy('FECHA_DESPACHO', 'desc')->paginate(12);
 
         // Stats: Total In Transit & In Transit by Destination Front
-        // These are GLOBAL stats (not filtered by search/table filters) as per dashboard requirements
         $totalTransito = Movilizacion::where('ESTADO_MVO', 'TRANSITO')->count();
         
         $transitoPorFrente = Movilizacion::where('ESTADO_MVO', 'TRANSITO')
@@ -89,12 +95,14 @@ class MovilizacionController extends Controller
         $frentes = FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')->orderBy('NOMBRE_FRENTE')->get();
         $allTipos = \App\Models\TipoEquipo::orderBy('nombre')->get();
 
+        // Para recepción directa: todos los frentes con sus subdivisiones
+        $allFrentes = FrenteTrabajo::orderBy('NOMBRE_FRENTE')->get();
+
         // Check if JSON specifically requested (for filters)
         if ($request->wantsJson()) {
             $tableHtml = view('admin.movilizaciones.partials.table_rows', compact('movilizaciones'))->render();
             $paginationHtml = $movilizaciones->appends($request->all())->links()->toHtml();
 
-            // Rebuild Stats HTML for AJAX updates (although these are global, keeping them dynamic is good practice)
             $statsHtml = '<h4 style="margin: 0 0 15px 0; font-size: 13px; text-transform: uppercase; color: #64748b; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
                 <i class="material-icons" style="font-size: 18px; color: #8b5cf6;">local_shipping</i>
                 En Tránsito por Frente
@@ -117,17 +125,15 @@ class MovilizacionController extends Controller
                 'html' => $tableHtml,
                 'pagination' => $paginationHtml,
                 'statsHtml' => $statsHtml,
-                'totalTransito' => $totalTransito // Send this for frontend update if needed (will need JS update)
+                'totalTransito' => $totalTransito
             ]);
         }
 
-        return view('admin.movilizaciones.index', compact('movilizaciones', 'totalTransito', 'transitoPorFrente', 'frentes', 'allTipos'));
+        return view('admin.movilizaciones.index', compact('movilizaciones', 'totalTransito', 'transitoPorFrente', 'frentes', 'allTipos', 'allFrentes'));
     }
 
     public function create()
     {
-        // Only load available equipments (active and confirmed on site, or simply not in transit?)
-        // Assuming we want to move any equipment that is supposedly on site.
         $equipos = \App\Models\Equipo::with(['tipo', 'frenteActual'])
             ->where('ESTADO_OPERATIVO', 'OPERATIVO')
             ->orderBy('CODIGO_PATIO')
@@ -146,26 +152,21 @@ class MovilizacionController extends Controller
         ]);
 
         $equipo = \App\Models\Equipo::findOrFail($request->ID_EQUIPO);
-        
-        // Prevent moving if already in transit? (Optional safety check)
-        if ($equipo->CONFIRMADO_EN_SITIO == 0) {
-             // return back()->withErrors(['msg' => 'El equipo ya está en tránsito.']);
-        }
 
-        // Generate ID (Simulating Max + 1 logic for CODIGO_CONTROL if it is numeric)
-        $lastLog = Movilizacion::latest('ID_MOVILIZACION')->first();
+        // Lock para evitar race condition si dos usuarios despachan al mismo tiempo
+        $lastLog = Movilizacion::latest('ID_MOVILIZACION')->lockForUpdate()->first();
         $nextId = $lastLog ? ($lastLog->ID_MOVILIZACION + 1) : 1; 
         
-        // Ensure ID_FRENTE_ORIGEN is valid. If null, maybe default to a generic one or error.
-        $origen = $equipo->ID_FRENTE_ACTUAL ?? 1; // Fallback to 1 if null
+        $origen = $equipo->ID_FRENTE_ACTUAL ?? 1;
 
         Movilizacion::create([
-            'CODIGO_CONTROL' => $nextId, // Storing strict number
+            'CODIGO_CONTROL' => $nextId,
             'ID_EQUIPO' => $request->ID_EQUIPO,
             'ID_FRENTE_ORIGEN' => $origen,
             'ID_FRENTE_DESTINO' => $request->ID_FRENTE_DESTINO,
             'FECHA_DESPACHO' => now(),
             'ESTADO_MVO' => 'TRANSITO',
+            'TIPO_MOVIMIENTO' => 'DESPACHO',
             'USUARIO_REGISTRO' => auth()->user()->CORREO_ELECTRONICO ?? 'SISTEMA',
         ]);
 
@@ -183,8 +184,6 @@ class MovilizacionController extends Controller
         try {
             DB::beginTransaction();
 
-            // 1. Find or Create the destination front
-            // Use shared lock if high concurrency expected, but firstOrCreate is atomic enough for this.
             $frente = FrenteTrabajo::firstOrCreate(
                 ['NOMBRE_FRENTE' => strtoupper($request->destination)],
                 ['ESTATUS_FRENTE' => 'ACTIVO']
@@ -193,15 +192,9 @@ class MovilizacionController extends Controller
             $user = auth()->user()->CORREO_ELECTRONICO ?? 'SISTEMA';
             $now = now();
             
-            // 2. Get Next Control ID (Robustness: Locking to prevent race conditions in high concurrency)
-            // We lock the last record to ensure we get a unique sequence for this batch
             $lastLog = Movilizacion::latest('ID_MOVILIZACION')->lockForUpdate()->first();
             $nextId = $lastLog ? ($lastLog->ID_MOVILIZACION + 1) : 1;
             
-            // 3. Prepare Batch Insert Data
-            // We fetch the 'origin' for each equipment efficiently. 
-            // If all come from different origins, we must fetch them.
-            // Optimization: Fetch only necessary columns.
             $equipos = \App\Models\Equipo::whereIn('ID_EQUIPO', $request->ids)->get(['ID_EQUIPO', 'ID_FRENTE_ACTUAL']);
             
             $insertData = [];
@@ -213,24 +206,22 @@ class MovilizacionController extends Controller
                     'ID_FRENTE_DESTINO' => $frente->ID_FRENTE,
                     'FECHA_DESPACHO' => $now,
                     'ESTADO_MVO' => 'TRANSITO',
+                    'TIPO_MOVIMIENTO' => 'DESPACHO',
                     'USUARIO_REGISTRO' => $user,
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
             }
 
-            // 4. Batch Insert (One Query)
             $movilizacionIds = [];
             if (!empty($insertData)) {
                 Movilizacion::insert($insertData);
                 
-                // Obtener los IDs de las movilizaciones recién creadas
                 $movilizacionIds = Movilizacion::where('CODIGO_CONTROL', $nextId)
                     ->pluck('ID_MOVILIZACION')
                     ->toArray();
             }
 
-            // 5. Batch Update Equipment Status (One Query)
             \App\Models\Equipo::whereIn('ID_EQUIPO', $request->ids)->update([
                 'ID_FRENTE_ACTUAL' => $frente->ID_FRENTE,
                 'CONFIRMADO_EN_SITIO' => 0
@@ -250,6 +241,9 @@ class MovilizacionController extends Controller
         }
     }
 
+    /**
+     * Confirmar recepción de una movilización en tránsito (RECIBIR)
+     */
     public function updateStatus(Request $request, $id)
     {
         DB::beginTransaction();
@@ -258,7 +252,7 @@ class MovilizacionController extends Controller
             $usuario = auth()->user();
             
             $request->validate([
-                'status' => 'required|in:RECIBIDO,RETORNADO',
+                'status' => 'required|in:RECIBIDO',
                 'DETALLE_UBICACION' => 'nullable|string|max:150'
             ]);
             
@@ -267,86 +261,219 @@ class MovilizacionController extends Controller
             $usuarioFrente = $usuario->ID_FRENTE_ASIGNADO;
             
             if (!$esGlobal) {
-                // Usuarios LOCAL deben estar en el frente correcto
                 if ($request->status == 'RECIBIDO' && $usuarioFrente != $mov->ID_FRENTE_DESTINO) {
-                    abort(403, 'Solo el frente destino puede confirmar la recepción');
-                }
-                
-                if ($request->status == 'RETORNADO' && $usuarioFrente != $mov->ID_FRENTE_ORIGEN) {
-                    abort(403, 'Solo el frente origen puede confirmar el retorno');
+                    $errorMsg = 'Solo el frente destino puede confirmar la recepción';
+                    if ($request->ajax()) {
+                        return response()->json(['success' => false, 'error' => $errorMsg], 403);
+                    }
+                    abort(403, $errorMsg);
                 }
             }
             
             // Validar que esté en tránsito
             if ($mov->ESTADO_MVO != 'TRANSITO') {
-                return back()->withErrors(['error' => 'Esta movilización ya fue procesada']);
+                $errorMsg = 'Esta movilización ya fue procesada';
+                if ($request->ajax()) {
+                    return response()->json(['success' => false, 'error' => $errorMsg], 422);
+                }
+                return back()->withErrors(['error' => $errorMsg]);
             }
             
             // 1. Actualizar movilización
             $mov->update([
-                'ESTADO_MVO' => $request->status,
-                'FECHA_RECEPCION' => now(),
-                'DETALLE_UBICACION' => $request->DETALLE_UBICACION // Guardar nombre del patio (Ej: Patio 1)
+                'ESTADO_MVO'       => 'RECIBIDO',
+                'FECHA_RECEPCION'  => now(),
+                'DETALLE_UBICACION' => $request->DETALLE_UBICACION,
+                'USUARIO_RECEPCION' => $usuario->CORREO_ELECTRONICO ?? 'SISTEMA',
             ]);
 
-            // 2. Actualizar tabla equipos según el estado
-            if ($request->status == 'RECIBIDO') {
-                // RECIBIDO en DESTINO
-                // El equipo pasa a estar en el FRENTE DESTINO (Padre)
-                // Y actualizamos su detalle de ubicación
-                
-                $mov->equipo->update([
-                    'ID_FRENTE_ACTUAL' => $mov->ID_FRENTE_DESTINO,
-                    'DETALLE_UBICACION_ACTUAL' => $request->DETALLE_UBICACION,
-                    'CONFIRMADO_EN_SITIO' => 1
-                ]);
+            // 2. Actualizar equipo: confirmar en el frente destino
+            $mov->equipo->update([
+                'ID_FRENTE_ACTUAL'          => $mov->ID_FRENTE_DESTINO,
+                'DETALLE_UBICACION_ACTUAL'  => $request->DETALLE_UBICACION,
+                'CONFIRMADO_EN_SITIO'       => 1
+            ]);
 
-                // Mensaje personalizado
-                $nombreUbicacion = $mov->frenteDestino->NOMBRE_FRENTE;
-                if ($request->filled('DETALLE_UBICACION')) {
-                    $nombreUbicacion .= ' (' . $request->DETALLE_UBICACION . ')';
-                }
-
-                $message = 'Equipo recibido exitosamente en ' . $nombreUbicacion;
-            } 
-            elseif ($request->status == 'RETORNADO') {
-                // RETORNADO → Volver al frente ORIGEN
-                // Limpiamos el detalle porque vuelve al origen general (o se podría pedir detalle de retorno, pero por ahora general)
-                $mov->equipo->update([
-                    'ID_FRENTE_ACTUAL' => $mov->ID_FRENTE_ORIGEN,
-                    'DETALLE_UBICACION_ACTUAL' => null, 
-                    'CONFIRMADO_EN_SITIO' => 1
-                ]);
-                $message = 'Equipo retornado exitosamente a ' . $mov->frenteOrigen->NOMBRE_FRENTE;
+            // Mensaje personalizado
+            $nombreUbicacion = $mov->frenteDestino->NOMBRE_FRENTE;
+            if ($request->filled('DETALLE_UBICACION')) {
+                $nombreUbicacion .= ' (' . $request->DETALLE_UBICACION . ')';
             }
+            $message = 'Equipo recibido exitosamente en ' . $nombreUbicacion;
 
             DB::commit();
+
+            // Responder según tipo de petición
+            if ($request->ajax()) {
+                return response()->json(['success' => true, 'message' => $message]);
+            }
             return back()->with('success', $message);
             
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Error en updateStatus: ' . $e->getMessage());
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'error' => 'Error al actualizar: ' . $e->getMessage()], 500);
+            }
             return back()->withErrors(['error' => 'Error al actualizar: ' . $e->getMessage()]);
         }
     }
 
     /**
-     * Generar PDF del Acta de Traslado
+     * RECEPCIÓN DIRECTA: Registrar equipos que llegan sin movilización previa
      */
+    public function recepcionDirecta(Request $request)
+    {
+        // El frente destino SIEMPRE es el frente del usuario que gestiona la recepción
+        $request->merge(['ID_FRENTE_DESTINO' => auth()->user()->ID_FRENTE_ASIGNADO]);
+
+        $request->validate([
+            'ids'               => 'required|array',
+            'ids.*'             => 'exists:equipos,ID_EQUIPO',
+            'ID_FRENTE_DESTINO' => 'required|exists:frentes_trabajo,ID_FRENTE',
+            'DETALLE_UBICACION' => 'nullable|string|max:150',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $usuario = auth()->user();
+            $now = now();
+            $frenteDestino = FrenteTrabajo::findOrFail($request->ID_FRENTE_DESTINO);
+            
+            // Generar código de control para este lote
+            $lastLog = Movilizacion::latest('ID_MOVILIZACION')->lockForUpdate()->first();
+            $nextId = $lastLog ? ($lastLog->ID_MOVILIZACION + 1) : 1;
+
+            $equipos = \App\Models\Equipo::with('frenteActual')
+                ->whereIn('ID_EQUIPO', $request->ids)
+                ->get();
+            
+            $insertData = [];
+            foreach ($equipos as $equipo) {
+                $insertData[] = [
+                    'CODIGO_CONTROL' => $nextId,
+                    'ID_EQUIPO' => $equipo->ID_EQUIPO,
+                    'ID_FRENTE_ORIGEN' => $equipo->ID_FRENTE_ACTUAL ?? $request->ID_FRENTE_DESTINO,
+                    'ID_FRENTE_DESTINO' => $request->ID_FRENTE_DESTINO,
+                    'DETALLE_UBICACION' => $request->DETALLE_UBICACION,
+                    'FECHA_DESPACHO' => null, // No hubo despacho
+                    'FECHA_RECEPCION' => $now,
+                    'ESTADO_MVO' => 'RECIBIDO',
+                    'TIPO_MOVIMIENTO' => 'RECEPCION_DIRECTA',
+                    'USUARIO_REGISTRO' => $usuario->CORREO_ELECTRONICO ?? 'SISTEMA',
+                    'USUARIO_RECEPCION' => $usuario->CORREO_ELECTRONICO ?? 'SISTEMA',
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+
+            if (!empty($insertData)) {
+                Movilizacion::insert($insertData);
+            }
+
+            // Actualizar equipos
+            \App\Models\Equipo::whereIn('ID_EQUIPO', $request->ids)->update([
+                'ID_FRENTE_ACTUAL' => $request->ID_FRENTE_DESTINO,
+                'DETALLE_UBICACION_ACTUAL' => $request->DETALLE_UBICACION,
+                'CONFIRMADO_EN_SITIO' => 1,
+            ]);
+
+            DB::commit();
+
+            $ubicacionTexto = $frenteDestino->NOMBRE_FRENTE;
+            if ($request->filled('DETALLE_UBICACION')) {
+                $ubicacionTexto .= ' → ' . $request->DETALLE_UBICACION;
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => count($request->ids) . ' equipo(s) recibido(s) directamente en ' . $ubicacionTexto,
+                'count' => count($request->ids),
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error en recepcionDirecta: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * API: Buscar equipos para recepción directa
+     */
+    public function buscarEquiposParaRecepcion(Request $request)
+    {
+        $query = \App\Models\Equipo::with(['tipo', 'frenteActual', 'documentacion', 'especificaciones:ID_ESPEC,FOTO_REFERENCIAL']);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('SERIAL_CHASIS', 'like', "%{$search}%")
+                  ->orWhere('CODIGO_PATIO', 'like', "%{$search}%")
+                  ->orWhereHas('documentacion', function($qDoc) use ($search) {
+                      $qDoc->where('PLACA', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $equipos = $query->orderBy('CODIGO_PATIO')->limit(20)->get();
+
+        return response()->json($equipos->map(function($eq) {
+            // Determinar la mejor foto disponible
+            $foto = null;
+            if ($eq->FOTO_EQUIPO) {
+                $foto = $eq->FOTO_EQUIPO;
+            } elseif ($eq->especificaciones && $eq->especificaciones->FOTO_REFERENCIAL) {
+                $foto = $eq->especificaciones->FOTO_REFERENCIAL;
+            }
+
+            return [
+                'ID_EQUIPO'            => $eq->ID_EQUIPO,
+                'TIPO'                 => $eq->tipo->nombre ?? 'N/A',
+                'CODIGO_PATIO'         => $eq->CODIGO_PATIO,
+                'SERIAL_CHASIS'        => $eq->SERIAL_CHASIS,
+                'PLACA'                => $eq->documentacion->PLACA ?? 'S/P',
+                'MARCA'                => $eq->MARCA,
+                'MODELO'               => $eq->MODELO,
+                'ANIO'                 => $eq->ANIO,
+                'FRENTE_ACTUAL'        => $eq->frenteActual->NOMBRE_FRENTE ?? 'Sin Asignar',
+                'FRENTE_ACTUAL_ESTATUS'=> $eq->frenteActual->ESTATUS_FRENTE ?? null,
+                'CONFIRMADO'           => $eq->CONFIRMADO_EN_SITIO,
+                'DETALLE_UBICACION'    => $eq->DETALLE_UBICACION_ACTUAL,
+                'FOTO'                 => $foto, // URL de foto del equipo o referencial
+            ];
+        }));
+    }
+
+    /**
+     * API: Obtener subdivisiones de un frente
+     */
+    public function getSubdivisiones($id)
+    {
+        $frente = FrenteTrabajo::findOrFail($id);
+        $subdivisiones = [];
+        if ($frente->SUBDIVISIONES && trim($frente->SUBDIVISIONES) !== '') {
+            $subdivisiones = array_filter(array_map('trim', explode(',', $frente->SUBDIVISIONES)));
+        }
+        return response()->json([
+            'nombre' => $frente->NOMBRE_FRENTE,
+            'subdivisiones' => array_values($subdivisiones),
+            'tiene_subdivisiones' => count($subdivisiones) > 0,
+        ]);
+    }
+
     /**
      * Generar PDF del Acta de Traslado (Agrupado por CODIGO_CONTROL)
      */
     public function generarActaTraslado($id)
     {
         try {
-            // 1. Cargar la movilización base para obtener la REFERENCIA (CODIGO_CONTROL)
             $baseMov = Movilizacion::findOrFail($id);
 
-            // 2. Buscar TODAS las movilizaciones que comparten ese código de control (el mismo lote de traslado)
             $movilizaciones = Movilizacion::with([
                 'equipo.tipo',
                 'equipo.documentacion',
-                'equipo.especificaciones', // Para la marca si es necesaria
+                'equipo.especificaciones',
                 'frenteOrigen',
                 'frenteDestino',
                 'usuario'
@@ -358,51 +485,41 @@ class MovilizacionController extends Controller
                 return back()->withErrors(['error' => 'No se encontraron registros para esta movilización.']);
             }
 
-            // Tomamos la primera para datos generales
             $movilizacion = $movilizaciones->first();
 
-            // Obtener el frente de ORIGEN con sus responsables (Quienes firman la salida)
             $frenteOrigen = FrenteTrabajo::find($movilizacion->ID_FRENTE_ORIGEN);
-            
-            // Obtener el frente de DESTINO (Para indicar hacia donde va)
             $frenteDestino = FrenteTrabajo::find($movilizacion->ID_FRENTE_DESTINO);
 
             if (!$frenteDestino) {
                 return back()->withErrors(['error' => 'No se encontró el frente de destino']);
             }
 
-            // Generar PDF usando nuestra clase personalizada con Header
             $pdf = new ActaTrasladoPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
             
-            // Asignar el código de control para que aparezca en el Header
             $pdf->codigoControl = $movilizacion->CODIGO_CONTROL;
-            
-            // Configuración del documento
             $pdf->SetTitle('Acta de Traslado - ' . $movilizacion->CODIGO_CONTROL);
-            
-            // Márgenes: Arriba 35mm para dejar espacio al Header gráfico, Abajo 15mm
-            $pdf->SetMargins(15, 35, 15); 
-            $pdf->SetHeaderMargin(10);
+            $pdf->SetMargins(15, 15, 15);
             $pdf->SetAutoPageBreak(true, 15);
-            
-            // Habilitar Header y Footer personalizados
-            $pdf->setPrintHeader(true);
-            $pdf->setPrintFooter(true);
-            
+            $pdf->setPrintHeader(false);
+            $pdf->setPrintFooter(false);
             $pdf->AddPage();
+            $pdf->SetFont('helvetica', '', 10);
 
-            // Renderizar vista pasando la COLECCIÓN de movilizaciones y los frentes
-            $html = view('admin.movilizaciones.acta_traslado_pdf', compact('movilizaciones', 'movilizacion', 'frenteOrigen', 'frenteDestino'))->render();
+            $usuarioEmisor = auth()->user();
+            $logoPath = public_path('img/imagen_uno.jpg');
+
+            $equipos = $movilizaciones->map(function($mov) {
+                return $mov->equipo;
+            });
+
+            $html = view('admin.movilizaciones.acta_traslado_pdf', compact('movilizaciones', 'equipos', 'movilizacion', 'frenteOrigen', 'frenteDestino', 'usuarioEmisor', 'logoPath'))->render();
             
-            // CLEANUP: Eliminar script inyectado accidentalmente (posiblemente por herramientas de dev o extensiones) que aparece impreso
             $html = str_replace("this.closest('div[style*='position: fixed']').remove();", "", $html);
 
             $pdf->writeHTML($html, true, false, true, false, '');
 
-            // Nombre del archivo
             $filename = 'Acta_Traslado_' . $movilizacion->CODIGO_CONTROL . '.pdf';
 
-            // Descargar PDF
             return $pdf->Output($filename, 'D');
 
         } catch (\Exception $e) {
@@ -412,47 +529,15 @@ class MovilizacionController extends Controller
     }
 }
 
-// Clase personalizada para el PDF con Header Gráfico Corporativo
+// Clase personalizada para el PDF
 class ActaTrasladoPDF extends \TCPDF {
-    public $codigoControl = null;
-    
+    // Eliminamos Header() y Footer() para que el diseño dependa 100% del HTML de la vista Blade
     public function Header() {
-        // Imagen 'imagen_uno.jpg' corporativa (Usada en reporte de alertas)
-        $image_file = public_path('img/imagen_uno.jpg');
-        
-        // Logo a la izquierda (Coordenadas: X=15, Y=10, H=25)
-        if (file_exists($image_file)) {
-            $this->Image($image_file, 15, 10, 0, 25, 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
-        } else {
-             // Fallback si no existe la imagen_uno, buscamos logo.png
-             $logo_bkp = public_path('images/maquinaria/logo.png');
-             if(file_exists($logo_bkp)) {
-                 $this->Image($logo_bkp, 15, 10, 0, 20, 'PNG');
-             }
-        }
-        
-        // Título centrado: ACTA DE TRASLADO
-        $this->SetY(15);
-        $this->SetFont('helvetica', 'B', 14);
-        $this->Cell(0, 5, 'ACTA DE TRASLADO', 0, 1, 'C', 0, '', 0, false, 'T', 'M');
-        
-        // Bloque Informativo Derecha: N° Operación + Fecha + Emisor
-        $this->SetY(15);
-        $this->SetX(15);
-        $this->SetFont('helvetica', '', 9);
-        
-        $numeroOp = $this->codigoControl ? str_pad($this->codigoControl, 6, '0', STR_PAD_LEFT) : '---';
-        
-        $html = '<div style="text-align: right;">
-            <strong>N° OPERACIÓN: ' . $numeroOp . '</strong><br>
-            <strong>FECHA DE EMISIÓN:</strong> ' . \Carbon\Carbon::now()->format('d/m/Y') . '<br>
-            EMITIDO POR SISTEMA DE GESTIÓN DE FLOTA
-        </div>';
-        
-        $this->writeHTMLCell(0, 0, 15, 15, $html, 0, 0, 0, true, 'R', true);
+        // Dejar vacío para no imprimir encabezado automático
     }
 
     public function Footer() {
+        // Dejar vacío para no imprimir pie de página automático (o personalizar si se requiere solo paginación)
         $this->SetY(-15);
         $this->SetFont('helvetica', 'I', 8);
         $this->Cell(0, 10, 'Página '.$this->getAliasNumPage().'/'.$this->getAliasNbPages(), 0, 0, 'C');

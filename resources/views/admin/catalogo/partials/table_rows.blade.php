@@ -65,7 +65,11 @@
                     <i class="material-icons">edit</i>
                 </a>
                 <div style="flex: 1;">
-                    <button type="button" onclick="confirmDeleteCatalogo('{{$catalogo->ID_ESPEC}}', '{{ addslashes($catalogo->MODELO) }}')" class="btn-details-mini" style="background: #fee2e2; color: #ef4444; width: 100%; height: 35px; border: none; display: flex; align-items: center; justify-content: center; border-radius: 6px;" title="Eliminar">
+                    <button type="button" 
+                        onclick="@can('super.admin') confirmDeleteCatalogo('{{$catalogo->ID_ESPEC}}', '{{ addslashes($catalogo->MODELO) }}') @else showModal({ type: 'error', title: 'Acceso Denegado', message: 'No tienes permiso para eliminar modelos.', confirmText: 'Entendido', hideCancel: true }); @endcan" 
+                        class="btn-details-mini" 
+                        style="background: #fee2e2; color: #ef4444; width: 100%; height: 35px; border: none; display: flex; align-items: center; justify-content: center; border-radius: 6px;" 
+                        title="Eliminar">
                         <i class="material-icons">delete</i>
                     </button>
                 </div>

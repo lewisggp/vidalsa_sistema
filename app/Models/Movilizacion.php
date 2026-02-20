@@ -17,12 +17,13 @@ class Movilizacion extends Model
         'ID_EQUIPO',
         'ID_FRENTE_ORIGEN',
         'ID_FRENTE_DESTINO',
-        'ID_FRENTE_RECEPCION', // Agregado
-        'DETALLE_UBICACION',   // Patio/Subdivisión específica de recepción
+        'DETALLE_UBICACION',       // Patio/Subdivisión específica de recepción
         'FECHA_DESPACHO',
         'FECHA_RECEPCION',
-        'ESTADO_MVO', // TRANSITO, RECIBIDO, RETORNADO
+        'ESTADO_MVO',              // TRANSITO, RECIBIDO
+        'TIPO_MOVIMIENTO',         // DESPACHO, RECEPCION_DIRECTA
         'USUARIO_REGISTRO',
+        'USUARIO_RECEPCION',       // Quién confirmó la recepción
     ];
 
     // Accessor for formatted CODIGO_CONTROL (MV-0000X)
@@ -51,11 +52,6 @@ class Movilizacion extends Model
     public function frenteDestino()
     {
         return $this->belongsTo(FrenteTrabajo::class, 'ID_FRENTE_DESTINO', 'ID_FRENTE');
-    }
-
-    public function frenteRecepcion()
-    {
-        return $this->belongsTo(FrenteTrabajo::class, 'ID_FRENTE_RECEPCION', 'ID_FRENTE');
     }
 
     public function usuario()

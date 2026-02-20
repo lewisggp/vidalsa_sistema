@@ -6,6 +6,16 @@
             <div class="tooltip-wrapper" style="font-size: 13px; color: #000000; margin-bottom: 5px; line-height: 1.3; font-weight: 600; text-align: center; width: 100%; word-wrap: break-word; position: relative; cursor: default;">
                 
                 {{ $equipo->frenteActual->NOMBRE_FRENTE ?? 'Sin Asignar' }}
+
+                {{-- Alerta: Equipo en frente FINALIZADO --}}
+                @if($equipo->frenteActual && $equipo->frenteActual->ESTATUS_FRENTE === 'FINALIZADO')
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 3px; margin-top: 2px;">
+                        <span style="background: #fef2f2; color: #dc2626; padding: 1px 6px; border-radius: 8px; font-size: 9px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; border: 1px solid #fecaca; animation: pulse-alert 2s infinite;">
+                            <i class="material-icons" style="font-size: 10px;">warning</i>
+                            PROYECTO FINALIZADO
+                        </span>
+                    </div>
+                @endif
                 
                 @if($equipo->DETALLE_UBICACION_ACTUAL)
                     {{-- Burbuja Tooltip --}}
@@ -92,36 +102,44 @@
                     $currentConfig = $statusConfig[$equipo->ESTADO_OPERATIVO] ?? $statusConfig['DESINCORPORADO'];
                 @endphp
 
-                <!-- Trigger -->
-                <div onclick="event.stopPropagation(); toggleStatusDropdown(this)" 
-                     class="status-trigger" 
-                     style="padding: 6px 10px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 5px; font-size: 13px; font-weight: 600; background: white; border: 1px solid #e2e8f0; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                    
-                    <div style="display: flex; align-items: center; gap: 6px; color: {{ $currentConfig['color'] }};">
-                        <i class="material-icons" style="font-size: 16px;">{{ $currentConfig['icon'] }}</i>
-                        <span style="color: #334155;">{{ $currentConfig['label'] }}</span>
-                    </div>
-                    <i class="material-icons" style="font-size: 16px; color: #94a3b8;">expand_more</i>
-                </div>
-
-                <!-- Dropdown -->
-                <div class="status-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 5px); left: 0; min-width: 180px; background: white; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; z-index: 50; overflow: hidden;">
-                    @foreach($statusConfig as $key => $config)
-                        <div onclick="changeStatus('{{ $equipo->ID_EQUIPO }}', '{{ $key }}', '{{ route('equipos.changeStatus', $equipo->ID_EQUIPO) }}', this)" 
-                             style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; transition: background 0.1s; border-bottom: 1px solid #f8fafc;" 
-                             onmouseover="this.style.background='#f8fafc'" 
-                             onmouseout="this.style.background='white'">
-                            
-                            <div style="background: {{ $config['bg'] }}; padding: 4px; border-radius: 4px; display: flex;">
-                                <i class="material-icons" style="font-size: 16px; color: {{ $config['color'] }};">{{ $config['icon'] }}</i>
-                            </div>
-                            <span style="font-size: 12px; font-weight: 600; color: #334155;">{{ $config['label'] }}</span>
-                            @if($equipo->ESTADO_OPERATIVO == $key)
-                                <i class="material-icons" style="font-size: 14px; color: {{ $config['color'] }}; margin-left: auto;">check</i>
-                            @endif
+                <!-- Trigger: Interactive or Static -->
+                @can('equipos.edit')
+                    <div onclick="event.stopPropagation(); toggleStatusDropdown(this)" 
+                         class="status-trigger" 
+                         style="padding: 6px 10px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 5px; font-size: 13px; font-weight: 600; background: white; border: 1px solid #e2e8f0; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                        
+                        <div style="display: flex; align-items: center; gap: 6px; color: {{ $currentConfig['color'] }};">
+                            <i class="material-icons" style="font-size: 16px;">{{ $currentConfig['icon'] }}</i>
+                            <span style="color: #334155;">{{ $currentConfig['label'] }}</span>
                         </div>
-                    @endforeach
-                </div>
+                        <i class="material-icons" style="font-size: 16px; color: #94a3b8;">expand_more</i>
+                    </div>
+
+                    <!-- Dropdown Menu -->
+                    <div class="status-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 5px); left: 0; min-width: 180px; background: white; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; z-index: 50; overflow: hidden;">
+                        @foreach($statusConfig as $key => $config)
+                            <div onclick="changeStatus('{{ $equipo->ID_EQUIPO }}', '{{ $key }}', '{{ route('equipos.changeStatus', $equipo->ID_EQUIPO) }}', this)" 
+                                 style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; transition: background 0.1s; border-bottom: 1px solid #f8fafc;" 
+                                 onmouseover="this.style.background='#f8fafc'" 
+                                 onmouseout="this.style.background='white'">
+                                
+                                <div style="background: {{ $config['bg'] }}; padding: 4px; border-radius: 4px; display: flex;">
+                                    <i class="material-icons" style="font-size: 16px; color: {{ $config['color'] }};">{{ $config['icon'] }}</i>
+                                </div>
+                                <span style="font-size: 12px; font-weight: 600; color: #334155;">{{ $config['label'] }}</span>
+                                @if($equipo->ESTADO_OPERATIVO == $key)
+                                    <i class="material-icons" style="font-size: 14px; color: {{ $config['color'] }}; margin-left: auto;">check</i>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <!-- Static Display for Unauthorized Users -->
+                    <div style="padding: 6px 10px; border-radius: 8px; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; background: {{ $currentConfig['bg'] }}; border: 1px solid {{ $currentConfig['bg'] }}; color: {{ $currentConfig['color'] }};">
+                         <i class="material-icons" style="font-size: 16px;">{{ $currentConfig['icon'] }}</i>
+                         <span>{{ $currentConfig['label'] }}</span>
+                    </div>
+                @endcan
             </div>
         </td>
         <td class="table-cell-center" style="padding: 12px 5px; width: 20px;">
