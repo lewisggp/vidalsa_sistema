@@ -1,6 +1,6 @@
 // movilizaciones_index.js - Movilizaciones Module Logic
-// Version: 7.3 - Fixed duplicate searchUp variable
-console.log('[MOVILIZACIONES] Script v7.3 cargado');
+// Version: 8.5 - Final Cleanup (No Dead Code)
+console.log('[MOVILIZACIONES] Script v8.5 cargado');
 
 // Global Filter Handler (Isolated from Equipos)
 window.selectMovilizacionFilter = function (type, value) {
@@ -242,94 +242,123 @@ window.buscarEquiposRD = function () {
             data.forEach(eq => {
                 const isSelected = rdEquiposSeleccionados.some(s => s.ID_EQUIPO === eq.ID_EQUIPO);
                 const item = document.createElement('div');
+                item.id = `card-equipo-${eq.ID_EQUIPO}`; // ID único para manipular DOM directo
                 item.className = 'dropdown-item';
-                item.style.cssText = `
+
+                // Estilo dinámico según selección
+                const baseStyle = `
                     display:flex; align-items:stretch; gap:0;
-                    border-bottom:2px solid #f0f4f8;
-                    background:${isSelected ? '#f8fafc' : 'white'};
-                    opacity:${isSelected ? '0.65' : '1'};
-                    transition: background 0.15s;
+                    background:${isSelected ? '#f0f9ff' : 'white'};
+                    transition: all 0.2s ease;
+                    cursor: pointer;
+                    position: relative;
+                    overflow: hidden;
+                    min-height: 110px;
                 `;
 
-                // ── Campo coincidente ──
-                const placa = eq.PLACA && eq.PLACA !== 'S/P' ? eq.PLACA : null;
-                const serial = eq.SERIAL_CHASIS || null;
-                const codigoPatio = eq.CODIGO_PATIO || null;
+                // Borde y márgenes especiales para seleccionados
+                if (isSelected) {
+                    item.style.cssText = baseStyle + `
+                        border: 2px solid #0067b1; 
+                        border-radius: 12px; 
+                        transform: scale(0.99);
+                        margin-bottom: 8px;
+                        box-shadow: 0 4px 6px -1px rgba(0, 103, 177, 0.1);
+                    `;
+                } else {
+                    item.style.cssText = baseStyle + `
+                        border-bottom: 1px solid #f1f5f9;
+                    `;
+                }
 
-                let matchBadge = '';
-                if (placa && placa.toUpperCase().includes(searchUp)) {
-                    matchBadge = `<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;">🪪 ${placa}</span>`;
-                } else if (serial && serial.toUpperCase().includes(searchUp)) {
-                    matchBadge = `<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;">🔩 ${serial}</span>`;
-                } else if (codigoPatio && codigoPatio.toUpperCase().includes(searchUp)) {
-                    matchBadge = `<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;">🏷 ${codigoPatio}</span>`;
+                // ── Foto ──
+                let fotoHtml = '';
+                const radiusStyle = isSelected ? 'border-top-left-radius:10px; border-bottom-left-radius:10px;' : '';
+
+                if (eq.FOTO) {
+                    const driveId = eq.FOTO.replace('/storage/google/', '').split('?')[0];
+                    fotoHtml = `
+                        <div style="width:85px; min-width:85px; align-self:stretch; position:relative; overflow:hidden; background:#f1f5f9; ${radiusStyle}">
+                            <img src="/storage/google/${driveId}" alt="" loading="lazy" 
+                                style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover;"
+                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center;">
+                                <span class="material-icons" style="font-size:32px; color:#cbd5e0;">directions_car</span>
+                            </div>
+                        </div>`;
+                } else {
+                    fotoHtml = `
+                        <div style="width:85px; min-width:85px; align-self:stretch; background:#f1f5f9; display:flex; align-items:center; justify-content:center; ${radiusStyle}">
+                            <span class="material-icons" style="font-size:32px; color:#cbd5e0;">directions_car</span>
+                        </div>`;
                 }
 
                 const tipo = eq.TIPO ?? '';
                 const marca = eq.MARCA ?? '';
                 const model = eq.MODELO ?? '';
                 const anio = eq.ANIO ? String(eq.ANIO) : '';
+                const serial = eq.SERIAL_CHASIS || null;
+                const placa = eq.PLACA && eq.PLACA !== 'S/P' ? eq.PLACA : null;
 
                 const warningFinalizado = eq.FRENTE_ACTUAL_ESTATUS === 'FINALIZADO'
                     ? `<span style="background:#fef2f2;color:#dc2626;padding:1px 6px;border-radius:10px;font-size:9px;font-weight:700;margin-left:4px;">FRENTE CERRADO</span>`
                     : '';
 
-                // ── Foto ──
-                let fotoHtml = '';
-                if (eq.FOTO) {
-                    // La URL viene en formato /storage/google/ID?v=...
-                    // La ruta Drive necesita pasar por la ruta drive.file
-                    const driveId = eq.FOTO.replace('/storage/google/', '').split('?')[0];
-                    fotoHtml = `
-                        <div style="width:72px;min-width:72px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;border-right:1px solid #e2e8f0;overflow:hidden;border-radius:0;">
-                            <img src="/storage/google/${driveId}" alt="" loading="lazy"
-                                 style="width:72px;height:100%;object-fit:cover;"
-                                 onerror="this.parentElement.innerHTML='<span class=\'material-icons\' style=\'font-size:28px;color:#cbd5e0;\'>directions_car</span>';">
-                        </div>`;
-                } else {
-                    fotoHtml = `
-                        <div style="width:72px;min-width:72px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;border-right:1px solid #e2e8f0;">
-                            <span class="material-icons" style="font-size:28px;color:#cbd5e0;">directions_car</span>
-                        </div>`;
-                }
-
-                // ── Chips de identificadores ──
-                let chips = '';
-                if (codigoPatio) chips += `<span style="background:#f1f5f9;color:#475569;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600;">ID: ${codigoPatio}</span> `;
-                if (placa) chips += `<span style="background:#f1f5f9;color:#475569;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600;">P: ${placa}</span> `;
-
+                // CONTENIDO
                 item.innerHTML = `
-                    ${fotoHtml}
-                    <div style="flex:1;min-width:0;padding:12px 14px;display:flex;flex-direction:column;gap:5px;">
-                        <div style="font-weight:800;font-size:13px;color:#1e293b;line-height:1.3;word-break:break-word;">
-                            ${tipo}${warningFinalizado}
+                    <div style="display:flex; flex-direction:row; align-items:stretch; width:100%;">
+                        ${fotoHtml}
+                        
+                        <div style="flex:1; padding:12px 14px; display:flex; flex-direction:column; justify-content:center; gap:3px; min-width:0;">
+                            <!-- TIPO -->
+                            <div style="font-weight:900; font-size:14px; color:#000000; line-height:1.2; text-transform:uppercase;">
+                                ${tipo}${warningFinalizado}
+                            </div>
+                            <!-- MARCA · MODELO · AÑO -->
+                            <div style="font-size:13px; color:#000000; font-weight:700; margin-bottom:4px;">
+                                ${[marca, model, anio].filter(Boolean).join(' · ') || '<span style="color:#94a3b8; font-weight:400; font-style:italic;">Sin detalles</span>'}
+                            </div>
+                            <!-- DATOS -->
+                            ${serial ? `<div style="font-size:12px; color:#000000; font-weight:600;">${serial}</div>` : ''}
+                            ${placa ? `<div style="font-size:12px; color:#000000; font-weight:600;">P: ${placa}</div>` : ''}
+                            <!-- UBICACIÓN -->
+                            <div style="font-size:11px; color:#94a3b8; margin-top:4px; display:flex; align-items:center; gap:4px;">
+                                <i class="material-icons" style="font-size:12px;">place</i>
+                                ${eq.FRENTE_ACTUAL}
+                            </div>
                         </div>
-                        <div style="font-size:12px;color:#64748b;font-weight:500;">
-                            ${[marca, model, anio].filter(Boolean).join(' · ')}
-                        </div>
-                        ${matchBadge ? `<div style="margin-top:2px;">${matchBadge}</div>` : ''}
-                        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">
-                            ${chips}
-                        </div>
-                        <div style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:3px;margin-top:1px;">
-                            <i class="material-icons" style="font-size:11px;">place</i>
-                            ${eq.FRENTE_ACTUAL}
-                        </div>
-                    </div>
-                    <div style="display:flex;align-items:center;padding:12px 12px 12px 0;flex-shrink:0;">
-                        <button type="button"
-                            style="padding:8px 14px;font-size:11px;background:${isSelected ? '#94a3b8' : '#0067b1'};border:none;border-radius:8px;color:white;font-weight:700;white-space:nowrap;"
-                            ${isSelected ? 'disabled' : ''}>
-                            ${isSelected ? '✓ Agregado' : '+ Agregar'}
-                        </button>
+
+                        <!-- INDICADOR CHECK -->
+                        ${isSelected ? `
+                        <div class="rd-check-indicator" style="display:flex; align-items:center; padding-right:15px;">
+                            <div style="width:28px; height:28px; background:#0067b1; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                                <i class="material-icons" style="color:white; font-size:18px;">check</i>
+                            </div>
+                        </div>` : ''}
                     </div>
                 `;
 
+                // LOGICA CLICK TARJETA COMPLETA (Actualización Instantánea)
+                item.onclick = function () {
+                    const currentlySelected = rdEquiposSeleccionados.some(s => s.ID_EQUIPO === eq.ID_EQUIPO);
+
+                    if (currentlySelected) {
+                        // Deseleccionar
+                        rdRemoverEquipo(eq.ID_EQUIPO);
+                    } else {
+                        // Seleccionar
+                        rdAgregarEquipo(eq);
+                    }
+                    // Actualizar visualmente ESTE elemento sin recargar todo
+                    rdToggleVisual(document.getElementById(`card-equipo-${eq.ID_EQUIPO}`), !currentlySelected);
+                };
+
+                // Hover Effects
                 if (!isSelected) {
-                    item.onclick = () => rdAgregarEquipo(eq);
-                    item.onmouseover = () => { if (!isSelected) item.style.background = '#f8faff'; };
+                    item.onmouseover = () => { item.style.background = '#f8fafc'; };
                     item.onmouseout = () => { item.style.background = 'white'; };
                 }
+
                 list.appendChild(item);
             });
         })
@@ -341,42 +370,85 @@ window.buscarEquiposRD = function () {
 
 function rdAgregarEquipo(eq) {
     if (rdEquiposSeleccionados.some(s => s.ID_EQUIPO === eq.ID_EQUIPO)) return;
-
     rdEquiposSeleccionados.push(eq);
-    rdActualizarSeleccionados();
-    window.buscarEquiposRD(); // Re-render results to disable selected
+    // No action needed UI-wise (handled by toggleVisual)
 }
 
 function rdRemoverEquipo(id) {
     rdEquiposSeleccionados = rdEquiposSeleccionados.filter(s => s.ID_EQUIPO !== id);
-    rdActualizarSeleccionados();
-    window.buscarEquiposRD();
+
+    // Si la acción vino de lógica externa (no toggle directo), aseguramos update visual
+    const card = document.getElementById(`card-equipo-${id}`);
+    if (card) rdToggleVisual(card, false);
 }
 
-function rdActualizarSeleccionados() {
-    const container = document.getElementById('rdSeleccionados');
-    const list = document.getElementById('rdSeleccionadosList');
-    const contador = document.getElementById('rdContador');
+// Función para actualizar estilos visuales sin re-renderizar
+function rdToggleVisual(card, isSelected) {
+    if (!card) return;
 
-    if (rdEquiposSeleccionados.length === 0) {
-        container.style.display = 'none';
-        return;
+    // Check mark container
+    let checkDiv = card.querySelector('.rd-check-indicator');
+
+    if (isSelected) {
+        // APLICAR ESTILO SELECCIONADO
+        card.style.background = '#f0f9ff';
+        card.style.border = '2px solid #0067b1';
+        card.style.borderRadius = '12px';
+        card.style.transform = 'scale(0.99)';
+        card.style.marginBottom = '8px';
+        card.style.boxShadow = '0 4px 6px -1px rgba(0, 103, 177, 0.1)';
+
+        // Bordes foto
+        const fotoDiv = card.querySelector('div[style*="min-width:85px"]');
+        if (fotoDiv) {
+            fotoDiv.style.borderTopLeftRadius = '10px';
+            fotoDiv.style.borderBottomLeftRadius = '10px';
+        }
+
+        // Mostrar Check
+        if (!checkDiv) {
+            checkDiv = document.createElement('div');
+            checkDiv.className = 'rd-check-indicator';
+            checkDiv.style.cssText = 'display:flex; align-items:center; padding-right:15px;';
+            checkDiv.innerHTML = `
+                <div style="width:28px; height:28px; background:#0067b1; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                    <i class="material-icons" style="color:white; font-size:18px;">check</i>
+                </div>`;
+            // Insertar al final del contenedor flex principal (hijo directo del card)
+            card.firstElementChild.appendChild(checkDiv);
+        }
+
+        // Desactivar hover fx
+        card.onmouseover = null;
+        card.onmouseout = null;
+
+    } else {
+        // QUITAR ESTILO SELECCIONADO (Volver a normal)
+        card.style.background = 'white';
+        card.style.border = ''; // Reset
+        card.style.borderBottom = '1px solid #f1f5f9';
+        card.style.borderRadius = '';
+        card.style.transform = '';
+        card.style.marginBottom = '';
+        card.style.boxShadow = '';
+
+        // Bordes foto reset
+        const fotoDiv = card.querySelector('div[style*="min-width:85px"]');
+        if (fotoDiv) {
+            fotoDiv.style.borderTopLeftRadius = '0';
+            fotoDiv.style.borderBottomLeftRadius = '0';
+        }
+
+        // Quitar Check
+        if (checkDiv) checkDiv.remove();
+
+        // Restaurar Hover
+        card.onmouseover = () => { card.style.background = '#f8fafc'; };
+        card.onmouseout = () => { card.style.background = 'white'; };
     }
-
-    container.style.display = 'block';
-    contador.textContent = rdEquiposSeleccionados.length;
-    list.innerHTML = '';
-
-    rdEquiposSeleccionados.forEach(eq => {
-        const tipo = eq.TIPO ?? '';
-        const marca = eq.MARCA ? eq.MARCA : '';
-        const label = [tipo, marca].filter(Boolean).join(' ');
-        const span = document.createElement('span');
-        span.style.cssText = 'background:#e0e7ff; color:#3730a3; padding:4px 10px; border-radius:15px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:5px; border:1px solid #c7d2fe;';
-        span.innerHTML = `${label || eq.CODIGO_PATIO || 'Equipo'} <i class="material-icons" style="font-size:14px;" onclick="rdRemoverEquipo(${eq.ID_EQUIPO})">cancel</i>`;
-        list.appendChild(span);
-    });
 }
+
+
 
 window.filtrarFrentesRD = function (search) {
     search = search.toUpperCase();

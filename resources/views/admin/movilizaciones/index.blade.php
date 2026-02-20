@@ -275,7 +275,7 @@
 <!-- MODAL DE RECEPCIÓN DIRECTA                     -->
 <!-- ============================================== -->
 <div id="recepcionDirectaModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center;">
-    <div style="background: white; width: 95%; max-width: 580px; max-height: 92vh; border-radius: 16px; padding: 0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: slideIn 0.3s ease-out; display: flex; flex-direction: column; overflow: hidden;">
+    <div style="background: white; width: 95%; max-width: 450px; max-height: 90vh; border-radius: 16px; padding: 0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: slideIn 0.3s ease-out; display: flex; flex-direction: column; overflow: hidden;">
         
         {{-- Header --}}
         <div style="background: linear-gradient(135deg, #0067b1, #004e8c); padding: 14px 18px; color: white; flex-shrink: 0;">
@@ -320,20 +320,12 @@
             {{-- Resultados de búsqueda --}}
             <div id="rdResultados" style="margin-bottom: 20px; display: none;">
                 <p style="font-size: 12px; font-weight: 600; color: #94a3b8; margin-bottom: 6px; margin-top: 0; text-transform: uppercase;">Resultados</p>
-                <div id="rdResultadosList" style="border: 1px solid #e2e8f0; border-radius: 10px; background: #fafbfc; overflow: hidden;">
+                <div id="rdResultadosList" style="min-height: 100px; max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; background: #fafbfc;">
                     <!-- populated by JS -->
                 </div>
             </div>
 
-            {{-- Equipos seleccionados --}}
-            <div id="rdSeleccionados" style="margin-bottom: 20px; display: none;">
-                <p style="font-size: 12px; font-weight: 600; color: #94a3b8; margin-bottom: 6px; margin-top: 0; text-transform: uppercase;">
-                    Equipos Seleccionados (<span id="rdContador">0</span>)
-                </p>
-                <div id="rdSeleccionadosList" style="display: flex; flex-wrap: wrap; gap: 6px;">
-                    <!-- populated by JS -->
-                </div>
-            </div>
+
 
             {{-- Frente receptor: hidden, siempre el del usuario --}}
             <input type="hidden" id="rdFrenteInput" value="{{ auth()->user()->ID_FRENTE_ASIGNADO }}">
@@ -342,7 +334,9 @@
             <div style="margin-bottom: 15px;">
                 <label for="rdUbicacionInput" style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px;">
                     <span style="background: #0067b1; color: white; padding: 2px 8px; border-radius: 50%; font-size: 11px; font-weight: 800; margin-right: 6px;">2</span>
-                    Ubicación <span style="font-weight: 400; color: #94a3b8; font-size: 12px;">(Opcional)</span>
+                    UBICACIÓN DETALLADA EN: <span style="color: #0f172a; font-weight: 900; text-transform: uppercase;">
+                        {{ optional(\App\Models\FrenteTrabajo::find(auth()->user()->ID_FRENTE_ASIGNADO))->NOMBRE_FRENTE ?? 'SIN ASIGNAR' }}
+                    </span>
                 </label>
                 {{-- Subdivisiones dropdown (se llena dinámicamente) --}}
                 <div id="rdSubdivisionesContainer" style="display: none; margin-bottom: 8px;">
