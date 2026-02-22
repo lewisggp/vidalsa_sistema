@@ -1,6 +1,6 @@
 // movilizaciones_index.js - Movilizaciones Module Logic
-// Version: 8.5 - Final Cleanup (No Dead Code)
-console.log('[MOVILIZACIONES] Script v8.5 cargado');
+// Version: 9.0 - Ubicacion suggestions fix
+console.log('[MOVILIZACIONES] Script v9.0 cargado');
 
 // Global Filter Handler (Isolated from Equipos)
 window.selectMovilizacionFilter = function (type, value) {
@@ -47,6 +47,12 @@ window.loadMovilizaciones = function (url = null) {
     if (tipoInput?.value && tipoInput.value !== 'all') {
         params.append('id_tipo', tipoInput.value);
     }
+
+    // Date range filters
+    const fechaDesde = document.getElementById('filterFechaDesde');
+    const fechaHasta = document.getElementById('filterFechaHasta');
+    if (fechaDesde?.value) params.append('fecha_desde', fechaDesde.value);
+    if (fechaHasta?.value) params.append('fecha_hasta', fechaHasta.value);
 
     // Maintain pagination if just switching pages via URL click
     if (url && url.includes('page=')) {
@@ -108,10 +114,6 @@ window.iniciarRecepcion = function (idMovilizacion, nombreFrente, subdivisiones,
     const modal = document.getElementById('recepcionModal');
     const form = document.getElementById('formRecepcion');
     const labelFrente = document.getElementById('modalFrenteNombre');
-    const seccionSub = document.getElementById('seccionSubdivisiones');
-    const patioList = document.getElementById('patioList');
-    const inputPatio = document.getElementById('input_patio');
-    const labelPatio = document.getElementById('label_patio');
     const inputUbicacion = document.getElementById('input_ubicacion_recepcion');
 
     if (!modal || !form || !labelFrente) return;
@@ -121,38 +123,9 @@ window.iniciarRecepcion = function (idMovilizacion, nombreFrente, subdivisiones,
     labelFrente.textContent = nombreFrente;
     inputUbicacion.value = '';
 
-    // Configurar subdivisiones si existen
-    if (subdivisiones && subdivisiones.trim() !== '') {
-        seccionSub.style.display = 'block';
-        patioList.innerHTML = '';
-        inputPatio.value = '';
-        labelPatio.textContent = 'Seleccione Subdivisión...';
-        labelPatio.style.color = '#94a3b8';
-
-        const listaPatios = subdivisiones.split(',');
-        listaPatios.forEach(patio => {
-            patio = patio.trim();
-            if (patio.length > 0) {
-                const item = document.createElement('div');
-                item.className = 'dropdown-item';
-                item.textContent = patio;
-                item.onclick = function () {
-                    inputPatio.value = patio;
-                    labelPatio.textContent = patio;
-                    labelPatio.style.color = '#1e293b';
-                    // También sugerir en el input libre
-                    inputUbicacion.value = patio;
-                    // Cerrar dropdown
-                    const dd = document.getElementById('patioSelect');
-                    if (dd) dd.classList.remove('active');
-                };
-                patioList.appendChild(item);
-            }
-        });
-    } else {
-        seccionSub.style.display = 'none';
-        inputPatio.value = '';
-    }
+    // Configurar subdivisiones como sugerencias en el input de ubicación
+    const allSubs = (subdivisiones && subdivisiones.trim() !== '') ? subdivisiones.split(',').map(s => s.trim()).filter(Boolean) : [];
+    loadUbicacionSuggestions('ubicacion-suggestions', allSubs);
 
     form.onsubmit = function (e) {
         e.preventDefault();
@@ -205,13 +178,25 @@ window.abrirRecepcionDirecta = function () {
     rdEquiposSeleccionados = [];
     document.getElementById('rdSearchInput').value = '';
     document.getElementById('rdResultados').style.display = 'none';
-    document.getElementById('rdSeleccionados').style.display = 'none';
-    document.getElementById('rdSubdivisionesContainer').style.display = 'none';
     document.getElementById('rdUbicacionInput').value = '';
-    // rdFrenteInput NO se resetea: su valor es el frente del usuario, fijo desde el HTML
+
+    // Cargar sugerencias del frente fijo del usuario automáticamente
+    const idFrente = document.getElementById('rdFrenteInput').value;
+    if (idFrente) {
+        fetch(`/admin/movilizaciones/subdivisiones/${idFrente}`)
+            .then(r => r.json())
+            .then(data => {
+                const subs = data.tiene_subdivisiones ? (data.subdivisiones || []) : [];
+                loadUbicacionSuggestions('rd-ubicacion-suggestions', subs);
+            })
+            .catch(() => loadUbicacionSuggestions('rd-ubicacion-suggestions', []));
+    } else {
+        loadUbicacionSuggestions('rd-ubicacion-suggestions', []);
+    }
 
     modal.style.display = 'flex';
 };
+
 
 window.cerrarRecepcionDirecta = function () {
     document.getElementById('recepcionDirectaModal').style.display = 'none';
@@ -250,7 +235,7 @@ window.buscarEquiposRD = function () {
                     display:flex; align-items:stretch; gap:0;
                     background:${isSelected ? '#f0f9ff' : 'white'};
                     transition: all 0.2s ease;
-                    cursor: pointer;
+                    cursor: default;
                     position: relative;
                     overflow: hidden;
                     min-height: 110px;
@@ -462,10 +447,6 @@ window.filtrarFrentesRD = function (search) {
 window.seleccionarFrenteRD = function (id, nombre) {
     const input = document.getElementById('rdFrenteInput');
     const label = document.getElementById('rdFrenteLabel');
-    const subContainer = document.getElementById('rdSubdivisionesContainer');
-    const patioList = document.getElementById('rdPatioList');
-    const patioInput = document.getElementById('rdPatioInput');
-    const patioLabel = document.getElementById('rdPatioLabel');
     const ubicacionInput = document.getElementById('rdUbicacionInput');
 
     input.value = id;
@@ -475,33 +456,15 @@ window.seleccionarFrenteRD = function (id, nombre) {
     // Cerrar dropdown
     document.getElementById('rdFrenteSelect').classList.remove('active');
 
-    // Fetch subdivisiones
+    // Fetch subdivisiones del frente para sugerencias
     fetch(`/admin/movilizaciones/subdivisiones/${id}`)
         .then(r => r.json())
         .then(data => {
             if (data.tiene_subdivisiones) {
-                subContainer.style.display = 'block';
-                patioInput.value = '';
-                patioLabel.textContent = 'Seleccionar subdivisión...';
-                patioLabel.style.color = '#94a3b8';
-
-                patioList.innerHTML = '';
-                data.subdivisiones.forEach(sub => {
-                    const item = document.createElement('div');
-                    item.className = 'dropdown-item';
-                    item.textContent = sub;
-                    item.onclick = function () {
-                        patioInput.value = sub;
-                        patioLabel.textContent = sub;
-                        patioLabel.style.color = '#1e293b';
-                        ubicacionInput.value = sub;
-                        document.getElementById('rdPatioSelect').classList.remove('active');
-                    };
-                    patioList.appendChild(item);
-                });
+                const subsList = data.subdivisiones || [];
+                loadUbicacionSuggestions('rd-ubicacion-suggestions', subsList);
             } else {
-                subContainer.style.display = 'none';
-                patioInput.value = '';
+                loadUbicacionSuggestions('rd-ubicacion-suggestions', []);
             }
         });
 };
@@ -612,3 +575,108 @@ window.addEventListener('spa:contentLoaded', function () {
         initMovilizaciones();
     }
 });
+
+// ─── Date Filter Toggle ─────────────────────────────────────────────────────
+window.advancedFilterOpen = false;
+
+window.toggleAdvancedFilter = function () {
+    const panel = document.getElementById('advancedFilterPanel');
+    const btn = document.getElementById('btnAdvancedFilter');
+    if (!panel) return;
+
+    window.advancedFilterOpen = !window.advancedFilterOpen;
+
+    if (window.advancedFilterOpen) {
+        panel.style.display = 'block';
+        btn.style.background = '#e1effa';
+        btn.style.borderColor = '#0067b1';
+        btn.style.color = '#0067b1';
+    } else {
+        panel.style.display = 'none';
+        btn.style.background = 'white';
+        btn.style.borderColor = '#cbd5e0';
+        btn.style.color = '#64748b';
+    }
+};
+
+// Cerrar el panel al hacer click fuera
+document.addEventListener('click', function (e) {
+    const panel = document.getElementById('advancedFilterPanel');
+    const btn = document.getElementById('btnAdvancedFilter');
+    if (!panel || !window.advancedFilterOpen) return;
+    if (!panel.contains(e.target) && !btn.contains(e.target)) {
+        panel.style.display = 'none';
+        btn.style.background = 'white';
+        btn.style.borderColor = '#cbd5e0';
+        btn.style.color = '#64748b';
+        window.advancedFilterOpen = false;
+    }
+});
+
+
+window.clearDateFilters = function () {
+    const desde = document.getElementById('filterFechaDesde');
+    const hasta = document.getElementById('filterFechaHasta');
+    if (desde) desde.value = '';
+    if (hasta) hasta.value = '';
+    window.loadMovilizaciones();
+};
+
+// ─── Sugerencias de Ubicación ────────────────────────────────────────────────
+
+// Llena el dropdown de sugerencias con un array de strings
+window.loadUbicacionSuggestions = function (containerId, items) {
+    const box = document.getElementById(containerId);
+    if (!box) return;
+    box.innerHTML = '';
+    box._allItems = items || [];
+    _renderSuggestions(box, items);
+};
+
+function _renderSuggestions(box, items) {
+    box.innerHTML = '';
+    if (!items || items.length === 0) { box.style.display = 'none'; return; }
+
+    // Busca el input de texto dentro del mismo contenedor padre
+    const input = box.closest('div').querySelector('input[type="text"]');
+
+    items.forEach(item => {
+        const d = document.createElement('div');
+        d.textContent = item;
+        d.style.cssText = 'padding: 9px 14px; font-size: 13px; color: #1e293b; cursor: default; border-bottom: 1px solid #f1f5f9; transition: background 0.15s;';
+        d.onmouseover = () => d.style.background = '#f0f9ff';
+        d.onmouseout = () => d.style.background = 'white';
+        d.onmousedown = (e) => {
+            e.preventDefault(); // Evita que onblur oculte antes del click
+            if (input) input.value = item;
+            box.style.display = 'none';
+        };
+        box.appendChild(d);
+    });
+}
+
+window.showUbicacionSuggestions = function (containerId) {
+    const box = document.getElementById(containerId);
+    if (!box || !box._allItems || box._allItems.length === 0) return;
+    const input = box.parentElement.querySelector('input[type="text"]');
+    const typed = input ? input.value.trim().toUpperCase() : '';
+    const filtered = typed ? box._allItems.filter(i => i.toUpperCase().includes(typed)) : box._allItems;
+    if (filtered.length === 0) { box.style.display = 'none'; return; }
+    _renderSuggestions(box, filtered);
+    box.style.display = 'block';
+};
+
+window.hideUbicacionSuggestions = function (containerId) {
+    const box = document.getElementById(containerId);
+    if (box) box.style.display = 'none';
+};
+
+window.filterUbicacionSuggestions = function (input, containerId) {
+    const box = document.getElementById(containerId);
+    if (!box || !box._allItems) return;
+    const typed = input.value.trim().toUpperCase();
+    const filtered = typed ? box._allItems.filter(i => i.toUpperCase().includes(typed)) : box._allItems;
+    if (filtered.length === 0) { box.style.display = 'none'; return; }
+    _renderSuggestions(box, filtered);
+    box.style.display = 'block';
+};

@@ -118,11 +118,44 @@
             </div>
 
             <!-- Botón Filtro Avanzado (Fechas) -->
-            <button type="button" id="btnAdvancedFilter" class="btn-primary-maquinaria" 
-                style="height: 45px; width: 45px; padding: 0; display: flex; align-items: center; justify-content: center; background: white; border: 1px solid #cbd5e0; color: #64748b; box-shadow: none; border-radius: 12px; cursor: pointer;"
-                onclick="alert('Funcionalidad de filtro por fechas pendiente.');">
-                <i class="material-icons">filter_list</i>
-            </button>
+            <div style="position: relative;">
+                <button type="button" id="btnAdvancedFilter" class="btn-primary-maquinaria"
+                    style="height: 45px; width: 45px; padding: 0; display: flex; align-items: center; justify-content: center; background: {{ request('fecha_desde') || request('fecha_hasta') ? '#e1effa' : 'white' }}; border: 1px solid {{ request('fecha_desde') || request('fecha_hasta') ? '#0067b1' : '#cbd5e0' }}; color: {{ request('fecha_desde') || request('fecha_hasta') ? '#0067b1' : '#64748b' }}; box-shadow: none; border-radius: 12px; cursor: pointer; transition: all 0.2s;"
+                    onclick="toggleAdvancedFilter()">
+                    <i class="material-icons">filter_list</i>
+                </button>
+
+                <!-- Panel Flotante de Filtros (mismo estilo que Equipos) -->
+                <div id="advancedFilterPanel" style="display: none; position: absolute; top: 100%; right: 0; width: 280px; background: #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15); border: 1px solid #cbd5e1; z-index: 100; margin-top: 10px; padding: 15px;">
+                    <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: 700; color: #334155; display: flex; justify-content: space-between; align-items: center;">
+                        Filtros Avanzados
+                        <span style="font-size: 11px; color: #64748b; font-weight: 400; text-decoration: underline; cursor: default;" onclick="clearDateFilters()">Limpiar Todo</span>
+                    </h4>
+
+                    <!-- Fecha Desde -->
+                    <div style="margin-bottom: 15px;">
+                        <span style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px;">Fecha Desde</span>
+                        <input type="date" id="filterFechaDesde"
+                            value="{{ request('fecha_desde') }}"
+                            style="width: 100%; height: 32px; padding: 0 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; background: {{ request('fecha_desde') ? '#e1effa' : 'white' }}; outline: none; color: #0f172a; box-sizing: border-box;"
+                            onfocus="this.style.borderColor='#0067b1'"
+                            onblur="this.style.borderColor='#e2e8f0'"
+                            onchange="loadMovilizaciones()">
+                    </div>
+
+                    <!-- Fecha Hasta -->
+                    <div>
+                        <span style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px;">Fecha Hasta</span>
+                        <input type="date" id="filterFechaHasta"
+                            value="{{ request('fecha_hasta') }}"
+                            style="width: 100%; height: 32px; padding: 0 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; background: {{ request('fecha_hasta') ? '#e1effa' : 'white' }}; outline: none; color: #0f172a; box-sizing: border-box;"
+                            onfocus="this.style.borderColor='#0067b1'"
+                            onblur="this.style.borderColor='#e2e8f0'"
+                            onchange="loadMovilizaciones()">
+                    </div>
+                </div>
+            </div>
+
 
             <!-- Botón Recepción Directa -->
             <button type="button" id="btnRecepcionDirecta" 
@@ -134,6 +167,7 @@
                 Recepción Directa
             </button>
         </div>
+
 
         <!-- Table Container -->
         <div class="custom-scrollbar-container" style="margin-top: 5px;">
@@ -224,35 +258,23 @@
             @method('PATCH')
             <input type="hidden" name="status" value="RECIBIDO">
             
-            {{-- Sección de subdivisiones (dropdown) --}}
-            <div id="seccionSubdivisiones" style="margin-bottom: 15px; display: none;">
-                <p style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px; margin-top: 0;">
-                    Seleccione Ubicación / Subdivisión
-                </p>
-                <div class="custom-dropdown" id="patioSelect">
-                    <input type="hidden" name="" id="input_patio">
-                    <div class="dropdown-trigger" onclick="toggleDropdown('patioSelect', event)" style="background: #f8fafc; border: 1px solid #cbd5e0;">
-                        <span id="label_patio">Seleccione Patio...</span>
-                        <i class="material-icons">expand_more</i>
-                    </div>
-                    <div class="dropdown-content" id="patioList">
-                        <!-- Options populated by JS -->
-                    </div>
-                </div>
-            </div>
 
-            {{-- Input libre para ubicación (siempre visible) --}}
-            <div style="margin-bottom: 20px;">
+            {{-- Input de ubicación con sugerencias de subdivisiones --}}
+            <div style="margin-bottom: 20px; position: relative;">
                 <label for="input_ubicacion_recepcion" style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px;">
                     <i class="material-icons" style="font-size: 14px; vertical-align: middle;">place</i>
                     Ubicación / Sección <span style="font-weight: 400; color: #94a3b8; font-size: 12px;">(Opcional)</span>
                 </label>
-                <input type="text" id="input_ubicacion_recepcion" name="DETALLE_UBICACION" 
+                <input type="text" id="input_ubicacion_recepcion" name="DETALLE_UBICACION"
                     placeholder=""
                     style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e0; border-radius: 10px; font-size: 14px; background: #f8fafc; outline: none; transition: border 0.2s; box-sizing: border-box;"
-                    onfocus="this.style.borderColor='#0067b1'" onblur="this.style.borderColor='#cbd5e0'">
-
+                    onfocus="this.style.borderColor='#0067b1'; showUbicacionSuggestions('ubicacion-suggestions')"
+                    onblur="this.style.borderColor='#cbd5e0'; setTimeout(()=>hideUbicacionSuggestions('ubicacion-suggestions'), 200)"
+                    oninput="filterUbicacionSuggestions(this, 'ubicacion-suggestions')">
+                <!-- Sugerencias -->
+                <div id="ubicacion-suggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1px solid #cbd5e0; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:500; max-height:160px; overflow-y:auto; margin-top:4px;"></div>
             </div>
+
 
             <div style="display: flex; gap: 10px;">
                 <button type="button" onclick="document.getElementById('recepcionModal').style.display='none'" 
@@ -338,22 +360,17 @@
                         {{ optional(\App\Models\FrenteTrabajo::find(auth()->user()->ID_FRENTE_ASIGNADO))->NOMBRE_FRENTE ?? 'SIN ASIGNAR' }}
                     </span>
                 </label>
-                {{-- Subdivisiones dropdown (se llena dinámicamente) --}}
-                <div id="rdSubdivisionesContainer" style="display: none; margin-bottom: 8px;">
-                    <div class="custom-dropdown" id="rdPatioSelect">
-                        <input type="hidden" id="rdPatioInput">
-                        <div class="dropdown-trigger" onclick="toggleDropdown('rdPatioSelect', event)" style="background: #f8fafc; border: 1px solid #cbd5e0;">
-                            <span id="rdPatioLabel" style="color: #94a3b8;">Seleccionar subdivisión...</span>
-                            <i class="material-icons">expand_more</i>
-                        </div>
-                        <div class="dropdown-content" id="rdPatioList"></div>
-                    </div>
+                {{-- Input con sugerencias --}}
+                <div style="position: relative;">
+                    <input type="text" id="rdUbicacionInput"
+                        placeholder=""
+                        style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e0; border-radius: 10px; font-size: 14px; background: #f8fafc; outline: none; box-sizing: border-box;"
+                        onfocus="this.style.borderColor='#0067b1'; showUbicacionSuggestions('rd-ubicacion-suggestions')"
+                        onblur="this.style.borderColor='#cbd5e0'; setTimeout(()=>hideUbicacionSuggestions('rd-ubicacion-suggestions'), 200)"
+                        oninput="filterUbicacionSuggestions(this, 'rd-ubicacion-suggestions')">
+                    <!-- Sugerencias -->
+                    <div id="rd-ubicacion-suggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1px solid #cbd5e0; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:500; max-height:160px; overflow-y:auto; margin-top:4px;"></div>
                 </div>
-                {{-- Input libre --}}
-                <input type="text" id="rdUbicacionInput" 
-                    placeholder=""
-                    style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e0; border-radius: 10px; font-size: 14px; background: #f8fafc; outline: none; box-sizing: border-box;"
-                    onfocus="this.style.borderColor='#0067b1'" onblur="this.style.borderColor='#cbd5e0'">
 
             </div>
         </div>

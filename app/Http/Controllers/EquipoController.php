@@ -220,8 +220,9 @@ class EquipoController extends Controller
 
     public function export(Request $request)
     {
-        // CRITICAL: Prevent exporting entire database without filters
-        $hasFilter = $request->filled('id_frente') && $request->id_frente != 'all'
+        // CRITICAL: Prevent exporting entire database without filters.
+        // 'id_frente=all' es un filtro explícito válido (el usuario seleccionó "Todos los Frentes").
+        $hasFilter = $request->filled('id_frente')   // incluye 'all' como filtro válido
             || $request->filled('id_tipo')
             || $request->filled('search_query')
             || $request->filled('modelo')

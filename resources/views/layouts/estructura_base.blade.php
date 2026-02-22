@@ -5,13 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Sistema de Gestión')</title>
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
-    
-    <!-- PWA Setup -->
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#0067b1">
-    <script>
-        if ('serviceWorker' in navigator) navigator.serviceWorker.register("/sw.js");
-    </script>
     <!-- CSS -->
     <link rel="stylesheet" href="{{ asset('css/maquinaria/estilos_globales.css') }}?v=13.4">
     <link rel="stylesheet" href="{{ asset('css/maquinaria/menu.css') }}?v=10.3">
@@ -447,7 +440,7 @@
     <script src="{{ asset('js/maquinaria/catalogo_create.js') }}?v=12.0"></script>
     <script src="{{ asset('js/maquinaria/equipos_index.js') }}?v=20.0"></script>
     <script src="{{ asset('js/maquinaria/catalogo_index.js') }}?v=3.6"></script>
-    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=8.5"></script>
+    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/maquinaria/usuarios_index.js') }}?v=10.0"></script>
     <script src="{{ asset('js/maquinaria/fleet_dashboard.js') }}?v=103.3"></script>
 

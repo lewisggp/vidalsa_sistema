@@ -711,7 +711,16 @@ window.exportEquipos = function () {
     let hasAnyFilter = false;
 
     hasAnyFilter |= appendIfValid('search_query', searchInput?.value);
-    hasAnyFilter |= appendIfValid('id_frente', frenteInput?.value);
+
+    // id_frente: 'all' es un filtro explícito válido (Todos los Frentes)
+    const frenteVal = frenteInput?.value?.trim();
+    if (frenteVal === 'all') {
+        params.append('id_frente', 'all');
+        hasAnyFilter = true;
+    } else {
+        hasAnyFilter |= appendIfValid('id_frente', frenteVal);
+    }
+
     hasAnyFilter |= appendIfValid('id_tipo', tipoInput?.value);
     hasAnyFilter |= appendIfValid('modelo', modeloInput?.value);
     hasAnyFilter |= appendIfValid('marca', marcaInput?.value);

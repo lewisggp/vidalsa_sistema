@@ -80,6 +80,14 @@ class MovilizacionController extends Controller
             $query->where('ID_FRENTE_ORIGEN', $request->id_frente_origen);
         }
 
+        // Filtro por rango de fechas (FECHA_DESPACHO)
+        if ($request->filled('fecha_desde')) {
+            $query->whereDate('FECHA_DESPACHO', '>=', $request->fecha_desde);
+        }
+        if ($request->filled('fecha_hasta')) {
+            $query->whereDate('FECHA_DESPACHO', '<=', $request->fecha_hasta);
+        }
+
         $movilizaciones = $query->orderBy('FECHA_DESPACHO', 'desc')->paginate(12);
 
         // Stats: Total In Transit & In Transit by Destination Front

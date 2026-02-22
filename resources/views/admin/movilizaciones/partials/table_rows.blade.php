@@ -5,7 +5,7 @@
             <div style="display: flex; align-items: center; justify-content: flex-start; gap: 10px;">
                 @php $equipoFoto = $mov->equipo->especificaciones->FOTO_REFERENCIAL ?? null; @endphp
                 @if($equipoFoto)
-                    <div style="width: 50px; height: 35px; border-radius: 4px; overflow: hidden; flex-shrink: 0; background: #f8fafc;" onclick="enlargeImage('{{ route('drive.file', ['path' => str_replace('/storage/google/', '', $equipoFoto)]) }}')" >
+                    <div style="width: 50px; height: 35px; border-radius: 4px; overflow: hidden; flex-shrink: 0; background: #f8fafc;">
                         <img src="{{ route('drive.file', ['path' => str_replace('/storage/google/', '', $equipoFoto)]) }}" alt="Foto" style="width: 100%; height: 100%; object-fit: contain;">
                     </div>
                 @else
