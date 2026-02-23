@@ -17,9 +17,17 @@ class FrenteTrabajo extends Model
         'ESTATUS_FRENTE',
         'SUBDIVISIONES',   // Nueva columna de texto para hijos
         'RESP_1_NOM',
+        'RESP_1_EQU',
         'RESP_1_CAR',
         'RESP_2_NOM',
         'RESP_2_CAR',
+        'RESP_2_EQU',
+        'RESP_3_NOM',
+        'RESP_3_CAR',
+        'RESP_3_EQU',
+        'RESP_4_NOM',
+        'RESP_4_CAR',
+        'RESP_4_EQU',
     ];
 
     public function usuarios()

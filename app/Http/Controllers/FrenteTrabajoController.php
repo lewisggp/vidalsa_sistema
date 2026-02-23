@@ -35,14 +35,15 @@ class FrenteTrabajoController extends Controller
 
         // Create empty frente instance for the form
         $frente = new FrenteTrabajo();
+        $categorias = ['FLOTA LIVIANA', 'FLOTA PESADA'];
 
-        return view('admin.frentes.formulario', compact('frente', 'stats', 'allFrentes'));
+        return view('admin.frentes.formulario', compact('frente', 'stats', 'allFrentes', 'categorias'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    
+
     public function store(Request $request)
     {
         // Force uppercase for all text fields
@@ -52,8 +53,16 @@ class FrenteTrabajoController extends Controller
             'SUBDIVISIONES' => $request->filled('SUBDIVISIONES') ? mb_strtoupper($request->input('SUBDIVISIONES')) : null,
             'RESP_1_NOM' => mb_strtoupper($request->input('RESP_1_NOM')),
             'RESP_1_CAR' => mb_strtoupper($request->input('RESP_1_CAR')),
+            'RESP_1_EQU' => mb_strtoupper($request->input('RESP_1_EQU')),
             'RESP_2_NOM' => mb_strtoupper($request->input('RESP_2_NOM')),
             'RESP_2_CAR' => mb_strtoupper($request->input('RESP_2_CAR')),
+            'RESP_2_EQU' => mb_strtoupper($request->input('RESP_2_EQU')),
+            'RESP_3_NOM' => mb_strtoupper($request->input('RESP_3_NOM')),
+            'RESP_3_CAR' => mb_strtoupper($request->input('RESP_3_CAR')),
+            'RESP_3_EQU' => mb_strtoupper($request->input('RESP_3_EQU')),
+            'RESP_4_NOM' => mb_strtoupper($request->input('RESP_4_NOM')),
+            'RESP_4_CAR' => mb_strtoupper($request->input('RESP_4_CAR')),
+            'RESP_4_EQU' => mb_strtoupper($request->input('RESP_4_EQU')),
         ]);
 
         $validated = $request->validate([
@@ -66,6 +75,14 @@ class FrenteTrabajoController extends Controller
             'RESP_1_CAR' => 'required|string|max:40',
             'RESP_2_NOM' => 'nullable|string|max:60',
             'RESP_2_CAR' => 'nullable|string|max:40',
+            'RESP_3_NOM' => 'nullable|string|max:60',
+            'RESP_3_CAR' => 'nullable|string|max:40',
+            'RESP_4_NOM' => 'nullable|string|max:60',
+            'RESP_4_CAR' => 'nullable|string|max:40',
+            'RESP_1_EQU' => 'nullable|string|max:40',
+            'RESP_2_EQU' => 'nullable|string|max:40',
+            'RESP_3_EQU' => 'nullable|string|max:40',
+            'RESP_4_EQU' => 'nullable|string|max:40',
         ], [
             'NOMBRE_FRENTE.required' => 'El nombre del frente es obligatorio.',
             'NOMBRE_FRENTE.unique' => 'Ya existe un frente de trabajo con este nombre.',
@@ -77,7 +94,7 @@ class FrenteTrabajoController extends Controller
         ]);
 
         $frente = FrenteTrabajo::create($validated);
-        
+
         if ($request->wantsJson() || $request->has('json')) {
             return response()->json([
                 'success' => true,
@@ -112,7 +129,9 @@ class FrenteTrabajoController extends Controller
             ->orderBy('NOMBRE_FRENTE')
             ->get();
 
-        return view('admin.frentes.formulario', compact('frente', 'stats', 'allFrentes'));
+        $categorias = ['FLOTA LIVIANA', 'FLOTA PESADA'];
+
+        return view('admin.frentes.formulario', compact('frente', 'stats', 'allFrentes', 'categorias'));
     }
 
     /**
@@ -131,6 +150,14 @@ class FrenteTrabajoController extends Controller
             'RESP_1_CAR' => mb_strtoupper($request->input('RESP_1_CAR')),
             'RESP_2_NOM' => mb_strtoupper($request->input('RESP_2_NOM')),
             'RESP_2_CAR' => mb_strtoupper($request->input('RESP_2_CAR')),
+            'RESP_3_NOM' => mb_strtoupper($request->input('RESP_3_NOM')),
+            'RESP_3_CAR' => mb_strtoupper($request->input('RESP_3_CAR')),
+            'RESP_4_NOM' => mb_strtoupper($request->input('RESP_4_NOM')),
+            'RESP_4_CAR' => mb_strtoupper($request->input('RESP_4_CAR')),
+            'RESP_1_EQU' => mb_strtoupper($request->input('RESP_1_EQU')),
+            'RESP_2_EQU' => mb_strtoupper($request->input('RESP_2_EQU')),
+            'RESP_3_EQU' => mb_strtoupper($request->input('RESP_3_EQU')),
+            'RESP_4_EQU' => mb_strtoupper($request->input('RESP_4_EQU')),
         ]);
 
         $validated = $request->validate([
@@ -143,6 +170,14 @@ class FrenteTrabajoController extends Controller
             'RESP_1_CAR' => 'required|string|max:40',
             'RESP_2_NOM' => 'nullable|string|max:60',
             'RESP_2_CAR' => 'nullable|string|max:40',
+            'RESP_3_NOM' => 'nullable|string|max:60',
+            'RESP_3_CAR' => 'nullable|string|max:40',
+            'RESP_4_NOM' => 'nullable|string|max:60',
+            'RESP_4_CAR' => 'nullable|string|max:40',
+            'RESP_1_EQU' => 'nullable|string|max:40',
+            'RESP_2_EQU' => 'nullable|string|max:40',
+            'RESP_3_EQU' => 'nullable|string|max:40',
+            'RESP_4_EQU' => 'nullable|string|max:40',
         ], [
             'NOMBRE_FRENTE.required' => 'El nombre del frente es obligatorio.',
             'NOMBRE_FRENTE.unique' => 'Ya existe un frente de trabajo con este nombre.',
@@ -152,7 +187,7 @@ class FrenteTrabajoController extends Controller
         ]);
 
         $frente->update($validated);
-        
+
         if ($request->wantsJson() || $request->has('json')) {
             return response()->json([
                 'success' => true,
