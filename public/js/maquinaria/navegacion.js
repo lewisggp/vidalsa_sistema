@@ -15,12 +15,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Only internal links, ignore logout or external
         const url = new URL(link.href);
-        
+
         // Skip blob, data, and javascript URLs
         if (url.protocol === 'blob:' || url.protocol === 'data:' || url.protocol === 'javascript:') {
             return;
         }
-        
+
         if (url.origin !== window.location.origin || link.hasAttribute('data-no-spa') || link.href.includes('logout')) {
             return;
         }
@@ -35,53 +35,68 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function navigateTo(url) {
-        history.pushState(null, '', url);
-        await loadPage(url);
+        await loadPage(url, true);
     }
 
-    async function loadPage(url, animate = true) {
+    async function loadPage(url, pushHistory = true) {
         try {
-            // Start Loading State (Show Preloader & Bar)
             if (window.showPreloader) window.showPreloader();
 
             const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
 
-            const html = await response.text();
-
-            // Extract the section content
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const newContent = doc.querySelector('.main-viewport');
-            const newTitle = doc.querySelector('title').innerText;
-
-            if (!newContent) {
-                window.location.href = url; // Fallback
+            // Respuesta HTTP con error → navegación normal
+            if (!response.ok) {
+                window.location.href = url;
                 return;
             }
 
-            document.title = newTitle;
+            // Si la respuesta no es HTML (PDF, JSON, archivo) → navegación normal
+            const contentType = response.headers.get('Content-Type') || '';
+            if (!contentType.includes('text/html')) {
+                window.location.href = url;
+                return;
+            }
+
+            const html = await response.text();
+
+            // Extraer contenido del viewport
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newContent = doc.querySelector('.main-viewport');
+
+            if (!newContent) {
+                window.location.href = url;
+                return;
+            }
+
+            // Solo modificar historial después de confirmar que es contenido válido
+            if (pushHistory) {
+                history.pushState(null, '', url);
+            }
+
+            const titleEl = doc.querySelector('title');
+            document.title = titleEl ? titleEl.innerText : document.title;
             mainViewport.innerHTML = newContent.innerHTML;
 
-            // Update active links in header
             updateActiveLinks(url);
-
-            // Dispatch event for re-initialization
             window.dispatchEvent(new CustomEvent('spa:contentLoaded'));
 
-            // Finish Loading State (Hide Preloader)
             setTimeout(() => {
                 if (window.hidePreloader) window.hidePreloader();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }, 100);
 
-            // Auto-close mobile menu if open
+            // Cerrar menú mobile si está abierto
             const mobileMenu = document.getElementById('mobileMenu');
             if (mobileMenu && mobileMenu.classList.contains('active')) {
                 mobileMenu.classList.remove('active');
             }
         } catch (error) {
             console.error('Error loading page:', error);
-            window.location.href = url; // Fallback to normal load
+            window.location.href = url;
+        } finally {
+            // Garantizar que el preloader se oculte en todos los casos
+            if (window.hidePreloader) window.hidePreloader();
         }
     }
 

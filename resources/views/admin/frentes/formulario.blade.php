@@ -1,5 +1,7 @@
 @extends('layouts.estructura_base')
 
+
+
 @section('title', 'Gestión de Frentes')
 
 @section('content')
@@ -135,7 +137,7 @@
                 </div>
 
                 <!-- Responsable 1 Inputs -->
-                <div style="grid-column: span 2; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                <div class="resp-grid" style="grid-column: span 2;">
                     <div>
                         <label for="RESP_1_NOM" class="form-label">Nombre Completo <span style="color: red;">*</span></label>
                         <input type="text" id="RESP_1_NOM" name="RESP_1_NOM" class="form-input-custom"
@@ -151,7 +153,7 @@
                     </div>
 
                     <div>
-                        <label class="form-label">Filtro Firma <span style="font-weight: normal; font-size: 11px; color: #64748b;">(Opcional)</span></label>
+                        <span class="form-label">Filtro Firma <span style="font-weight: normal; font-size: 11px; color: #64748b;">(Opcional)</span></span>
                         <div class="custom-dropdown" id="resp1EquSelect">
                             <input type="hidden" name="RESP_1_EQU" id="input_resp1_equ" value="{{ old('RESP_1_EQU', $frente->RESP_1_EQU ?? '') }}">
                             <div class="dropdown-trigger" onclick="toggleDropdown('resp1EquSelect', event)" style="background: white; cursor: default;">
@@ -175,7 +177,7 @@
                 </div>
 
                 <!-- Responsable 2 Inputs -->
-                <div style="grid-column: span 2; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                <div class="resp-grid" style="grid-column: span 2;">
                     <div>
                         <label for="RESP_2_NOM" class="form-label">Nombre Completo</label>
                         <input type="text" id="RESP_2_NOM" name="RESP_2_NOM" class="form-input-custom"
@@ -191,7 +193,7 @@
                     </div>
 
                     <div>
-                        <label class="form-label">Filtro Firma</label>
+                        <span class="form-label">Filtro Firma</span>
                         <div class="custom-dropdown" id="resp2EquSelect">
                             <input type="hidden" name="RESP_2_EQU" id="input_resp2_equ" value="{{ old('RESP_2_EQU', $frente->RESP_2_EQU ?? '') }}">
                             <div class="dropdown-trigger" onclick="toggleDropdown('resp2EquSelect', event)" style="background: white; cursor: default;">
@@ -215,7 +217,7 @@
                 </div>
 
                 <!-- Responsable 3 Inputs -->
-                <div style="grid-column: span 2; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                <div class="resp-grid" style="grid-column: span 2;">
                     <div>
                         <label for="RESP_3_NOM" class="form-label">Nombre Completo</label>
                         <input type="text" id="RESP_3_NOM" name="RESP_3_NOM" class="form-input-custom"
@@ -231,7 +233,7 @@
                     </div>
 
                     <div>
-                        <label class="form-label">Filtro Firma</label>
+                        <span class="form-label">Filtro Firma</span>
                         <div class="custom-dropdown" id="resp3EquSelect">
                             <input type="hidden" name="RESP_3_EQU" id="input_resp3_equ" value="{{ old('RESP_3_EQU', $frente->RESP_3_EQU ?? '') }}">
                             <div class="dropdown-trigger" onclick="toggleDropdown('resp3EquSelect', event)" style="background: white; cursor: default;">
@@ -255,7 +257,7 @@
                 </div>
 
                 <!-- Responsable 4 Inputs -->
-                <div style="grid-column: span 2; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                <div class="resp-grid" style="grid-column: span 2;">
                     <div>
                         <label for="RESP_4_NOM" class="form-label">Nombre Completo</label>
                         <input type="text" id="RESP_4_NOM" name="RESP_4_NOM" class="form-input-custom"
@@ -271,7 +273,7 @@
                     </div>
 
                     <div>
-                        <label class="form-label">Filtro Firma</label>
+                        <span class="form-label">Filtro Firma</span>
                         <div class="custom-dropdown" id="resp4EquSelect">
                             <input type="hidden" name="RESP_4_EQU" id="input_resp4_equ" value="{{ old('RESP_4_EQU', $frente->RESP_4_EQU ?? '') }}">
                             <div class="dropdown-trigger" onclick="toggleDropdown('resp4EquSelect', event)" style="background: white; cursor: default;">
@@ -289,7 +291,7 @@
                 </div>
             </div>
 
-            <div
+            <div class="frentes-btn-row"
                 style="margin-top: 40px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; align-items: center;">
                 <a href="{{ route('menu') }}" class="btn-primary-maquinaria btn-secondary">
                     Cancelar
@@ -312,54 +314,3 @@
         @endif
     </div>
 @endsection
-
-<script>
-    // Script eliminado temporalmente para debugging
-
-
-    // --- Funciones Globales para el Buscador ---
-
-    window.clearFrentesSearchSPA = function () {
-        const input = document.getElementById('filterSearchInput');
-        if (input) input.value = '';
-
-        const btn = document.getElementById('btn_clear_search_frente');
-        if (btn) btn.style.display = 'none';
-
-        const items = document.querySelectorAll('.search-result-item');
-        items.forEach(item => item.style.display = 'block');
-
-        const msg = document.getElementById('no-results-msg');
-        if (msg) msg.style.display = 'none';
-    };
-
-    window.filterFrentesDropdown = function (input) {
-        const filter = input.value.toUpperCase();
-        const btnClear = document.getElementById('btn_clear_search_frente');
-        const items = document.querySelectorAll('.search-result-item');
-        let visibleCount = 0;
-
-        if (btnClear) btnClear.style.display = filter.length > 0 ? 'block' : 'none';
-
-        items.forEach(item => {
-            const txt = item.getAttribute('data-name').toUpperCase();
-            if (txt.includes(filter)) {
-                item.style.display = 'block';
-                visibleCount++;
-            } else {
-                item.style.display = 'none';
-            }
-        });
-
-        const msg = document.getElementById('no-results-msg');
-        if (msg) msg.style.display = visibleCount === 0 ? 'block' : 'none';
-    };
-
-    window.selectFrenteSPA = function (id) {
-        if (window.showPreloader) window.showPreloader();
-        // Redirección directa para cargar los datos del frente seleccionado
-        window.location.href = `/admin/frentes/${id}/edit`;
-    };
-</script>
-
-<!-- Custom Delete Modal -->

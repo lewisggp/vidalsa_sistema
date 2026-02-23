@@ -89,7 +89,7 @@
 
     <!-- Unified Responsive Table -->
     <div class="custom-scrollbar-container">
-        <table class="admin-table" style="width: 100% !important;">
+        <table class="admin-table table-usuarios-mobile" style="width: 100% !important;">
             <thead>
                 <tr style="background: #cbd5e0; text-align: left; color: var(--maquinaria-dark-blue); font-size: 14px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; border-bottom: 2px solid #a0aec0;">
                     <th class="table-cell-bordered" style="padding: 10px 15px; text-align: left; min-width: 200px;">Nombre y Apellido</th>

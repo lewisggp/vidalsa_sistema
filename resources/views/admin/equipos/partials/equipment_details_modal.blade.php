@@ -94,6 +94,18 @@
                     <div style="padding: 20px; border-top: 1px solid #e2e8f0;">
                         <div style="display: flex; flex-direction: column; gap: 15px; font-size: 14px;">
                             
+                            <!-- Marca -->
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px;">
+                                <span style="color: #64748b;">Marca:</span>
+                                <span id="d_marca" style="color: #333333; font-weight: 700;"></span>
+                            </div>
+
+                            <!-- Modelo -->
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px;">
+                                <span style="color: #64748b;">Modelo:</span>
+                                <span id="d_modelo" style="color: #333333; font-weight: 700;"></span>
+                            </div>
+
                             <!-- Año -->
                             <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px;">
                                 <span style="color: #64748b;">Año de Fabricación:</span>

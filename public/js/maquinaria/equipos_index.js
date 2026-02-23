@@ -600,7 +600,6 @@ window.openBulkModal = function (event) {
                 if (firstId) {
                     const downloadLink = document.createElement('a');
                     downloadLink.href = `/admin/movilizaciones/${firstId}/acta-traslado`;
-                    downloadLink.target = '_blank';
                     downloadLink.style.display = 'none';
                     document.body.appendChild(downloadLink);
 

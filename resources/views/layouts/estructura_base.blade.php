@@ -6,7 +6,7 @@
     <title>@yield('title', 'Sistema de Gestión')</title>
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <!-- CSS -->
-    <link rel="stylesheet" href="{{ asset('css/maquinaria/estilos_globales.css') }}?v=13.4">
+    <link rel="stylesheet" href="{{ asset('css/maquinaria/estilos_globales.css') }}?v=19.0">
     <link rel="stylesheet" href="{{ asset('css/maquinaria/menu.css') }}?v=10.3">
     <link rel="stylesheet" href="{{ asset('css/maquinaria/catalogo.css') }}?v=2.3">
     <!-- Local Fonts Optimization -->
@@ -736,6 +736,7 @@
             };
             
             const fields = {
+                'd_marca': 'marca', 'd_modelo': 'modelo',
                 'd_anio': 'anio', 'd_categoria': 'categoria', 'd_motor_serial': 'motorSerial',
                 'd_combustible': 'combustible', 'd_consumo': 'consumo',
                 'd_titular': 'titular', 'd_nro_doc': 'nroDoc',
@@ -767,7 +768,7 @@
                         <div class="pdf-btn-container">
                             <button type="button" 
                                 onclick="openPdfPreview('${doc.link}', '${docType}', '${doc.label}', '${d.equipoId}')" 
-                                style="width: 36px; height: 36px; border-radius: 8px; background: #f8f9fa; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"
+                                style="width: 36px; height: 36px; border-radius: 8px; background: #f8f9fa; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: default;"
                                 onmouseover="this.style.background='#e9ecef'" 
                                 onmouseout="this.style.background='#f8f9fa'"
                                 title="Ver PDF: ${doc.label}">
@@ -1037,6 +1038,14 @@
                                 <input type="text" id="meta_placa" name="placa" value="${info.placa || ''}" ${disabledAttr} autocomplete="off">
                             </div>
                             <div style="${containerStyle}">
+                                <label for="meta_marca" style="${labelStyle}">Marca</label>
+                                <input type="text" id="meta_marca" name="marca" value="${info.marca || ''}" ${disabledAttr} autocomplete="off">
+                            </div>
+                             <div style="${containerStyle}">
+                                <label for="meta_modelo" style="${labelStyle}">Modelo</label>
+                                <input type="text" id="meta_modelo" name="modelo" value="${info.modelo || ''}" ${disabledAttr} autocomplete="off">
+                            </div>
+                            <div style="${containerStyle}">
                                 <label for="meta_serial_chasis" style="${labelStyle}">Serial Chasis</label>
                                 <input type="text" id="meta_serial_chasis" name="serial_chasis" value="${info.serial_chasis || ''}" ${disabledAttr} autocomplete="off">
                             </div>
@@ -1130,6 +1139,8 @@
                         { name: 'nro_documento', label: 'Nro. de Documento' },
                         { name: 'titular', label: 'Titular' },
                         { name: 'placa', label: 'Placa' },
+                        { name: 'marca', label: 'Marca' },
+                        { name: 'modelo', label: 'Modelo' },
                         { name: 'serial_chasis', label: 'Serial de Chasis' }
                     ];
 
@@ -1199,8 +1210,49 @@
                 const data = await res.json();
                 if (data.success) {
                     showModal({ type: 'success', title: 'Guardado', message: 'Datos actualizados correctamente.', confirmText: 'OK', hideCancel: true });
-                    // Refresh details modal if it's open
+                    
+                    // Update the dataset and UI of the underlying row to reflect changes immediately
                     if (window.activeEquipoButton) {
+                        const d = window.activeEquipoButton.dataset;
+                        const row = window.activeEquipoButton.closest('tr');
+                        
+                        if (ctx.docType === 'propiedad') {
+                             // Update dataset (camelCase for JS)
+                             d.nroDoc = formData.get('nro_documento');
+                             d.titular = formData.get('titular');
+                             d.placa = formData.get('placa');
+                             d.marca = formData.get('marca');
+                             d.modelo = formData.get('modelo');
+                             d.chasis = formData.get('serial_chasis');
+                             d.motorSerial = formData.get('serial_motor');
+
+                             // Update visible UI in the table row
+                             if (row && row.cells.length >= 4) {
+                                 // Marca/Modelo (Column 3, index 2)
+                                 const mmCell = row.cells[2];
+                                 if (mmCell) {
+                                     mmCell.innerHTML = `<div style="font-weight: 700; font-size: 14px; color: #000;">${d.marca}</div>
+                                                         <div style="font-size: 14px; color: #718096;">${d.modelo}</div>`;
+                                 }
+                                 // Serials/Placa/ID (Column 4, index 3)
+                                 const sCell = row.cells[3];
+                                 if (sCell) {
+                                     let placaHtml = d.placa && d.placa !== 'N/A' ? `<div style="color: var(--maquinaria-blue); margin-top: 1px;"><strong>P:</strong> ${d.placa}</div>` : `<div style="color: #a0aec0; margin-top: 1px; font-style: italic;">Sin Placa</div>`;
+                                     sCell.innerHTML = `<div style="color: #4a5568;"><strong>S:</strong> ${d.chasis}</div>
+                                                        ${placaHtml}
+                                                        <div style="color: #2d3748; margin-top: 1px; font-weight: 600;"><strong>ID:</strong> ${d.codigo || 'N/A'}</div>`;
+                                 }
+                             }
+                        } else if (ctx.docType === 'poliza') {
+                             d.vencSeguro = formData.get('fecha_vencimiento');
+                             d.seguro = formData.get('nombre_aseguradora');
+                        } else if (ctx.docType === 'rotc') {
+                             d.fechaRotc = formData.get('fecha_vencimiento');
+                        } else if (ctx.docType === 'racda') {
+                             d.fechaRacda = formData.get('fecha_vencimiento');
+                        }
+
+                        // Refresh details modal to show updated values in its fields
                         showDetailsImproved(window.activeEquipoButton);
                     }
                     

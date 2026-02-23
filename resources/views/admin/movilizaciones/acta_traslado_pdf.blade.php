@@ -68,7 +68,7 @@
     <!-- ===================== CUERPO DEL TEXTO ===================== -->
     <table width="100%" border="0" cellpadding="0" cellspacing="0">
         <tr>
-            <td align="justify" style="font-size: 10pt; text-indent: 40pt;">
+            <td align="justify" style="font-size: 10pt;">
                 Por medio del presente documento, el frente
                 <b>{{ strtoupper($frenteOrigen->NOMBRE_FRENTE ?? 'OFICINA PRINCIPAL') }}</b> de la
                 <b>CONSTRUCTORA VIDALSA 27, C.A.</b>, deja constancia formal del despacho y traslado de los equipos

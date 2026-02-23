@@ -759,6 +759,12 @@ window.showDetailsImproved = function (target, event) {
     }
 
     const d = target.dataset;
+    const modal = document.getElementById('detailsModal');
+
+    // Reset Accordions (Close all sections)
+    if (modal) {
+        modal.querySelectorAll('details').forEach(det => det.removeAttribute('open'));
+    }
 
     // Helper to identify empty values
     const isValid = (val) => val && val !== 'N/A' && val !== '';
@@ -806,6 +812,8 @@ window.showDetailsImproved = function (target, event) {
     }
 
     // General Info
+    set('d_marca', d.marca);
+    set('d_modelo', d.modelo);
     set('d_anio', d.anio);
     set('d_categoria', d.categoria);
     set('d_motor_serial', d.motorSerial);
@@ -837,7 +845,7 @@ window.showDetailsImproved = function (target, event) {
                 <div class="pdf-btn-container">
                     <button type="button" 
                         onclick="openPdfPreview('${link}', '${type}', '${label}', '${equipoId}')" 
-                        style="width: 36px; height: 36px; border-radius: 8px; background: #f8f9fa; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: pointer;"
+                        style="width: 36px; height: 36px; border-radius: 8px; background: #f8f9fa; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: default;"
                         onmouseover="this.style.background='#e9ecef'" 
                         onmouseout="this.style.background='#f8f9fa'"
                         title="Ver PDF: ${label}">
@@ -858,7 +866,7 @@ window.showDetailsImproved = function (target, event) {
                 <div style="position: relative; width: 30px; height: 30px;">
                     <input type="file" id="${inputId}" accept="application/pdf" style="display: none;" onchange="uploadDocument(this, '${type}', '${equipoId}', '${containerId}', '${label}')">
                     <label for="${inputId}" 
-                        style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #fbfcfd; color: #3b82f6; border: 1px dashed #3b82f6; border-radius: 6px; transition: 0.2s; cursor: pointer;" 
+                        style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #fbfcfd; color: #3b82f6; border: 1px dashed #3b82f6; border-radius: 6px; transition: 0.2s; cursor: default;" 
                         onmouseover="this.style.background='#eff6ff'" 
                         onmouseout="this.style.background='#fbfcfd'" 
                         title="Cargar ${label}">
@@ -878,7 +886,6 @@ window.showDetailsImproved = function (target, event) {
     createDocBtn('d_btn_adicional', 'adicional', d.linkAdicional, 'Adicional', eqId);
 
     // Show Modal
-    const modal = document.getElementById('detailsModal');
     if (modal) {
         modal.style.display = 'flex';
         // Force reflow

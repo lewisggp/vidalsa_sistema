@@ -1,6 +1,6 @@
 // movilizaciones_index.js - Movilizaciones Module Logic
-// Version: 9.0 - Ubicacion suggestions fix
-console.log('[MOVILIZACIONES] Script v9.0 cargado');
+// Version: 10.0 - Mobile card layout + filter fixes
+console.log('[MOVILIZACIONES] Script v10.0 cargado');
 
 // Global Filter Handler (Isolated from Equipos)
 window.selectMovilizacionFilter = function (type, value) {
@@ -221,7 +221,6 @@ window.buscarEquiposRD = function () {
                 return;
             }
 
-            const searchUp = search.toUpperCase();
 
             list.innerHTML = '';
             data.forEach(eq => {
@@ -541,26 +540,12 @@ function initMovilizacionesListeners() {
 function initMovilizaciones() {
     if (!document.getElementById('movilizacionesTableBody')) return;
     initMovilizacionesListeners();
-}
 
-// Global toggle for custom dropdowns
-window.toggleDropdown = function (id, event) {
-    if (event) event.stopPropagation();
-    const el = document.getElementById(id);
-    if (!el) return;
-
-    // Close other dropdowns
-    document.querySelectorAll('.custom-dropdown').forEach(d => {
-        if (d.id !== id) d.classList.remove('active');
+    // Cerrar dropdowns al hacer click fuera
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.custom-dropdown').forEach(d => d.classList.remove('active'));
     });
-
-    el.classList.toggle('active');
-};
-
-// Global click outside to close dropdowns
-document.addEventListener('click', () => {
-    document.querySelectorAll('.custom-dropdown').forEach(d => d.classList.remove('active'));
-});
+}
 
 // Register module
 if (typeof ModuleManager !== 'undefined') {
@@ -579,7 +564,8 @@ window.addEventListener('spa:contentLoaded', function () {
 // ─── Date Filter Toggle ─────────────────────────────────────────────────────
 window.advancedFilterOpen = false;
 
-window.toggleAdvancedFilter = function () {
+window.toggleAdvancedFilter = function (e) {
+    if (e) e.stopPropagation(); // Evita que el click burbujee al document listener
     const panel = document.getElementById('advancedFilterPanel');
     const btn = document.getElementById('btnAdvancedFilter');
     if (!panel) return;

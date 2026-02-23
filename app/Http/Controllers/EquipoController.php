@@ -58,18 +58,24 @@ class EquipoController extends Controller
         }
 
         if ($search) {
-            // Smart Search: If hyphen detected, search only in CODIGO_PATIO (faster)
-            if (strpos($search, '-') !== false) {
+            // Smart Search
+            if (strpos($search, '#') !== false) {
+                // Mode: Tag Number Search (Clean # symbol)
+                $tagSearch = str_replace('#', '', $search);
+                $equipos->where('NUMERO_ETIQUETA', 'like', "%{$tagSearch}%");
+            } elseif (strpos($search, '-') !== false) {
+                // Mode: Yard Code Search (Hyphens are typical for these codes)
                 $equipos->where('CODIGO_PATIO', 'like', "%{$search}%");
             } else {
-                // Standard search across all columns
+                // Standard search across all identified identifying columns
                 $equipos->where(function ($q) use ($search) {
                     $q->where('SERIAL_CHASIS', 'like', "%{$search}%")
                       ->orWhereHas('documentacion', function ($d) use ($search) {
                           $d->where('PLACA', 'like', "%{$search}%");
                       })
                       ->orWhere('SERIAL_DE_MOTOR', 'like', "%{$search}%")
-                      ->orWhere('CODIGO_PATIO', 'like', "%{$search}%");
+                      ->orWhere('CODIGO_PATIO', 'like', "%{$search}%")
+                      ->orWhere('NUMERO_ETIQUETA', 'like', "%{$search}%");
                 });
             }
         }
@@ -290,14 +296,20 @@ class EquipoController extends Controller
 
         $search = $request->input('search_query');
         if ($search) {
-            $equipos->where(function ($q) use ($search) {
-                $q->where('SERIAL_CHASIS', 'like', "%{$search}%")
-                  ->orWhereHas('documentacion', function ($d) use ($search) {
-                      $d->where('PLACA', 'like', "%{$search}%");
-                  })
-                  ->orWhere('SERIAL_DE_MOTOR', 'like', "%{$search}%")
-                  ->orWhere('CODIGO_PATIO', 'like', "%{$search}%");
-            });
+            if (strpos($search, '#') !== false) {
+                $tagSearch = str_replace('#', '', $search);
+                $equipos->where('NUMERO_ETIQUETA', 'like', "%{$tagSearch}%");
+            } else {
+                $equipos->where(function ($q) use ($search) {
+                    $q->where('SERIAL_CHASIS', 'like', "%{$search}%")
+                      ->orWhereHas('documentacion', function ($d) use ($search) {
+                          $d->where('PLACA', 'like', "%{$search}%");
+                      })
+                      ->orWhere('SERIAL_DE_MOTOR', 'like', "%{$search}%")
+                      ->orWhere('CODIGO_PATIO', 'like', "%{$search}%")
+                      ->orWhere('NUMERO_ETIQUETA', 'like', "%{$search}%");
+                });
+            }
         }
 
         $equipos->with(['frenteActual', 'tipo', 'documentacion', 'especificaciones']);
@@ -1193,6 +1205,8 @@ class EquipoController extends Controller
                         'nro_documento' => $doc->NRO_DE_DOCUMENTO ?? '',
                         'titular' => $doc->NOMBRE_DEL_TITULAR ?? '',
                         'placa' => $doc->PLACA ?? '',
+                        'marca' => $equipo->MARCA ?? '',
+                        'modelo' => $equipo->MODELO ?? '',
                         'serial_chasis' => $equipo->SERIAL_CHASIS ?? '',
                         'serial_motor' => $equipo->SERIAL_DE_MOTOR ?? ''
                     ];
@@ -1252,8 +1266,10 @@ class EquipoController extends Controller
                     'PLACA' => strtoupper($request->input('placa', '')),
                 ];
 
-                // Update Equipment Serials directly
+                // Update Equipment basic info directly
                 $equipo->update([
+                    'MARCA' => strtoupper($request->input('marca', '')),
+                    'MODELO' => strtoupper($request->input('modelo', '')),
                     'SERIAL_CHASIS' => strtoupper($request->input('serial_chasis', '')),
                     'SERIAL_DE_MOTOR' => (trim($request->input('serial_motor', '') ?? '') === '') ? null : strtoupper(trim($request->input('serial_motor', ''))),
                 ]);

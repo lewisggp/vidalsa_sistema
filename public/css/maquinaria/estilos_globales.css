@@ -898,6 +898,12 @@ body {
     .form-grid {
         grid-template-columns: 1fr;
     }
+
+    /* Evitar que hijos con span 2 desborden en grids de 1 columna */
+    .form-grid>[style*="grid-column: span 2"],
+    .form-grid>.resp-grid {
+        grid-column: span 1 !important;
+    }
 }
 
 /* Responsive Grid Utilities (New) */
@@ -1021,11 +1027,6 @@ body {
 }
 
 @media (max-width: 768px) {
-    .filter-toolbar-container {
-        flex-wrap: wrap !important;
-        gap: 10px;
-    }
-
     .user-filter-item {
         width: 100% !important;
     }
@@ -1248,16 +1249,16 @@ nav[role="navigation"] {
         overflow: visible !important;
     }
 
-    .admin-table {
+    .table-usuarios-mobile {
         display: block;
         min-width: 0 !important;
     }
 
-    .admin-table thead {
+    .table-usuarios-mobile thead {
         display: none;
     }
 
-    .admin-table tbody {
+    .table-usuarios-mobile tbody {
         display: block;
         width: 100%;
         display: flex;
@@ -1265,7 +1266,7 @@ nav[role="navigation"] {
         gap: 15px;
     }
 
-    .admin-table tr {
+    .table-usuarios-mobile tr {
         display: block;
         background: #fff;
         border-radius: 12px;
@@ -1277,7 +1278,7 @@ nav[role="navigation"] {
         /* Tightened space for footer */
     }
 
-    .admin-table tr td {
+    .table-usuarios-mobile tr td {
         display: block;
         border: none !important;
         padding: 5px 15px;
@@ -1289,7 +1290,7 @@ nav[role="navigation"] {
     /* Specific Cell Styling to match "Mobile Card" design */
 
     /* Name (Cell 1) */
-    .admin-table tr td:nth-child(1) {
+    .table-usuarios-mobile tr td:nth-child(1) {
         text-align: left;
         padding-top: 15px;
         padding-bottom: 0;
@@ -1297,7 +1298,7 @@ nav[role="navigation"] {
     }
 
     /* Email (Cell 2) - No border to keep together with Rol */
-    .admin-table tr td:nth-child(2) {
+    .table-usuarios-mobile tr td:nth-child(2) {
         text-align: left;
         color: #718096 !important;
         font-size: 13px;
@@ -1307,14 +1308,14 @@ nav[role="navigation"] {
     }
 
     /* Status (Cell 6) - Reset to flow */
-    .admin-table tr td:nth-child(6) {
+    .table-usuarios-mobile tr td:nth-child(6) {
         padding: 5px 15px;
     }
 
     /* Data Cells (Rol, Access, Frente, Estado) */
-    .admin-table tr td:nth-child(3),
-    .admin-table tr td:nth-child(4),
-    .admin-table tr td:nth-child(5) {
+    .table-usuarios-mobile tr td:nth-child(3),
+    .table-usuarios-mobile tr td:nth-child(4),
+    .table-usuarios-mobile tr td:nth-child(5) {
         display: flex;
         justify-content: flex-start;
         align-items: center;
@@ -1328,7 +1329,7 @@ nav[role="navigation"] {
     }
 
     /* Condition for Estado (6) to remove border before actions */
-    .admin-table tr td:nth-child(6) {
+    .table-usuarios-mobile tr td:nth-child(6) {
         display: flex;
         justify-content: flex-start;
         align-items: center;
@@ -1343,7 +1344,7 @@ nav[role="navigation"] {
         width: 100% !important;
     }
 
-    .admin-table tr td:nth-child(3)::before {
+    .table-usuarios-mobile tr td:nth-child(3)::before {
         content: 'Rol:';
         color: #718096;
         font-weight: 600;
@@ -1351,7 +1352,7 @@ nav[role="navigation"] {
         min-width: 55px;
     }
 
-    .admin-table tr td:nth-child(4)::before {
+    .table-usuarios-mobile tr td:nth-child(4)::before {
         content: 'Acceso:';
         color: #718096;
         font-weight: 600;
@@ -1359,7 +1360,7 @@ nav[role="navigation"] {
         min-width: 65px;
     }
 
-    .admin-table tr td:nth-child(5)::before {
+    .table-usuarios-mobile tr td:nth-child(5)::before {
         content: 'Frente:';
         color: #718096;
         font-weight: 600;
@@ -1367,7 +1368,7 @@ nav[role="navigation"] {
         min-width: 55px;
     }
 
-    .admin-table tr td:nth-child(6)::before {
+    .table-usuarios-mobile tr td:nth-child(6)::before {
         content: 'Estado:';
         color: #718096;
         font-weight: 600;
@@ -1378,13 +1379,13 @@ nav[role="navigation"] {
     }
 
     /* Reset absolute position for child 6 */
-    .admin-table tr td:nth-child(6) {
+    .table-usuarios-mobile tr td:nth-child(6) {
         position: static !important;
         width: 100% !important;
     }
 
     /* Actions (Cell 7) - Footer */
-    .admin-table tr td:nth-child(7) {
+    .table-usuarios-mobile tr td:nth-child(7) {
         position: absolute;
         bottom: 0;
         left: 0;
@@ -1396,13 +1397,13 @@ nav[role="navigation"] {
         border-radius: 0 0 12px 12px !important;
     }
 
-    .admin-table tr td:nth-child(7) div {
+    .table-usuarios-mobile tr td:nth-child(7) div {
         display: flex;
         width: 100%;
         gap: 10px;
     }
 
-    .admin-table tr td:nth-child(7) .btn-action-maquinaria {
+    .table-usuarios-mobile tr td:nth-child(7) .btn-action-maquinaria {
         flex: 1;
         width: auto;
         height: auto;
@@ -1416,17 +1417,17 @@ nav[role="navigation"] {
     }
 
     /* Add labels to buttons for mobile */
-    .admin-table tr td:nth-child(7) .btn-action-maquinaria[title="Editar"]::after {
+    .table-usuarios-mobile tr td:nth-child(7) .btn-action-maquinaria[title="Editar"]::after {
         content: "Editar";
         font-weight: 600;
     }
 
-    .admin-table tr td:nth-child(7) .btn-action-maquinaria[title="Eliminar"]::after {
+    .table-usuarios-mobile tr td:nth-child(7) .btn-action-maquinaria[title="Eliminar"]::after {
         content: "Eliminar";
         font-weight: 600;
     }
 
-    .admin-table tr td:nth-child(7) .btn-action-maquinaria i {
+    .table-usuarios-mobile tr td:nth-child(7) .btn-action-maquinaria i {
         font-size: 16px;
     }
 }
@@ -2106,5 +2107,437 @@ input:-webkit-autofill:active {
         padding: 10px !important;
         align-items: center !important;
         /* Center vertically */
+    }
+}
+
+/* ── Frentes de Trabajo: Responsive Grid ── */
+.resp-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+@media (max-width: 900px) {
+    .resp-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .resp-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .page-title span#formTitle {
+        font-size: 20px !important;
+    }
+
+    #frenteSearchDropdown {
+        max-width: 100% !important;
+    }
+
+    .frentes-btn-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    .frentes-btn-row a,
+    .frentes-btn-row button {
+        width: 100%;
+        display: block;
+        box-sizing: border-box;
+        text-align: center;
+        justify-content: center;
+    }
+}
+
+/* ══════════════════════════════════════════════
+   MOVILIZACIONES — Responsive & Mobile Card View
+   Clases .mv-* son exclusivas de esta sección
+   ══════════════════════════════════════════════ */
+
+/* ── Layout principal desktop ── */
+.movilizaciones-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 40px;
+    align-items: start;
+    width: 100%;
+}
+
+/* ── Tabla desktop: mismos estilos que estaban en el HTML ── */
+#movilizacionesTable {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    min-width: 700px;
+}
+
+#movilizacionesTable th.table-header-custom:nth-child(1) {
+    width: 240px;
+}
+
+#movilizacionesTable th.table-header-custom:nth-child(2) {
+    width: 390px;
+    text-align: center;
+}
+
+#movilizacionesTable th.table-header-custom:nth-child(3) {
+    width: 90px;
+    text-align: center;
+}
+
+#movilizacionesTable th.table-header-custom:nth-child(4) {
+    width: 140px;
+    text-align: center;
+}
+
+#movilizacionesTable th.table-header-custom:nth-child(5) {
+    width: 70px;
+    text-align: center;
+}
+
+/* ── Desktop TD styles (antes eran inline en el HTML) ── */
+#movilizacionesTable .mv-row-card td {
+    padding: 2px 8px;
+    border-top: 1px solid #cbd5e0;
+    border-bottom: 1px solid #cbd5e0;
+    border-right: 1px solid #e2e8f0;
+    font-size: 13px;
+}
+
+#movilizacionesTable .mv-td-equipo {
+    text-align: left;
+    border-left: 1px solid #cbd5e0;
+    border-radius: 12px 0 0 12px;
+}
+
+#movilizacionesTable .mv-td-trayecto {
+    text-align: center;
+}
+
+#movilizacionesTable .mv-td-fechas {
+    text-align: center;
+}
+
+#movilizacionesTable .mv-col-op {
+    text-align: center;
+    padding: 2px 8px;
+}
+
+#movilizacionesTable .mv-td-estado {
+    text-align: center;
+    border-right: 1px solid #cbd5e0;
+    border-radius: 0 12px 12px 0;
+}
+
+.movilizaciones-mobile-stats {
+    display: none;
+}
+
+/* En desktop: mv-filter-btn-row es transparente — el botón actúa como flex-item directo */
+.mv-filter-btn-row {
+    display: contents;
+}
+
+/* En desktop: el wrapper de búsqueda+filtro avanzado es transparente
+   los hijos (search item + adv filter) actúan como flex-items directos */
+.mv-search-adv-row {
+    display: contents;
+}
+
+.mv-filter-item {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 130px;
+}
+
+/* En desktop el botón Recepción Directa tiene ancho automático */
+#btnRecepcionDirecta {
+    width: auto;
+}
+
+@media (max-width: 1024px) {
+
+    /* Layout colapsa a 1 columna */
+    .movilizaciones-layout {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    /* Sidebar oculto en mobile */
+    .movilizaciones-sidebar {
+        display: none !important;
+    }
+
+    /* Stats pills visibles arriba */
+    .movilizaciones-mobile-stats {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+
+    .movilizaciones-mobile-stats .stat-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: linear-gradient(135deg, #4c1d95, #6d28d9);
+        color: white;
+        padding: 7px 14px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+        box-shadow: 0 2px 6px rgba(109, 40, 217, 0.3);
+    }
+
+    .movilizaciones-mobile-stats .stat-pill i {
+        font-size: 16px;
+    }
+
+    /* ── Filtros Responsive ── */
+    .movilizaciones-filter-bar {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+
+    /* Cada filtro ocupa fila completa en móvil (excepto el wrapper de búsqueda) */
+    .mv-filter-item:not(.mv-search-item) {
+        flex: 1 1 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+
+    /* Wrapper Búsqueda + Filtro Avanzado: fila horizontal en mobile */
+    .mv-search-adv-row {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 8px !important;
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        order: 3 !important;
+    }
+
+    /* El input de búsqueda se estira, el botón es fijo */
+    .mv-search-item {
+        flex: 1 !important;
+        min-width: 0 !important;
+        max-width: unset !important;
+    }
+
+    .mv-adv-filter-wrap {
+        flex-shrink: 0 !important;
+        width: 45px !important;
+    }
+
+    /* Div contenedor del botón Recepción Directa: fila propia full-width */
+    .mv-filter-btn-row {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        order: 10 !important;
+        display: flex !important;
+        margin-top: 5px;
+    }
+
+    .mv-filter-btn-row #btnRecepcionDirecta {
+        justify-content: center !important;
+        flex: 1 !important;
+    }
+
+    .movilizaciones-main-card {
+        min-height: unset !important;
+    }
+
+    /* ══════════════════════════════════════════
+       MOBILE CARD LAYOUT — Movilizaciones
+       Convierte la tabla en tarjetas verticales
+       ══════════════════════════════════════════ */
+
+    /* Quitar scroll horizontal */
+    .movilizaciones-table-wrap {
+        overflow-x: visible !important;
+        padding-bottom: 0 !important;
+    }
+
+    /* ── RESET TABLA: el ID tiene mayor especificidad que inline styles ── */
+    #movilizacionesTable,
+    .movilizaciones-table-wrap table {
+        display: block !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        border-collapse: collapse !important;
+        border-spacing: 0 !important;
+        table-layout: auto !important;
+        border: none !important;
+    }
+
+    /* Reset anchos de columnas definidos por CSS desktop */
+    #movilizacionesTable th {
+        width: auto !important;
+    }
+
+    /* Thead oculto totalmente */
+    .movilizaciones-table-wrap thead {
+        display: none !important;
+    }
+
+    /* tbody también en block */
+    #movilizacionesTable tbody,
+    .movilizaciones-table-wrap tbody {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    /* ── Cada TR = Tarjeta ── */
+    #movilizacionesTable .mv-row-card,
+    .movilizaciones-table-wrap .mv-row-card {
+        display: block !important;
+        background: #ffffff !important;
+        border-radius: 14px !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+        overflow: hidden !important;
+        width: 100% !important;
+        margin-bottom: 16px !important;
+        /* Spacing between cards */
+        box-sizing: border-box !important;
+    }
+
+    /* Todos los TDs: bloque full-width con padding reducido, EXCEPTO los que deben estar ocultos */
+    #movilizacionesTable .mv-row-card td:not(.mv-mobile-hidden),
+    .movilizaciones-table-wrap .mv-row-card td:not(.mv-mobile-hidden) {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 8px 12px !important;
+        max-width: 100% !important;
+    }
+
+    /* REGLA DE ORO: Ocultar columnas prohibidas en móvil con máxima especificidad */
+    body .movilizaciones-table-wrap .mv-row-card td.mv-td-fechas,
+    body .movilizaciones-table-wrap .mv-row-card td.mv-col-op,
+    body .movilizaciones-table-wrap .mv-row-card td.mv-mobile-hidden,
+    body .movilizaciones-table-wrap .mv-mobile-hidden,
+    body .mv-mobile-hidden {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        border: none !important;
+    }
+
+    /* ── Sección EQUIPO ── */
+    .movilizaciones-table-wrap .mv-td-equipo {
+        border-bottom: 1px solid #f1f5f9 !important;
+        padding-top: 12px !important;
+        padding-bottom: 12px !important;
+    }
+
+    .movilizaciones-table-wrap .mv-td-equipo>div {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+    }
+
+    /* Foto/Icono del equipo reducido */
+    .movilizaciones-table-wrap .mv-td-equipo>div>div:first-child {
+        width: 48px !important;
+        height: 48px !important;
+        flex-shrink: 0 !important;
+        border-radius: 8px !important;
+        overflow: hidden !important;
+        background: #f1f5f9 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .movilizaciones-table-wrap .mv-td-equipo>div>div:first-child img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+    }
+
+    /* ── Sección TRAYECTO ── */
+    .movilizaciones-table-wrap .mv-td-trayecto {
+        border-bottom: 1px solid #f1f5f9 !important;
+        text-align: center !important;
+        padding: 10px 14px !important;
+    }
+
+    .movilizaciones-table-wrap .mv-trayecto-container {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 10px !important;
+        flex-wrap: nowrap !important;
+    }
+
+    .movilizaciones-table-wrap .mv-trayecto-item {
+        max-width: 140px !important;
+        flex: 1;
+    }
+
+    .movilizaciones-table-wrap .mv-trayecto-label {
+        display: none !important;
+    }
+
+    .movilizaciones-table-wrap .mv-frente-nombre {
+        font-size: 11px !important;
+        font-weight: 800 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: block !important;
+        max-width: 100% !important;
+        color: #1e293b !important;
+    }
+
+    .movilizaciones-table-wrap .mv-trayecto-arrow {
+        font-size: 16px !important;
+        opacity: 0.5;
+        flex-shrink: 0;
+    }
+
+    /* ID del equipo: oculto en mobile */
+    .movilizaciones-table-wrap .mv-id-field {
+        display: none !important;
+    }
+
+    /* ── Sección ESTADO / BOTÓN RECIBIR ── */
+    .movilizaciones-table-wrap .mv-td-estado {
+        text-align: center !important;
+        padding: 12px 14px !important;
+    }
+
+    .movilizaciones-table-wrap .mv-td-estado>div {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 6px !important;
+        width: 100% !important;
+    }
+
+    .movilizaciones-table-wrap .mv-td-estado button {
+        width: 100% !important;
+        min-height: 44px !important;
+        font-size: 14px !important;
+        justify-content: center !important;
+        border-radius: 10px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    .movilizaciones-table-wrap .mv-td-estado .mv-estado-label {
+        font-size: 14px !important;
+        font-weight: 800 !important;
     }
 }
