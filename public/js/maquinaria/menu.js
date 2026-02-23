@@ -120,6 +120,62 @@ window.filterDashboardAlerts = function () {
     }
 };
 
+window.filterPendingMovs = function () {
+    const input = document.getElementById('pendingMovSearch');
+    if (!input) return;
+
+    const normalizeStr = str => str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : '';
+    let val = input.value.trim();
+    const isTagSearch = val.startsWith('#');
+    const filter = normalizeStr(isTagSearch ? val.substring(1) : val);
+
+    const container = document.getElementById('pendingMovsContainer');
+    if (!container) return;
+
+    const items = container.querySelectorAll('.activity-item');
+    let hasVisibleItems = false;
+
+    items.forEach(item => {
+        const placa = normalizeStr(item.getAttribute('data-placa'));
+        const chasis = normalizeStr(item.getAttribute('data-chasis'));
+        const etiqueta = normalizeStr(item.getAttribute('data-etiqueta'));
+        const fullText = normalizeStr(item.innerText);
+
+        let match = false;
+        if (isTagSearch) {
+            match = etiqueta.indexOf(filter) > -1;
+        } else {
+            match = placa.indexOf(filter) > -1 || chasis.indexOf(filter) > -1 || fullText.indexOf(filter) > -1 || etiqueta.indexOf(filter) > -1;
+        }
+
+        if (match) {
+            item.style.display = "flex";
+            hasVisibleItems = true;
+        } else {
+            item.style.display = "none";
+        }
+    });
+
+    let emptyState = document.getElementById('movs-search-empty-state');
+    const list = container.querySelector('.activity-list');
+
+    if (!hasVisibleItems && val.length > 0) {
+        if (!emptyState) {
+            emptyState = document.createElement('div');
+            emptyState.id = 'movs-search-empty-state';
+            emptyState.style.padding = '20px';
+            emptyState.style.textAlign = 'center';
+            emptyState.style.color = '#64748b';
+            emptyState.innerHTML = `<p>No se encontraron equipos pendientes con ese criterio.</p>`;
+            list.appendChild(emptyState);
+        } else {
+            emptyState.style.display = 'block';
+        }
+    } else if (emptyState) {
+        emptyState.style.display = 'none';
+    }
+};
+
 // Function to start management (replacing tomarResponsabilidad)
 window.iniciarGestion = function (equipoId, docType) {
     // CHECK PERMISSION FIRST

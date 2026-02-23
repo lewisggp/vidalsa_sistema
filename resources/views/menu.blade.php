@@ -56,6 +56,21 @@
                     <!-- Movilizaciones Pendientes List -->
                     <div class="content-card activity-card" id="pendingMovsContainer" style="display: none;">
                         <h3 class="card-title">Equipos Por Confirmar Recepción</h3>
+                        <div style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; background: white; display: flex; gap: 6px; align-items: center;">
+                            <input type="text" id="pendingMovSearch" placeholder="Buscar..." 
+                                   style="flex: 1; min-width: 0; box-sizing: border-box; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.815rem; outline: none; transition: border 0.2s;"
+                                   onfocus="this.style.borderColor='#3b82f6'"
+                                   onblur="this.style.borderColor='#d1d5db'"
+                                   onkeyup="filterPendingMovs()"
+                                   autocomplete="off">
+                            <a href="{{ route('movilizaciones.index') }}" 
+                               class="btn-recibir-dashboard"
+                               title="Ir a Recepción Directa"
+                               style="background: rgb(0, 103, 177); border: none; color: white; padding: 0 10px; height: 36px; border-radius: 6px; font-weight: 700; display: flex; align-items: center; gap: 4px; text-decoration: none; flex-shrink: 0; cursor: default;">
+                                <i class="material-icons" style="font-size: 18px;">input</i>
+                                <span class="desktop-only" style="font-size: 10px; font-weight: 800;">RECEP. DIRECTA</span>
+                            </a>
+                        </div>
                         <div class="activity-list">
                             @forelse($recentActivity as $activity)
                             @php
@@ -69,37 +84,59 @@
                                 $puedeRecibir = $esDestinatario || $esGlobal;
                             @endphp
                             
-                            <div class="activity-item" style="display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #f1f5f9;">
+                            <div class="activity-item" 
+                                 data-chasis="{{ $activity->equipo->SERIAL_CHASIS ?? '' }}" 
+                                 data-placa="{{ $activity->equipo->documentacion->PLACA ?? '' }}" 
+                                 data-etiqueta="{{ $activity->equipo->NUMERO_ETIQUETA ?? '' }}"
+                                 style="display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #f1f5f9;">
                                 <div class="activity-icon">
                                     <i class="material-icons">local_shipping</i>
                                 </div>
                                 <div class="activity-info" style="flex: 1; min-width: 0;">
-                                    <p class="activity-text" style="margin: 0 0 4px 0;">
-                                        <strong>{{ $activity->equipo->tipo->nombre ?? 'Equipo' }}</strong> - {{ $activity->equipo->SERIAL_CHASIS ?? 'N/A' }} → {{ $activity->frenteDestino->NOMBRE_FRENTE ?? 'Destino' }}
+                                    <div style="display: flex; align-items: center; gap: 5px;">
+                                        <strong style="font-size: 13px; color: #1e293b;">{{ $activity->equipo->tipo->nombre ?? 'Equipo' }}</strong>
+                                        @if(!empty($activity->equipo->NUMERO_ETIQUETA))
+                                            <span style="color: #0067b1; font-weight: 800; font-size: 12px;">#{{ $activity->equipo->NUMERO_ETIQUETA }}</span>
+                                        @endif
+                                    </div>
+                                    @php
+                                        $placa = $activity->equipo->documentacion->PLACA ?? null;
+                                        $serial = $activity->equipo->SERIAL_CHASIS ?? null;
+                                        $primaryId = ($placa && strtoupper($placa) !== 'N/A') ? $placa : $serial;
+                                    @endphp
+                                    <p class="activity-text" style="margin: 1px 0; font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase;">
+                                        {{ $primaryId }}
                                     </p>
-                                    <span class="activity-time">{{ $activity->created_at->locale('es')->diffForHumans() }}</span>
+                                    <div style="font-size: 10px; color: #94a3b8; display: flex; align-items: center; gap: 4px;">
+                                        <i class="material-icons" style="font-size: 12px;">schedule</i>
+                                        {{ $activity->created_at->locale('es')->diffForHumans() }}
+                                    </div>
                                 </div>
+
                                 
-                                <!-- Botón de Recibir -->
-                                <div class="activity-actions" style="display: flex; gap: 6px; flex-shrink: 0;">
+                                <!-- Botones de Acción -->
+                                <div class="activity-actions" style="display: flex; gap: 6px; flex-shrink: 0; align-items: center;">
                                     @if($puedeRecibir)
+                                        <!-- Botón Recibir (Rápido) -->
                                         <form action="{{ route('movilizaciones.updateStatus', $activity->ID_MOVILIZACION) }}" method="POST" style="margin: 0;">
                                             @csrf
                                             @method('PATCH')
                                             <input type="hidden" name="status" value="RECIBIDO">
                                             <button type="submit" 
                                                 class="btn-recibir-dashboard"
-                                                title="Confirmar recepción en {{ $activity->frenteDestino->NOMBRE_FRENTE }}">
-                                                <i class="material-icons">check_circle</i>
-                                                <span>RECIBIR</span>
+                                                title="Confirmar recepción rápida"
+                                                style="background: rgb(0, 103, 177); border: none; color: white; padding: 4px 12px; height: 32px; border-radius: 8px; font-weight: 800; display: flex; align-items: center; gap: 5px; cursor: default;">
+                                                <i class="material-icons" style="font-size: 18px;">check_circle</i>
+                                                <span style="font-size: 11px;">RECIBIR</span>
                                             </button>
                                         </form>
                                     @else
                                         {{-- Sin permisos para recibir --}}
                                         <div class="btn-sin-acceso-dashboard"
-                                            title="No tienes permisos para recibir este equipo">
-                                            <i class="material-icons">block</i>
-                                            <span>Sin Acceso</span>
+                                            title="No tienes permisos para recibir este equipo"
+                                            style="height: 32px; padding: 5px 12px; display: flex; align-items: center; gap: 4px;">
+                                            <i class="material-icons" style="font-size: 18px;">block</i>
+                                            <span style="font-size: 11px; font-weight: 800;">Sin Acceso</span>
                                         </div>
                                     @endif
                                 </div>
@@ -133,12 +170,13 @@
                     <!-- Documentos Vencidos y Por Vencer List -->
                     <div class="content-card policies-card" id="expiredDocsContainer" style="display: none;">
                         <h3 class="card-title" style="color: #000;">Alertas de Documentos</h3>
-                        <div style="padding: 10px 15px; border-bottom: 1px solid #e5e7eb; background: white; display: flex; align-items: center; gap: 10px;">
-                            <input type="text" id="alertSearch" placeholder="Buscar por placa, serial, chasis..." 
-                                   style="flex: 1; box-sizing: border-box; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; outline: none; transition: border 0.2s;"
+                        <div style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; background: white; display: flex; align-items: center; gap: 6px;">
+                            <input type="text" id="alertSearch" placeholder="Buscar..." 
+                                   style="flex: 1; box-sizing: border-box; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.815rem; outline: none; transition: border 0.2s;"
                                    onfocus="this.style.borderColor='#3b82f6'"
                                    onblur="this.style.borderColor='#d1d5db'"
-                                   onkeyup="filterDashboardAlerts()">
+                                   onkeyup="filterDashboardAlerts()"
+                                   autocomplete="off">
                             <a href="{{ route('dashboard.exportDocumentsPDF') }}"
                                data-no-spa="true"
                                class="btn-export-pdf"
@@ -159,9 +197,8 @@
 
             </div>
         </div>
-
     </div>
-    </div>
+</div>
     
     
     <!-- User Floating Panel (Bottom Left) -->
@@ -200,20 +237,16 @@
         </div>
     </div>
     
-    <!-- Machinery Image (Reused from Login - Big & Impactful) -->
     <div class="machinery-fixed-bottom">
         <div class="machinery-wrapper" style="width: 100%; height: auto;">
             <img src="{{ asset('images/maquinaria_login_new.webp') }}" alt="Maquinaria Vidalsa" style="width: 100%; height: auto; display: block; filter: drop-shadow(-10px -10px 20px rgba(0, 0, 0, 0.15));">
         </div>
     </div>
-</div>
-
-
-
-
 
     <!-- Partial Modal for Equipment Details (Used by Alerts) -->
     @include('admin.equipos.partials.equipment_details_modal')
+
+@endsection
 
 @section('scripts')
     <!-- Inject Scripts for Equipment Modal Logic on Dashboard -->
@@ -228,9 +261,10 @@
             const receiveForms = document.querySelectorAll('form'); 
             
             receiveForms.forEach(form => {
-                if(form.querySelector('.btn-recibir-dashboard')) {
+                const btn = form.querySelector('.btn-recibir-dashboard');
+                // Solo adjuntar si es el botón de RECIBIR (el azul)
+                if(btn && btn.style.background.includes('rgb(0, 103, 177)') && btn.type === 'submit') {
                     form.addEventListener('submit', function(e) {
-                        const btn = this.querySelector('.btn-recibir-dashboard');
                          // Prevent multiple clicks if already disabled
                         if (btn.disabled) return;
 
@@ -246,6 +280,6 @@
                 }
             });
         });
+
     </script>
-@endsection
 @endsection

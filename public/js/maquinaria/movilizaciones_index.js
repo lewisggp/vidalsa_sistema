@@ -540,11 +540,6 @@ function initMovilizacionesListeners() {
 function initMovilizaciones() {
     if (!document.getElementById('movilizacionesTableBody')) return;
     initMovilizacionesListeners();
-
-    // Cerrar dropdowns al hacer click fuera
-    document.addEventListener('click', () => {
-        document.querySelectorAll('.custom-dropdown').forEach(d => d.classList.remove('active'));
-    });
 }
 
 // Register module

@@ -44,7 +44,7 @@ class DashboardController extends Controller
 
         // 5. Recent Activity - Cached by MovilizacionObserver (ALL pending, not just 5)
         $recentActivity = \Illuminate\Support\Facades\Cache::rememberForever('dashboard_recent_activity', function() {
-            return Movilizacion::with(['equipo.tipo', 'frenteDestino'])
+            return Movilizacion::with(['equipo.tipo', 'equipo.documentacion', 'frenteDestino'])
                 ->where('ESTADO_MVO', 'TRANSITO')
                 ->orderBy('created_at', 'desc')
                 ->get();
