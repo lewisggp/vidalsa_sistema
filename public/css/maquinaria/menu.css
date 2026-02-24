@@ -17,7 +17,6 @@
     top: 5px;
     /* Adjust to 5px as requested */
     /* Separación del top para efecto flotante */
-    /* Separación del top para efecto flotante */
     left: 50%;
     transform: translateX(-50%);
     /* Centrado horizontal */
@@ -36,7 +35,6 @@
     z-index: 1000;
     display: flex;
     align-items: center;
-    justify-content: space-between;
     padding: 0 30px;
     box-sizing: border-box;
     transition: all 0.3s ease;
@@ -52,7 +50,14 @@
 /* Navegación */
 .header-nav {
     display: flex;
-    gap: 30px;
+    gap: 18px;
+    align-items: center;
+    margin-left: auto;
+}
+
+.header-actions {
+    margin-left: 20px;
+    display: flex;
     align-items: center;
 }
 
@@ -61,7 +66,7 @@
     color: var(--maquinaria-gray-text);
     font-weight: 700;
     /* Un poco más de peso también para que se lea mejor */
-    font-size: 18px;
+    font-size: 16px;
     transition: color 0.3s ease;
     position: relative;
     cursor: default;
@@ -98,7 +103,6 @@
 .nav-dropdown {
     position: relative;
     display: flex;
-    display: flex;
     align-items: center;
 }
 
@@ -129,11 +133,11 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 15px;
+    padding: 8px 12px;
     color: var(--maquinaria-gray-text);
     text-decoration: none;
     font-weight: 700;
-    font-size: 16px;
+    font-size: 15px;
     border-radius: 8px;
     transition: all 0.2s;
     white-space: nowrap;
@@ -416,45 +420,11 @@
 
 /* Estilos de perfil y avatar ya definidos arriba son reutilizados */
 
-/* Contenido Principal */
-.main-content {
-    max-width: 1200px;
-    margin: 40px auto;
-    padding: 0 20px;
-}
-
-.welcome-card {
-    background: white;
-    border-radius: 16px;
-    padding: 40px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-    text-align: center;
-    max-width: 900px;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.welcome-title {
-    color: var(--maquinaria-blue);
-    font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    font-size: 1.8rem;
-    font-weight: 700;
-    line-height: 1.2;
-    margin-bottom: 10px;
-    overflow-wrap: break-word;
-    word-break: break-word;
-    white-space: normal;
-}
-
 /* Nuevo estilo para título principal en dos líneas */
 .page-title-card {
-    max-width: 900px;
-    margin: 0 auto;
-    /* Reverted to original compact margin */
-    /* Centered */
-
-    text-align: center;
-    /* Centered text */
+    max-width: 1200px;
+    margin: 0;
+    text-align: left;
     padding: 10px 0;
 }
 
@@ -521,6 +491,8 @@
 
     .dashboard-header {
         padding: 0 20px;
+        justify-content: space-between;
+        /* Logo left, Menu right on mobile */
     }
 
     /* Reducir tamaño del logo en móvil */
@@ -545,20 +517,22 @@
 .cards-wrapper {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
+    gap: 15px;
     width: 100%;
-    max-width: 1000px;
-    margin: 0 auto;
+    max-width: 850px;
+    margin: 0;
 }
 
 /* Dashboard Cards */
 .dashboard-card {
     background: white;
     border-radius: 16px;
-    padding: 20px;
+    padding: 15px 18px;
+    /* Compressed padding */
     display: flex;
     align-items: flex-start;
-    gap: 15px;
+    gap: 12px;
+    /* Compressed gap */
     /* Updated shadow to match login forms (centered, dark) */
     box-shadow: 0 0 25px -5px rgba(0, 0, 0, 0.25), 0 0 10px -5px rgba(0, 0, 0, 0.15);
     transition: transform 0.2s, box-shadow 0.2s;

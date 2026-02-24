@@ -117,14 +117,16 @@
 
             <a href="#" class="nav-link">Sección 5</a>
             <a href="#" class="nav-link">Sección 6</a>
-            
+        </nav>
+
+        <div class="header-actions desktop-only">
             <form action="{{ route('logout') }}" method="POST" style="margin: 0; display: inline;">
                 @csrf
                 <button type="submit" class="btn-logout-header" data-no-spa title="Salir del sistema">
                     <i class="material-icons">logout</i>
                 </button>
             </form>
-        </nav>
+        </div>
 
         <button class="menu-toggle mobile-only" onclick="toggleMobileMenu()">
             <i class="material-icons">menu</i>

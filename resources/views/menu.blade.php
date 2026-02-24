@@ -88,7 +88,7 @@
                                  data-chasis="{{ $activity->equipo->SERIAL_CHASIS ?? '' }}" 
                                  data-placa="{{ $activity->equipo->documentacion->PLACA ?? '' }}" 
                                  data-etiqueta="{{ $activity->equipo->NUMERO_ETIQUETA ?? '' }}"
-                                 style="display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #f1f5f9;">
+                                 style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #f1f5f9;">
                                 <div class="activity-icon">
                                     <i class="material-icons">local_shipping</i>
                                 </div>
@@ -125,9 +125,9 @@
                                             <button type="submit" 
                                                 class="btn-recibir-dashboard"
                                                 title="Confirmar recepción rápida"
-                                                style="background: rgb(0, 103, 177); border: none; color: white; padding: 4px 12px; height: 32px; border-radius: 8px; font-weight: 800; display: flex; align-items: center; gap: 5px; cursor: default;">
-                                                <i class="material-icons" style="font-size: 18px;">check_circle</i>
-                                                <span style="font-size: 11px;">RECIBIR</span>
+                                                style="background: rgb(0, 103, 177); border: none; color: white; padding: 4px 8px; height: 32px; border-radius: 8px; font-weight: 800; display: flex; align-items: center; gap: 5px; cursor: default;">
+                                                <i class="material-icons" style="font-size: 16px;">check_circle</i>
+                                                <span style="font-size: 10px;">RECIBIR</span>
                                             </button>
                                         </form>
                                     @else

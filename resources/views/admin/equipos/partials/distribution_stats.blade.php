@@ -9,7 +9,7 @@
             @php $totalFrentes = $frentesStats->sum('total'); @endphp
             @foreach($frentesStats as $stat)
                 @php $percentage = $totalFrentes > 0 ? ($stat->total / $totalFrentes) * 100 : 0; @endphp
-                <li style="padding-bottom: 8px; border-bottom: 1px dashed #f1f5f9;">
+                <li onclick="selectOption('frenteFilterSelect', '{{ $stat->ID_FRENTE_ACTUAL }}', '{{ $stat->NOMBRE_FRENTE }}'); loadEquipos();" style="padding-bottom: 8px; border-bottom: 1px dashed #f1f5f9; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                         <span style="color: #334155; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px;" title="{{ $stat->NOMBRE_FRENTE ?? 'Sin Asignar' }}">
                             {{ $stat->NOMBRE_FRENTE ?? 'Sin Asignar' }}
@@ -37,7 +37,7 @@
             @php $totalStats = $tiposStats->sum('total'); @endphp
             @foreach($tiposStats as $stat)
                 @php $percentage = $totalStats > 0 ? ($stat->total / $totalStats) * 100 : 0; @endphp
-                <li style="padding-bottom: 8px; border-bottom: 1px dashed #f1f5f9;">
+                <li onclick="selectOption('tipoFilterSelect', '{{ $stat->id_tipo_equipo }}', '{{ $stat->nombre }}'); loadEquipos();" style="padding-bottom: 8px; border-bottom: 1px dashed #f1f5f9; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                         <span style="color: #334155; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px;" title="{{ $stat->nombre ?? 'Desconocido' }}">
                             {{ $stat->nombre ?? 'Desconocido' }}

@@ -430,7 +430,7 @@
             
             <div style="display: flex; align-items: center; gap: 8px;">
                 <!-- Main Total -->
-                <div style="display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.15); padding: 8px 6px; border-radius: 10px; min-width: 65px;">
+                <div onclick="filterByStatus('')" style="cursor: pointer; display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.15); padding: 8px 6px; border-radius: 10px; min-width: 65px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'; this.style.transform='translateY(0)'">
                     <span id="stats_total" style="font-size: 36px; font-weight: 800; line-height: 1;">
                         {{ $hasFilter ? $stats['total'] : '--' }}
                     </span>
@@ -439,12 +439,12 @@
                 
                 <!-- Detailed Stats Row -->
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; flex: 1;">
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.15); padding: 6px 2px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.25);">
+                    <div onclick="filterByStatus('INOPERATIVO')" style="cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.15); padding: 6px 2px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.25); transition: all 0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.25)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='rgba(239, 68, 68, 0.15)'; this.style.transform='translateY(0)'">
                         <i class="material-icons" style="font-size: 20px; color: #ef4444; margin-bottom: 2px;">cancel</i>
                         <strong id="stats_inactivos" style="font-weight: 800; font-size: 20px;">{{ $hasFilter ? $stats['inactivos'] : '--' }}</strong>
                         <span style="font-size: 11px; opacity: 0.8; font-weight: 700; text-transform: uppercase;">Inoperativos</span>
                     </div>
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(245, 158, 11, 0.15); padding: 6px 2px; border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.25);">
+                    <div onclick="filterByStatus('EN MANTENIMIENTO')" style="cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(245, 158, 11, 0.15); padding: 6px 2px; border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.25); transition: all 0.2s;" onmouseover="this.style.background='rgba(245, 158, 11, 0.25)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='rgba(245, 158, 11, 0.15)'; this.style.transform='translateY(0)'">
                         <i class="material-icons" style="font-size: 20px; color: #f59e0b; margin-bottom: 2px;">engineering</i>
                         <strong id="stats_mantenimiento" style="font-weight: 800; font-size: 20px;">{{ $hasFilter ? $stats['mantenimiento'] : '--' }}</strong>
                         <span style="font-size: 11px; opacity: 0.8; font-weight: 700;">MANTENIMIENTO</span>

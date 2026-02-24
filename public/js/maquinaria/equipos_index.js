@@ -166,6 +166,26 @@ window.toggleDocFilter = function (type) {
     window.loadEquipos();
 };
 
+window.filterByStatus = function (status) {
+    const dropdown = document.getElementById('estadoAdvFilter');
+    if (!dropdown) return;
+
+    if (status === '') {
+        window.clearDropdownFilter('estadoAdvFilter');
+    } else {
+        // Obtenemos el input oculto para verificar si ya está seleccionado (toggle)
+        const hiddenInput = dropdown.querySelector('input[name="estado"]');
+        if (hiddenInput && hiddenInput.value === status) {
+            window.clearDropdownFilter('estadoAdvFilter');
+        } else {
+            window.selectOption('estadoAdvFilter', status, status);
+        }
+    }
+
+    // El sistema selectOption despacha un evento, pero llamamos manualmente para asegurar inmediatez
+    window.loadEquipos();
+};
+
 window.loadEquipos = function (url = null, silent = false) {
     const tableBody = document.getElementById('equiposTableBody');
     if (!tableBody) return Promise.resolve();
@@ -176,21 +196,23 @@ window.loadEquipos = function (url = null, silent = false) {
     const tipoInput = document.querySelector('input[name="id_tipo"]');
     const advancedPanel = document.getElementById('advancedFilterPanel');
 
-    // Prioritize inputs within the Advanced Filter Panel if it exists
-    const modeloInput = advancedPanel ? advancedPanel.querySelector('input[name="modelo"]') : document.querySelector('input[name="modelo"]');
-    const anioInput = advancedPanel ? advancedPanel.querySelector('input[name="anio"]') : document.querySelector('input[name="anio"]');
-    const marcaInput = advancedPanel ? advancedPanel.querySelector('input[name="marca"]') : document.querySelector('input[name="marca"]');
+    // Helper robusto para obtener valores de inputs
+    const getVal = (selector, parent = document) => {
+        const el = parent.querySelector(selector);
+        if (!el) return null;
+        return (el.value && el.value.trim() !== '') ? el.value.trim() : null;
+    };
 
-    // Unified Filter Object (Single Source of Truth)
+    // Unified Filter Object
     const filters = {
-        search_query: searchInput?.value,
-        id_frente: (frenteInput?.value !== '') ? frenteInput?.value : null,
-        id_tipo: (tipoInput?.value !== '') ? tipoInput?.value : null,
-        modelo: (modeloInput?.value !== '') ? modeloInput?.value : null,
-        marca: (marcaInput?.value !== '') ? marcaInput?.value : null,
-        anio: (anioInput?.value !== '') ? anioInput?.value : null,
-        categoria: (advancedPanel ? advancedPanel.querySelector('input[name="categoria"]')?.value : null),
-        estado: (advancedPanel ? advancedPanel.querySelector('input[name="estado"]')?.value : null),
+        search_query: getVal('#searchInput'),
+        id_frente: getVal('input[name="id_frente"]'),
+        id_tipo: getVal('input[name="id_tipo"]'),
+        modelo: getVal('input[name="modelo"]', advancedPanel || document),
+        marca: getVal('input[name="marca"]', advancedPanel || document),
+        anio: getVal('input[name="anio"]', advancedPanel || document),
+        categoria: getVal('input[name="categoria"]', advancedPanel || document),
+        estado: getVal('input[name="estado"]', advancedPanel || document),
         filter_propiedad: document.getElementById('chk_propiedad')?.checked ? 'true' : null,
         filter_poliza: document.getElementById('chk_poliza')?.checked ? 'true' : null,
         filter_rotc: document.getElementById('chk_rotc')?.checked ? 'true' : null,
@@ -208,43 +230,21 @@ window.loadEquipos = function (url = null, silent = false) {
         }
     });
 
+    /* 
     // OPTIMIZATION: Check if there are any meaningful filters
     // Strategy: Only skip server request if EVERYTHING is null/empty (truly no input from user)
     const hasAnyInput = Object.entries(filters).some(([key, value]) => {
         if (value === null || value === '' || value === undefined) return false;
         if (typeof value === 'string' && value.trim() === '') return false;
-        return true; // Any non-empty value means user provided input
+        return true; 
     });
 
-    // If truly no input at all, clear UI without server request
     if (!hasAnyInput) {
-        console.log('No active filters detected - clearing UI without server request');
-
-        // Clear table with friendly message
+        console.log('No active filters detected - showing empty state');
         tableBody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px; color: #94a3b8; font-style: italic;">SELECCIONE UN FILTRO PARA VISUALIZAR LOS EQUIPOS</td></tr>';
-        tableBody.style.opacity = '1';
-
-        // Clear statistics
-        const statsTotal = document.getElementById('stats_total');
-        const statsInactivos = document.getElementById('stats_inactivos');
-        const statsMantenimiento = document.getElementById('stats_mantenimiento');
-        if (statsTotal) statsTotal.textContent = '0';
-        if (statsInactivos) statsInactivos.textContent = '0';
-        if (statsMantenimiento) statsMantenimiento.textContent = '0';
-
-        // Clear distribution stats
-        const distroContainer = document.getElementById('distributionStatsContainer');
-        if (distroContainer) distroContainer.innerHTML = '';
-
-        // Clear pagination
-        const paginationContainer = document.getElementById('equiposPagination');
-        if (paginationContainer) paginationContainer.innerHTML = '';
-
-        // Update URL to reflect empty state
-        window.history.pushState(null, '', window.location.pathname);
-
         return Promise.resolve();
     }
+    */
 
     // NOTE: reApplySelections() is NOT called here because the table
     // shows a "no filters" message with no real rows to highlight.
