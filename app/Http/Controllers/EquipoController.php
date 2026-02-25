@@ -78,12 +78,12 @@ class EquipoController extends Controller
                 // Standard search across all identified identifying columns
                 $equipos->where(function ($q) use ($search) {
                     $q->where('SERIAL_CHASIS', 'like', "%{$search}%")
-                      ->orWhereHas('documentacion', function ($d) use ($search) {
-                          $d->where('PLACA', 'like', "%{$search}%");
-                      })
-                      ->orWhere('SERIAL_DE_MOTOR', 'like', "%{$search}%")
-                      ->orWhere('CODIGO_PATIO', 'like', "%{$search}%")
-                      ->orWhere('NUMERO_ETIQUETA', 'like', "%{$search}%");
+                        ->orWhereHas('documentacion', function ($d) use ($search) {
+                            $d->where('PLACA', 'like', "%{$search}%");
+                        })
+                        ->orWhere('SERIAL_DE_MOTOR', 'like', "%{$search}%")
+                        ->orWhere('CODIGO_PATIO', 'like', "%{$search}%")
+                        ->orWhere('NUMERO_ETIQUETA', 'like', "%{$search}%");
                 });
             }
         }
@@ -318,12 +318,12 @@ class EquipoController extends Controller
             } else {
                 $equipos->where(function ($q) use ($search) {
                     $q->where('SERIAL_CHASIS', 'like', "%{$search}%")
-                      ->orWhereHas('documentacion', function ($d) use ($search) {
-                          $d->where('PLACA', 'like', "%{$search}%");
-                      })
-                      ->orWhere('SERIAL_DE_MOTOR', 'like', "%{$search}%")
-                      ->orWhere('CODIGO_PATIO', 'like', "%{$search}%")
-                      ->orWhere('NUMERO_ETIQUETA', 'like', "%{$search}%");
+                        ->orWhereHas('documentacion', function ($d) use ($search) {
+                            $d->where('PLACA', 'like', "%{$search}%");
+                        })
+                        ->orWhere('SERIAL_DE_MOTOR', 'like', "%{$search}%")
+                        ->orWhere('CODIGO_PATIO', 'like', "%{$search}%")
+                        ->orWhere('NUMERO_ETIQUETA', 'like', "%{$search}%");
                 });
             }
         }
@@ -1819,6 +1819,119 @@ class EquipoController extends Controller
 
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get available equipos for anchoring in a specific front
+     */
+    public function getEquiposByFrente(Request $request)
+    {
+        $request->validate([
+            'id_frente' => 'required',
+            'exclude_ids' => 'nullable|array'
+        ]);
+
+        $equipos = Equipo::where('ID_FRENTE_ACTUAL', $request->id_frente)
+            ->whereHas('tipo', function ($q) use ($request) {
+                if ($request->source_role === 'REMOLCADOR') {
+                    $q->where('ROL_ANCLAJE', 'REMOLCABLE');
+                } elseif ($request->source_role === 'REMOLCABLE') {
+                    $q->where('ROL_ANCLAJE', 'REMOLCADOR');
+                } else {
+                    // Fallback or handle neutro (though button shouldn't show)
+                    $q->where('ROL_ANCLAJE', 'NONE');
+                }
+            })
+            ->when($request->exclude_ids, function ($q) use ($request) {
+                $q->whereNotIn('ID_EQUIPO', $request->exclude_ids);
+            })
+            ->with(['especificaciones', 'documentacion'])
+            ->select('ID_EQUIPO', 'CODIGO_PATIO', 'MARCA', 'MODELO', 'ID_ESPEC', 'FOTO_EQUIPO', 'SERIAL_CHASIS')
+            ->orderBy('CODIGO_PATIO')
+            ->get()
+            ->map(function ($eq) {
+                return [
+                    'ID_EQUIPO' => $eq->ID_EQUIPO,
+                    'CODIGO_PATIO' => $eq->CODIGO_PATIO,
+                    'SERIAL_CHASIS' => $eq->SERIAL_CHASIS,
+                    'PLACA' => $eq->documentacion->PLACA ?? null,
+                    'MARCA' => $eq->MARCA,
+                    'MODELO' => $eq->MODELO,
+                    'FOTO' => $eq->especificaciones->FOTO_REFERENCIAL ?? $eq->FOTO_EQUIPO
+                ];
+            });
+
+        return response()->json($equipos);
+    }
+
+    /**
+     * Perform bulk anchoring of equipment
+     */
+    public function bulkAnchor(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:equipos,ID_EQUIPO',
+            'master_id' => 'required|exists:equipos,ID_EQUIPO'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $sourceId = $request->ids[0]; // Single-selection logic
+            $targetId = $request->master_id;
+
+            // Update source to point to target
+            Equipo::where('ID_EQUIPO', $sourceId)->update([
+                'ID_ANCLAJE' => $targetId
+            ]);
+
+            // Update target to point to source
+            Equipo::where('ID_EQUIPO', $targetId)->update([
+                'ID_ANCLAJE' => $sourceId
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Equipos anclados mutuamente con éxito.'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Clear anchor relationship between two equipments
+     */
+    public function clearAnchor(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array|size:2',
+            'ids.*' => 'exists:equipos,ID_EQUIPO'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            Equipo::whereIn('ID_EQUIPO', $request->ids)->update([
+                'ID_ANCLAJE' => null
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Vínculo de anclaje eliminado.'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
     /**

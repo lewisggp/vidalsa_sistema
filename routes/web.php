@@ -56,6 +56,9 @@ Route::middleware(['auth'])->group(function () {
             Route::post('equipos/bulk-mobilize', [App\Http\Controllers\MovilizacionController::class, 'bulkStore'])->name('equipos.bulkMobilize');
             Route::post('equipos/check-anclaje-compatibility', [App\Http\Controllers\EquipoController::class, 'checkAnclajeCompatibility'])->name('equipos.checkAnclaje');
             Route::post('equipos/process-anclaje', [App\Http\Controllers\EquipoController::class, 'processAnclaje'])->name('equipos.processAnclaje');
+            Route::get('equipos/get-equipos-by-frente', [App\Http\Controllers\EquipoController::class, 'getEquiposByFrente'])->name('equipos.getByFrente');
+            Route::post('equipos/bulk-anchor', [App\Http\Controllers\EquipoController::class, 'bulkAnchor'])->name('equipos.bulkAnchor');
+            Route::post('equipos/clear-anchor', [App\Http\Controllers\EquipoController::class, 'clearAnchor'])->name('equipos.clearAnchor');
             Route::resource('equipos', App\Http\Controllers\EquipoController::class);
             // Rutas específicas de Movilizaciones ANTES del resource (evita conflicto de wildcard)
             Route::post('movilizaciones/recepcion-directa', [App\Http\Controllers\MovilizacionController::class, 'recepcionDirecta'])->name('movilizaciones.recepcionDirecta');
