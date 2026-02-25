@@ -487,6 +487,14 @@
         <button type="button" onclick="clearSelection(event)" style="background: transparent; border: none; color: #94a3b8; font-size: 13px; font-weight: 600;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#94a3b8'">
             Limpiar
         </button>
+        <button type="button" onclick="openAnchorModal(event)" class="btn-bulk-action" style="background: #10b981;">
+            <i class="material-icons" style="font-size: 18px;">anchor</i>
+            Anclar
+        </button>
+        <button type="button" id="btnUnanchor" onclick="unanchorEquipos(event)" class="btn-bulk-action" style="background: #ef4444; display: none;">
+            <i class="material-icons" style="font-size: 18px;">link_off</i>
+            Desanclar
+        </button>
         <button type="button" onclick="openBulkModal(event)" class="btn-bulk-action">
             <i class="material-icons" style="font-size: 18px;">local_shipping</i>
             Asignar
