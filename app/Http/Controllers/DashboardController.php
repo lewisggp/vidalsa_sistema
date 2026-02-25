@@ -5,57 +5,66 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Equipo;
 use App\Models\Movilizacion;
+use App\Models\FrenteTrabajo;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        // 1. Total Alerts (Poliza + ROTC + RACDA) - Optimized with Daily Cache
-        // Cache until the end of the current day (midnight)
-        $totalAlerts = \Illuminate\Support\Facades\Cache::remember('dashboard_total_alerts', Carbon::now()->endOfDay(), function() {
-            $now = Carbon::now();
-            $in30Days = $now->copy()->addDays(30);
-            
-            $stats = \App\Models\Documentacion::selectRaw("
-                COUNT(CASE WHEN FECHA_VENC_POLIZA < ? THEN 1 END) as poliza,
-                COUNT(CASE WHEN FECHA_ROTC < ? THEN 1 END) as rotc,
-                COUNT(CASE WHEN FECHA_RACDA < ? THEN 1 END) as racda
-            ", [$in30Days, $in30Days, $in30Days])->first();
+        $user      = auth()->user();
+        $isGlobal  = $user && $user->NIVEL_ACCESO == 1;
+        $frenteId  = $user ? $user->ID_FRENTE_ASIGNADO : null;
 
-            return ($stats->poliza ?? 0) + ($stats->rotc ?? 0) + ($stats->racda ?? 0);
-        });
+        // 1. Mobilizations Today — LOCAL users see only their frente
+        $movilizacionesHoyQuery = Movilizacion::whereDate('FECHA_DESPACHO', Carbon::today());
+        if (!$isGlobal && $frenteId) {
+            $movilizacionesHoyQuery->where(function($q) use ($frenteId) {
+                $q->where('ID_FRENTE_ORIGEN', $frenteId)
+                  ->orWhere('ID_FRENTE_DESTINO', $frenteId);
+            });
+        }
+        $movilizacionesHoy = $movilizacionesHoyQuery->count();
 
-        // 2. Mobilizations Today - Cached by MovilizacionObserver
-        $movilizacionesHoy = \Illuminate\Support\Facades\Cache::rememberForever('dashboard_movilizaciones_hoy', function() {
-            return Movilizacion::whereDate('FECHA_DESPACHO', Carbon::today())->count();
-        });
+        // 2. Pending Mobilizations (TRÁNSITO) — LOCAL users see only their frente
+        $pendientesQuery = Movilizacion::where('ESTADO_MVO', 'TRANSITO');
+        if (!$isGlobal && $frenteId) {
+            $pendientesQuery->where(function($q) use ($frenteId) {
+                $q->where('ID_FRENTE_ORIGEN', $frenteId)
+                  ->orWhere('ID_FRENTE_DESTINO', $frenteId);
+            });
+        }
+        $pendientes = $pendientesQuery->count();
 
-        // 3. Pending Mobilizations - Optimized
-        $pendientes = \Illuminate\Support\Facades\Cache::rememberForever('dashboard_pendientes', function () {
-            return Movilizacion::where('ESTADO_MVO', 'TRANSITO')->count(); 
-        }); 
+        // 3. Alerts List — LOCAL users see only their frente's equipment
+        $expiredList = $this->generateAlertsList(!$isGlobal ? $frenteId : null);
+        $totalAlerts  = $expiredList->count();
 
-        // 4. Alerts List (Cached Daily) - Expired AND Expiring Soon (30 days)
-        // UPDATED TO v2 for consistency with AJAX endpoint and Observer
-        $expiredList = \Illuminate\Support\Facades\Cache::remember('dashboard_expired_list_v3', Carbon::now()->endOfDay(), function() {
-            return $this->generateAlertsList();
-        });
+        // 4. Recent Activity (list) — LOCAL users see only their frente
+        $recentActivityQuery = Movilizacion::with(['equipo.tipo', 'equipo.documentacion', 'frenteDestino'])
+            ->where('ESTADO_MVO', 'TRANSITO')
+            ->orderBy('created_at', 'desc')
+            ->limit(50); // safety cap — never load unlimited records
+        if (!$isGlobal && $frenteId) {
+            $recentActivityQuery->where(function($q) use ($frenteId) {
+                $q->where('ID_FRENTE_ORIGEN', $frenteId)
+                  ->orWhere('ID_FRENTE_DESTINO', $frenteId);
+            });
+        }
+        $recentActivity = $recentActivityQuery->get();
 
-        // 5. Recent Activity - Cached by MovilizacionObserver (ALL pending, not just 5)
-        $recentActivity = \Illuminate\Support\Facades\Cache::rememberForever('dashboard_recent_activity', function() {
-            return Movilizacion::with(['equipo.tipo', 'equipo.documentacion', 'frenteDestino'])
-                ->where('ESTADO_MVO', 'TRANSITO')
-                ->orderBy('created_at', 'desc')
-                ->get();
-        });
+        // 5. Frentes activos (necesarios para el modal de Recepción Directa)
+        $frentes = FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')
+            ->orderBy('NOMBRE_FRENTE')
+            ->get();
 
         return view('menu', compact(
-            'totalAlerts', 
-            'movilizacionesHoy', 
-            'pendientes', 
+            'totalAlerts',
+            'movilizacionesHoy',
+            'pendientes',
             'recentActivity',
-            'expiredList'
+            'expiredList',
+            'frentes'
         ));
     }
 
@@ -70,11 +79,13 @@ class DashboardController extends Controller
             // 2. Specific Google Drive Circuit Breaker (Redundant but safe)
             \Illuminate\Support\Facades\Cache::forget('google_drive_connection_error');
 
-            // 3. Clear Internal Dashboard Caches
+            // 3. Clear Dashboard Caches
+            // (alert caches are now user-scoped direct queries — no shared keys to clear)
+            // Legacy keys kept for safety:
             \Illuminate\Support\Facades\Cache::forget('dashboard_total_alerts');
+            \Illuminate\Support\Facades\Cache::forget('dashboard_expired_list_v3');
             \Illuminate\Support\Facades\Cache::forget('dashboard_movilizaciones_hoy');
             \Illuminate\Support\Facades\Cache::forget('dashboard_pendientes');
-            \Illuminate\Support\Facades\Cache::forget('dashboard_expired_list_v3'); // Corrected key
             \Illuminate\Support\Facades\Cache::forget('dashboard_recent_activity');
 
             return back()->with('success', 'Sistema reiniciado correctamente. Las conexiones han sido restablecidas.');
@@ -86,26 +97,72 @@ class DashboardController extends Controller
 
     public function getAlertsHtml()
     {
-        // NO CACHE - Direct fetch to ensure real-time updates for "Take Responsibility"
-        $expiredList = $this->generateAlertsList();
+        $user        = auth()->user();
+        $isGlobal    = $user && $user->NIVEL_ACCESO == 1;
+        $frenteId    = $user ? $user->ID_FRENTE_ASIGNADO : null;
+
+        $expiredList = $this->generateAlertsList(!$isGlobal ? $frenteId : null);
         $totalAlerts = $expiredList->count();
-        
+
         return response()->json([
-            'html' => view('partials.dashboard_alerts', compact('expiredList'))->render(),
+            'html'        => view('partials.dashboard_alerts', compact('expiredList'))->render(),
             'totalAlerts' => $totalAlerts
         ]);
     }
 
     /**
-     * Generate alerts list for expired and expiring documents
-     * Shared logic used by index(), getAlertsHtml(), and Observer
+     * AJAX: Devuelve HTML actualizado de la lista de movilizaciones pendientes + contadores
+     * Mismo criterio de filtrado LOCAL/GLOBAL que index().
      */
-    public function generateAlertsList()
+    public function getPendingMovsHtml()
     {
-        $now = \Carbon\Carbon::now();
+        $user     = auth()->user();
+        $isGlobal = $user && $user->NIVEL_ACCESO == 1;
+        $frenteId = $user ? $user->ID_FRENTE_ASIGNADO : null;
+
+        $query = Movilizacion::with(['equipo.tipo', 'equipo.documentacion', 'frenteDestino'])
+            ->where('ESTADO_MVO', 'TRANSITO')
+            ->orderBy('created_at', 'desc')
+            ->limit(50);
+
+        if (!$isGlobal && $frenteId) {
+            $query->where(function ($q) use ($frenteId) {
+                $q->where('ID_FRENTE_ORIGEN', $frenteId)
+                  ->orWhere('ID_FRENTE_DESTINO', $frenteId);
+            });
+        }
+
+        $recentActivity = $query->get();
+        $pendientes     = $recentActivity->count();
+
+        $hoyQuery = Movilizacion::whereDate('FECHA_DESPACHO', \Carbon\Carbon::today());
+        if (!$isGlobal && $frenteId) {
+            $hoyQuery->where(function ($q) use ($frenteId) {
+                $q->where('ID_FRENTE_ORIGEN', $frenteId)
+                  ->orWhere('ID_FRENTE_DESTINO', $frenteId);
+            });
+        }
+        $movilizacionesHoy = $hoyQuery->count();
+
+        return response()->json([
+            'html'              => view('partials.pending_movs_list', compact('recentActivity'))->render(),
+            'pendientes'        => $pendientes,
+            'movilizacionesHoy' => $movilizacionesHoy,
+        ]);
+    }
+
+    /**
+     * Generate alerts list for expired and expiring documents.
+     * Shared by index(), getAlertsHtml().
+     *
+     * @param int|null $frenteId  When set, only returns alerts for equipment in that frente (LOCAL users).
+     */
+    public function generateAlertsList(?int $frenteId = null)
+    {
+        $now      = \Carbon\Carbon::now();
         $in30Days = $now->copy()->addDays(30);
-        
-        $equipos = Equipo::whereHas('documentacion', function($q) use ($in30Days) {
+
+        $query = Equipo::whereHas('documentacion', function ($q) use ($in30Days) {
             $q->where('FECHA_VENC_POLIZA', '<', $in30Days)
               ->orWhere('FECHA_ROTC', '<', $in30Days)
               ->orWhere('FECHA_RACDA', '<', $in30Days);
@@ -116,8 +173,14 @@ class DashboardController extends Controller
             'documentacion.frenteGestionRacda',
             'tipo',
             'frenteActual'
-        ])
-        ->get();
+        ]);
+
+        // LOCAL users only see alerts for their assigned frente
+        if ($frenteId) {
+            $query->where('ID_FRENTE_ACTUAL', $frenteId);
+        }
+
+        $equipos = $query->get();
 
         $alerts = collect();
 

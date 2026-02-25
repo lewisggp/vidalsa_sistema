@@ -276,14 +276,26 @@ async function loadFleetDashboardData(frenteId) {
     }
 }
 
-
-
 /**
  * Create all charts with data from selected frente
  */
 function createCharts(data) {
     // Destroy existing charts first
     destroyAllCharts();
+
+    // Tooltip style: black background, white text (consistent across all charts)
+    const tooltipStyles = {
+        backgroundColor: '#1e293b',
+        titleColor: '#ffffff',
+        bodyColor: '#e2e8f0',
+        borderColor: '#334155',
+        borderWidth: 1,
+        padding: 10,
+        cornerRadius: 8,
+        displayColors: true,
+        boxWidth: 10,
+        boxHeight: 10
+    };
 
     // Common options for clean look
     const commonOptions = {
@@ -294,15 +306,16 @@ function createCharts(data) {
                 position: 'bottom',
                 labels: {
                     padding: 15,
-                    font: { size: 14, weight: '600' }, // Increased font size
+                    font: { size: 14, weight: '600' },
                     boxWidth: 14,
                     boxHeight: 14
                 }
             },
+            tooltip: tooltipStyles,
             datalabels: {
                 color: 'white',
                 font: { weight: 'bold', size: 12 },
-                formatter: (value) => value > 0 ? value : '' // Only show if > 0
+                formatter: (value) => value > 0 ? value : ''
             }
         }
     };
@@ -369,12 +382,27 @@ function createCleanStackedBarChart(canvasId, config) {
                     position: 'bottom',
                     labels: {
                         padding: 15,
-                        font: { size: 14, weight: '600' }, // Increased font size
+                        font: { size: 14, weight: '600' },
                         boxWidth: 14,
                         boxHeight: 14
                     }
                 },
 
+                tooltip: {
+                    backgroundColor: '#1e293b',
+                    titleColor: '#ffffff',
+                    bodyColor: '#e2e8f0',
+                    borderColor: '#334155',
+                    borderWidth: 1,
+                    padding: 10,
+                    cornerRadius: 8,
+                    callbacks: {
+                        // Muestra el nombre completo en el tooltip (útil cuando el eje Y trunca nombres largos)
+                        title: function (tooltipItems) {
+                            return tooltipItems[0]?.label || '';
+                        }
+                    }
+                },
                 datalabels: {
                     color: 'white',
                     font: { weight: 'bold', size: 12 },
@@ -394,7 +422,7 @@ function createCleanStackedBarChart(canvasId, config) {
                     stacked: true,
                     grid: { display: false },
                     ticks: {
-                        font: { size: 12, weight: '600' }, // Increased font size for axis labels
+                        font: { size: 12, weight: '600' },
                         color: '#475569'
                     }
                 }

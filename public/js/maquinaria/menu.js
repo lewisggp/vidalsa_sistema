@@ -252,5 +252,125 @@ async function ejecutarIniciarGestion(equipoId, docType) {
     }
 };
 
+// ─────────────────────────────────────────────────────────
+// RECIBIR MOVILIZACIÓN — AJAX (sin recarga de página)
+// ─────────────────────────────────────────────────────────
 
+/**
+ * Refresca la lista de movilizaciones pendientes vía AJAX
+ * y actualiza los contadores de las cards.
+ */
+window.refreshPendingMovs = async function () {
+    const listContainer = document.getElementById('pendingMovsList');
+    if (!listContainer) return;
 
+    try {
+        const response = await fetch(`/dashboard/pending-movs-html?t=${Date.now()}`);
+        if (!response.ok) throw new Error('Network error');
+
+        const data = await response.json();
+
+        // Actualizar lista
+        if (data.html !== undefined) {
+            listContainer.style.opacity = '0';
+            setTimeout(() => {
+                listContainer.innerHTML = data.html;
+                listContainer.style.transition = 'opacity 0.3s ease';
+                listContainer.style.opacity = '1';
+            }, 100);
+        }
+
+        // Actualizar contador "Por Confirmar" (x|N Por Confirmar — card-subtext-inline)
+        if (data.pendientes !== undefined) {
+            const subtextEl = document.querySelector('.card-blue .card-subtext-inline');
+            if (subtextEl) subtextEl.innerText = `| ${data.pendientes} Por Confirmar`;
+        }
+
+        // Actualizar contador "Movilizaciones Hoy" (card-value dentro de card-blue)
+        if (data.movilizacionesHoy !== undefined) {
+            const hoyEl = document.querySelector('.card-blue .card-value');
+            if (hoyEl) hoyEl.innerText = data.movilizacionesHoy;
+        }
+
+    } catch (error) {
+        console.error('refreshPendingMovs error:', error);
+    }
+};
+
+/**
+ * Confirmación y ejecución AJAX de recepción de una movilización.
+ * @param {number} movId  - ID de la movilización
+ * @param {HTMLElement} btn - referencia al botón clickeado (para feedback visual)
+ */
+window.recibirMovilizacion = function (movId, btn) {
+    if (typeof showModal === 'function') {
+        showModal({
+            type: 'info',
+            title: 'Confirmar Recepción',
+            message: '¿Confirmas la recepción de este equipo en tu frente?',
+            confirmText: 'Sí, Recibir',
+            cancelText: 'Cancelar',
+            onConfirm: () => _ejecutarRecepcion(movId, btn)
+        });
+    } else {
+        if (confirm('¿Confirmas la recepción de este equipo?')) {
+            _ejecutarRecepcion(movId, btn);
+        }
+    }
+};
+
+async function _ejecutarRecepcion(movId, btn) {
+    // Feedback visual inmediato en el botón
+    const originalHTML = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="material-icons" style="font-size:16px;animation:spin 0.8s linear infinite;">hourglass_empty</i>';
+    }
+
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        const response = await fetch(`/admin/movilizaciones/${movId}/status`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ status: 'RECIBIDO' })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Refrescar solo la lista sin recargar la página
+            await refreshPendingMovs();
+
+            if (typeof showModal === 'function') {
+                showModal({
+                    type: 'success',
+                    title: '¡Recepción Confirmada!',
+                    message: data.message || 'El equipo fue recibido exitosamente.',
+                    confirmText: 'Entendido',
+                    hideCancel: true
+                });
+            }
+        } else {
+            throw new Error(data.error || data.message || 'Error al confirmar recepción');
+        }
+
+    } catch (error) {
+        // Restaurar botón en caso de error
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+        console.error('_ejecutarRecepcion error:', error);
+        if (typeof showModal === 'function') {
+            showModal({ type: 'error', title: 'Error', message: error.message });
+        } else {
+            alert(error.message);
+        }
+    }
+}

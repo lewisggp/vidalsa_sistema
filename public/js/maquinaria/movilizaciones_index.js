@@ -1,6 +1,4 @@
 // movilizaciones_index.js - Movilizaciones Module Logic
-// Version: 10.0 - Mobile card layout + filter fixes
-console.log('[MOVILIZACIONES] Script v10.0 cargado');
 
 // Global Filter Handler (Isolated from Equipos)
 window.selectMovilizacionFilter = function (type, value) {
@@ -434,39 +432,6 @@ function rdToggleVisual(card, isSelected) {
 
 
 
-window.filtrarFrentesRD = function (search) {
-    search = search.toUpperCase();
-    const items = document.querySelectorAll('#rdFrenteList .dropdown-item');
-    items.forEach(it => {
-        const text = it.textContent.toUpperCase();
-        it.style.display = text.includes(search) ? 'block' : 'none';
-    });
-};
-
-window.seleccionarFrenteRD = function (id, nombre) {
-    const input = document.getElementById('rdFrenteInput');
-    const label = document.getElementById('rdFrenteLabel');
-    const ubicacionInput = document.getElementById('rdUbicacionInput');
-
-    input.value = id;
-    label.textContent = nombre;
-    label.style.color = '#1e293b';
-
-    // Cerrar dropdown
-    document.getElementById('rdFrenteSelect').classList.remove('active');
-
-    // Fetch subdivisiones del frente para sugerencias
-    fetch(`/admin/movilizaciones/subdivisiones/${id}`)
-        .then(r => r.json())
-        .then(data => {
-            if (data.tiene_subdivisiones) {
-                const subsList = data.subdivisiones || [];
-                loadUbicacionSuggestions('rd-ubicacion-suggestions', subsList);
-            } else {
-                loadUbicacionSuggestions('rd-ubicacion-suggestions', []);
-            }
-        });
-};
 
 window.confirmarRecepcionDirecta = function () {
     const ids = rdEquiposSeleccionados.map(s => s.ID_EQUIPO);

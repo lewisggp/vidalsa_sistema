@@ -24,42 +24,75 @@
     
     <!-- Left Column: Table & Filters -->
     <div class="admin-card" data-page="equipos" style="margin: 0; min-height: 80vh; min-width: 0; width: 100%;">
-    <div class="filter-toolbar-container" style="margin-bottom: 5px;">
-        <!-- Frente Filter -->
-        <div class="filter-item aligned-filter">
-            <div class="custom-dropdown" id="frenteFilterSelect" data-filter-type="id_frente" data-default-label="Filtrar Frente...">
-                <input type="hidden" name="id_frente" data-filter-value value="{{ request('id_frente') }}" form="search-form">
-                
-                @php 
-                    $currentFrente = $frentes->firstWhere('ID_FRENTE', request('id_frente'));
-                @endphp
+    @php
+        $authUser        = auth()->user();
+        $isLocalUser     = $authUser && $authUser->NIVEL_ACCESO == 2;
+        $userFrenteAsig  = $authUser ? $authUser->ID_FRENTE_ASIGNADO : null;
+        $userFrenteObj   = $userFrenteAsig ? $frentes->firstWhere('ID_FRENTE', $userFrenteAsig) : null;
+    @endphp
 
-                <div class="dropdown-trigger {{ request('id_frente') && request('id_frente') != 'all' ? 'filter-active' : '' }}" style="padding: 0; display: flex; align-items: center; background: #fbfcfd; overflow: hidden; border: 1px solid #cbd5e0; border-radius: 12px; height: 45px;">
-                    <div style="padding: 0 10px; display: flex; align-items: center; color: var(--maquinaria-gray-text);">
-                        <i class="material-icons" style="font-size: 18px;">search</i>
+    <div class="filter-toolbar-container" style="margin-bottom: 5px;">
+
+        {{-- =====================================================================
+             FILTRO FRENTE: LOCAL = bloqueado | GLOBAL = dropdown con default real
+             ===================================================================== --}}
+        <div class="filter-item aligned-filter">
+        @if($isLocalUser)
+            {{-- ── USUARIO LOCAL: frente fijo, no se puede cambiar ── --}}
+            <input type="hidden" name="id_frente" value="{{ $userFrenteAsig }}" form="search-form">
+            <div style="display:flex; align-items:center; background:#e8f4fd; border:1.5px solid #0067b1; border-radius:12px; height:45px; padding:0 14px; gap:8px; min-width:180px;">
+                <i class="material-icons" style="font-size:18px; color:#0067b1; flex-shrink:0;">location_on</i>
+                <span style="font-size:14px; font-weight:600; color:#0067b1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                    {{ $userFrenteObj ? $userFrenteObj->NOMBRE_FRENTE : 'Mi Frente' }}
+                </span>
+                <i class="material-icons" title="Sólo puedes ver tu frente asignado" style="font-size:16px; color:#64748b; margin-left:auto; flex-shrink:0;">lock</i>
+            </div>
+        @else
+            {{-- ── USUARIO GLOBAL: dropdown completo, frente del usuario ya seleccionado ── --}}
+            @php
+                $currentFrenteId = request('id_frente');
+                // Si no viene filtro en el request (primer load), usamos el frente asignado del usuario
+                if (!$currentFrenteId && $userFrenteAsig) {
+                    $currentFrenteId = $userFrenteAsig;
+                }
+                $currentFrente = $currentFrenteId ? $frentes->firstWhere('ID_FRENTE', $currentFrenteId) : null;
+            @endphp
+            <div class="custom-dropdown" id="frenteFilterSelect" data-filter-type="id_frente" data-default-label="Filtrar Frente...">
+                <input type="hidden" name="id_frente" data-filter-value value="{{ $currentFrenteId }}" form="search-form">
+
+                <div class="dropdown-trigger {{ $currentFrenteId && $currentFrenteId != 'all' ? 'filter-active' : '' }}" style="padding:0; display:flex; align-items:center; background:#fbfcfd; overflow:hidden; border:1px solid #cbd5e0; border-radius:12px; height:45px;">
+                    <div style="padding:0 10px; display:flex; align-items:center; color:var(--maquinaria-gray-text);">
+                        <i class="material-icons" style="font-size:18px;">search</i>
                     </div>
                     <input type="text" name="filter_search_dropdown" data-filter-search
-                        placeholder="{{ $currentFrente ? $currentFrente->NOMBRE_FRENTE : 'Filtrar Frente...' }}" 
-                         aria-label="Filtrar Frente"
-                        style="width: 100%; border: none; background: transparent; padding: 10px 5px; font-size: 14px; outline: none;"
+                        placeholder="{{ $currentFrente ? $currentFrente->NOMBRE_FRENTE : 'Filtrar Frente...' }}"
+                        aria-label="Filtrar Frente"
+                        style="width:100%; border:none; background:transparent; padding:10px 5px; font-size:14px; outline:none;"
                         oninput="window.filterDropdownOptions(this)"
                         autocomplete="off">
-                    <i class="material-icons" data-clear-btn style="padding: 0 5px; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_frente') && request('id_frente') != 'all' ? 'block' : 'none' }};" onclick="event.stopPropagation(); clearDropdownFilter('frenteFilterSelect'); clearAdvancedFilters(); loadEquipos();">close</i>
+                    <i class="material-icons" data-clear-btn
+                       style="padding:0 5px; color:var(--maquinaria-gray-text); font-size:18px; display:{{ $currentFrenteId && $currentFrenteId != 'all' ? 'block' : 'none' }};"
+                       onclick="event.stopPropagation(); clearDropdownFilter('frenteFilterSelect'); clearAdvancedFilters(); loadEquipos();">close</i>
                 </div>
 
-                <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible; z-index: 1000;">
-                    <div class="dropdown-item-list" style="max-height: 250px; overflow-y: auto;">
-                            <div class="dropdown-item {{ !request('id_frente') || request('id_frente') == 'all' ? 'selected' : '' }}" data-value="all" onclick="selectOption('frenteFilterSelect', 'all', 'TODOS LOS FRENTES'); loadEquipos();">
-                                TODOS LOS FRENTES
+                <div class="dropdown-content" style="padding:5px; max-height:none; overflow:visible; z-index:1000;">
+                    <div class="dropdown-item-list" style="max-height:250px; overflow-y:auto;">
+                        <div class="dropdown-item {{ !$currentFrenteId || $currentFrenteId == 'all' ? 'selected' : '' }}"
+                             data-value="all"
+                             onclick="selectOption('frenteFilterSelect', 'all', 'TODOS LOS FRENTES'); loadEquipos();">
+                            TODOS LOS FRENTES
+                        </div>
+                        @foreach($frentes as $frente)
+                            <div class="dropdown-item {{ $currentFrenteId == $frente->ID_FRENTE ? 'selected' : '' }}"
+                                 data-value="{{ $frente->ID_FRENTE }}"
+                                 onclick="selectOption('frenteFilterSelect', '{{ $frente->ID_FRENTE }}', '{{ $frente->NOMBRE_FRENTE }}'); loadEquipos();">
+                                {{ $frente->NOMBRE_FRENTE }}
                             </div>
-                            @foreach($frentes as $frente)
-                                <div class="dropdown-item {{ request('id_frente') == $frente->ID_FRENTE ? 'selected' : '' }}" data-value="{{ $frente->ID_FRENTE }}" onclick="selectOption('frenteFilterSelect', '{{ $frente->ID_FRENTE }}', '{{ $frente->NOMBRE_FRENTE }}'); loadEquipos();">
-                                    {{ $frente->NOMBRE_FRENTE }}
-                                </div>
-                            @endforeach
+                        @endforeach
                     </div>
                 </div>
             </div>
+        @endif
         </div>
 
         <!-- Tipo Filter -->
@@ -487,7 +520,7 @@
         <button type="button" onclick="clearSelection(event)" style="background: transparent; border: none; color: #94a3b8; font-size: 13px; font-weight: 600;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#94a3b8'">
             Limpiar
         </button>
-        <button type="button" onclick="openAnchorModal(event)" class="btn-bulk-action" style="background: #10b981;">
+        <button type="button" id="btnAnclar" onclick="openAnchorModal(event)" class="btn-bulk-action" style="background: #10b981;">
             <i class="material-icons" style="font-size: 18px;">anchor</i>
             Anclar
         </button>
@@ -510,7 +543,6 @@
 </datalist>
 
 
-    <!-- Fleet Dashboard Modal -->
     <!-- Fleet Dashboard Modal -->
     <style>
         .fleet-dashboard-header {
@@ -596,28 +628,49 @@
                         </div>
                         
                         <!-- Controls Group (Export + Filter) -->
-                        <!-- Controls Group (Export + Filter) -->
+                        @php
+                            $dashUser        = auth()->user();
+                            $dashIsLocal     = $dashUser && $dashUser->NIVEL_ACCESO == 2;
+                            $dashFrenteAsig  = $dashUser ? $dashUser->ID_FRENTE_ASIGNADO : null;
+                            $dashFrenteObj   = $dashFrenteAsig ? $frentes->firstWhere('ID_FRENTE', $dashFrenteAsig) : null;
+                            $defaultDashboardId     = $dashFrenteAsig ?? ($frentes->first()->ID_FRENTE ?? '');
+                            $defaultDashboardNombre = $dashFrenteObj ? $dashFrenteObj->NOMBRE_FRENTE : ($frentes->first()->NOMBRE_FRENTE ?? '');
+                        @endphp
                         <div class="fleet-header-controls">
                             <!-- Export Button -->
                             <button onclick="exportFleetStats()" title="Descargar Reporte Excel" style="background: #10b981; border: none; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); flex-shrink: 0;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
                                 <i class="material-icons" style="color: white; font-size: 22px;">download</i>
                             </button>
 
-                            <!-- Filter (Redesigned to match main filters) -->
+                            <!-- Filter: LOCAL = locked | GLOBAL = dropdown -->
                             <div class="fleet-filter-container">
+                            @if($dashIsLocal)
+                                {{-- LOCAL: frente fijo, no se puede cambiar --}}
+                                <input type="hidden" id="dashboardSelectedFrenteId" value="{{ $defaultDashboardId }}">
+                                <input type="hidden" id="dashboardSelectedFrenteNombre" value="{{ $defaultDashboardNombre }}">
+                                <div style="display:flex;align-items:center;background:rgba(255,255,255,0.15);border-radius:8px;height:38px;padding:0 12px;gap:8px;min-width:170px;">
+                                    <i class="material-icons" style="font-size:16px;color:rgba(255,255,255,0.8);flex-shrink:0;">location_on</i>
+                                    <span style="font-size:13px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;">
+                                        {{ $defaultDashboardNombre ?: 'Mi Frente' }}
+                                    </span>
+                                    <i class="material-icons" title="Solo puedes ver tu frente asignado" style="font-size:15px;color:rgba(255,255,255,0.6);flex-shrink:0;">lock</i>
+                                </div>
+                            @else
+                                {{-- GLOBAL: dropdown completo --}}
+                                <input type="hidden" id="dashboardSelectedFrenteId" value="{{ $defaultDashboardId }}">
+                                <input type="hidden" id="dashboardSelectedFrenteNombre" value="{{ $defaultDashboardNombre }}">
                                 <div class="custom-dropdown" id="dashboardFrenteDropdown" style="width: 100%;">
                                     <div class="dropdown-trigger" onclick="dashboardToggleFrente(event)" style="padding: 0; display: flex; align-items: center; background: rgba(255,255,255,0.95); overflow: hidden; border: none; border-radius: 8px; height: 38px;">
                                         <div style="padding: 0 10px; display: flex; align-items: center; color: #64748b;">
                                             <i class="material-icons" style="font-size: 18px;">search</i>
                                         </div>
-                                        <input type="text" id="dashboardFrenteSearch" 
-                                            placeholder="Buscar frente..." 
-                                            onkeyup="dashboardFilterFrentes()" 
+                                        <input type="text" id="dashboardFrenteSearch"
+                                            placeholder="Buscar frente..."
+                                            onkeyup="dashboardFilterFrentes()"
                                             style="width: 100%; border: none; background: transparent; padding: 8px 5px; font-size: 13px; font-weight: 500; outline: none; color: #1e293b;"
                                             autocomplete="off">
                                         <i class="material-icons" style="padding: 0 8px; color: #64748b; font-size: 20px;">arrow_drop_down</i>
                                     </div>
-
                                     <!-- Custom Dropdown List -->
                                     <div id="dashboardFrenteList" style="display: none; position: absolute; top: 105%; left: 0; right: 0; max-height: 250px; overflow-y: auto; background: white; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 50; padding: 5px;">
                                         @foreach($frentes as $frente)
@@ -626,15 +679,8 @@
                                             </div>
                                         @endforeach
                                     </div>
-                                    @php
-                                        $userFrenteId = auth()->user()->ID_FRENTE_ASIGNADO;
-                                        $userFrente = $userFrenteId ? $frentes->firstWhere('ID_FRENTE', $userFrenteId) : null;
-                                        $defaultDashboardId = $userFrenteId ?? ($frentes->first()->ID_FRENTE ?? '');
-                                        $defaultDashboardNombre = $userFrente ? $userFrente->NOMBRE_FRENTE : ($frentes->first()->NOMBRE_FRENTE ?? '');
-                                    @endphp
-                                    <input type="hidden" id="dashboardSelectedFrenteId" value="{{ $defaultDashboardId }}">
-                                    <input type="hidden" id="dashboardSelectedFrenteNombre" value="{{ $defaultDashboardNombre }}">
                                 </div>
+                            @endif
                             </div>
                         </div>
                     </div>

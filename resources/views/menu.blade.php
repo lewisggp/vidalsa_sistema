@@ -11,8 +11,6 @@
     }
 </style>
 
-
-
 <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;">
     <svg viewBox="0 0 1440 900" preserveAspectRatio="xMinYMin slice" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
         <path d="M0 900 V 400 Q 150 750 600 850 T 1440 900 Z" fill="#00004d" />
@@ -63,90 +61,17 @@
                                    onblur="this.style.borderColor='#d1d5db'"
                                    onkeyup="filterPendingMovs()"
                                    autocomplete="off">
-                            <a href="{{ route('movilizaciones.index') }}" 
+                            <button type="button"
+                               onclick="abrirRecepcionDirecta()"
                                class="btn-recibir-dashboard"
-                               title="Ir a Recepción Directa"
+                               title="Recepción Directa (sin movilización previa)"
                                style="background: rgb(0, 103, 177); border: none; color: white; padding: 0 10px; height: 36px; border-radius: 6px; font-weight: 700; display: flex; align-items: center; gap: 4px; text-decoration: none; flex-shrink: 0; cursor: default;">
                                 <i class="material-icons" style="font-size: 18px;">input</i>
                                 <span class="desktop-only" style="font-size: 10px; font-weight: 800;">RECEP. DIRECTA</span>
-                            </a>
+                            </button>
                         </div>
-                        <div class="activity-list">
-                            @forelse($recentActivity as $activity)
-                            @php
-                                // Obtener permisos del usuario actual
-                                $usuario = auth()->user();
-                                $usuarioFrenteId = $usuario->ID_FRENTE_ASIGNADO;
-                                $esGlobal = ($usuario->NIVEL_ACCESO == 1);
-                                
-                                // Determinar si puede recibir (destinatario o global)
-                                $esDestinatario = ($usuarioFrenteId == $activity->ID_FRENTE_DESTINO);
-                                $puedeRecibir = $esDestinatario || $esGlobal;
-                            @endphp
-                            
-                            <div class="activity-item" 
-                                 data-chasis="{{ $activity->equipo->SERIAL_CHASIS ?? '' }}" 
-                                 data-placa="{{ $activity->equipo->documentacion->PLACA ?? '' }}" 
-                                 data-etiqueta="{{ $activity->equipo->NUMERO_ETIQUETA ?? '' }}"
-                                 style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #f1f5f9;">
-                                <div class="activity-icon">
-                                    <i class="material-icons">local_shipping</i>
-                                </div>
-                                <div class="activity-info" style="flex: 1; min-width: 0;">
-                                    <div style="display: flex; align-items: center; gap: 5px;">
-                                        <strong style="font-size: 13px; color: #1e293b;">{{ $activity->equipo->tipo->nombre ?? 'Equipo' }}</strong>
-                                        @if(!empty($activity->equipo->NUMERO_ETIQUETA))
-                                            <span style="color: #0067b1; font-weight: 800; font-size: 12px;">#{{ $activity->equipo->NUMERO_ETIQUETA }}</span>
-                                        @endif
-                                    </div>
-                                    @php
-                                        $placa = $activity->equipo->documentacion->PLACA ?? null;
-                                        $serial = $activity->equipo->SERIAL_CHASIS ?? null;
-                                        $primaryId = ($placa && strtoupper($placa) !== 'N/A') ? $placa : $serial;
-                                    @endphp
-                                    <p class="activity-text" style="margin: 1px 0; font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase;">
-                                        {{ $primaryId }}
-                                    </p>
-                                    <div style="font-size: 10px; color: #94a3b8; display: flex; align-items: center; gap: 4px;">
-                                        <i class="material-icons" style="font-size: 12px;">schedule</i>
-                                        {{ $activity->created_at->locale('es')->diffForHumans() }}
-                                    </div>
-                                </div>
-
-                                
-                                <!-- Botones de Acción -->
-                                <div class="activity-actions" style="display: flex; gap: 6px; flex-shrink: 0; align-items: center;">
-                                    @if($puedeRecibir)
-                                        <!-- Botón Recibir (Rápido) -->
-                                        <form action="{{ route('movilizaciones.updateStatus', $activity->ID_MOVILIZACION) }}" method="POST" style="margin: 0;">
-                                            @csrf
-                                            @method('PATCH')
-                                            <input type="hidden" name="status" value="RECIBIDO">
-                                            <button type="submit" 
-                                                class="btn-recibir-dashboard"
-                                                title="Confirmar recepción rápida"
-                                                style="background: rgb(0, 103, 177); border: none; color: white; padding: 4px 8px; height: 32px; border-radius: 8px; font-weight: 800; display: flex; align-items: center; gap: 5px; cursor: default;">
-                                                <i class="material-icons" style="font-size: 16px;">check_circle</i>
-                                                <span style="font-size: 10px;">RECIBIR</span>
-                                            </button>
-                                        </form>
-                                    @else
-                                        {{-- Sin permisos para recibir --}}
-                                        <div class="btn-sin-acceso-dashboard"
-                                            title="No tienes permisos para recibir este equipo"
-                                            style="height: 32px; padding: 5px 12px; display: flex; align-items: center; gap: 4px;">
-                                            <i class="material-icons" style="font-size: 18px;">block</i>
-                                            <span style="font-size: 11px; font-weight: 800;">Sin Acceso</span>
-                                        </div>
-                                    @endif
-                                </div>
-                            </div>
-                            @empty
-                            <div class="empty-state">
-                                <i class="material-icons">inbox</i>
-                                <p>No hay movilizaciones por confirmar.</p>
-                            </div>
-                            @endforelse
+                        <div class="activity-list" id="pendingMovsList">
+                            @include('partials.pending_movs_list', ['recentActivity' => $recentActivity])
                         </div>
                     </div>
                 </div>
@@ -199,8 +124,7 @@
         </div>
     </div>
 </div>
-    
-    
+
     <!-- User Floating Panel (Bottom Left) -->
     <style>
         @media (max-width: 768px) {
@@ -218,7 +142,6 @@
             <span style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">{{ auth()->user()->rol->NOMBRE_ROL ?? 'Sin Rol' }}</span>
         </div>
     </div>
-    
     <!-- Feature Cards (Above Machinery) -->
     <div class="features-floating-wrapper">
         <div class="features-container">
@@ -236,7 +159,6 @@
             </div>
         </div>
     </div>
-    
     <div class="machinery-fixed-bottom">
         <div class="machinery-wrapper" style="width: 100%; height: auto;">
             <img src="{{ asset('images/maquinaria_login_new.webp') }}" alt="Maquinaria Vidalsa" style="width: 100%; height: auto; display: block; filter: drop-shadow(-10px -10px 20px rgba(0, 0, 0, 0.15));">
@@ -246,40 +168,127 @@
     <!-- Partial Modal for Equipment Details (Used by Alerts) -->
     @include('admin.equipos.partials.equipment_details_modal')
 
+    {{-- ============================================================ --}}
+    {{-- MODAL DE RECEPCIÓN DIRECTA (Abierto desde el menú) --}}
+    {{-- ============================================================ --}}
+    @php
+        $menuUser        = auth()->user();
+        $menuFrenteAsig  = $menuUser ? $menuUser->ID_FRENTE_ASIGNADO : null;
+        $menuFrenteObj   = $menuFrenteAsig ? $frentes->firstWhere('ID_FRENTE', $menuFrenteAsig) : null;
+    @endphp
+
+    {{-- El modal reutiliza exactamente la misma lógica JS de movilizaciones_index.js --}}
+    <div id="recepcionDirectaModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center;">
+        <div style="background: white; width: 95%; max-width: 450px; max-height: 90vh; border-radius: 16px; padding: 0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: slideDown 0.3s ease-out; display: flex; flex-direction: column; overflow: hidden;">
+
+            {{-- Header --}}
+            <div style="background: linear-gradient(135deg, #0067b1, #004e8c); padding: 14px 18px; color: white; flex-shrink: 0;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="material-icons" style="font-size: 22px;">input</i>
+                        <div>
+                            <h3 style="margin: 0; font-size: 15px; font-weight: 800;">Recepción Directa</h3>
+                            <p style="margin: 0; font-size: 11px; opacity: 0.85;">Sin movilización previa</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="cerrarRecepcionDirecta()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="material-icons" style="font-size: 18px;">close</i>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Body --}}
+            <div style="padding: 20px 25px; overflow-y: auto; flex: 1;">
+
+                {{-- PASO 1: Buscar equipos --}}
+                <div style="margin-bottom: 20px;">
+                    <label for="rdSearchInput" style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px;">
+                        <span style="background: #0067b1; color: white; padding: 2px 8px; border-radius: 50%; font-size: 11px; font-weight: 800; margin-right: 6px;">1</span>
+                        Buscar Equipo (Serial, Placa o Código)
+                    </label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="rdSearchInput"
+                            placeholder="Buscar por serial, placa o código..."
+                            style="flex: 1; padding: 10px 14px; border: 1px solid #cbd5e0; border-radius: 10px; font-size: 14px; background: #f8fafc; outline: none;"
+                            autocomplete="off"
+                            onfocus="this.style.borderColor='#0067b1'" onblur="this.style.borderColor='#cbd5e0'"
+                            onkeyup="if(event.key==='Enter') buscarEquiposRD()">
+                        <button type="button" onclick="buscarEquiposRD()"
+                            style="padding: 10px 16px; background: #0067b1; border: none; border-radius: 10px; color: white; font-weight: 700; display: flex; align-items: center; gap: 4px; transition: background 0.2s;"
+                            onmouseover="this.style.background='#005a9e'" onmouseout="this.style.background='#0067b1'">
+                            <i class="material-icons" style="font-size: 18px;">search</i>
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Resultados de búsqueda --}}
+                <div id="rdResultados" style="margin-bottom: 20px; display: none;">
+                    <p style="font-size: 12px; font-weight: 600; color: #94a3b8; margin-bottom: 6px; margin-top: 0; text-transform: uppercase;">Resultados</p>
+                    <div id="rdResultadosList" style="min-height: 100px; max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; background: #fafbfc;">
+                        {{-- populated by JS --}}
+                    </div>
+                </div>
+
+                {{-- Frente receptor: hidden, siempre el frente asignado al usuario --}}
+                <input type="hidden" id="rdFrenteInput" value="{{ $menuFrenteAsig }}">
+
+                {{-- PASO 2: Ubicación específica --}}
+                <div style="margin-bottom: 15px;">
+                    <label for="rdUbicacionInput" style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px;">
+                        <span style="background: #0067b1; color: white; padding: 2px 8px; border-radius: 50%; font-size: 11px; font-weight: 800; margin-right: 6px;">2</span>
+                        UBICACIÓN DETALLADA EN: <span style="color: #0f172a; font-weight: 900; text-transform: uppercase;">
+                            {{ $menuFrenteObj ? $menuFrenteObj->NOMBRE_FRENTE : 'SIN ASIGNAR' }}
+                        </span>
+                    </label>
+                    <div style="position: relative;">
+                        <input type="text" id="rdUbicacionInput"
+                            placeholder=""
+                            style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e0; border-radius: 10px; font-size: 14px; background: #f8fafc; outline: none; box-sizing: border-box;"
+                            onfocus="this.style.borderColor='#0067b1'; showUbicacionSuggestions('rd-ubicacion-suggestions')"
+                            onblur="this.style.borderColor='#cbd5e0'; setTimeout(()=>hideUbicacionSuggestions('rd-ubicacion-suggestions'), 200)"
+                            oninput="filterUbicacionSuggestions(this, 'rd-ubicacion-suggestions')">
+                        <div id="rd-ubicacion-suggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1px solid #cbd5e0; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:500; max-height:160px; overflow-y:auto; margin-top:4px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Footer --}}
+            <div style="padding: 15px 25px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; flex-shrink: 0; background: #fafbfc;">
+                <button type="button" onclick="cerrarRecepcionDirecta()"
+                    style="flex: 1; padding: 12px; background: white; border: 1px solid #e2e8f0; border-radius: 10px; font-weight: 600; color: #64748b;">
+                    Cancelar
+                </button>
+                <button type="button" id="btnConfirmarRD" onclick="confirmarRecepcionDirecta()"
+                    style="flex: 1; padding: 12px; background: #0067b1; border: none; border-radius: 10px; font-weight: 700; color: white; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 103, 177, 0.3);"
+                    onmouseover="this.style.background='#005a9e'; this.style.transform='translateY(-1px)'"
+                    onmouseout="this.style.background='#0067b1'; this.style.transform='translateY(0)'">
+                    <i class="material-icons" style="font-size: 16px;">check_circle</i>
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @section('scripts')
     <!-- Inject Scripts for Equipment Modal Logic on Dashboard -->
     <script src="{{ asset('js/maquinaria/uicomponents.js') }}"></script>
     <script src="{{ asset('js/maquinaria/equipos_index.js') }}"></script>
+    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}"></script>
     <script>
-        // Ensure functions are available globally if needed, though uicomponents.js should handle it
-        console.log('Dashboard scripts loaded for alerts.');
+        // Animación del modal de recepción directa
+        const _styleRD = document.createElement('style');
+        _styleRD.textContent = '@keyframes slideDown { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }';
+        document.head.appendChild(_styleRD);
 
-        document.addEventListener('DOMContentLoaded', function() {
-            // Intercept all forms with the receive button
-            const receiveForms = document.querySelectorAll('form'); 
-            
-            receiveForms.forEach(form => {
-                const btn = form.querySelector('.btn-recibir-dashboard');
-                // Solo adjuntar si es el botón de RECIBIR (el azul)
-                if(btn && btn.style.background.includes('rgb(0, 103, 177)') && btn.type === 'submit') {
-                    form.addEventListener('submit', function(e) {
-                         // Prevent multiple clicks if already disabled
-                        if (btn.disabled) return;
-
-                        // Show Global Preloader
-                        const preloader = document.getElementById('preloader');
-                        if (preloader) {
-                            preloader.style.display = 'flex';
-                        }
-                        
-                        // Disable button to prevent double submit
-                        btn.disabled = true;
-                    });
-                }
-            });
-        });
+        // En el MENÚ no hay tabla de movilizaciones, así que sobreescribimos
+        // loadMovilizaciones para que refresque solo la lista pendiente (sin recargar página).
+        window.loadMovilizaciones = function () {
+            if (typeof window.refreshPendingMovs === 'function') {
+                window.refreshPendingMovs();
+            }
+        };
 
     </script>
 @endsection

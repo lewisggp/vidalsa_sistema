@@ -42,42 +42,73 @@
 
         <!-- Filter Toolbar -->
         <div class="movilizaciones-filter-bar filter-toolbar-container" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center; margin-bottom: 5px;">
-            <!-- Frente Filter -->
-            <div class="mv-filter-item" style="flex: 2; min-width: 170px;">
-                <div class="custom-dropdown" id="frenteFilterSelect" data-filter-type="id_frente" data-default-label="Filtrar Frente...">
-                    <input type="hidden" name="id_frente" data-filter-value value="{{ request('id_frente') }}" form="search-form">
-                    
-                    @php 
-                        $currentFrente = $frentes->firstWhere('ID_FRENTE', request('id_frente'));
-                    @endphp
+        @php
+            $authUser       = auth()->user();
+            $isLocalUser    = $authUser && $authUser->NIVEL_ACCESO == 2;
+            $userFrenteAsig = $authUser ? $authUser->ID_FRENTE_ASIGNADO : null;
+            $userFrenteObj  = $userFrenteAsig ? $frentes->firstWhere('ID_FRENTE', $userFrenteAsig) : null;
+        @endphp
 
-                    <div class="dropdown-trigger {{ request('id_frente') && request('id_frente') != 'all' ? 'filter-active' : '' }}" style="padding: 0; display: flex; align-items: center; background: #fbfcfd; overflow: hidden; border: 1px solid #cbd5e0; border-radius: 12px; height: 45px;">
-                        <div style="padding: 0 10px; display: flex; align-items: center; color: var(--maquinaria-gray-text);">
-                            <i class="material-icons" style="font-size: 18px;">search</i>
-                        </div>
-                        <input type="text" name="filter_search_dropdown" data-filter-search
-                            placeholder="{{ $currentFrente ? $currentFrente->NOMBRE_FRENTE : 'Filtrar Frente...' }}" 
-                             aria-label="Filtrar Frente"
-                            style="width: 100%; border: none; background: transparent; padding: 10px 5px; font-size: 14px; outline: none;"
-                            oninput="window.filterDropdownOptions(this)"
-                            autocomplete="off">
-                        <i class="material-icons" data-clear-btn style="padding: 0 5px; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_frente') && request('id_frente') != 'all' ? 'block' : 'none' }};" onclick="event.stopPropagation(); clearDropdownFilter('frenteFilterSelect'); loadMovilizaciones();">close</i>
+        {{-- =====================================================================
+             FILTRO FRENTE: LOCAL = bloqueado | GLOBAL = dropdown con default real
+             ===================================================================== --}}
+        <div class="mv-filter-item" style="flex: 2; min-width: 170px;">
+        @if($isLocalUser)
+            {{-- ── USUARIO LOCAL: frente fijo, no se puede cambiar ── --}}
+            <input type="hidden" name="id_frente" data-filter-value value="{{ $userFrenteAsig }}" form="search-form">
+            <div style="display:flex; align-items:center; background:#e8f4fd; border:1.5px solid #0067b1; border-radius:12px; height:45px; padding:0 14px; gap:8px;">
+                <i class="material-icons" style="font-size:18px; color:#0067b1; flex-shrink:0;">location_on</i>
+                <span style="font-size:14px; font-weight:600; color:#0067b1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                    {{ $userFrenteObj ? $userFrenteObj->NOMBRE_FRENTE : 'Mi Frente' }}
+                </span>
+                <i class="material-icons" title="Sólo puedes ver tu frente asignado" style="font-size:16px; color:#64748b; margin-left:auto; flex-shrink:0;">lock</i>
+            </div>
+        @else
+            {{-- ── USUARIO GLOBAL: dropdown completo con frente pre-seleccionado ── --}}
+            @php
+                $currentFrenteId = request('id_frente');
+                if (!$currentFrenteId && $userFrenteAsig) {
+                    $currentFrenteId = $userFrenteAsig;
+                }
+                $currentFrente = $currentFrenteId ? $frentes->firstWhere('ID_FRENTE', $currentFrenteId) : null;
+            @endphp
+            <div class="custom-dropdown" id="frenteFilterSelect" data-filter-type="id_frente" data-default-label="Filtrar Frente...">
+                <input type="hidden" name="id_frente" data-filter-value value="{{ $currentFrenteId }}" form="search-form">
+
+                <div class="dropdown-trigger {{ $currentFrenteId && $currentFrenteId != 'all' ? 'filter-active' : '' }}" style="padding:0; display:flex; align-items:center; background:#fbfcfd; overflow:hidden; border:1px solid #cbd5e0; border-radius:12px; height:45px;">
+                    <div style="padding:0 10px; display:flex; align-items:center; color:var(--maquinaria-gray-text);">
+                        <i class="material-icons" style="font-size:18px;">search</i>
                     </div>
+                    <input type="text" name="filter_search_dropdown" data-filter-search
+                        placeholder="{{ $currentFrente ? $currentFrente->NOMBRE_FRENTE : 'Filtrar Frente...' }}"
+                        aria-label="Filtrar Frente"
+                        style="width:100%; border:none; background:transparent; padding:10px 5px; font-size:14px; outline:none;"
+                        oninput="window.filterDropdownOptions(this)"
+                        autocomplete="off">
+                    <i class="material-icons" data-clear-btn
+                       style="padding:0 5px; color:var(--maquinaria-gray-text); font-size:18px; display:{{ $currentFrenteId && $currentFrenteId != 'all' ? 'block' : 'none' }};"
+                       onclick="event.stopPropagation(); clearDropdownFilter('frenteFilterSelect'); loadMovilizaciones();">close</i>
+                </div>
 
-                    <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible;">
-                        <div class="dropdown-item-list" style="max-height: 250px; overflow-y: auto;">
-                            <div class="dropdown-item {{ !request('id_frente') || request('id_frente') == 'all' ? 'selected' : '' }}" data-value="all" onclick="selectOption('frenteFilterSelect', 'all', 'TODOS LOS FRENTES'); loadMovilizaciones();">
-                                TODOS LOS FRENTES
-                            </div>
-                            @foreach($frentes as $frente)
-                                <div class="dropdown-item {{ request('id_frente') == $frente->ID_FRENTE ? 'selected' : '' }}" data-value="{{ $frente->ID_FRENTE }}" onclick="selectOption('frenteFilterSelect', '{{ $frente->ID_FRENTE }}', '{{ $frente->NOMBRE_FRENTE }}'); loadMovilizaciones();">
-                                    {{ $frente->NOMBRE_FRENTE }}
-                                </div>
-                            @endforeach
+                <div class="dropdown-content" style="padding:5px; max-height:none; overflow:visible;">
+                    <div class="dropdown-item-list" style="max-height:250px; overflow-y:auto;">
+                        <div class="dropdown-item {{ !$currentFrenteId || $currentFrenteId == 'all' ? 'selected' : '' }}"
+                             data-value="all"
+                             onclick="selectOption('frenteFilterSelect', 'all', 'TODOS LOS FRENTES'); loadMovilizaciones();">
+                            TODOS LOS FRENTES
                         </div>
+                        @foreach($frentes as $frente)
+                            <div class="dropdown-item {{ $currentFrenteId == $frente->ID_FRENTE ? 'selected' : '' }}"
+                                 data-value="{{ $frente->ID_FRENTE }}"
+                                 onclick="selectOption('frenteFilterSelect', '{{ $frente->ID_FRENTE }}', '{{ $frente->NOMBRE_FRENTE }}'); loadMovilizaciones();">
+                                {{ $frente->NOMBRE_FRENTE }}
+                            </div>
+                        @endforeach
                     </div>
                 </div>
             </div>
+        @endif
+        </div>
 
             <!-- Tipo Filter -->
             <div class="mv-filter-item" style="flex: 2; min-width: 170px;">
@@ -127,8 +158,7 @@
                             <input type="text" id="searchInput" name="search" value="{{ request('search') }}"
                                 placeholder="Buscar Control o Equipo"
                                 class="search-input-field"
-                                autocomplete="off"
-                                onkeyup="if(this.value.length >= 4 || this.value.length == 0) { /* Debounce handled in script */ }">
+                                autocomplete="off">
                             <i id="btn_clear_search" class="material-icons clear-icon" style="display: {{ request('search') ? 'block' : 'none' }};" onclick="selectMovilizacionFilter('search', '');">close</i>
                         </div>
                     </form>
@@ -368,17 +398,15 @@
                 </div>
             </div>
 
-
-
-            {{-- Frente receptor: hidden, siempre el del usuario --}}
-            <input type="hidden" id="rdFrenteInput" value="{{ auth()->user()->ID_FRENTE_ASIGNADO }}">
+            {{-- Frente receptor: hidden, siempre el frente asignado al usuario --}}
+            <input type="hidden" id="rdFrenteInput" value="{{ $userFrenteAsig }}">
 
             {{-- PASO 2: Ubicación específica (opcional) --}}
             <div style="margin-bottom: 15px;">
                 <label for="rdUbicacionInput" style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px;">
                     <span style="background: #0067b1; color: white; padding: 2px 8px; border-radius: 50%; font-size: 11px; font-weight: 800; margin-right: 6px;">2</span>
                     UBICACIÓN DETALLADA EN: <span style="color: #0f172a; font-weight: 900; text-transform: uppercase;">
-                        {{ optional(\App\Models\FrenteTrabajo::find(auth()->user()->ID_FRENTE_ASIGNADO))->NOMBRE_FRENTE ?? 'SIN ASIGNAR' }}
+                        {{ $userFrenteObj ? $userFrenteObj->NOMBRE_FRENTE : 'SIN ASIGNAR' }}
                     </span>
                 </label>
                 {{-- Input con sugerencias --}}

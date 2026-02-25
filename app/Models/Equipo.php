@@ -65,6 +65,15 @@ class Equipo extends Model
         return $this->belongsTo(Equipo::class, 'ID_ANCLAJE', 'ID_EQUIPO');
     }
 
+    /**
+     * Alias semántico de anclaje() usado en vistas — incluye sub-relaciones necesarias.
+     */
+    public function ancladoA()
+    {
+        return $this->belongsTo(Equipo::class, 'ID_ANCLAJE', 'ID_EQUIPO')
+                    ->with(['tipo', 'documentacion']);
+    }
+
     public function equiposAnclados()
     {
         return $this->hasMany(Equipo::class, 'ID_ANCLAJE', 'ID_EQUIPO');

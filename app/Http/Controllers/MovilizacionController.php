@@ -18,10 +18,18 @@ class MovilizacionController extends Controller
 
     public function index(Request $request)
     {
-        // Default to user's assigned front if no filter is provided
-        if (!$request->has('id_frente')) {
-            $user = auth()->user();
-            if ($user && $user->ID_FRENTE_ASIGNADO) {
+        // Frente filter logic: LOCAL users always see their frente (locked).
+        // GLOBAL users get their frente as default ONLY on the initial page load (non-AJAX).
+        // When a GLOBAL user clears the filter (AJAX request), we respect the empty value.
+        $user = auth()->user();
+        $isLocalUser = $user && $user->NIVEL_ACCESO == 2;
+
+        if ($isLocalUser && $user->ID_FRENTE_ASIGNADO) {
+            // LOCAL: Always force their assigned frente, ignore any request parameter
+            $request->merge(['id_frente' => $user->ID_FRENTE_ASIGNADO]);
+        } elseif (!$isLocalUser && $user && $user->ID_FRENTE_ASIGNADO) {
+            // GLOBAL: Only set default on initial page load (not AJAX / not when user explicitly cleared it)
+            if (!$request->wantsJson() && !$request->exists('id_frente')) {
                 $request->merge(['id_frente' => $user->ID_FRENTE_ASIGNADO]);
             }
         }
@@ -512,23 +520,20 @@ class MovilizacionController extends Controller
 
             $pdf = new ActaTrasladoPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
 
-            $pdf->codigoControl = $movilizacion->CODIGO_CONTROL;
-            $pdf->SetTitle('Acta de Traslado - ' . $movilizacion->CODIGO_CONTROL);
-            $pdf->SetMargins(15, 15, 15);
+            $pdf->frenteOrigen = $frenteOrigen->NOMBRE_FRENTE ?? 'OFICINA PRINCIPAL';
+            $pdf->setPrintHeader(true);
+            $pdf->setPrintFooter(true);
+            $pdf->SetMargins(15, 42, 15);  // top=42 para dejar espacio al header nativo
+            $pdf->SetHeaderMargin(8);
             $pdf->SetAutoPageBreak(true, 15);
-            $pdf->setPrintHeader(false);
-            $pdf->setPrintFooter(false);
             $pdf->AddPage();
             $pdf->SetFont('helvetica', '', 10);
-
-            $usuarioEmisor = auth()->user();
-            $logoPath = public_path('img/imagen_uno.jpg');
 
             $equipos = $movilizaciones->map(function ($mov) {
                 return $mov->equipo;
             });
 
-            $html = view('admin.movilizaciones.acta_traslado_pdf', compact('movilizaciones', 'equipos', 'movilizacion', 'frenteOrigen', 'frenteDestino', 'usuarioEmisor', 'logoPath'))->render();
+            $html = view('admin.movilizaciones.acta_traslado_pdf', compact('movilizaciones', 'equipos', 'movilizacion', 'frenteOrigen', 'frenteDestino'))->render();
 
             $html = str_replace("this.closest('div[style*='position: fixed']').remove();", "", $html);
 
@@ -548,15 +553,23 @@ class MovilizacionController extends Controller
 // Clase personalizada para el PDF
 class ActaTrasladoPDF extends \TCPDF
 {
-    // Eliminamos Header() y Footer() para que el diseño dependa 100% del HTML de la vista Blade
+    public $frenteOrigen = '';
+
     public function Header()
     {
-        // Dejar vacío para no imprimir encabezado automático
+        $image_file = public_path('img/imagen_uno.jpg');
+        if (file_exists($image_file)) {
+            $this->Image($image_file, 15, 8, 0, 25, 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
+        }
+
+        $this->SetFont('helvetica', '', 8.5);
+        $frente = strtoupper($this->frenteOrigen ?: 'OFICINA PRINCIPAL');
+        $html = '<div style="text-align: right; line-height: 1.8;"><strong>FECHA DE EMISI&Oacute;N:</strong> ' . \Carbon\Carbon::now()->format('d/m/Y') . '<br><strong>FRENTE DE ORIGEN:</strong> ' . $frente . '<br>EMITIDO POR SISTEMA DE GESTI&Oacute;N DE FLOTA</div>';
+        $this->writeHTMLCell(0, 0, 15, 20, $html, 0, 1, 0, true, 'R', true);
     }
 
     public function Footer()
     {
-        // Dejar vacío para no imprimir pie de página automático (o personalizar si se requiere solo paginación)
         $this->SetY(-15);
         $this->SetFont('helvetica', 'I', 8);
         $this->Cell(0, 10, 'Página ' . $this->getAliasNumPage() . '/' . $this->getAliasNbPages(), 0, 0, 'C');

@@ -7,32 +7,6 @@
 
 <body>
 
-    <!-- ===================== ENCABEZADO ===================== -->
-    <table width="100%" border="0" cellpadding="0" cellspacing="0">
-        <tr>
-            <td width="30%" valign="top">
-                @if(file_exists($logoPath))
-                    <img src="{{ $logoPath }}" height="65" />
-                @else
-                    <b><span style="font-size: 9pt;">VIDALSA 27</span></b>
-                @endif
-            </td>
-            <td width="70%" align="right" valign="bottom" style="font-size: 8.5pt;">
-                <b>FECHA DE EMISIÓN:</b> {{ date('d/m/Y') }}<br>
-                <b>FRENTE DE ORIGEN:</b>
-                {{ strtoupper($usuarioEmisor->frenteAsignado->NOMBRE_FRENTE ?? 'OFICINA PRINCIPAL') }}<br>
-                EMITIDO POR SISTEMA DE GESTIÓN DE FLOTA
-            </td>
-        </tr>
-    </table>
-
-    <!-- Separador encabezado / N° Operación (12px) -->
-    <table width="100%" border="0" cellpadding="0" cellspacing="0">
-        <tr>
-            <td height="12">&nbsp;</td>
-        </tr>
-    </table>
-
     <!-- ===================== N° OPERACIÓN ===================== -->
     <table width="100%" border="0" cellpadding="0" cellspacing="0">
         <tr>
@@ -68,7 +42,7 @@
     <!-- ===================== CUERPO DEL TEXTO ===================== -->
     <table width="100%" border="0" cellpadding="0" cellspacing="0">
         <tr>
-            <td align="justify" style="font-size: 10pt;">
+            <td align="justify" style="font-size: 10pt; line-height: 1.5;">
                 Por medio del presente documento, el frente
                 <b>{{ strtoupper($frenteOrigen->NOMBRE_FRENTE ?? 'OFICINA PRINCIPAL') }}</b> de la
                 <b>CONSTRUCTORA VIDALSA 27, C.A.</b>, deja constancia formal del despacho y traslado de los equipos
@@ -203,7 +177,7 @@
             </tr>
         @endforeach
 
-        <!-- ── Fila: RECIBIDO POR (DESTINO) centrado con columnas vacías ── -->
+        <!-- ── Fila: RECIBIDO POR (DESTINO) centrado ── -->
         <tr>
             <td width="20%">&nbsp;</td>
             <td width="60%" align="center">
@@ -224,6 +198,7 @@
                                     <td align="center" style="font-size: 8.5pt; line-height: 1.5;">Nombre:
                                         ___________________________</td>
                                 </tr>
+                                <tr><td height="1">&nbsp;</td></tr>
                                 <tr>
                                     <td align="center" style="font-size: 8.5pt; line-height: 1.5;">Cédula:
                                         ___________________________</td>

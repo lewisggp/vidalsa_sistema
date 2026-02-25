@@ -51,36 +51,35 @@ function updateSelectionUI() {
             text.innerText = count;
             bar.classList.add("active");
 
-            // Role-based visibility for Anchor button
-            const anchorBtn = bar.querySelector(
-                'button[onclick="openAnchorModal(event)"]',
-            );
+            const selections = Object.values(window.selectedEquipos);
+
+            // ── Anclar button ──
+            const anchorBtn = document.getElementById('btnAnclar');
             if (anchorBtn) {
-                const selections = Object.values(window.selectedEquipos);
                 const canAnchor =
                     selections.length === 1 &&
-                    (selections[0].rolAnclaje === "REMOLCADOR" ||
-                        selections[0].rolAnclaje === "REMOLCABLE");
-                anchorBtn.style.display = canAnchor ? "flex" : "none";
-
-                // Unanchor button visibility
-                const unanchorBtn = document.getElementById("btnUnanchor");
-                if (unanchorBtn) {
-                    let canUnanchor = false;
-                    if (selections.length === 2) {
-                        const s1 = selections[0];
-                        const s2 = selections[1];
-                        // If cross-referenced
-                        if (
-                            String(s1.anchorId) === String(s2.id) &&
-                            String(s2.anchorId) === String(s1.id)
-                        ) {
-                            canUnanchor = true;
-                        }
-                    }
-                    unanchorBtn.style.display = canUnanchor ? "flex" : "none";
-                }
+                    (selections[0].rolAnclaje === 'REMOLCADOR' ||
+                        selections[0].rolAnclaje === 'REMOLCABLE');
+                anchorBtn.style.display = canAnchor ? 'flex' : 'none';
             }
+
+            // ── Desanclar button ──
+            const unanchorBtn = document.getElementById('btnUnanchor');
+            if (unanchorBtn) {
+                let canUnanchor = false;
+                if (selections.length === 2) {
+                    const s1 = selections[0];
+                    const s2 = selections[1];
+                    if (
+                        String(s1.anchorId) === String(s2.id) &&
+                        String(s2.anchorId) === String(s1.id)
+                    ) {
+                        canUnanchor = true;
+                    }
+                }
+                unanchorBtn.style.display = canUnanchor ? 'flex' : 'none';
+            }
+
         } else {
             bar.classList.remove("active");
         }
@@ -154,6 +153,8 @@ function handleRowClick(e) {
 
     const id = btnDetails.dataset.equipoId;
     const code = btnDetails.dataset.codigo;
+    const placa = btnDetails.dataset.placa;   // PLACA del documento
+    const chasis = btnDetails.dataset.chasis; // SERIAL_CHASIS
     const frenteId = btnDetails.dataset.frenteId;
     const rolAnclaje = btnDetails.dataset.rolAnclaje;
     const anchorId = btnDetails.dataset.anchorId;
@@ -163,18 +164,22 @@ function handleRowClick(e) {
     const toggleSelection = (
         targetId,
         targetCode,
+        targetPlaca,
+        targetChasis,
         targetFrente,
         targetRol,
-        targetAnchorId, // Added parameter for anchorId
+        targetAnchorId,
         targetRow,
     ) => {
         if (isSelecting) {
             window.selectedEquipos[targetId] = {
-                id: targetId, // Added id to the stored object
+                id: targetId,
                 code: targetCode,
+                placa: targetPlaca,
+                chasis: targetChasis,
                 frenteId: targetFrente,
                 rolAnclaje: targetRol,
-                anchorId: targetAnchorId, // Store the anchorId
+                anchorId: targetAnchorId,
             };
             if (targetRow) targetRow.classList.add("selected-row-maquinaria");
         } else {
@@ -185,11 +190,13 @@ function handleRowClick(e) {
     };
 
     // Toggle main equipment
-    toggleSelection(id, code, frenteId, rolAnclaje, anchorId, row);
+    toggleSelection(id, code, placa, chasis, frenteId, rolAnclaje, anchorId, row);
 
     // Toggle anchored partner if exists
     if (anchorId && anchorId !== "" && anchorId !== "null") {
         const partnerCode = btnDetails.dataset.anchorCode;
+        const partnerPlaca = btnDetails.dataset.anchorPlaca;
+        const partnerSerial = btnDetails.dataset.anchorSerial;
         const partnerRol = btnDetails.dataset.anchorRol;
 
         // Try to find partner row in DOM for visual feedback
@@ -201,9 +208,11 @@ function handleRowClick(e) {
         toggleSelection(
             anchorId,
             partnerCode || (partnerBtn ? partnerBtn.dataset.codigo : ""),
-            frenteId, // Always same frente
+            partnerPlaca || (partnerBtn ? partnerBtn.dataset.placa : ""),
+            partnerSerial || (partnerBtn ? partnerBtn.dataset.chasis : ""),
+            frenteId,
             partnerRol || (partnerBtn ? partnerBtn.dataset.rolAnclaje : ""),
-            partnerBtn ? partnerBtn.dataset.anchorId : id, // Partner's anchor is me or its metadata
+            partnerBtn ? partnerBtn.dataset.anchorId : id,
             partnerRow,
         );
 
@@ -211,30 +220,26 @@ function handleRowClick(e) {
         if (window.showToast) {
             // Priority: Partner in DOM > Clicked row dataset
             const partnerTipo = partnerBtn
-                ? partnerBtn.dataset.tipo
-                : btnDetails.dataset.anchorTipoNombre || "Equipo";
-            const partnerPlaca = partnerBtn
-                ? partnerBtn.dataset.placa
-                : btnDetails.dataset.anchorPlaca;
-            const partnerChasis = partnerBtn
+                ? (partnerBtn.dataset.tipo || 'Equipo')
+                : (btnDetails.dataset.anchorTipoNombre || 'Equipo');
+            const toastSerial = partnerBtn
                 ? partnerBtn.dataset.chasis
                 : btnDetails.dataset.anchorSerial;
+            const toastPlaca = partnerBtn
+                ? partnerBtn.dataset.placa
+                : btnDetails.dataset.anchorPlaca;
 
-            const identificador =
-                partnerPlaca && partnerPlaca !== "N/A" && partnerPlaca !== ""
-                    ? partnerPlaca
-                    : partnerChasis || anchorId;
+            // Identificador: TIPO · SERIAL > PLACA > SERIAL solo > CÓDIGO > ID
+            const identLabel = toastSerial
+                ? `${partnerTipo} · ${toastSerial}`
+                : (toastPlaca && toastPlaca !== 'N/A' && toastPlaca !== ''
+                    ? toastPlaca
+                    : (partnerCode || anchorId));
 
             if (isSelecting) {
-                window.showToast(
-                    `Has seleccionado también el ${partnerTipo}: ${identificador}`,
-                    "info",
-                );
+                window.showToast(`El equipo seleccionado está anclado a: ${identLabel}`, 'info');
             } else {
-                window.showToast(
-                    `Haz retirado también el ${partnerTipo}: ${identificador}`,
-                    "info",
-                );
+                window.showToast(`El equipo fue desanclado de: ${identLabel}`, 'info');
             }
         }
     }
@@ -653,155 +658,188 @@ window.openBulkModal = function (event) {
         return;
     }
 
-    /**
-     * Muestra el modal para seleccionar el equipo que servirá como ancla (maestro)
-     */
-
     // 2. Nuclear Cleanup: Remove any existing dynamic modals
-    const oldModals = document.querySelectorAll(".dynamic-bulk-modal");
-    oldModals.forEach((el) => el.remove());
+    document.querySelectorAll(".dynamic-bulk-modal").forEach((el) => el.remove());
 
-    // 3. Create Overlay (Safe, Isolated Context)
-    const overlay = document.createElement("div");
-    overlay.className = "dynamic-bulk-modal";
-    overlay.style.position = "fixed";
-    overlay.style.top = "0";
-    overlay.style.left = "0";
-    overlay.style.width = "100vw";
-    overlay.style.height = "100vh";
-    overlay.style.backgroundColor = "rgba(0,0,0,0.5)";
-    overlay.style.zIndex = "2500"; // Corrected Z-Index (Below Standard Modal 3000, Above Header 1000)
-    overlay.style.display = "flex";
-    overlay.style.justifyContent = "center";
-    overlay.style.alignItems = "center";
-    overlay.style.backdropFilter = "blur(2px)";
+    // 3. Collect selected equipment codes
+    const selectedList = Object.values(window.selectedEquipos);
+    const count = selectedList.length;
 
-    // 4. Create Content Box
-    const content = document.createElement("div");
-    content.style.backgroundColor = "white";
-    content.style.borderRadius = "16px";
-    content.style.width = "90%";
-    content.style.maxWidth = "500px";
-    content.style.overflow = "hidden";
-    content.style.boxShadow = "0 25px 50px -12px rgba(0,0,0,0.25)";
-    content.style.animation = "slideDown 0.2s ease-out"; // Defined in CSS
-
-    // 5. Header
-    const header = document.createElement("div");
-    header.style.background = "#1e293b";
-    header.style.padding = "20px";
-    header.style.color = "white";
-    header.style.display = "flex";
-    header.style.justifyContent = "center";
-    header.style.alignItems = "center";
-    header.style.position = "relative";
-    header.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <i class="material-icons" style="color: #60a5fa;">local_shipping</i>
-            <h2 style="margin: 0; font-size: 18px; font-weight: 700;">Movilización</h2>
-        </div>
-        <button type="button" id="btnCloseDynamic" style="position: absolute; right: 20px; background: transparent; border: none; color: white;">
-            <i class="material-icons">close</i>
-        </button>
-    `;
-
-    // 6. Body & Form Construction
-    const body = document.createElement("div");
-    body.style.padding = "25px";
-
-    // Generate Equipments List
-    let listHtml = "";
-    Object.values(window.selectedEquipos).forEach((item) => {
-        const code = typeof item === "object" ? item.code : item;
-        listHtml += `<span style="background: #e2e8f0; padding: 2px 8px; border-radius: 4px; margin-right: 5px; display: inline-block; margin-bottom: 5px; font-size: 12px; color: #64748b;">${code}</span>`;
-    });
-
-    // Clone Datalist Options safely from main DOM (extract only <option> elements)
-    let optionsHtml = "";
-    const existingDatalist = document.querySelector("#frentesList");
-    if (existingDatalist) {
-        const options = existingDatalist.querySelectorAll("option");
-        options.forEach((opt) => {
-            const value = opt.getAttribute("value") || "";
-            const dataId = opt.getAttribute("data-id") || "";
-            optionsHtml += `<option value="${value}" data-id="${dataId}"></option>`;
+    // 4. Collect frentes from datalist in DOM
+    const frentesData = [];
+    const dl = document.querySelector("#dynamicFrentesList");
+    if (dl) {
+        dl.querySelectorAll("option").forEach((opt) => {
+            const nombre = opt.getAttribute("value") || "";
+            const id = opt.getAttribute("data-id") || "";
+            if (nombre) frentesData.push({ nombre, id });
         });
     }
 
-    body.innerHTML = `
-        <form id="dynamicBulkForm">
+    // 5. Create Overlay
+    const overlay = document.createElement("div");
+    overlay.className = "dynamic-bulk-modal";
+    overlay.style.cssText = "position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.55);z-index:2500;display:flex;justify-content:center;align-items:center;backdrop-filter:blur(3px);";
 
-            <div style="margin-bottom: 25px;">
-                <label for="dynamicDestInput" style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px;">Frente de Destino</label>
-                <div style="position: relative;">
-                    <i class="material-icons" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 18px; color: #94a3b8;">place</i>
-                    <input type="text" id="dynamicDestInput" list="dynamicFrentesList"
-                        placeholder="Escriba o busque destino..."
-                        autocomplete="off"
-                        style="width: 100%; padding: 12px 12px 12px 40px; border: 2px solid #e2e8f0; border-radius: 10px; outline: none; box-sizing: border-box; font-size: 14px;">
-                     <datalist id="dynamicFrentesList">
-                        ${optionsHtml}
-                     </datalist>
-                </div>
+    // 6. Create Content Box
+    const content = document.createElement("div");
+    content.style.cssText = "background:white;border-radius:16px;width:90%;max-width:480px;max-height:92vh;overflow:hidden;box-shadow:0 25px 50px -12px rgba(0,0,0,0.30);animation:slideDown 0.2s ease-out;display:flex;flex-direction:column;";
+
+    // 7. Header
+    const header = document.createElement("div");
+    header.style.cssText = "background:linear-gradient(135deg,#1e3a5f,#0067b1);padding:18px 22px;color:white;display:flex;justify-content:space-between;align-items:center;";
+    header.innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;">
+            <div style="background:rgba(255,255,255,0.15);border-radius:10px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;">
+                <i class="material-icons" style="font-size:22px;">local_shipping</i>
             </div>
-
-            <button type="submit" style="width: 100%; height: 48px; border-radius: 10px; font-weight: 700; font-size: 15px; background: #0067b1; color: white; border: none; display: flex; align-items: center; justify-content: center; gap: 10px;">
-                <i class="material-icons" style="font-size: 18px;">save</i> Confirmar
-            </button>
-        </form>
+            <div>
+                <h2 style="margin:0;font-size:17px;font-weight:800;">Movilización</h2>
+                <p style="margin:0;font-size:12px;opacity:0.8;">${count} equipo${count !== 1 ? 's' : ''} seleccionado${count !== 1 ? 's' : ''}</p>
+            </div>
+        </div>
+        <button type="button" id="btnCloseDynamic" style="background:rgba(255,255,255,0.15);border:none;color:white;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+            <i class="material-icons" style="font-size:20px;">close</i>
+        </button>
     `;
 
-    // 7. Assemble
+    // 8. Body
+    const body = document.createElement("div");
+    body.style.cssText = "padding:22px 24px;display:flex;flex-direction:column;gap:18px;overflow-y:auto;flex:1;";
+
+    const chipsHtml = selectedList.map(item => {
+        // Prioridad: PLACA > SERIAL_CHASIS > CODIGO_PATIO
+        const placa = item.placa && item.placa !== 'N/A' && item.placa !== '' ? item.placa : null;
+        const chasis = item.chasis && item.chasis !== '' ? item.chasis : null;
+        const label = placa || chasis || (typeof item === 'object' ? item.code : item);
+        return `<span style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap;">${label}</span>`;
+    }).join("");
+
+    body.innerHTML = `
+        <div>
+            <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Equipos a movilizar</p>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+                ${chipsHtml}
+            </div>
+        </div>
+        <div>
+            <label style="display:block;font-size:13px;font-weight:700;color:#475569;margin-bottom:8px;">
+                <i class="material-icons" style="font-size:14px;vertical-align:middle;margin-right:4px;">place</i>
+                Frente de Destino <span style="color:#ef4444;">*</span>
+            </label>
+            <div style="position:relative;" id="bm-frente-wrapper">
+                <div style="display:flex;align-items:center;border:2px solid #e2e8f0;border-radius:10px;background:white;overflow:hidden;transition:border-color 0.2s;" id="bm-input-box">
+                    <i class="material-icons" style="padding:0 10px;color:#94a3b8;font-size:20px;flex-shrink:0;">search</i>
+                    <input type="text" id="bm-frente-search"
+                        placeholder="Buscar frente de destino..."
+                        autocomplete="off"
+                        style="flex:1;border:none;outline:none;padding:11px 6px;font-size:14px;background:transparent;">
+                    <i class="material-icons" id="bm-frente-clear" style="padding:0 10px;color:#94a3b8;font-size:18px;cursor:pointer;display:none;">close</i>
+                </div>
+                <input type="hidden" id="bm-frente-value">
+            </div>
+        </div>
+        <button type="button" id="bm-submit-btn" style="width:100%;height:48px;border-radius:10px;font-weight:700;font-size:15px;background:#0067b1;color:white;border:none;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;transition:background 0.2s;">
+            <i class="material-icons" style="font-size:18px;">send</i> Confirmar Movilización
+        </button>
+    `;
+
+    // 9. Assemble
     content.appendChild(header);
     content.appendChild(body);
     overlay.appendChild(content);
     document.body.appendChild(overlay);
 
-    // 8. Attach Event Listeners (Directly to new elements)
+    // ── Dropdown portal: renderizado en document.body para escapar del overflow modal ──
+    const listBox = document.createElement('div');
+    listBox.id = 'bm-frente-list-portal';
+    listBox.style.cssText = 'display:none;position:fixed;background:white;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 10px 25px -5px rgba(0,0,0,0.15);z-index:9999;max-height:240px;overflow-y:auto;';
+    document.body.appendChild(listBox);
 
-    // Close Button
-    const closeBtn = overlay.querySelector("#btnCloseDynamic");
-    closeBtn.onclick = function () {
-        overlay.remove();
-    };
+    // Reposiciona el portal justo debajo del input
+    function positionListBox() {
+        const rect = inputBox.getBoundingClientRect();
+        listBox.style.top = (rect.bottom + 4) + 'px';
+        listBox.style.left = rect.left + 'px';
+        listBox.style.width = rect.width + 'px';
+    }
 
-    // Close on Overlay Click (Optional)
-    overlay.onclick = function (e) {
-        if (e.target === overlay) overlay.remove();
-    };
+    function renderFrenteList(filter) {
+        listBox.innerHTML = '';
+        const q = (filter || '').trim().toUpperCase();
+        const filtered = q ? frentesData.filter(f => f.nombre.toUpperCase().includes(q)) : frentesData;
+        if (filtered.length === 0) {
+            listBox.innerHTML = `<div style="padding:14px;text-align:center;color:#94a3b8;font-size:13px;">Sin resultados</div>`;
+        } else {
+            filtered.forEach(f => {
+                const item = document.createElement('div');
+                item.style.cssText = 'padding:11px 16px;cursor:pointer;font-size:14px;color:#1e293b;border-bottom:1px solid #f8fafc;transition:background 0.15s;';
+                item.textContent = f.nombre;
+                item.onmouseover = () => item.style.background = '#eff6ff';
+                item.onmouseout = () => item.style.background = 'white';
+                item.onmousedown = (e) => {
+                    e.preventDefault();
+                    searchInput.value = f.nombre;
+                    hiddenInput.value = f.nombre;
+                    clearBtn.style.display = 'flex';
+                    listBox.style.display = 'none';
+                    inputBox.style.borderColor = '#0067b1';
+                };
+                listBox.appendChild(item);
+            });
+        }
+        positionListBox();
+        listBox.style.display = 'block';
+    }
 
-    // Form Submit
-    const form = body.querySelector("#dynamicBulkForm");
-    form.onsubmit = function (e) {
-        e.preventDefault();
+    // Limpiar el portal cuando se cierre el modal
+    function removePortal() { listBox.remove(); }
 
-        const destInput = body.querySelector("#dynamicDestInput");
-        const dest = destInput ? destInput.value.trim() : "";
+    const searchInput = overlay.querySelector('#bm-frente-search');
+    const hiddenInput = overlay.querySelector('#bm-frente-value');
+    const clearBtn = overlay.querySelector('#bm-frente-clear');
+    const inputBox = overlay.querySelector('#bm-input-box');
+
+    searchInput.addEventListener('focus', () => {
+        inputBox.style.borderColor = '#0067b1';
+        renderFrenteList(searchInput.value);
+    });
+    searchInput.addEventListener('input', () => {
+        hiddenInput.value = searchInput.value.trim();
+        clearBtn.style.display = searchInput.value ? 'flex' : 'none';
+        renderFrenteList(searchInput.value);
+    });
+    searchInput.addEventListener('blur', () => {
+        setTimeout(() => { listBox.style.display = 'none'; inputBox.style.borderColor = '#e2e8f0'; }, 150);
+    });
+    clearBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        hiddenInput.value = '';
+        clearBtn.style.display = 'none';
+        searchInput.focus();
+    });
+
+    // ── Close handlers ──
+    const _closeModal = () => { removePortal(); overlay.remove(); };
+    overlay.querySelector('#btnCloseDynamic').onclick = _closeModal;
+    overlay.onclick = (e) => { if (e.target === overlay) _closeModal(); };
+
+    // ── Submit ──
+    overlay.querySelector("#bm-submit-btn").onclick = function () {
+        const dest = (hiddenInput.value || searchInput.value).trim();
 
         if (!dest) {
-            showModal({
-                type: "warning",
-                title: "Campo Requerido",
-                message: "Por favor ingrese un frente de destino.",
-                confirmText: "Entendido",
-                hideCancel: true,
-            });
+            inputBox.style.borderColor = "#ef4444";
+            searchInput.focus();
             return;
         }
 
-        const btn = form.querySelector('button[type="submit"]');
-        const originalText = btn.innerHTML;
-
-        // Show visual loading state in button
-        btn.innerHTML =
-            '<i class="material-icons" style="font-size: 18px; animation: spin 1s linear infinite;">sync</i> Procesando...';
+        const btn = this;
+        btn.innerHTML = '<i class="material-icons" style="font-size:18px;animation:spin 1s linear infinite;">sync</i> Procesando...';
         btn.disabled = true;
         btn.style.opacity = "0.7";
-        btn.style.cursor = "wait";
 
         const ids = Object.keys(window.selectedEquipos);
-
-        // Show global preloader (may be behind modal)
         if (window.showPreloader) window.showPreloader();
 
         fetch("/admin/equipos/bulk-mobilize", {
@@ -839,6 +877,7 @@ window.openBulkModal = function (event) {
                 // Hide preloader
                 if (window.hidePreloader) window.hidePreloader();
 
+                removePortal();
                 overlay.remove();
                 window.clearSelection();
 
@@ -898,11 +937,12 @@ window.openBulkModal = function (event) {
                 // Hide preloader
                 if (window.hidePreloader) window.hidePreloader();
 
-                // Remove overlay to prevent UI blocking
+                // Remove overlay and portal to prevent UI blocking
+                removePortal();
                 overlay.remove();
 
                 // Restore button state (though overlay is gone, this variable reference persists)
-                btn.innerHTML = originalText;
+                btn.innerHTML = '<i class="material-icons" style="font-size:18px;">send</i> Confirmar Movilización';
                 btn.disabled = false;
                 btn.style.opacity = "1";
                 btn.style.cursor = "pointer";
@@ -968,7 +1008,16 @@ window.openAnchorModal = async function (event) {
             </button>
         </div>
         <div style="padding:20px;">
-            <div id="anchorEquiposList" style="max-height:400px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:12px; margin-bottom:20px; background:#f8fafc; padding:8px;">
+            <!-- Buscador -->
+            <div style="display:flex; align-items:center; border:1.5px solid #e2e8f0; border-radius:10px; background:white; overflow:hidden; margin-bottom:12px; transition:border-color 0.2s;" id="anchor-search-box">
+                <i class="material-icons" style="padding:0 10px; color:#94a3b8; font-size:18px; flex-shrink:0;">search</i>
+                <input type="text" id="anchorSearchInput"
+                    placeholder="Buscar por tipo, marca, serial..."
+                    autocomplete="off"
+                    style="flex:1; border:none; outline:none; padding:9px 6px; font-size:13px; background:transparent;">
+                <i class="material-icons" id="anchorSearchClear" style="padding:0 10px; color:#94a3b8; font-size:16px; cursor:pointer; display:none;">close</i>
+            </div>
+            <div id="anchorEquiposList" style="max-height:360px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:12px; margin-bottom:20px; background:#f8fafc; padding:8px;">
                 <div style="padding:20px; text-align:center;"><i class="material-icons spin">sync</i> Cargando equipos...</div>
             </div>
             <button id="btnConfirmAnchor" disabled style="width:100%; height:46px; border-radius:12px; font-weight:700; font-size:14px; background:#10b981; color:white; border:none; display:flex; align-items:center; justify-content:center; gap:8px; opacity:0.5; cursor:not-allowed; transition:all 0.2s;">
@@ -998,13 +1047,65 @@ window.openAnchorModal = async function (event) {
 
         if (equipos.length === 0) {
             listContainer.innerHTML =
-                '<div style="padding:40px 20px; text-align:center; color:#94a3b8;"><i class="material-icons" style="font-size:32px; display:block; margin-bottom:10px;">assignment_late</i>No existe equipos de tipo remolcador</div>';
+                '<div style="padding:40px 20px; text-align:center; color:#94a3b8;"><i class="material-icons" style="font-size:32px; display:block; margin-bottom:10px;">assignment_late</i>No existe equipos disponibles</div>';
         } else {
+            // ── Búsqueda en tiempo real ──
+            const anchorSearchInput = content.querySelector('#anchorSearchInput');
+            const anchorSearchClear = content.querySelector('#anchorSearchClear');
+            const anchorSearchBox = content.querySelector('#anchor-search-box');
+
+            function filterAnchorList(query) {
+                const q = (query || '').trim().toUpperCase();
+                const items = listContainer.querySelectorAll('.anchor-option-item');
+                let anyVisible = false;
+                items.forEach(item => {
+                    const text = (item.dataset.searchText || '').toUpperCase();
+                    const match = !q || text.includes(q);
+                    item.style.display = match ? '' : 'none';
+                    if (match) anyVisible = true;
+                });
+                let noResult = listContainer.querySelector('.anchor-no-result');
+                if (!anyVisible) {
+                    if (!noResult) {
+                        noResult = document.createElement('div');
+                        noResult.className = 'anchor-no-result';
+                        noResult.style.cssText = 'padding:30px 20px; text-align:center; color:#94a3b8; font-size:13px;';
+                        noResult.innerHTML = '<i class="material-icons" style="font-size:28px; display:block; margin-bottom:6px;">search_off</i>Sin resultados';
+                        listContainer.appendChild(noResult);
+                    }
+                } else if (noResult) {
+                    noResult.remove();
+                }
+            }
+
+            anchorSearchInput.addEventListener('input', () => {
+                const val = anchorSearchInput.value;
+                anchorSearchClear.style.display = val ? 'block' : 'none';
+                anchorSearchBox.style.borderColor = val ? '#10b981' : '#e2e8f0';
+                filterAnchorList(val);
+            });
+            anchorSearchClear.addEventListener('click', () => {
+                anchorSearchInput.value = '';
+                anchorSearchClear.style.display = 'none';
+                anchorSearchBox.style.borderColor = '#e2e8f0';
+                filterAnchorList('');
+                anchorSearchInput.focus();
+            });
+
+            // ── Render de items ──
             equipos.forEach((eq) => {
                 const isSelected = selectedIds.includes(String(eq.ID_EQUIPO));
                 const item = document.createElement("div");
                 item.className = "anchor-option-item";
                 item.style.cssText = `padding:10px; border-radius:8px; background:white; border:1px solid #e2e8f0; margin-bottom:6px; cursor:${isSelected ? "not-allowed" : "pointer"}; opacity:${isSelected ? "0.6" : "1"}; display:flex; align-items:center; gap:12px; transition:all 0.2s; position:relative;`;
+                item.dataset.searchText = [
+                    eq.TIPO_NOMBRE || '',
+                    eq.CODIGO_PATIO || '',
+                    eq.MARCA || '',
+                    eq.MODELO || '',
+                    eq.SERIAL_CHASIS || '',
+                    eq.PLACA || '',
+                ].join(' ');
 
                 if (!isSelected) {
                     item.onmouseover = () => {
@@ -1058,14 +1159,12 @@ window.openAnchorModal = async function (event) {
                     <div style="width:40px; height:40px; background:#f1f5f9; border-radius:6px; overflow:hidden; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                         ${fotoHtml}
                     </div>
-                    <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;">
-                        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-                            <span style="font-weight:800; font-size:13px; color:#1e293b; text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${eq.CODIGO_PATIO || "S/ID"}</span>
-                        </div>
-                        <div style="font-size:11px; color:#1e293b; font-weight:600;">${eq.MARCA} · ${eq.MODELO}</div>
+                    <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                        <span style="font-weight:800; font-size:13px; color:#1e293b; text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${eq.TIPO_NOMBRE || 'S/TIPO'}</span>
+                        <div style="font-size:11px; color:#475569; font-weight:600;">${eq.MARCA}</div>
                         <div style="display:flex; align-items:center; gap:8px; margin-top:1px;">
-                             <span style="font-size:10px; color:#64748b; display:flex; align-items:center; gap:2px;"><i class="material-icons" style="font-size:10px;">fingerprint</i>${eq.SERIAL_CHASIS || "S/S"}</span>
-                             ${eq.PLACA ? `<span style="font-size:10px; color:#0067b1; font-weight:700; display:flex; align-items:center; gap:2px;"><i class="material-icons" style="font-size:10px;">featured_play_list</i>${eq.PLACA}</span>` : ""}
+                            <span style="font-size:10px; color:#64748b; display:flex; align-items:center; gap:2px;"><i class="material-icons" style="font-size:10px;">fingerprint</i>${eq.SERIAL_CHASIS || 'S/S'}</span>
+                            ${eq.PLACA ? `<span style="font-size:10px; color:#0067b1; font-weight:700; display:flex; align-items:center; gap:2px;"><i class="material-icons" style="font-size:10px;">featured_play_list</i>${eq.PLACA}</span>` : ""}
                         </div>
                     </div>
                     <div class="check-mark" style="display:none; color:#10b981;">
@@ -1075,7 +1174,7 @@ window.openAnchorModal = async function (event) {
                 `;
                 listContainer.appendChild(item);
             });
-        }
+        } // fin else
     } catch (error) {
         console.error(error);
         overlay.remove();

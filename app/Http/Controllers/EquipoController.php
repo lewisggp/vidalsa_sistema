@@ -29,10 +29,18 @@ class EquipoController extends Controller
         $search = $request->input('search_query');
         $equipos = Equipo::query();
 
-        // Default to user's assigned front if no filter is provided
-        if (!$request->has('id_frente')) {
-            $user = auth()->user();
-            if ($user && $user->ID_FRENTE_ASIGNADO) {
+        // Frente filter logic: LOCAL users always see their frente (locked).
+        // GLOBAL users get their frente as default ONLY on the initial page load (non-AJAX).
+        // When a GLOBAL user clears the filter (AJAX request), we respect the empty value.
+        $user = auth()->user();
+        $isLocalUser = $user && $user->NIVEL_ACCESO == 2;
+
+        if ($isLocalUser && $user->ID_FRENTE_ASIGNADO) {
+            // LOCAL: Always force their assigned frente, ignore any request parameter
+            $request->merge(['id_frente' => $user->ID_FRENTE_ASIGNADO]);
+        } elseif (!$isLocalUser && $user && $user->ID_FRENTE_ASIGNADO) {
+            // GLOBAL: Only set default on initial page load (not AJAX / not when user explicitly cleared it)
+            if (!$request->wantsJson() && !$request->exists('id_frente')) {
                 $request->merge(['id_frente' => $user->ID_FRENTE_ASIGNADO]);
             }
         }
@@ -119,7 +127,8 @@ class EquipoController extends Controller
                 'documentacion.seguro',
                 'especificaciones:ID_ESPEC,COMBUSTIBLE,CONSUMO_PROMEDIO,FOTO_REFERENCIAL',
                 'tipo',
-                'frenteActual'
+                'frenteActual',
+                'ancladoA',
             ])
             ->orderBy('tipo_equipos.nombre', 'asc')
             ->orderBy('equipos.CODIGO_PATIO', 'asc');
@@ -234,10 +243,17 @@ class EquipoController extends Controller
 
     public function export(Request $request)
     {
-        // Default to user's assigned front if no filter is provided
-        if (!$request->has('id_frente')) {
-            $user = auth()->user();
-            if ($user && $user->ID_FRENTE_ASIGNADO) {
+        // Frente filter logic: LOCAL users always see their frente (locked).
+        // GLOBAL users get their frente as default if no filter is explicitly provided.
+        $user = auth()->user();
+        $isLocalUser = $user && $user->NIVEL_ACCESO == 2;
+
+        if ($isLocalUser && $user->ID_FRENTE_ASIGNADO) {
+            // LOCAL: Always force their assigned frente
+            $request->merge(['id_frente' => $user->ID_FRENTE_ASIGNADO]);
+        } elseif (!$isLocalUser && $user && $user->ID_FRENTE_ASIGNADO) {
+            // GLOBAL: Only set default if no explicit filter was provided
+            if (!$request->has('id_frente')) {
                 $request->merge(['id_frente' => $user->ID_FRENTE_ASIGNADO]);
             }
         }
@@ -1461,7 +1477,16 @@ class EquipoController extends Controller
     public function fleetStats(Request $request)
     {
         try {
-            $frenteId = $request->input('frente_id');
+            $user = auth()->user();
+            $isLocal = $user && $user->NIVEL_ACCESO == 2;
+
+            // LOCAL: always force their assigned frente (ignore any request param)
+            // GLOBAL: use the frente_id from the request (can be null = all frentes)
+            if ($isLocal && $user->ID_FRENTE_ASIGNADO) {
+                $frenteId = $user->ID_FRENTE_ASIGNADO;
+            } else {
+                $frenteId = $request->input('frente_id');
+            }
 
             // Base query builder for filtering
             $baseQuery = Equipo::query();
@@ -1573,7 +1598,17 @@ class EquipoController extends Controller
     public function fleetExport(Request $request)
     {
         try {
-            $frenteId = $request->input('frente_id');
+            $user = auth()->user();
+            $isLocal = $user && $user->NIVEL_ACCESO == 2;
+
+            // LOCAL: always force their assigned frente
+            // GLOBAL: use the frente_id from the request
+            if ($isLocal && $user->ID_FRENTE_ASIGNADO) {
+                $frenteId = $user->ID_FRENTE_ASIGNADO;
+            } else {
+                $frenteId = $request->input('frente_id');
+            }
+
             $frenteNombre = 'Todos los Frentes';
 
             // Base query builder
@@ -1846,19 +1881,20 @@ class EquipoController extends Controller
             ->when($request->exclude_ids, function ($q) use ($request) {
                 $q->whereNotIn('ID_EQUIPO', $request->exclude_ids);
             })
-            ->with(['especificaciones', 'documentacion'])
-            ->select('ID_EQUIPO', 'CODIGO_PATIO', 'MARCA', 'MODELO', 'ID_ESPEC', 'FOTO_EQUIPO', 'SERIAL_CHASIS')
+            ->with(['especificaciones', 'documentacion', 'tipo'])
+            ->select('ID_EQUIPO', 'CODIGO_PATIO', 'MARCA', 'MODELO', 'ID_ESPEC', 'FOTO_EQUIPO', 'SERIAL_CHASIS', 'id_tipo_equipo')
             ->orderBy('CODIGO_PATIO')
             ->get()
             ->map(function ($eq) {
                 return [
-                    'ID_EQUIPO' => $eq->ID_EQUIPO,
+                    'ID_EQUIPO'    => $eq->ID_EQUIPO,
                     'CODIGO_PATIO' => $eq->CODIGO_PATIO,
-                    'SERIAL_CHASIS' => $eq->SERIAL_CHASIS,
-                    'PLACA' => $eq->documentacion->PLACA ?? null,
-                    'MARCA' => $eq->MARCA,
-                    'MODELO' => $eq->MODELO,
-                    'FOTO' => $eq->especificaciones->FOTO_REFERENCIAL ?? $eq->FOTO_EQUIPO
+                    'TIPO_NOMBRE'  => $eq->tipo->nombre ?? $eq->CODIGO_PATIO,
+                    'SERIAL_CHASIS'=> $eq->SERIAL_CHASIS,
+                    'PLACA'        => $eq->documentacion->PLACA ?? null,
+                    'MARCA'        => $eq->MARCA,
+                    'MODELO'       => $eq->MODELO,
+                    'FOTO'         => $eq->especificaciones->FOTO_REFERENCIAL ?? $eq->FOTO_EQUIPO
                 ];
             });
 

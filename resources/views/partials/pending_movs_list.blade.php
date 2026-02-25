@@ -1,0 +1,70 @@
+{{--
+    Partial: Lista de Movilizaciones Pendientes (Por Confirmar Recepción)
+    Variables requeridas: $recentActivity (Collection de Movilizacion con relaciones)
+--}}
+@php
+    $authUser       = auth()->user();
+    $authFrenteId   = $authUser->ID_FRENTE_ASIGNADO;
+    $authEsGlobal   = ($authUser->NIVEL_ACCESO == 1);
+@endphp
+
+@forelse($recentActivity as $activity)
+    @php
+        $esDestinatario = ($authFrenteId == $activity->ID_FRENTE_DESTINO);
+        $puedeRecibir   = $esDestinatario || $authEsGlobal;
+        $placa          = $activity->equipo->documentacion->PLACA ?? null;
+        $serial         = $activity->equipo->SERIAL_CHASIS ?? null;
+        $primaryId      = ($placa && strtoupper($placa) !== 'N/A') ? $placa : $serial;
+    @endphp
+
+    <div class="activity-item"
+         data-chasis="{{ $activity->equipo->SERIAL_CHASIS ?? '' }}"
+         data-placa="{{ $activity->equipo->documentacion->PLACA ?? '' }}"
+         data-etiqueta="{{ $activity->equipo->NUMERO_ETIQUETA ?? '' }}"
+         style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #f1f5f9;">
+        <div class="activity-icon">
+            <i class="material-icons">local_shipping</i>
+        </div>
+        <div class="activity-info" style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <strong style="font-size: 13px; color: #1e293b;">{{ $activity->equipo->tipo->nombre ?? 'Equipo' }}</strong>
+                @if(!empty($activity->equipo->NUMERO_ETIQUETA))
+                    <span style="color: #0067b1; font-weight: 800; font-size: 12px;">#{{ $activity->equipo->NUMERO_ETIQUETA }}</span>
+                @endif
+            </div>
+            <p class="activity-text" style="margin: 1px 0; font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase;">
+                {{ $primaryId }}
+            </p>
+            <div style="font-size: 10px; color: #94a3b8; display: flex; align-items: center; gap: 4px;">
+                <i class="material-icons" style="font-size: 12px;">schedule</i>
+                {{ $activity->created_at->locale('es')->diffForHumans() }}
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="activity-actions" style="display: flex; gap: 6px; flex-shrink: 0; align-items: center;">
+            @if($puedeRecibir)
+                <button type="button"
+                    onclick="recibirMovilizacion({{ $activity->ID_MOVILIZACION }}, this)"
+                    class="btn-recibir-dashboard"
+                    title="Confirmar recepción rápida"
+                    style="background: rgb(0, 103, 177); border: none; color: white; padding: 4px 8px; height: 32px; border-radius: 8px; font-weight: 800; display: flex; align-items: center; gap: 5px; cursor: default;">
+                    <i class="material-icons" style="font-size: 16px;">check_circle</i>
+                    <span style="font-size: 10px;">RECIBIR</span>
+                </button>
+            @else
+                <div class="btn-sin-acceso-dashboard"
+                    title="No tienes permisos para recibir este equipo"
+                    style="height: 32px; padding: 5px 12px; display: flex; align-items: center; gap: 4px;">
+                    <i class="material-icons" style="font-size: 18px;">block</i>
+                    <span style="font-size: 11px; font-weight: 800;">Sin Acceso</span>
+                </div>
+            @endif
+        </div>
+    </div>
+@empty
+    <div class="empty-state">
+        <i class="material-icons">inbox</i>
+        <p>No hay movilizaciones por confirmar.</p>
+    </div>
+@endforelse
