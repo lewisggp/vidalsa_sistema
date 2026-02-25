@@ -29,6 +29,14 @@ class EquipoController extends Controller
         $search = $request->input('search_query');
         $equipos = Equipo::query();
 
+        // Default to user's assigned front if no filter is provided
+        if (!$request->has('id_frente')) {
+            $user = auth()->user();
+            if ($user && $user->ID_FRENTE_ASIGNADO) {
+                $request->merge(['id_frente' => $user->ID_FRENTE_ASIGNADO]);
+            }
+        }
+
         if ($request->filled('id_frente') && trim($request->id_frente) !== '' && $request->id_frente !== 'all') {
             $equipos->where('ID_FRENTE_ACTUAL', $request->id_frente);
         }
@@ -82,39 +90,39 @@ class EquipoController extends Controller
 
         // --- Documentation Filters ---
         if ($request->filled('filter_propiedad') && $request->filter_propiedad === 'true') {
-            $equipos->whereHas('documentacion', function($q) {
+            $equipos->whereHas('documentacion', function ($q) {
                 $q->whereNotNull('LINK_DOC_PROPIEDAD');
             });
         }
 
         if ($request->filled('filter_poliza') && $request->filter_poliza === 'true') {
-            $equipos->whereHas('documentacion', function($q) {
+            $equipos->whereHas('documentacion', function ($q) {
                 $q->whereNotNull('LINK_POLIZA_SEGURO');
             });
         }
 
         if ($request->filled('filter_rotc') && $request->filter_rotc === 'true') {
-            $equipos->whereHas('documentacion', function($q) {
+            $equipos->whereHas('documentacion', function ($q) {
                 $q->whereNotNull('LINK_ROTC');
             });
         }
 
         if ($request->filled('filter_racda') && $request->filter_racda === 'true') {
-            $equipos->whereHas('documentacion', function($q) {
+            $equipos->whereHas('documentacion', function ($q) {
                 $q->whereNotNull('LINK_RACDA');
             });
         }
 
         $equipos->select('equipos.*')
-                ->leftJoin('tipo_equipos', 'equipos.id_tipo_equipo', '=', 'tipo_equipos.id')
-                ->with([
-                    'documentacion.seguro', 
-                    'especificaciones:ID_ESPEC,COMBUSTIBLE,CONSUMO_PROMEDIO,FOTO_REFERENCIAL', 
-                    'tipo', 
-                    'frenteActual'
-                ])
-                ->orderBy('tipo_equipos.nombre', 'asc')
-                ->orderBy('equipos.CODIGO_PATIO', 'asc');
+            ->leftJoin('tipo_equipos', 'equipos.id_tipo_equipo', '=', 'tipo_equipos.id')
+            ->with([
+                'documentacion.seguro',
+                'especificaciones:ID_ESPEC,COMBUSTIBLE,CONSUMO_PROMEDIO,FOTO_REFERENCIAL',
+                'tipo',
+                'frenteActual'
+            ])
+            ->orderBy('tipo_equipos.nombre', 'asc')
+            ->orderBy('equipos.CODIGO_PATIO', 'asc');
 
         // Check if any filter is applied (with non-empty values)
         $hasFilter = $request->filled('id_frente') || $request->filled('id_tipo') || $request->filled('search_query') || $request->filled('modelo') || $request->filled('marca') || $request->filled('anio') || $request->filled('categoria') || $request->filled('estado') || $request->filled('filter_propiedad') || $request->filled('filter_poliza') || $request->filled('filter_rotc') || $request->filled('filter_racda');
@@ -122,46 +130,46 @@ class EquipoController extends Controller
         if ($hasFilter) {
             // Get ALL records matching filters (no pagination limit)
             $allResults = $equipos->get();
-            
+
             // Wrap in Paginator to keep view compatibility, but page size is total count
             $equipos = new \Illuminate\Pagination\LengthAwarePaginator(
-                $allResults, 
-                $allResults->count(), 
+                $allResults,
+                $allResults->count(),
                 $allResults->count() > 0 ? $allResults->count() : 1, // perPage = total items
                 1 // current page always 1
             );
             $equipos->withPath($request->url())->appends($request->all());
 
         } else {
-             // Return empty paginator to open the interface without showing any records initially
-             $equipos = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10);
+            // Return empty paginator to open the interface without showing any records initially
+            $equipos = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10);
         }
-        
+
         $frentes = FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')->orderBy('NOMBRE_FRENTE', 'asc')->get();
         $allTipos = TipoEquipo::orderBy('nombre', 'asc')->get();
-        
-            // Advanced Filter Lists (Optimized with cache: Only needed for initial page load, not AJAX)
-            // Cache these lists for 1 hour to avoid repeated DB queries
-            $availableModelos = \Illuminate\Support\Facades\Cache::remember('equipos_modelos_dropdown', 3600, function() {
-                return Equipo::distinct()
-                    ->whereNotNull('MODELO')
-                    ->where('MODELO', '!=', '')
-                    ->orderBy('MODELO', 'asc')
-                    ->pluck('MODELO');
-            });
-            
-            $availableMarcas = \Illuminate\Support\Facades\Cache::remember('equipos_marcas_dropdown', 3600, function() {
-                return Equipo::distinct()
-                    ->whereNotNull('MARCA')
-                    ->where('MARCA', '!=', '')
-                    ->orderBy('MARCA', 'asc')
-                    ->pluck('MARCA');
-            });
-            
-            $availableAnios = \Illuminate\Support\Facades\Cache::remember('equipos_anios_dropdown', 3600, function() {
-                return Equipo::distinct()->whereNotNull('ANIO')->orderBy('ANIO', 'desc')->pluck('ANIO');
-            });
-        
+
+        // Advanced Filter Lists (Optimized with cache: Only needed for initial page load, not AJAX)
+        // Cache these lists for 1 hour to avoid repeated DB queries
+        $availableModelos = \Illuminate\Support\Facades\Cache::remember('equipos_modelos_dropdown', 3600, function () {
+            return Equipo::distinct()
+                ->whereNotNull('MODELO')
+                ->where('MODELO', '!=', '')
+                ->orderBy('MODELO', 'asc')
+                ->pluck('MODELO');
+        });
+
+        $availableMarcas = \Illuminate\Support\Facades\Cache::remember('equipos_marcas_dropdown', 3600, function () {
+            return Equipo::distinct()
+                ->whereNotNull('MARCA')
+                ->where('MARCA', '!=', '')
+                ->orderBy('MARCA', 'asc')
+                ->pluck('MARCA');
+        });
+
+        $availableAnios = \Illuminate\Support\Facades\Cache::remember('equipos_anios_dropdown', 3600, function () {
+            return Equipo::distinct()->whereNotNull('ANIO')->orderBy('ANIO', 'desc')->pluck('ANIO');
+        });
+
         $stats = ['total' => 0, 'activos' => 0, 'inactivos' => 0, 'mantenimiento' => 0];
         $tiposStats = collect([]);
         $frentesStats = []; // Ensure array or collection
@@ -170,7 +178,7 @@ class EquipoController extends Controller
         if ($hasFilter) {
             // OPTIMIZATION: Calculate stats from the already loaded collection instead of hitting DB again
             // This reduces DB queries from ~5 to 1.
-            
+
             $stats['total'] = $allResults->count();
             $stats['activos'] = $allResults->where('ESTADO_OPERATIVO', 'OPERATIVO')->count();
             $stats['inactivos'] = $allResults->where('ESTADO_OPERATIVO', 'INOPERATIVO')->count();
@@ -226,6 +234,14 @@ class EquipoController extends Controller
 
     public function export(Request $request)
     {
+        // Default to user's assigned front if no filter is provided
+        if (!$request->has('id_frente')) {
+            $user = auth()->user();
+            if ($user && $user->ID_FRENTE_ASIGNADO) {
+                $request->merge(['id_frente' => $user->ID_FRENTE_ASIGNADO]);
+            }
+        }
+
         // CRITICAL: Prevent exporting entire database without filters.
         // 'id_frente=all' es un filtro explícito válido (el usuario seleccionó "Todos los Frentes").
         $hasFilter = $request->filled('id_frente')   // incluye 'all' como filtro válido
@@ -274,22 +290,22 @@ class EquipoController extends Controller
 
         // --- Documentation Filters ---
         if ($request->filled('filter_propiedad') && $request->filter_propiedad === 'true') {
-            $equipos->whereHas('documentacion', function($q) {
+            $equipos->whereHas('documentacion', function ($q) {
                 $q->whereNotNull('LINK_DOC_PROPIEDAD');
             });
         }
         if ($request->filled('filter_poliza') && $request->filter_poliza === 'true') {
-            $equipos->whereHas('documentacion', function($q) {
+            $equipos->whereHas('documentacion', function ($q) {
                 $q->whereNotNull('LINK_POLIZA_SEGURO');
             });
         }
         if ($request->filled('filter_rotc') && $request->filter_rotc === 'true') {
-            $equipos->whereHas('documentacion', function($q) {
+            $equipos->whereHas('documentacion', function ($q) {
                 $q->whereNotNull('LINK_ROTC');
             });
         }
         if ($request->filled('filter_racda') && $request->filter_racda === 'true') {
-            $equipos->whereHas('documentacion', function($q) {
+            $equipos->whereHas('documentacion', function ($q) {
                 $q->whereNotNull('LINK_RACDA');
             });
         }
@@ -316,7 +332,7 @@ class EquipoController extends Controller
 
         return response()->streamDownload(function () use ($equipos) {
             $handle = fopen('php://output', 'w');
-            
+
             // Start HTML for Excel
             fwrite($handle, '<html xmlns:x="urn:schemas-microsoft-com:office:excel">');
             fwrite($handle, '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"></head>');
@@ -325,10 +341,10 @@ class EquipoController extends Controller
 
             // Exact columns requested by user in order (DB Keys)
             $headers = ['FRENTE', 'TIPO', 'CATEGORIA_FLOTA', 'MARCA', 'MODELO', 'ANIO', 'CODIGO_PATIO', 'SERIAL_CHASIS', 'SERIAL_DE_MOTOR', 'ESTADO_OPERATIVO', 'PLACA', 'NRO_DE_DOCUMENTO', 'NOMBRE_DEL_TITULAR', 'ESTADO_POLIZA', 'FECHA_VENC_POLIZA'];
-            
+
             // Display Labels (Mapped 1:1)
             $labels = ['FRENTE', 'TIPO', 'CATEGORÍA', 'MARCA', 'MODELO', 'AÑO', 'CÓDIGO', 'SERIAL CHASIS', 'SERIAL MOTOR', 'ESTATUS', 'PLACA', 'NRO DOCUMENTO', 'TITULAR', 'ESTADO PÓLIZA', 'VENCIMIENTO PÓLIZA'];
-            
+
             // --- MAIN TITLE ROW ---
             $currentDate = date('d/m/Y');
             fwrite($handle, '<thead>');
@@ -346,7 +362,7 @@ class EquipoController extends Controller
             fwrite($handle, '</tr></thead>');
 
             fwrite($handle, '<tbody>');
-            
+
             $equipos->chunk(200, function ($chunk) use ($handle, $headers) {
                 foreach ($chunk as $equipo) {
                     fwrite($handle, '<tr>');
@@ -399,7 +415,8 @@ class EquipoController extends Controller
     public function searchSpecs(Request $request)
     {
         $query = $request->input('query');
-        if (!$query) return response()->json([]);
+        if (!$query)
+            return response()->json([]);
 
         $results = CaracteristicaModelo::select('ID_ESPEC', 'MODELO')
             ->where('MODELO', 'LIKE', "%{$query}%")
@@ -414,7 +431,7 @@ class EquipoController extends Controller
     {
         $field = $request->input('field');
         $query = $request->input('query');
-        
+
         if (!$field || !$query) {
             return response()->json([]);
         }
@@ -430,7 +447,7 @@ class EquipoController extends Controller
         }
 
         $column = $fieldMap[$field];
-        
+
         $results = Equipo::select($column)
             ->distinct()
             ->whereNotNull($column)
@@ -446,52 +463,52 @@ class EquipoController extends Controller
     public function create()
     {
         // Cache dropdown lists for 1 hour to avoid repeated DB queries
-        $frentes = \Illuminate\Support\Facades\Cache::remember('frentes_activos_form', 3600, function() {
+        $frentes = \Illuminate\Support\Facades\Cache::remember('frentes_activos_form', 3600, function () {
             return FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')
                 ->orderBy('NOMBRE_FRENTE', 'asc')
                 ->pluck('NOMBRE_FRENTE', 'ID_FRENTE');
         });
 
-        $seguros = \Illuminate\Support\Facades\Cache::remember('seguros_list_form', 3600, function() {
+        $seguros = \Illuminate\Support\Facades\Cache::remember('seguros_list_form', 3600, function () {
             return CatalogoSeguro::orderBy('NOMBRE_ASEGURADORA', 'asc')
                 ->pluck('NOMBRE_ASEGURADORA');
         });
 
-        $tipos_equipo = \Illuminate\Support\Facades\Cache::remember('tipos_equipo_list_form', 3600, function() {
+        $tipos_equipo = \Illuminate\Support\Facades\Cache::remember('tipos_equipo_list_form', 3600, function () {
             return TipoEquipo::orderBy('nombre', 'asc')
                 ->pluck('nombre');
         });
-        
+
         // Performance Optimization: Don't pre-load models list
         // Models will be loaded dynamically via AJAX autocomplete (same as years)
         // This eliminates DOM bloat when there are thousands of models
         $modelosList = [];
-        
+
         // Performance Optimization: Don't pre-load models list
         // Models will be loaded dynamically via AJAX autocomplete
         $modelosList = [];
-        
-        $aniosList = \Illuminate\Support\Facades\Cache::remember('anios_list_form_v3', 60, function() {
+
+        $aniosList = \Illuminate\Support\Facades\Cache::remember('anios_list_form_v3', 60, function () {
             return Equipo::distinct()->whereNotNull('ANIO')->orderBy('ANIO', 'desc')->pluck('ANIO');
         });
-        
-        $marcas = \Illuminate\Support\Facades\Cache::remember('marcas_list_form_v3', 60, function() {
+
+        $marcas = \Illuminate\Support\Facades\Cache::remember('marcas_list_form_v3', 60, function () {
             return Equipo::distinct()->whereNotNull('MARCA')->orderBy('MARCA', 'asc')->limit(1000)->pluck('MARCA');
         });
 
-        $modelos = \Illuminate\Support\Facades\Cache::remember('modelos_list_form_v3', 60, function() {
+        $modelos = \Illuminate\Support\Facades\Cache::remember('modelos_list_form_v3', 60, function () {
             return Equipo::distinct()->whereNotNull('MODELO')->orderBy('MODELO', 'asc')->limit(1000)->pluck('MODELO');
         });
-        
+
         $categorias = ['FLOTA LIVIANA', 'FLOTA PESADA'];
-        
+
         $equipo = new Equipo(); // Empty instance for form partial
         return view('admin.equipos.create', compact('frentes', 'seguros', 'tipos_equipo', 'marcas', 'modelos', 'categorias', 'equipo', 'modelosList', 'aniosList'));
     }
 
     public function store(Request $request)
     {
-        set_time_limit(600); 
+        set_time_limit(600);
         ini_set('memory_limit', '512M');
 
         // Normalize inputs to uppercase before validation to avoid case-sensitivity issues with unique constraints
@@ -500,7 +517,7 @@ class EquipoController extends Controller
             'SERIAL_CHASIS' => strtoupper($request->SERIAL_CHASIS),
             'SERIAL_DE_MOTOR' => (trim($request->SERIAL_DE_MOTOR ?? '') === '') ? null : strtoupper(trim($request->SERIAL_DE_MOTOR)),
         ]);
-        
+
         if ($request->has('documentacion.PLACA')) {
             $doc = $request->documentacion;
             $placa = trim($doc['PLACA'] ?? '');
@@ -543,7 +560,7 @@ class EquipoController extends Controller
         // PERFORMANCE & ROBUSTNESS: Process files BEFORE opening DB transaction
         // This prevents DB locks while waiting for slow disk I/O operations
         $filesToProcess = [];
-        
+
         // Handle catalog reference photo if linked
         if ($request->filled('ID_ESPEC') && $request->hasFile('foto_referencial')) {
             $file = $request->file('foto_referencial');
@@ -612,14 +629,14 @@ class EquipoController extends Controller
                 $equipo->ID_ESPEC = $request->input('ID_ESPEC');
                 $equipo->save();
             }
-            
+
             // --- DOCUMENTATION & PHOTOS UPLOAD (SYNCHRONOUS DIRECT TO DRIVE) ---
             $driveService = \App\Services\GoogleDriveService::getInstance();
             $folderId = $driveService->getRootFolderId();
             $docDataUpdates = []; // FIX: Initialize variable to avoid 500 Error if no files are uploaded
 
             if (count($filesToProcess) > 0) {
-                 // Folders Configuration (Same as Job)
+                // Folders Configuration (Same as Job)
                 $folders = [
                     'foto_equipo' => '1Pmm9WI6YSi6Wb6-2_L0D5wk5whHs-mCf',
                     'foto_referencial' => '1KWEYWqnPjmJxz1XpR8U-Jto8KQT9RSsy',
@@ -629,23 +646,23 @@ class EquipoController extends Controller
                 foreach ($filesToProcess as $fileData) {
                     try {
                         $type = $fileData['type'];
-                        $localPath = $fileData['path']; 
-                        
+                        $localPath = $fileData['path'];
+
                         if (!Storage::disk('local')->exists($localPath)) {
-                             Log::warning("Store Upload: File missing from LOCAL storage: {$localPath}");
-                             continue;
+                            Log::warning("Store Upload: File missing from LOCAL storage: {$localPath}");
+                            continue;
                         }
                         $fullLocalPath = Storage::disk('local')->path($localPath);
                         $targetFolderId = $folders[$type] ?? $folders['default'];
 
                         // Prepare Upload Object
                         $fileObject = new \Illuminate\Http\File($fullLocalPath);
-                        
+
                         // Upload to Drive
                         $driveFile = $driveService->uploadFile(
-                            $targetFolderId, 
-                            $fileObject, 
-                            $fileData['originalName'], 
+                            $targetFolderId,
+                            $fileObject,
+                            $fileData['originalName'],
                             $fileData['mime']
                         );
 
@@ -653,13 +670,14 @@ class EquipoController extends Controller
                             // Cache Busting: Add version timestamp to URL
                             $timestamp = time();
                             $publicUrl = '/storage/google/' . $driveFile->id . '?v=' . $timestamp;
-                            
+
                             // Apply updates based on type
                             if ($type === 'foto_equipo') {
                                 $equipo->update(['FOTO_EQUIPO' => $publicUrl]);
                             } elseif ($type === 'foto_referencial' && $equipo->ID_ESPEC) {
                                 $espec = CaracteristicaModelo::find($equipo->ID_ESPEC);
-                                if ($espec) $espec->update(['FOTO_REFERENCIAL' => $publicUrl]);
+                                if ($espec)
+                                    $espec->update(['FOTO_REFERENCIAL' => $publicUrl]);
                             } elseif (in_array($type, ['doc_propiedad', 'poliza_seguro', 'doc_rotc', 'doc_racda'])) {
                                 $colMap = [
                                     'doc_propiedad' => 'LINK_DOC_PROPIEDAD',
@@ -667,7 +685,7 @@ class EquipoController extends Controller
                                     'doc_rotc' => 'LINK_ROTC',
                                     'doc_racda' => 'LINK_RACDA'
                                 ];
-                                if(isset($colMap[$type])) {
+                                if (isset($colMap[$type])) {
                                     $docDataUpdates[$colMap[$type]] = $publicUrl;
                                 }
                             }
@@ -683,7 +701,7 @@ class EquipoController extends Controller
                         throw new \Exception("Error subiendo el archivo {$type}: " . $e->getMessage());
                     }
                 }
-                
+
                 // Save accumulated doc link updates
                 if (!empty($docDataUpdates)) {
                     // We handle this below along with documentacion input data
@@ -697,32 +715,34 @@ class EquipoController extends Controller
                 $reqDoc['PLACA'] = strtoupper($reqDoc['PLACA'] ?? '');
                 $reqDoc['NOMBRE_DEL_TITULAR'] = strtoupper($reqDoc['NOMBRE_DEL_TITULAR'] ?? '');
                 $reqDoc['NRO_DE_DOCUMENTO'] = strtoupper($reqDoc['NRO_DE_DOCUMENTO'] ?? '');
-                
-                if (!empty($reqDoc['NOMBRE_SEGURO'])) { 
+
+                if (!empty($reqDoc['NOMBRE_SEGURO'])) {
                     $seguro = CatalogoSeguro::firstOrCreate(['NOMBRE_ASEGURADORA' => strtoupper($reqDoc['NOMBRE_SEGURO'])]);
                     $reqDoc['ID_SEGURO'] = $seguro->ID_SEGURO;
                 }
-                unset($reqDoc['NOMBRE_SEGURO']); 
-                
+                unset($reqDoc['NOMBRE_SEGURO']);
+
                 // FIX: Remove ESTADO_POLIZA if present (calculated field, not in DB)
                 if (isset($reqDoc['ESTADO_POLIZA'])) {
                     unset($reqDoc['ESTADO_POLIZA']);
-                } 
-                
+                }
+
                 // Merge Uploaded Links
                 $reqDoc = array_merge($reqDoc, $docDataUpdates);
 
-                $reqDoc = array_filter($reqDoc, function($value) { return !is_null($value) && $value !== ''; });
+                $reqDoc = array_filter($reqDoc, function ($value) {
+                    return !is_null($value) && $value !== '';
+                });
                 Documentacion::create($reqDoc);
             }
 
             // Responsables Record
             if ($request->has('responsable')) {
                 $reqResp = $request->input('responsable');
-                if (!empty($reqResp['NOMBRE_RESPONSABLE'])) { 
+                if (!empty($reqResp['NOMBRE_RESPONSABLE'])) {
                     $reqResp['ID_EQUIPO'] = $equipo->ID_EQUIPO;
-                    $reqResp['FECHA_ASIGNACION'] = now(); 
-                    Responsable::create($reqResp); 
+                    $reqResp['FECHA_ASIGNACION'] = now();
+                    Responsable::create($reqResp);
                 }
             }
         });
@@ -752,16 +772,16 @@ class EquipoController extends Controller
         $frentes = FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')->orderBy('NOMBRE_FRENTE', 'asc')->pluck('NOMBRE_FRENTE', 'ID_FRENTE');
         $seguros = CatalogoSeguro::orderBy('NOMBRE_ASEGURADORA', 'asc')->pluck('NOMBRE_ASEGURADORA');
         $tipos_equipo = TipoEquipo::orderBy('nombre', 'asc')->pluck('nombre');
-        
+
         // Optimización: Uso de Cache para variables globales (Solicitud Usuario)
-        $marcas = \Illuminate\Support\Facades\Cache::remember('marcas_list_form_v2', 3600, function() {
+        $marcas = \Illuminate\Support\Facades\Cache::remember('marcas_list_form_v2', 3600, function () {
             return Equipo::distinct()->whereNotNull('MARCA')->orderBy('MARCA', 'asc')->limit(1000)->pluck('MARCA');
         });
 
-        $modelos = \Illuminate\Support\Facades\Cache::remember('modelos_list_form_v2', 3600, function() {
+        $modelos = \Illuminate\Support\Facades\Cache::remember('modelos_list_form_v2', 3600, function () {
             return Equipo::distinct()->whereNotNull('MODELO')->orderBy('MODELO', 'asc')->limit(1000)->pluck('MODELO');
         });
-        
+
         $categorias = ['FLOTA LIVIANA', 'FLOTA PESADA'];
         return view('admin.equipos.edit', compact('equipo', 'frentes', 'seguros', 'categorias', 'tipos_equipo', 'marcas', 'modelos'));
     }
@@ -777,7 +797,7 @@ class EquipoController extends Controller
             'SERIAL_CHASIS' => strtoupper($request->SERIAL_CHASIS),
             'SERIAL_DE_MOTOR' => (trim($request->SERIAL_DE_MOTOR ?? '') === '') ? null : strtoupper(trim($request->SERIAL_DE_MOTOR)),
         ]);
-        
+
         if ($request->has('documentacion.PLACA')) {
             $doc = $request->documentacion;
             $placa = trim($doc['PLACA'] ?? '');
@@ -804,66 +824,66 @@ class EquipoController extends Controller
             'doc_racda' => 'nullable|file|mimes:pdf|max:5120',
         ], $this->validationMessages(), $this->validationAttributes());
 
-         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), []); 
-         // Custom validation for update: Check if file exists or is being uploaded if meta is present
-         $validator->after(function ($validator) use ($request, $equipo) {
-             // Propiedad
-             if ($request->filled('documentacion.NRO_DE_DOCUMENTO')) {
-                 $hasFile = $request->hasFile('doc_propiedad');
-                 $hasExisting = $equipo->documentacion && $equipo->documentacion->LINK_DOC_PROPIEDAD;
-                 if (!$hasFile && !$hasExisting) {
-                     $validator->errors()->add('doc_propiedad', 'El documento de propiedad es obligatorio si se indica el número.');
-                 }
-             }
-             if ($request->hasFile('doc_propiedad') && !$request->filled('documentacion.NRO_DE_DOCUMENTO')) {
-                 if (!($equipo->documentacion && $equipo->documentacion->NRO_DE_DOCUMENTO)) {
-                      $validator->errors()->add('documentacion.NRO_DE_DOCUMENTO', 'El número de documento es obligatorio al cargar el archivo.');
-                 }
-             }
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), []);
+        // Custom validation for update: Check if file exists or is being uploaded if meta is present
+        $validator->after(function ($validator) use ($request, $equipo) {
+            // Propiedad
+            if ($request->filled('documentacion.NRO_DE_DOCUMENTO')) {
+                $hasFile = $request->hasFile('doc_propiedad');
+                $hasExisting = $equipo->documentacion && $equipo->documentacion->LINK_DOC_PROPIEDAD;
+                if (!$hasFile && !$hasExisting) {
+                    $validator->errors()->add('doc_propiedad', 'El documento de propiedad es obligatorio si se indica el número.');
+                }
+            }
+            if ($request->hasFile('doc_propiedad') && !$request->filled('documentacion.NRO_DE_DOCUMENTO')) {
+                if (!($equipo->documentacion && $equipo->documentacion->NRO_DE_DOCUMENTO)) {
+                    $validator->errors()->add('documentacion.NRO_DE_DOCUMENTO', 'El número de documento es obligatorio al cargar el archivo.');
+                }
+            }
 
-             // Poliza
-             if ($request->filled('documentacion.FECHA_VENC_POLIZA')) {
-                 $hasFile = $request->hasFile('poliza_seguro');
-                 $hasExisting = $equipo->documentacion && $equipo->documentacion->LINK_POLIZA_SEGURO;
-                 if (!$hasFile && !$hasExisting) {
-                     $validator->errors()->add('poliza_seguro', 'La póliza es obligatoria si se indica el vencimiento.');
-                 }
-             }
-              if ($request->hasFile('poliza_seguro') && !$request->filled('documentacion.FECHA_VENC_POLIZA')) {
-                 if (!($equipo->documentacion && $equipo->documentacion->FECHA_VENC_POLIZA)) {
-                      $validator->errors()->add('documentacion.FECHA_VENC_POLIZA', 'La fecha de vencimiento es obligatoria al cargar la póliza.');
-                 }
-             }
+            // Poliza
+            if ($request->filled('documentacion.FECHA_VENC_POLIZA')) {
+                $hasFile = $request->hasFile('poliza_seguro');
+                $hasExisting = $equipo->documentacion && $equipo->documentacion->LINK_POLIZA_SEGURO;
+                if (!$hasFile && !$hasExisting) {
+                    $validator->errors()->add('poliza_seguro', 'La póliza es obligatoria si se indica el vencimiento.');
+                }
+            }
+            if ($request->hasFile('poliza_seguro') && !$request->filled('documentacion.FECHA_VENC_POLIZA')) {
+                if (!($equipo->documentacion && $equipo->documentacion->FECHA_VENC_POLIZA)) {
+                    $validator->errors()->add('documentacion.FECHA_VENC_POLIZA', 'La fecha de vencimiento es obligatoria al cargar la póliza.');
+                }
+            }
 
-             // ROTC
-             if ($request->filled('documentacion.FECHA_ROTC')) {
-                 $hasFile = $request->hasFile('doc_rotc');
-                 $hasExisting = $equipo->documentacion && $equipo->documentacion->LINK_ROTC;
-                 if (!$hasFile && !$hasExisting) {
-                     $validator->errors()->add('doc_rotc', 'El documento ROTC es obligatorio si se indica la fecha.');
-                 }
-             }
-             if ($request->hasFile('doc_rotc') && !$request->filled('documentacion.FECHA_ROTC')) {
-                 if (!($equipo->documentacion && $equipo->documentacion->FECHA_ROTC)) {
-                      $validator->errors()->add('documentacion.FECHA_ROTC', 'La fecha ROTC es obligatoria al cargar el archivo.');
-                 }
-             }
+            // ROTC
+            if ($request->filled('documentacion.FECHA_ROTC')) {
+                $hasFile = $request->hasFile('doc_rotc');
+                $hasExisting = $equipo->documentacion && $equipo->documentacion->LINK_ROTC;
+                if (!$hasFile && !$hasExisting) {
+                    $validator->errors()->add('doc_rotc', 'El documento ROTC es obligatorio si se indica la fecha.');
+                }
+            }
+            if ($request->hasFile('doc_rotc') && !$request->filled('documentacion.FECHA_ROTC')) {
+                if (!($equipo->documentacion && $equipo->documentacion->FECHA_ROTC)) {
+                    $validator->errors()->add('documentacion.FECHA_ROTC', 'La fecha ROTC es obligatoria al cargar el archivo.');
+                }
+            }
 
-             // RACDA
-             if ($request->filled('documentacion.FECHA_RACDA')) {
-                 $hasFile = $request->hasFile('doc_racda');
-                 $hasExisting = $equipo->documentacion && $equipo->documentacion->LINK_RACDA;
-                 if (!$hasFile && !$hasExisting) {
-                     $validator->errors()->add('doc_racda', 'El documento RACDA es obligatorio si se indica la fecha.');
-                 }
-             }
-              if ($request->hasFile('doc_racda') && !$request->filled('documentacion.FECHA_RACDA')) {
-                 if (!($equipo->documentacion && $equipo->documentacion->FECHA_RACDA)) {
-                      $validator->errors()->add('documentacion.FECHA_RACDA', 'La fecha RACDA es obligatoria al cargar el archivo.');
-                 }
-             }
-         });
-         $validator->validate();
+            // RACDA
+            if ($request->filled('documentacion.FECHA_RACDA')) {
+                $hasFile = $request->hasFile('doc_racda');
+                $hasExisting = $equipo->documentacion && $equipo->documentacion->LINK_RACDA;
+                if (!$hasFile && !$hasExisting) {
+                    $validator->errors()->add('doc_racda', 'El documento RACDA es obligatorio si se indica la fecha.');
+                }
+            }
+            if ($request->hasFile('doc_racda') && !$request->filled('documentacion.FECHA_RACDA')) {
+                if (!($equipo->documentacion && $equipo->documentacion->FECHA_RACDA)) {
+                    $validator->errors()->add('documentacion.FECHA_RACDA', 'La fecha RACDA es obligatoria al cargar el archivo.');
+                }
+            }
+        });
+        $validator->validate();
 
         DB::transaction(function () use ($request, $equipo) {
             $tipoName = strtoupper($request->input('TIPO_EQUIPO'));
@@ -906,7 +926,7 @@ class EquipoController extends Controller
                 if ($driveFile && isset($driveFile->id)) {
                     $timestamp = time();
                     $equipo->update(['FOTO_EQUIPO' => '/storage/google/' . $driveFile->id . '?v=' . $timestamp]);
-                } 
+                }
             }
 
             if ($request->has('documentacion')) {
@@ -921,26 +941,28 @@ class EquipoController extends Controller
                 if (isset($docData['ESTADO_POLIZA'])) {
                     unset($docData['ESTADO_POLIZA']);
                 }
-                $docData = array_filter($docData, function($value) { return !is_null($value) && $value !== ''; });
+                $docData = array_filter($docData, function ($value) {
+                    return !is_null($value) && $value !== '';
+                });
 
                 $docTypes = ['doc_propiedad' => 'LINK_DOC_PROPIEDAD', 'poliza_seguro' => 'LINK_POLIZA_SEGURO', 'doc_rotc' => 'LINK_ROTC', 'doc_racda' => 'LINK_RACDA'];
                 foreach ($docTypes as $fileKey => $dbCol) {
                     if ($request->hasFile($fileKey)) {
                         $file = $request->file($fileKey);
-                        
+
                         // Check for old file and delete it (Correctly using DB relation)
                         if ($equipo->documentacion && $equipo->documentacion->$dbCol && str_starts_with($equipo->documentacion->$dbCol, '/storage/google/')) {
-                             // Extract file ID (remove query params for cache busting)
-                             $oldUrl = $equipo->documentacion->$dbCol;
-                             $oldFileId = str_replace('/storage/google/', '', parse_url($oldUrl, PHP_URL_PATH));
-                             try {
-                                 $driveService->deleteFile($oldFileId);
-                                 // Invalidate local cache
-                                 \Illuminate\Support\Facades\Storage::disk('local')->delete('google_cache/' . $oldFileId);
-                                 \Illuminate\Support\Facades\Cache::forget('gdrive_meta_' . $oldFileId);
-                             } catch (\Exception $e) {
-                                 Log::error("Failed to delete old Drive file: $oldFileId");
-                             }
+                            // Extract file ID (remove query params for cache busting)
+                            $oldUrl = $equipo->documentacion->$dbCol;
+                            $oldFileId = str_replace('/storage/google/', '', parse_url($oldUrl, PHP_URL_PATH));
+                            try {
+                                $driveService->deleteFile($oldFileId);
+                                // Invalidate local cache
+                                \Illuminate\Support\Facades\Storage::disk('local')->delete('google_cache/' . $oldFileId);
+                                \Illuminate\Support\Facades\Cache::forget('gdrive_meta_' . $oldFileId);
+                            } catch (\Exception $e) {
+                                Log::error("Failed to delete old Drive file: $oldFileId");
+                            }
                         }
 
                         $driveFile = $driveService->uploadFile($folderId, $file, $fileKey . '_' . time() . '.pdf', 'application/pdf');
@@ -955,17 +977,20 @@ class EquipoController extends Controller
                     $placaVal = trim($docData['PLACA']);
                     $docData['PLACA'] = ($placaVal === '') ? null : strtoupper($placaVal);
                 }
-                if (isset($docData['NOMBRE_DEL_TITULAR'])) $docData['NOMBRE_DEL_TITULAR'] = strtoupper($docData['NOMBRE_DEL_TITULAR']);
-                if (isset($docData['NRO_DE_DOCUMENTO'])) $docData['NRO_DE_DOCUMENTO'] = strtoupper($docData['NRO_DE_DOCUMENTO']);
+                if (isset($docData['NOMBRE_DEL_TITULAR']))
+                    $docData['NOMBRE_DEL_TITULAR'] = strtoupper($docData['NOMBRE_DEL_TITULAR']);
+                if (isset($docData['NRO_DE_DOCUMENTO']))
+                    $docData['NRO_DE_DOCUMENTO'] = strtoupper($docData['NRO_DE_DOCUMENTO']);
 
-                if ($equipo->documentacion) $equipo->documentacion->update($docData);
+                if ($equipo->documentacion)
+                    $equipo->documentacion->update($docData);
                 else {
                     $docData['ID_EQUIPO'] = $equipo->ID_EQUIPO;
                     Documentacion::create($docData);
                 }
             }
         });
-        
+
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'message' => 'Equipo actualizado correctamente.']);
         }
@@ -1005,29 +1030,29 @@ class EquipoController extends Controller
         $equipo = Equipo::findOrFail($id);
         $type = $request->input('doc_type');
         $file = $request->file('file');
-        
+
         $dbColumn = '';
         $dateColumn = '';
         $filenamePrefix = '';
         switch ($type) {
-            case 'propiedad': 
-                $dbColumn = 'LINK_DOC_PROPIEDAD'; 
-                $filenamePrefix = 'doc_propiedad_'; 
+            case 'propiedad':
+                $dbColumn = 'LINK_DOC_PROPIEDAD';
+                $filenamePrefix = 'doc_propiedad_';
                 break;
-            case 'poliza': 
-                $dbColumn = 'LINK_POLIZA_SEGURO'; 
-                $dateColumn = 'FECHA_VENC_POLIZA'; 
-                $filenamePrefix = 'poliza_seguro_'; 
+            case 'poliza':
+                $dbColumn = 'LINK_POLIZA_SEGURO';
+                $dateColumn = 'FECHA_VENC_POLIZA';
+                $filenamePrefix = 'poliza_seguro_';
                 break;
-            case 'rotc': 
-                $dbColumn = 'LINK_ROTC'; 
-                $dateColumn = 'FECHA_ROTC'; 
-                $filenamePrefix = 'rotc_'; 
+            case 'rotc':
+                $dbColumn = 'LINK_ROTC';
+                $dateColumn = 'FECHA_ROTC';
+                $filenamePrefix = 'rotc_';
                 break;
-            case 'racda': 
-                $dbColumn = 'LINK_RACDA'; 
-                $dateColumn = 'FECHA_RACDA'; 
-                $filenamePrefix = 'racda_'; 
+            case 'racda':
+                $dbColumn = 'LINK_RACDA';
+                $dateColumn = 'FECHA_RACDA';
+                $filenamePrefix = 'racda_';
                 break;
             case 'adicional':
                 $dbColumn = 'LINK_DOC_ADICIONAL';
@@ -1037,21 +1062,22 @@ class EquipoController extends Controller
 
         try {
             $driveService = \App\Services\GoogleDriveService::getInstance();
-            
+
             // 1. CAPTURE OLD FILE ID (Don't delete yet - Safety First)
             $oldFileIdToDelete = null;
             if ($equipo->documentacion && $equipo->documentacion->$dbColumn && str_starts_with($equipo->documentacion->$dbColumn, '/storage/google/')) {
-                 // Extract file ID (remove query params for cache busting)
-                 $oldUrl = $equipo->documentacion->$dbColumn;
-                 $oldFileIdToDelete = str_replace('/storage/google/', '', parse_url($oldUrl, PHP_URL_PATH));
+                // Extract file ID (remove query params for cache busting)
+                $oldUrl = $equipo->documentacion->$dbColumn;
+                $oldFileIdToDelete = str_replace('/storage/google/', '', parse_url($oldUrl, PHP_URL_PATH));
             }
 
             // 2. UPLOAD NEW FILE
             $folderId = $driveService->getRootFolderId();
             $filename = $filenamePrefix . time() . '.pdf';
             $driveFile = $driveService->uploadFile($folderId, $file, $filename, $file->getMimeType());
-            
-            if (!$driveFile || !isset($driveFile->id)) throw new \Exception("La subida a Google Drive no retornó un ID válido");
+
+            if (!$driveFile || !isset($driveFile->id))
+                throw new \Exception("La subida a Google Drive no retornó un ID válido");
 
             // Cache Busting: Add version timestamp
             $timestamp = time();
@@ -1059,16 +1085,16 @@ class EquipoController extends Controller
 
             // 3. UPDATE DATABASE (Including user tracking)
             $updateData = [$dbColumn => $fullUrl];
-            
+
             // Add expiration date if applicable
             if ($dateColumn && $request->filled('expiration_date')) {
                 $updateData[$dateColumn] = $request->input('expiration_date');
             }
-            
+
             // COMPATIBILITY FIX: Save ID (Int) to match Server DB structure
             $uploadedBy = auth()->user()->ID_USUARIO;
             $uploadedAt = now();
-            
+
             switch ($type) {
                 case 'propiedad':
                     $updateData['PROPIEDAD_SUBIDO_POR'] = $uploadedBy;
@@ -1111,11 +1137,13 @@ class EquipoController extends Controller
             \Illuminate\Support\Facades\Cache::forget('dashboard_total_alerts');
             \Illuminate\Support\Facades\Cache::forget('dashboard_expired_list_v3');
 
-            if (ob_get_length()) ob_end_clean();
+            if (ob_get_length())
+                ob_end_clean();
             return response()->json(['success' => true, 'link' => $fullUrl, 'message' => 'Documento actualizado correctamente']);
         } catch (\Exception $e) {
             Log::error('Error subiendo archivo a Google Drive: ' . $e->getMessage());
-            if (ob_get_length()) ob_end_clean();
+            if (ob_get_length())
+                ob_end_clean();
             return response()->json(['success' => false, 'message' => 'Error al subir archivo: ' . $e->getMessage()], 500);
         }
     }
@@ -1193,11 +1221,11 @@ class EquipoController extends Controller
     public function metadata(Request $request, $id)
     {
         $equipo = Equipo::with(['documentacion.seguro'])->findOrFail($id);
-        
+
         $type = $request->input('type');
         $doc = $equipo->documentacion;
         $data = [];
-        
+
         if ($doc) {
             switch ($type) {
                 case 'propiedad':
@@ -1211,7 +1239,7 @@ class EquipoController extends Controller
                         'serial_motor' => $equipo->SERIAL_DE_MOTOR ?? ''
                     ];
                     break;
-                    
+
                 case 'poliza':
                     $data = [
                         'fecha_vencimiento' => $doc->FECHA_VENC_POLIZA ?? '',
@@ -1219,25 +1247,25 @@ class EquipoController extends Controller
                         'insurers' => CatalogoSeguro::orderBy('NOMBRE_ASEGURADORA', 'asc')->get()
                     ];
                     break;
-                    
+
                 case 'rotc':
                     $data = [
                         'fecha_vencimiento' => $doc->FECHA_ROTC ?? ''
                     ];
                     break;
-                    
+
                 case 'racda':
                     $data = [
                         'fecha_vencimiento' => $doc->FECHA_RACDA ?? ''
                     ];
                     break;
-                
+
                 case 'adicional':
                     $data = [];
                     break;
             }
         }
-        
+
         return response()->json(['success' => true, 'data' => $data]);
     }
 
@@ -1251,13 +1279,13 @@ class EquipoController extends Controller
         }
         $equipo = Equipo::with('documentacion')->findOrFail($id);
         $type = $request->input('doc_type');
-        
+
         if (!$equipo->documentacion) {
             return response()->json(['success' => false, 'message' => 'No existe documentación para este equipo'], 400);
         }
-        
+
         $updateData = [];
-        
+
         switch ($type) {
             case 'propiedad':
                 $updateData = [
@@ -1274,12 +1302,12 @@ class EquipoController extends Controller
                     'SERIAL_DE_MOTOR' => (trim($request->input('serial_motor', '') ?? '') === '') ? null : strtoupper(trim($request->input('serial_motor', ''))),
                 ]);
                 break;
-                
+
             case 'poliza':
                 $updateData = [
                     'FECHA_VENC_POLIZA' => $request->input('fecha_vencimiento'),
                 ];
-                
+
                 // Clear management if new date is in future
                 if ($request->filled('fecha_vencimiento')) {
                     $newDate = \Carbon\Carbon::parse($request->input('fecha_vencimiento'));
@@ -1288,7 +1316,7 @@ class EquipoController extends Controller
                         $updateData['poliza_gestion_fecha'] = null;
                     }
                 }
-                
+
                 // Handle insurance name (create if new)
                 if ($request->filled('nombre_aseguradora')) {
                     $seguro = CatalogoSeguro::firstOrCreate([
@@ -1297,7 +1325,7 @@ class EquipoController extends Controller
                     $updateData['ID_SEGURO'] = $seguro->ID_SEGURO;
                 }
                 break;
-                
+
             case 'rotc':
                 $updateData = [
                     'FECHA_ROTC' => $request->input('fecha_vencimiento'),
@@ -1310,7 +1338,7 @@ class EquipoController extends Controller
                     }
                 }
                 break;
-                
+
             case 'racda':
                 $updateData = [
                     'FECHA_RACDA' => $request->input('fecha_vencimiento'),
@@ -1324,18 +1352,18 @@ class EquipoController extends Controller
                 }
                 break;
         }
-        
+
         // Filter empty values
-        $updateData = array_filter($updateData, function($value) {
+        $updateData = array_filter($updateData, function ($value) {
             return !is_null($value) && $value !== '';
         });
-        
+
         $equipo->documentacion->update($updateData);
-        
+
         // Clear Dashboard Cache to update alerts immediately
         \Illuminate\Support\Facades\Cache::forget('dashboard_total_alerts');
         \Illuminate\Support\Facades\Cache::forget('dashboard_expired_list_v3');
-        
+
         return response()->json(['success' => true, 'message' => 'Datos actualizados correctamente']);
     }
 
@@ -1351,8 +1379,8 @@ class EquipoController extends Controller
         Log::info("SEARCH CATALOG MATCH: Model='$model', Year='$year'");
 
         if (!$model || !$year) {
-             Log::info("SEARCH CATALOG: Missing params");
-             return response()->json(['found' => false]);
+            Log::info("SEARCH CATALOG: Missing params");
+            return response()->json(['found' => false]);
         }
 
         // Use strict match but trim-safe
@@ -1360,10 +1388,18 @@ class EquipoController extends Controller
         $catalogEntries = CaracteristicaModelo::where('MODELO', $model)
             ->where('ANIO_ESPEC', $year)
             ->select([
-                'ID_ESPEC', 'MODELO', 'ANIO_ESPEC', 'MOTOR',
-                'COMBUSTIBLE', 'CONSUMO_PROMEDIO', 'ACEITE_MOTOR',
-                'ACEITE_CAJA', 'LIGA_FRENO', 'REFRIGERANTE',
-                'TIPO_BATERIA', 'FOTO_REFERENCIAL'
+                'ID_ESPEC',
+                'MODELO',
+                'ANIO_ESPEC',
+                'MOTOR',
+                'COMBUSTIBLE',
+                'CONSUMO_PROMEDIO',
+                'ACEITE_MOTOR',
+                'ACEITE_CAJA',
+                'LIGA_FRENO',
+                'REFRIGERANTE',
+                'TIPO_BATERIA',
+                'FOTO_REFERENCIAL'
             ])
             ->get();
 
@@ -1373,7 +1409,7 @@ class EquipoController extends Controller
 
         return response()->json([
             'found' => true,
-            'data' => $catalogEntries->map(function($entry) {
+            'data' => $catalogEntries->map(function ($entry) {
                 return [
                     'ID_ESPEC' => $entry->ID_ESPEC,
                     'MODELO' => $entry->MODELO,
@@ -1426,7 +1462,7 @@ class EquipoController extends Controller
     {
         try {
             $frenteId = $request->input('frente_id');
-            
+
             // Base query builder for filtering
             $baseQuery = Equipo::query();
             if ($frenteId && $frenteId !== 'all') {
@@ -1539,7 +1575,7 @@ class EquipoController extends Controller
         try {
             $frenteId = $request->input('frente_id');
             $frenteNombre = 'Todos los Frentes';
-            
+
             // Base query builder
             $baseQuery = Equipo::query();
             if ($frenteId && $frenteId !== 'all') {
@@ -1581,11 +1617,11 @@ class EquipoController extends Controller
                 "Expires" => "0"
             ];
 
-            $callback = function() use ($ageData, $categoryData, $frenteNombre) {
+            $callback = function () use ($ageData, $categoryData, $frenteNombre) {
                 $file = fopen('php://output', 'w');
-                
+
                 // Add BOM for Excel UTF-8 compatibility
-                fputs($file, "\xEF\xBB\xBF"); 
+                fputs($file, "\xEF\xBB\xBF");
 
                 // Metadata Header
                 fputcsv($file, ['REPORTE DE FLOTA - SISTEMA SFS']);
@@ -1597,21 +1633,21 @@ class EquipoController extends Controller
                 fputcsv($file, ['=== FLOTA NUEVA VS VIEJA ===']);
                 fputcsv($file, ['Tipo de Equipo', 'Nuevo', 'Viejo', 'Total']);
                 fputcsv($file, ['', '', '', '']); // Separator for table borders
-                
+
                 foreach ($ageData as $row) {
                     $tipoName = $row->tipo ? $row->tipo->nombre : 'Sin Tipo';
                     $total = $row->new_count + $row->old_count;
                     if ($total > 0) {
                         fputcsv($file, [
-                            $tipoName, 
-                            $row->new_count, 
+                            $tipoName,
+                            $row->new_count,
                             $row->old_count,
                             $total
                         ]);
                     }
                 }
                 fputcsv($file, []);
-                fputcsv($file, []); 
+                fputcsv($file, []);
 
                 // SECTION 2: PESADA VS LIVIANA
                 fputcsv($file, ['=== FLOTA PESADA VS LIVIANA ===']);
@@ -1649,7 +1685,7 @@ class EquipoController extends Controller
     public function checkAnclajeCompatibility(Request $request)
     {
         $ids = $request->input('ids', []);
-        
+
         if (empty($ids)) {
             return response()->json(['message' => 'No se seleccionaron equipos.'], 400);
         }
@@ -1663,11 +1699,11 @@ class EquipoController extends Controller
         // Analizar Roles de la selección
         // Asume propiedad ROL_ANCLAJE o helper
         // Si no existe, default NEUTRO
-        
+
         // Check ALL selected items share same role
         $firstRole = $equipos->first()->tipo ? $equipos->first()->tipo->ROL_ANCLAJE : 'NEUTRO';
-        
-        foreach($equipos as $e) {
+
+        foreach ($equipos as $e) {
             $r = $e->tipo ? $e->tipo->ROL_ANCLAJE : 'NEUTRO';
             if ($r !== $firstRole) {
                 return response()->json(['message' => 'Selección mixta detectada. Por favor seleccione solo equipos del mismo rol de anclaje (Solo Remolcadores o Solo Remolcables).'], 422);
@@ -1691,30 +1727,30 @@ class EquipoController extends Controller
         if ($firstRole === 'REMOLCABLE') {
             $response['mode'] = 'assign_parent'; // Asignar un Padre a estos Hijos
             $response['selected_info'] = $equipos->count() . ' equipo(s) remolcable(s) buscando Padre';
-            
+
             // Buscar Padres Disponibles (Remolcadores)
-            $candidatos = Equipo::whereHas('tipo', function($q) {
+            $candidatos = Equipo::whereHas('tipo', function ($q) {
                 $q->where('ROL_ANCLAJE', 'REMOLCADOR');
             })
-            ->where('ESTADO_OPERATIVO', 'OPERATIVO') // Solo operativos?
-            ->orderBy('CODIGO_PATIO', 'asc')
-            ->get();
+                ->where('ESTADO_OPERATIVO', 'OPERATIVO') // Solo operativos?
+                ->orderBy('CODIGO_PATIO', 'asc')
+                ->get();
 
         } else { // REMOLCADOR
             $response['mode'] = 'assign_children'; // Asignar un Hijo a este Padre
             $response['selected_info'] = $equipos->count() . ' equipo(s) remolcador(es) buscando Hijo';
-            
+
             // Buscar Hijos Disponibles (Remolcables) que NO estén anclados ya
-            $candidatos = Equipo::whereHas('tipo', function($q) {
+            $candidatos = Equipo::whereHas('tipo', function ($q) {
                 $q->where('ROL_ANCLAJE', 'REMOLCABLE');
             })
-            ->whereNull('ID_ANCLAJE') // Solo libres
-            ->where('ESTADO_OPERATIVO', 'OPERATIVO')
-            ->orderBy('CODIGO_PATIO', 'asc')
-            ->get();
+                ->whereNull('ID_ANCLAJE') // Solo libres
+                ->where('ESTADO_OPERATIVO', 'OPERATIVO')
+                ->orderBy('CODIGO_PATIO', 'asc')
+                ->get();
         }
 
-        $response['candidates'] = $candidatos->map(function($c) {
+        $response['candidates'] = $candidatos->map(function ($c) {
             return [
                 'id' => $c->ID_EQUIPO,
                 'codigo' => $c->CODIGO_PATIO,
@@ -1735,11 +1771,12 @@ class EquipoController extends Controller
         $mode = $request->input('mode'); // assign_parent o assign_children
         $detach = $request->input('detach', false); // Booleano para desanclar
 
-        if (empty($ids)) return response()->json(['message' => 'Sin selección'], 400);
+        if (empty($ids))
+            return response()->json(['message' => 'Sin selección'], 400);
 
         try {
-            DB::transaction(function() use ($ids, $targetId, $mode, $detach) {
-                
+            DB::transaction(function () use ($ids, $targetId, $mode, $detach) {
+
                 if ($detach) {
                     // Desvincular seleccionados
                     if ($mode === 'assign_parent') {
@@ -1755,14 +1792,14 @@ class EquipoController extends Controller
                         // Selección: Hijos. Acción: Asignarles el Padre targetId.
                         // Validar que el Padre exista
                         $padre = Equipo::findOrFail($targetId);
-                        
+
                         // LOGIC: Multiple children linked to ONE parent. Correct.
                         Equipo::whereIn('ID_EQUIPO', $ids)->update(['ID_ANCLAJE' => $padre->ID_EQUIPO]);
                     } else {
                         // Selección: Padres. Acción: Asignarles el Hijo targetId.
                         // LOGIC: Multiple Parents linked to ONE child? IMPOSSIBLE.
                         // A child can only have one parent (ID_ANCLAJE).
-                        
+
                         if (count($ids) > 1) {
                             throw new \Exception("No se puede asignar un mismo componente a múltiples equipos remolcadores simultáneamente. Seleccione un solo equipo Padre.");
                         }
@@ -1770,7 +1807,7 @@ class EquipoController extends Controller
                         // Tengo 1 Padre (ids[0]) y quiero asignarle 1 Hijo (targetId)
                         $padreId = $ids[0];
                         $hijo = Equipo::findOrFail($targetId);
-                        
+
                         // Set the child's parent to be this selected father
                         $hijo->ID_ANCLAJE = $padreId;
                         $hijo->save();
@@ -1791,7 +1828,7 @@ class EquipoController extends Controller
     {
         // Si no se especifica frente, usar el frente del usuario autenticado
         $frenteId = $request->input('id_frente');
-        
+
         if (!$frenteId) {
             $usuario = auth()->user();
             if ($usuario && $usuario->ID_FRENTE) {
@@ -1801,17 +1838,17 @@ class EquipoController extends Controller
 
         // Obtener Frentes directamente de la base de datos (tabla: frentes_trabajo)
         $frentes = \DB::table('frentes_trabajo')->select('ID_FRENTE', 'NOMBRE_FRENTE')->orderBy('NOMBRE_FRENTE')->get();
-        
+
         // Base Query Builder
-        $queryRemolcadores = Equipo::whereHas('tipo', function($q) {
-                $q->where('ROL_ANCLAJE', 'REMOLCADOR');
-            })
-            ->with(['tipo', 'especificaciones', 'equiposAnclados.tipo', 'equiposAnclados.especificaciones', 'equiposAnclados.documentacion', 'documentacion']) 
+        $queryRemolcadores = Equipo::whereHas('tipo', function ($q) {
+            $q->where('ROL_ANCLAJE', 'REMOLCADOR');
+        })
+            ->with(['tipo', 'especificaciones', 'equiposAnclados.tipo', 'equiposAnclados.especificaciones', 'equiposAnclados.documentacion', 'documentacion'])
             ->whereIn('ESTADO_OPERATIVO', ['OPERATIVO', 'EN MANTENIMIENTO']);
 
-        $queryRemolcables = Equipo::whereHas('tipo', function($q) {
-                $q->where('ROL_ANCLAJE', 'REMOLCABLE');
-            })
+        $queryRemolcables = Equipo::whereHas('tipo', function ($q) {
+            $q->where('ROL_ANCLAJE', 'REMOLCABLE');
+        })
             ->whereNull('ID_ANCLAJE')
             ->with(['tipo', 'especificaciones', 'documentacion'])
             ->whereIn('ESTADO_OPERATIVO', ['OPERATIVO', 'EN MANTENIMIENTO']);
@@ -1828,13 +1865,13 @@ class EquipoController extends Controller
         return view('admin.equipos.configuracion_flota', compact('remolcadores', 'remolcablesLibres', 'frentes', 'frenteId'));
     }
 
-    public function vincularEquipos(Request $request) 
+    public function vincularEquipos(Request $request)
     {
         $padreId = $request->input('padre_id');
         $hijoId = $request->input('hijo_id');
 
         try {
-            DB::transaction(function() use ($padreId, $hijoId) {
+            DB::transaction(function () use ($padreId, $hijoId) {
                 $hijo = Equipo::findOrFail($hijoId);
                 $padre = Equipo::findOrFail($padreId); // Load Parent to check its Front
 
@@ -1864,7 +1901,7 @@ class EquipoController extends Controller
         $hijoId = $request->input('hijo_id');
 
         try {
-            DB::transaction(function() use ($hijoId) {
+            DB::transaction(function () use ($hijoId) {
                 $hijo = Equipo::findOrFail($hijoId);
                 $hijo->ID_ANCLAJE = null;
                 $hijo->save();

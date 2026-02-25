@@ -618,8 +618,14 @@
                                             </div>
                                         @endforeach
                                     </div>
-                                    <input type="hidden" id="dashboardSelectedFrenteId" value="{{ $frentes->first()->ID_FRENTE ?? '' }}">
-                                    <input type="hidden" id="dashboardSelectedFrenteNombre" value="{{ $frentes->first()->NOMBRE_FRENTE ?? '' }}">
+                                    @php
+                                        $userFrenteId = auth()->user()->ID_FRENTE_ASIGNADO;
+                                        $userFrente = $userFrenteId ? $frentes->firstWhere('ID_FRENTE', $userFrenteId) : null;
+                                        $defaultDashboardId = $userFrenteId ?? ($frentes->first()->ID_FRENTE ?? '');
+                                        $defaultDashboardNombre = $userFrente ? $userFrente->NOMBRE_FRENTE : ($frentes->first()->NOMBRE_FRENTE ?? '');
+                                    @endphp
+                                    <input type="hidden" id="dashboardSelectedFrenteId" value="{{ $defaultDashboardId }}">
+                                    <input type="hidden" id="dashboardSelectedFrenteNombre" value="{{ $defaultDashboardNombre }}">
                                 </div>
                             </div>
                         </div>
