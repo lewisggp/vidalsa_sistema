@@ -209,17 +209,30 @@ function handleRowClick(e) {
 
         // Selection Feedback (Toast)
         if (window.showToast) {
-            const partnerName =
-                partnerCode ||
-                (partnerBtn ? partnerBtn.dataset.codigo : anchorId);
+            // Priority: Partner in DOM > Clicked row dataset
+            const partnerTipo = partnerBtn
+                ? partnerBtn.dataset.tipo
+                : btnDetails.dataset.anchorTipoNombre || "Equipo";
+            const partnerPlaca = partnerBtn
+                ? partnerBtn.dataset.placa
+                : btnDetails.dataset.anchorPlaca;
+            const partnerChasis = partnerBtn
+                ? partnerBtn.dataset.chasis
+                : btnDetails.dataset.anchorSerial;
+
+            const identificador =
+                partnerPlaca && partnerPlaca !== "N/A" && partnerPlaca !== ""
+                    ? partnerPlaca
+                    : partnerChasis || anchorId;
+
             if (isSelecting) {
                 window.showToast(
-                    `Has seleccionado también el equipo anclado: ${partnerName}`,
+                    `Has seleccionado también el ${partnerTipo}: ${identificador}`,
                     "info",
                 );
             } else {
                 window.showToast(
-                    `Haz retirado también el equipo anclado: ${partnerName}`,
+                    `Haz retirado también el ${partnerTipo}: ${identificador}`,
                     "info",
                 );
             }

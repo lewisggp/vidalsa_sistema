@@ -175,6 +175,9 @@
                     data-anchor-id="{{ $equipo->ID_ANCLAJE ?? '' }}"
                     data-anchor-code="{{ $equipo->ancladoA->CODIGO_PATIO ?? '' }}"
                     data-anchor-rol="{{ $equipo->ancladoA->tipo->ROL_ANCLAJE ?? '' }}"
+                    data-anchor-tipo-nombre="{{ $equipo->ancladoA->tipo->nombre ?? 'Equipo' }}"
+                    data-anchor-placa="{{ $equipo->ancladoA->documentacion->PLACA ?? '' }}"
+                    data-anchor-serial="{{ $equipo->ancladoA->SERIAL_CHASIS ?? '' }}"
                     onclick="showDetailsImproved(this, event)"
                     class="btn-details-mini" title="Ver Detalles">
                     <i class="material-icons">visibility</i>
