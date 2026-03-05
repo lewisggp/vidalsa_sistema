@@ -115,35 +115,31 @@ class Usuario extends Authenticatable
      */
     public function can($abilities, $arguments = []): bool
     {
-        // 1. Si es Super Administrador por ROL (ID 1), tiene acceso TOTAL.
-        if ($this->ID_ROL == 1) {
-            return true;
+        // manage.users SIEMPRE delega al Gate (requiere clave + rol en Gate::before)
+        // Si se resuelve aquí con el shortcut de super.admin, el check de rol se pasa por alto.
+        if (is_string($abilities) && $abilities === 'manage.users') {
+            return parent::can($abilities, $arguments);
         }
 
-        // Verificación robusta del nombre del rol (Super Admin)
-        if (strtoupper(optional($this->rol)->NOMBRE_ROL) === 'SUPER ADMIN') {
-            return true;
-        }
-
-        // 2. Lógica personalizada para nuestro sistema de permisos (Columna PERMISOS)
+        // Sistema basado ÚNICAMENTE en claves (columna PERMISOS).
+        // El ROL no otorga acceso automático. Solo la clave 'super.admin' da acceso total.
         if (is_string($abilities)) {
-            // Obtener permisos y normalizar a minúsculas para evitar problemas de Case Sensitivity
-            $permisosRaw = $this->PERMISOS ?? []; // Array via Accessor
+            $permisosRaw = $this->PERMISOS ?? [];
             $permisos = array_map('strtolower', $permisosRaw);
             $ability = strtolower($abilities);
 
-            // REGLA MAESTRA: Si tiene permiso 'super.admin' explícito
+            // REGLA MAESTRA: clave super.admin explícita = acceso total
             if (in_array('super.admin', $permisos)) {
                 return true;
             }
-            
+
             // Verificación del permiso específico solicitado
             if (in_array($ability, $permisos)) {
                 return true;
             }
         }
 
-        // 3. Delegar el resto al framework (para Gates/Policies estándar si se usan)
+        // Delegar el resto al framework (para Gates/Policies estándar si se usan)
         return parent::can($abilities, $arguments);
     }
 }

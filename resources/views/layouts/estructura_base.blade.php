@@ -11,6 +11,11 @@
     <link rel="stylesheet" href="{{ asset('css/maquinaria/catalogo.css') }}?v=2.3">
     <!-- Local Fonts Optimization -->
     <link rel="stylesheet" href="{{ asset('css/fonts.css') }}?v=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.default.min.css" rel="stylesheet">
+    <style>
+        .ts-control { font-size: 13px !important; font-family: inherit !important; border-radius: 10px !important; border: 1px solid #cbd5e0 !important; cursor: text !important; min-height: 36px !important; padding: 7px 12px !important; background: #fbfcfd !important; }
+        .ts-control.focus { box-shadow: none !important; border-color: #0067b1 !important; }
+    </style>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
         /* Standard Material Icons definition */
@@ -100,11 +105,11 @@
                     <i class="material-icons" style="font-size: 16px;">expand_more</i>
                 </a>
                 <div class="nav-dropdown-content">
-                    @if(auth()->check() && in_array('super.admin', auth()->user()->PERMISOS ?? []))
+                    @can('manage.users')
                     <a href="{{ route('usuarios.index') }}" class="nav-dropdown-link {{ request()->is('admin/usuarios*') ? 'active' : '' }}">
                         <i class="material-icons">people</i> Usuarios
                     </a>
-                    @endif
+                    @endcan
                     <a href="{{ route('frentes.index') }}" class="nav-dropdown-link {{ request()->is('admin/frentes*') ? 'active' : '' }}">
                         <i class="material-icons">business</i> Frentes de trabajo
                     </a>
@@ -115,7 +120,9 @@
                 </div>
             </div>
 
-            <a href="#" class="nav-link">Sección 5</a>
+            <a href="{{ route('consumibles.index') }}" class="nav-link {{ request()->is('admin/consumibles*') ? 'active' : '' }}" style="display:flex; align-items:center;">
+                <i class="material-icons" style="font-size:18px; margin-right:5px;">local_gas_station</i>Consumibles
+            </a>
             <a href="#" class="nav-link">Sección 6</a>
         </nav>
 
@@ -159,11 +166,11 @@
                 <i class="material-icons chevron">expand_more</i>
             </div>
             <div class="mobile-nav-group-content">
-                @if(auth()->check() && in_array('super.admin', auth()->user()->PERMISOS ?? []))
+                @can('manage.users')
                 <a href="{{ route('usuarios.index') }}" class="mobile-nav-link {{ request()->is('admin/usuarios*') ? 'active' : '' }}">
                     <i class="material-icons">people</i> Usuarios
                 </a>
-                @endif
+                @endcan
                 <a href="{{ route('frentes.index') }}" class="mobile-nav-link {{ request()->is('admin/frentes*') ? 'active' : '' }}">
                     <i class="material-icons">business</i> Frentes de trabajo
                 </a>
@@ -226,12 +233,12 @@
                         <i class="material-icons" style="font-size: 16px;">download</i> Descargar
                     </button>
                     
-                    @canany(['user.delete', 'user.edit'])
+                    @can('equipos.edit')
                     <label id="pdfUpdateLabel" for="pdfUpdateInput" style="background: #059669; border: none; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: white; border-radius: 50%; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Actualizar Documento">
                         <i class="material-icons" style="font-size: 18px;">add</i>
                         <input type="file" id="pdfUpdateInput" accept="application/pdf" style="display: none;">
                     </label>
-                    @endcanany
+                    @endcan
 
                     <button onclick="closePdfPreview()" style="background: none; border: none; color: #cbd5e0; padding: 4px; display: flex; align-items: center;">
                         <i class="material-icons" style="font-size: 20px;">close</i>
@@ -276,11 +283,11 @@
                             <!-- Dynamic Content -->
                             <div id="metaFieldsContainer"></div>
 
-                            @canany(['user.delete', 'user.edit'])
+                            @can('equipos.edit')
                             <button type="submit" id="btnSaveMeta" style="margin-top: 8px; background: #3182ce; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; width: 100%; box-sizing: border-box;">
                                 <i class="material-icons" style="font-size: 16px;">save</i> Guardar Cambios
                             </button>
-                            @endcanany
+                            @endcan
                         </form>
                     </div>
                 </div>
@@ -428,26 +435,27 @@
     </script>
     
     {{-- Core Scripts (Always Loaded) --}}
-    <script src="{{ asset('js/maquinaria/module_manager.js') }}"></script>
+    <script src="{{ asset('js/maquinaria/module_manager.js') }}?v=2.0"></script>
     <script src="{{ asset('js/maquinaria/uicomponents.js') }}?v=15.6"></script>
     <script src="{{ asset('js/maquinaria/navegacion.js') }}?v=10.0"></script>
-    <script src="{{ asset('js/maquinaria/form_logic.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/maquinaria/equipo_catalog_linking.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/maquinaria/form_logic.js') }}?v=4.0"></script>
+    <script src="{{ asset('js/maquinaria/equipo_catalog_linking.js') }}?v=3.0"></script>
     
     {{-- Module Scripts (Global Load for SPA Navigation) --}}
     {{-- NOTE: These MUST be loaded globally because the SPA navigation --}}
     {{-- calls functions like window.loadEquipos(), window.loadCatalogo(), etc. --}}
     {{-- from navegacion.js when switching between pages without reload --}}
-    <script src="{{ asset('js/maquinaria/menu.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/maquinaria/menu.js') }}?v=5.0"></script>
     <script src="{{ asset('js/maquinaria/catalogo_create.js') }}?v=12.0"></script>
-    <script src="{{ asset('js/maquinaria/equipos_index.js') }}?v=20.0"></script>
+    <script src="{{ asset('js/maquinaria/equipos_index.js') }}?v=20.3"></script>
     <script src="{{ asset('js/maquinaria/catalogo_index.js') }}?v=3.6"></script>
-    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=6.0"></script>
     <script src="{{ asset('js/maquinaria/usuarios_index.js') }}?v=10.0"></script>
-    <script src="{{ asset('js/maquinaria/fleet_dashboard.js') }}?v=103.3"></script>
+    <script src="{{ asset('js/maquinaria/fleet_dashboard.js') }}?v=105.3"></script>
 
-
-    <script src="{{ asset('js/maquinaria/frentes_spa.js') }}?v={{ time() }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <script src="{{ asset('js/maquinaria/frentes_spa.js') }}?v=4.0"></script>
+    <script src="{{ asset('js/maquinaria/consumibles_index.js') }}?v=3.0"></script>
     <script>
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
@@ -864,9 +872,13 @@
             const downloadBtn = document.getElementById('pdfDownloadBtn');
             const updateInput = document.getElementById('pdfUpdateInput');
             const loader = document.getElementById('pdfViewerLoader');
+
+            // Mostrar spinner global — se oculta cuando el PDF cargue en el iframe
+            if (typeof window.showPreloader === 'function') window.showPreloader();
             
-            // Show Modal immediately
+            // Abrir modal de PDF
             if(modal) modal.classList.add('active');
+            // NO ocultamos el preloader aquí — esperamos al onload del iframe
             
             // Show Loader
             if(loader) {
@@ -895,8 +907,9 @@
             const loaderStartTime = Date.now();
             const minimumLoaderDuration = 800; // Minimum time (ms) to show loader
             
-            // Fallback timeout (max wait time)
+            // Fallback: ocultar spinner y loader tras 5s máximo
             const loaderTimeout = setTimeout(() => {
+                if (typeof window.hidePreloader === 'function') window.hidePreloader();
                 if(loader) loader.style.display = 'none';
                 if(iframe) iframe.style.opacity = '1';
             }, 5000);
@@ -910,11 +923,13 @@
                 
                 setTimeout(() => {
                     clearTimeout(loaderTimeout);
+                    // Ocultar spinner global al terminar de cargar el PDF
+                    if (typeof window.hidePreloader === 'function') window.hidePreloader();
                     if(loader) {
                         loader.style.opacity = '0';
                         setTimeout(() => { 
                             if(loader) loader.style.display = 'none'; 
-                        }, 200); // Smooth fade out
+                        }, 200);
                     }
                     if(iframe) iframe.style.opacity = '1';
                 }, remainingTime);
@@ -982,20 +997,11 @@
         };
 
         // Permission Flag (Global & Exposed to External Scripts)
-        window.CAN_UPDATE_INFO = {{ auth()->user() && (auth()->user()->can('super.admin') || auth()->user()->can('user.delete') || auth()->user()->can('user.edit')) ? 'true' : 'false' }};
-        window.CAN_CREATE_EQUIPOS = {{ auth()->user() && (auth()->user()->can('super.admin') || auth()->user()->can('equipos.create') || auth()->user()->can('Registrar Equipos')) ? 'true' : 'false' }};
-        window.CAN_ASSIGN_EQUIPOS = {{ auth()->user() && (auth()->user()->can('super.admin') || auth()->user()->can('equipos.assign')) ? 'true' : 'false' }};
-        window.CAN_CHANGE_STATUS = {{ auth()->user() && (auth()->user()->can('super.admin') || auth()->user()->can('equipos.edit')) ? 'true' : 'false' }};
-        
-        console.group('🔍 Debug Permisos Sistema');
-        console.log('Usuario:', '{{ auth()->user()->NOMBRE_COMPLETO ?? "Invitado" }}');
-        console.log('Permisos Activos (DB):', @json(auth()->user()->PERMISOS ?? []));
-        console.log('Tiene Super Admin:', {{ auth()->user()->can('super.admin') ? 'true' : 'false' }});
-        console.log('Tiene Equipos Edit:', {{ auth()->user()->can('equipos.edit') ? 'true' : 'false' }});
-        console.log('Tiene Equipos Create:', {{ auth()->user()->can('equipos.create') ? 'true' : 'false' }});
-        console.log('RESULTADO FINAL (CAN_UPDATE_INFO):', window.CAN_UPDATE_INFO);
-        console.log('RESULTADO FINAL (CAN_CREATE_EQUIPOS):', window.CAN_CREATE_EQUIPOS);
-        console.groupEnd();
+        window.CAN_UPDATE_INFO = {{ auth()->user() && auth()->user()->can('equipos.edit') ? 'true' : 'false' }};
+        window.CAN_CREATE_EQUIPOS = {{ auth()->user() && auth()->user()->can('equipos.create') ? 'true' : 'false' }};
+        window.CAN_ASSIGN_EQUIPOS = {{ auth()->user() && auth()->user()->can('equipos.assign') ? 'true' : 'false' }};
+        window.CAN_CHANGE_STATUS = {{ auth()->user() && auth()->user()->can('equipos.edit') ? 'true' : 'false' }};
+
 
         window.loadMetadata = async function() {
             const ctx = window.currentPdfContext;
@@ -1778,11 +1784,8 @@
         };
     </script>
     {{-- Scripts de Formularios (Globales para soporte SPA) --}}
-    <script src="{{ asset('js/maquinaria/module_manager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/maquinaria/uicomponents.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/maquinaria/form_selects.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/maquinaria/equipos_form.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/maquinaria/catalogo_create.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/maquinaria/form_selects.js') }}?v=2.0"></script>
+    <script src="{{ asset('js/maquinaria/equipos_form.js') }}?v=5.0"></script>
     @yield('extra_js')
     @include('partials.session_timeout')
 

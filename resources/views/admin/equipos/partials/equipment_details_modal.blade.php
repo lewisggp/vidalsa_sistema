@@ -94,17 +94,9 @@
                     <div style="padding: 20px; border-top: 1px solid #e2e8f0;">
                         <div style="display: flex; flex-direction: column; gap: 15px; font-size: 14px;">
                             
-                            <!-- Marca -->
-                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px;">
-                                <span style="color: #64748b;">Marca:</span>
-                                <span id="d_marca" style="color: #333333; font-weight: 700;"></span>
-                            </div>
-
-                            <!-- Modelo -->
-                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px;">
-                                <span style="color: #64748b;">Modelo:</span>
-                                <span id="d_modelo" style="color: #333333; font-weight: 700;"></span>
-                            </div>
+                            <!-- Marca y Modelo ocultos: ya aparecen en la tabla principal -->
+                            <span id="d_marca" style="display:none;"></span>
+                            <span id="d_modelo" style="display:none;"></span>
 
                             <!-- Año -->
                             <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px;">
@@ -118,11 +110,8 @@
                                 <span id="d_categoria" style="color: #333333;"></span>
                             </div>
 
-                            <!-- Motor Serial -->
-                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px;">
-                                <span style="color: #64748b;">Serial de Motor:</span>
-                                <span id="d_motor_serial" style="color: #333333;"></span>
-                            </div>
+                            <!-- Serial de Motor oculto: ya aparece en la tabla principal -->
+                            <span id="d_motor_serial" style="display:none;"></span>
 
                             <!-- Combustible -->
                             <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px;">

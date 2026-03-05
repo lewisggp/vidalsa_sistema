@@ -267,12 +267,8 @@ class DashboardController extends Controller
 
         $user = auth()->user();
         
-        // CHECK PERMISSIONS (Matching CAN_UPDATE_INFO logic)
-        if (!$user->can('super.admin') && 
-            !$user->can('equipos.edit') && 
-            !$user->can('user.edit') && 
-            !$user->can('Actualizar Información')) 
-        {
+        // Solo usuarios con permiso de edición de equipos pueden iniciar gestión
+        if (!$user->can('equipos.edit')) {
             return response()->json(['success' => false, 'message' => 'No tiene permisos para realizar esta acción.'], 403);
         }
 

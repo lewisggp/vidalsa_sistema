@@ -29,21 +29,14 @@ class EquipoController extends Controller
         $search = $request->input('search_query');
         $equipos = Equipo::query();
 
-        // Frente filter logic: LOCAL users always see their frente (locked).
-        // GLOBAL users get their frente as default ONLY on the initial page load (non-AJAX).
-        // When a GLOBAL user clears the filter (AJAX request), we respect the empty value.
         $user = auth()->user();
         $isLocalUser = $user && $user->NIVEL_ACCESO == 2;
 
+        // LOCAL users are scoped to their frente (security restriction remains)
         if ($isLocalUser && $user->ID_FRENTE_ASIGNADO) {
-            // LOCAL: Always force their assigned frente, ignore any request parameter
             $request->merge(['id_frente' => $user->ID_FRENTE_ASIGNADO]);
-        } elseif (!$isLocalUser && $user && $user->ID_FRENTE_ASIGNADO) {
-            // GLOBAL: Only set default on initial page load (not AJAX / not when user explicitly cleared it)
-            if (!$request->wantsJson() && !$request->exists('id_frente')) {
-                $request->merge(['id_frente' => $user->ID_FRENTE_ASIGNADO]);
-            }
         }
+        // GLOBAL users: no default filter applied — show all equipos on load
 
         if ($request->filled('id_frente') && trim($request->id_frente) !== '' && $request->id_frente !== 'all') {
             $equipos->where('ID_FRENTE_ACTUAL', $request->id_frente);
@@ -243,20 +236,14 @@ class EquipoController extends Controller
 
     public function export(Request $request)
     {
-        // Frente filter logic: LOCAL users always see their frente (locked).
-        // GLOBAL users get their frente as default if no filter is explicitly provided.
         $user = auth()->user();
         $isLocalUser = $user && $user->NIVEL_ACCESO == 2;
 
+        // LOCAL users are scoped to their frente (security restriction remains)
         if ($isLocalUser && $user->ID_FRENTE_ASIGNADO) {
-            // LOCAL: Always force their assigned frente
             $request->merge(['id_frente' => $user->ID_FRENTE_ASIGNADO]);
-        } elseif (!$isLocalUser && $user && $user->ID_FRENTE_ASIGNADO) {
-            // GLOBAL: Only set default if no explicit filter was provided
-            if (!$request->has('id_frente')) {
-                $request->merge(['id_frente' => $user->ID_FRENTE_ASIGNADO]);
-            }
         }
+        // GLOBAL users: export respects only the filters explicitly set in the request
 
         // CRITICAL: Prevent exporting entire database without filters.
         // 'id_frente=all' es un filtro explícito válido (el usuario seleccionó "Todos los Frentes").
@@ -356,17 +343,17 @@ class EquipoController extends Controller
             fwrite($handle, '<table style="border-collapse: collapse;">');
 
             // Exact columns requested by user in order (DB Keys)
-            $headers = ['FRENTE', 'TIPO', 'CATEGORIA_FLOTA', 'MARCA', 'MODELO', 'ANIO', 'CODIGO_PATIO', 'SERIAL_CHASIS', 'SERIAL_DE_MOTOR', 'ESTADO_OPERATIVO', 'PLACA', 'NRO_DE_DOCUMENTO', 'NOMBRE_DEL_TITULAR', 'ESTADO_POLIZA', 'FECHA_VENC_POLIZA'];
+            $headers = ['FRENTE', 'TIPO', 'MARCA_MODELO', 'ANIO', 'CODIGO_PATIO', 'SERIAL_CHASIS', 'SERIAL_DE_MOTOR', 'ESTADO_OPERATIVO', 'PLACA', 'NRO_DE_DOCUMENTO', 'NOMBRE_DEL_TITULAR', 'ESTADO_POLIZA', 'FECHA_VENC_POLIZA'];
 
             // Display Labels (Mapped 1:1)
-            $labels = ['FRENTE', 'TIPO', 'CATEGORÍA', 'MARCA', 'MODELO', 'AÑO', 'CÓDIGO', 'SERIAL CHASIS', 'SERIAL MOTOR', 'ESTATUS', 'PLACA', 'NRO DOCUMENTO', 'TITULAR', 'ESTADO PÓLIZA', 'VENCIMIENTO PÓLIZA'];
+            $labels = ['FRENTE', 'TIPO', 'MARCA / MODELO', 'AÑO', 'CÓDIGO', 'SERIAL CHASIS', 'SERIAL MOTOR', 'ESTATUS', 'PLACA', 'NRO DOCUMENTO', 'TITULAR', 'ESTADO PÓLIZA', 'VENCIMIENTO PÓLIZA'];
 
             // --- MAIN TITLE ROW ---
             $currentDate = date('d/m/Y');
             fwrite($handle, '<thead>');
             fwrite($handle, '<tr>');
-            // Colspan 15 for 15 columns
-            fwrite($handle, '<th colspan="15" style="text-align: center; font-weight: bold; font-size: 22px; height: 60px; vertical-align: middle; border: thin solid #000000; background-color: #003366; color: #ffffff;">REPORTE DE ASIGNACIÓN DE EQUIPOS Y MAQUINARIA PARA LA FECHA ' . $currentDate . '</th>');
+            // Colspan = total number of columns (13)
+            fwrite($handle, '<th colspan="13" style="text-align: center; font-weight: bold; font-size: 22px; height: 60px; vertical-align: middle; border: thin solid #000000; background-color: #003366; color: #ffffff;">REPORTE DE ASIGNACIÓN DE EQUIPOS Y MAQUINARIA PARA LA FECHA ' . $currentDate . '</th>');
             fwrite($handle, '</tr>');
 
             // Render Header Row with Styles
@@ -406,6 +393,11 @@ class EquipoController extends Controller
                                 break;
                             case 'FECHA_VENC_POLIZA':
                                 $val = $equipo->documentacion ? $equipo->documentacion->FECHA_VENC_POLIZA : '';
+                                break;
+                            case 'MARCA_MODELO':
+                                $marca  = $equipo->MARCA  ?? '';
+                                $modelo = $equipo->MODELO ?? '';
+                                $val = trim($marca . ' ' . $modelo);
                                 break;
                             default:
                                 $val = $equipo->$col ?? '';
@@ -1519,48 +1511,101 @@ class EquipoController extends Controller
             // --- 2. FLOTA NUEVA VS VIEJA POR TIPO ---
             $ageByTypeRaw = (clone $baseQuery)
                 ->select(
-                    'id_tipo_equipo',
-                    DB::raw('SUM(CASE WHEN ANIO >= 2025 THEN 1 ELSE 0 END) as new_count'),
-                    DB::raw('SUM(CASE WHEN ANIO < 2025 THEN 1 ELSE 0 END) as old_count')
+                    'tipo_equipos.nombre as tipo_nombre',
+                    DB::raw('SUM(CASE WHEN equipos.ANIO >= 2025 THEN 1 ELSE 0 END) as new_count'),
+                    DB::raw('SUM(CASE WHEN equipos.ANIO < 2025 THEN 1 ELSE 0 END) as old_count')
                 )
-                ->with('tipo:id,nombre')
-                ->whereNotNull('id_tipo_equipo')
-                ->groupBy('id_tipo_equipo')
+                ->leftJoin('tipo_equipos', 'equipos.id_tipo_equipo', '=', 'tipo_equipos.id')
+                ->whereNotNull('equipos.id_tipo_equipo')
+                ->whereNotNull('tipo_equipos.nombre')
+                ->groupBy('tipo_equipos.nombre')
+                ->orderBy('tipo_equipos.nombre')
                 ->get();
 
-            $tiposForAge = $ageByTypeRaw->pluck('tipo.nombre')->toArray();
+            $tiposForAge  = $ageByTypeRaw->pluck('tipo_nombre')->toArray();
             $newFleetData = $ageByTypeRaw->pluck('new_count')->toArray();
             $oldFleetData = $ageByTypeRaw->pluck('old_count')->toArray();
 
             $ageByTypeDatasets = [
                 ['label' => 'Flota Nueva (≥2025)', 'data' => $newFleetData],
-                ['label' => 'Flota Vieja (<2025)', 'data' => $oldFleetData]
+                ['label' => 'Flota Vieja (<2025)',  'data' => $oldFleetData]
             ];
 
             // --- 3. FLOTA PESADA VS LIVIANA POR TIPO ---
             $categoryByTypeRaw = (clone $baseQuery)
                 ->select(
-                    'id_tipo_equipo',
-                    DB::raw("SUM(CASE WHEN CATEGORIA_FLOTA = 'FLOTA PESADA' THEN 1 ELSE 0 END) as pesada_count"),
-                    DB::raw("SUM(CASE WHEN CATEGORIA_FLOTA = 'FLOTA LIVIANA' THEN 1 ELSE 0 END) as liviana_count"),
-                    DB::raw("SUM(CASE WHEN CATEGORIA_FLOTA IS NULL OR CATEGORIA_FLOTA = '' THEN 1 ELSE 0 END) as sin_asignar_count")
+                    'tipo_equipos.nombre as tipo_nombre',
+                    DB::raw("SUM(CASE WHEN equipos.CATEGORIA_FLOTA = 'FLOTA PESADA'  THEN 1 ELSE 0 END) as pesada_count"),
+                    DB::raw("SUM(CASE WHEN equipos.CATEGORIA_FLOTA = 'FLOTA LIVIANA' THEN 1 ELSE 0 END) as liviana_count"),
+                    DB::raw("SUM(CASE WHEN (equipos.CATEGORIA_FLOTA IS NULL OR equipos.CATEGORIA_FLOTA = '') THEN 1 ELSE 0 END) as sin_asignar_count")
                 )
-                ->with('tipo:id,nombre')
-                ->whereNotNull('id_tipo_equipo')
-                // ->whereNotNull('CATEGORIA_FLOTA')  <-- REMOVIDO para mostrar todo
-                ->groupBy('id_tipo_equipo')
+                ->leftJoin('tipo_equipos', 'equipos.id_tipo_equipo', '=', 'tipo_equipos.id')
+                ->whereNotNull('equipos.id_tipo_equipo')
+                ->whereNotNull('tipo_equipos.nombre')
+                ->groupBy('tipo_equipos.nombre')
+                ->orderBy('tipo_equipos.nombre')
                 ->get();
 
-            $tiposForCategory = $categoryByTypeRaw->pluck('tipo.nombre')->toArray();
-            $pesadaData = $categoryByTypeRaw->pluck('pesada_count')->toArray();
-            $livianaData = $categoryByTypeRaw->pluck('liviana_count')->toArray();
-            $sinAsignarData = $categoryByTypeRaw->pluck('sin_asignar_count')->toArray();
+            $tiposForCategory = $categoryByTypeRaw->pluck('tipo_nombre')->toArray();
+            $pesadaData       = $categoryByTypeRaw->pluck('pesada_count')->toArray();
+            $livianaData      = $categoryByTypeRaw->pluck('liviana_count')->toArray();
+            $sinAsignarData   = $categoryByTypeRaw->pluck('sin_asignar_count')->toArray();
 
             $categoryByTypeDatasets = [
-                ['label' => 'Flota Pesada', 'data' => $pesadaData],
+                ['label' => 'Flota Pesada',  'data' => $pesadaData],
                 ['label' => 'Flota Liviana', 'data' => $livianaData],
-                ['label' => 'Sin Asignar', 'data' => $sinAsignarData]
+                ['label' => 'Sin Asignar',   'data' => $sinAsignarData]
             ];
+
+            // --- 4. INOPERATIVIDAD POR TIPO DE EQUIPO ---
+            $inoperativeByTypeRaw = (clone $baseQuery)
+                ->select(
+                    'tipo_equipos.nombre as tipo_nombre',
+                    DB::raw("SUM(CASE WHEN equipos.ESTADO_OPERATIVO = 'INOPERATIVO'      THEN 1 ELSE 0 END) as inoperativo_count"),
+                    DB::raw("SUM(CASE WHEN equipos.ESTADO_OPERATIVO = 'EN MANTENIMIENTO' THEN 1 ELSE 0 END) as mantenimiento_count"),
+                    DB::raw("SUM(CASE WHEN equipos.ESTADO_OPERATIVO = 'DESINCORPORADO'   THEN 1 ELSE 0 END) as desincorporado_count")
+                )
+                ->leftJoin('tipo_equipos', 'equipos.id_tipo_equipo', '=', 'tipo_equipos.id')
+                ->whereNotNull('equipos.id_tipo_equipo')
+                ->whereNotNull('tipo_equipos.nombre')
+                ->groupBy('tipo_equipos.nombre')
+                ->havingRaw("(
+                    SUM(CASE WHEN equipos.ESTADO_OPERATIVO = 'INOPERATIVO'      THEN 1 ELSE 0 END) +
+                    SUM(CASE WHEN equipos.ESTADO_OPERATIVO = 'EN MANTENIMIENTO' THEN 1 ELSE 0 END) +
+                    SUM(CASE WHEN equipos.ESTADO_OPERATIVO = 'DESINCORPORADO'   THEN 1 ELSE 0 END)
+                ) > 0")
+                ->orderBy('tipo_equipos.nombre')
+                ->get();
+
+            $tiposForInoperative = $inoperativeByTypeRaw->pluck('tipo_nombre')->toArray();
+            $inoperativoData     = $inoperativeByTypeRaw->pluck('inoperativo_count')->toArray();
+            $mantenimientoData   = $inoperativeByTypeRaw->pluck('mantenimiento_count')->toArray();
+            $desincorporadoData  = $inoperativeByTypeRaw->pluck('desincorporado_count')->toArray();
+
+            $inoperativeByTypeDatasets = [
+                ['label' => 'Inoperativo',      'data' => $inoperativoData],
+                ['label' => 'En Mantenimiento', 'data' => $mantenimientoData],
+                ['label' => 'Desincorporado',   'data' => $desincorporadoData],
+            ];
+
+            // --- 5. EQUIPOS ASIGNADOS POR FRENTE ---
+            // Siempre muestra TODOS los frentes (ignora el filtro de frente del dashboard)
+            $eqByFrenteRaw = Equipo::query()
+                ->select(
+                    'frentes_trabajo.NOMBRE_FRENTE as frente_nombre',
+                    DB::raw('COUNT(equipos.ID_EQUIPO) as total')
+                )
+                ->leftJoin('frentes_trabajo', 'equipos.ID_FRENTE_ACTUAL', '=', 'frentes_trabajo.ID_FRENTE')
+                ->whereNotNull('equipos.ID_FRENTE_ACTUAL')
+                ->whereNotNull('frentes_trabajo.NOMBRE_FRENTE')
+                ->groupBy('frentes_trabajo.NOMBRE_FRENTE')
+                ->orderByDesc('total')
+                ->get();
+
+            $equiposPorFrente = $eqByFrenteRaw->map(fn($r) => [
+                'frente' => $r->frente_nombre,
+                'total'  => (int) $r->total,
+            ])->values()->toArray();
 
             return response()->json([
                 'success' => true,
@@ -1581,7 +1626,12 @@ class EquipoController extends Controller
                 'categoryByType' => [
                     'labels' => $tiposForCategory,
                     'datasets' => $categoryByTypeDatasets
-                ]
+                ],
+                'inoperativeByType' => [
+                    'labels'   => $tiposForInoperative,
+                    'datasets' => $inoperativeByTypeDatasets
+                ],
+                'equiposPorFrente' => $equiposPorFrente,
             ]);
 
         } catch (\Exception $e) {
@@ -1711,353 +1761,6 @@ class EquipoController extends Controller
         } catch (\Exception $e) {
             Log::error('Fleet Export Error: ' . $e->getMessage());
             return response()->json(['error' => 'Error generating report'], 500);
-        }
-    }
-
-    /**
-     * Valida la selección de equipos para anclaje masivo y devuelve candidatos compatibles.
-     */
-    public function checkAnclajeCompatibility(Request $request)
-    {
-        $ids = $request->input('ids', []);
-
-        if (empty($ids)) {
-            return response()->json(['message' => 'No se seleccionaron equipos.'], 400);
-        }
-
-        $equipos = Equipo::with('tipo')->whereIn('ID_EQUIPO', $ids)->get();
-
-        if ($equipos->isEmpty()) {
-            return response()->json(['message' => 'Equipos no encontrados.'], 404);
-        }
-
-        // Analizar Roles de la selección
-        // Asume propiedad ROL_ANCLAJE o helper
-        // Si no existe, default NEUTRO
-
-        // Check ALL selected items share same role
-        $firstRole = $equipos->first()->tipo ? $equipos->first()->tipo->ROL_ANCLAJE : 'NEUTRO';
-
-        foreach ($equipos as $e) {
-            $r = $e->tipo ? $e->tipo->ROL_ANCLAJE : 'NEUTRO';
-            if ($r !== $firstRole) {
-                return response()->json(['message' => 'Selección mixta detectada. Por favor seleccione solo equipos del mismo rol de anclaje (Solo Remolcadores o Solo Remolcables).'], 422);
-            }
-        }
-
-        if ($firstRole === 'NEUTRO') {
-            return response()->json(['message' => 'Los equipos seleccionados (Tipo: NEUTRO) no soportan anclaje.'], 422);
-        }
-
-        $response = [
-            'mode' => '',
-            'candidates' => [],
-            'selected_info' => $equipos->count() . ' equipo(s) seleccionados (' . $firstRole . ')'
-        ];
-
-        // LOGICA DE NEGOCIO:
-        // Si seleccioné REMOLCABLES (Hijos) -> Busco REMOLCADORES (Padres)
-        // Si seleccioné REMOLCADORES (Padres) -> Busco REMOLCABLES (Hijos)
-
-        if ($firstRole === 'REMOLCABLE') {
-            $response['mode'] = 'assign_parent'; // Asignar un Padre a estos Hijos
-            $response['selected_info'] = $equipos->count() . ' equipo(s) remolcable(s) buscando Padre';
-
-            // Buscar Padres Disponibles (Remolcadores)
-            $candidatos = Equipo::whereHas('tipo', function ($q) {
-                $q->where('ROL_ANCLAJE', 'REMOLCADOR');
-            })
-                ->where('ESTADO_OPERATIVO', 'OPERATIVO') // Solo operativos?
-                ->orderBy('CODIGO_PATIO', 'asc')
-                ->get();
-
-        } else { // REMOLCADOR
-            $response['mode'] = 'assign_children'; // Asignar un Hijo a este Padre
-            $response['selected_info'] = $equipos->count() . ' equipo(s) remolcador(es) buscando Hijo';
-
-            // Buscar Hijos Disponibles (Remolcables) que NO estén anclados ya
-            $candidatos = Equipo::whereHas('tipo', function ($q) {
-                $q->where('ROL_ANCLAJE', 'REMOLCABLE');
-            })
-                ->whereNull('ID_ANCLAJE') // Solo libres
-                ->where('ESTADO_OPERATIVO', 'OPERATIVO')
-                ->orderBy('CODIGO_PATIO', 'asc')
-                ->get();
-        }
-
-        $response['candidates'] = $candidatos->map(function ($c) {
-            return [
-                'id' => $c->ID_EQUIPO,
-                'codigo' => $c->CODIGO_PATIO,
-                'descripcion' => $c->MARCA . ' ' . $c->MODELO . ($c->documentacion ? ' (' . $c->documentacion->PLACA . ')' : '')
-            ];
-        });
-
-        return response()->json($response);
-    }
-
-    /**
-     * Procesa la asignación masiva de anclaje.
-     */
-    public function processAnclaje(Request $request)
-    {
-        $ids = $request->input('ids', []);
-        $targetId = $request->input('target_id'); // ID del Padre o Hijo seleccionado
-        $mode = $request->input('mode'); // assign_parent o assign_children
-        $detach = $request->input('detach', false); // Booleano para desanclar
-
-        if (empty($ids))
-            return response()->json(['message' => 'Sin selección'], 400);
-
-        try {
-            DB::transaction(function () use ($ids, $targetId, $mode, $detach) {
-
-                if ($detach) {
-                    // Desvincular seleccionados
-                    if ($mode === 'assign_parent') {
-                        // Selección: Hijos. Acción: Quitarles su Padre.
-                        Equipo::whereIn('ID_EQUIPO', $ids)->update(['ID_ANCLAJE' => null]);
-                    } else {
-                        // Selección: Padres. Acción: Liberar a sus Hijos actuales.
-                        Equipo::whereIn('ID_ANCLAJE', $ids)->update(['ID_ANCLAJE' => null]);
-                    }
-                } else {
-                    // Vincular
-                    if ($mode === 'assign_parent') {
-                        // Selección: Hijos. Acción: Asignarles el Padre targetId.
-                        // Validar que el Padre exista
-                        $padre = Equipo::findOrFail($targetId);
-
-                        // LOGIC: Multiple children linked to ONE parent. Correct.
-                        Equipo::whereIn('ID_EQUIPO', $ids)->update(['ID_ANCLAJE' => $padre->ID_EQUIPO]);
-                    } else {
-                        // Selección: Padres. Acción: Asignarles el Hijo targetId.
-                        // LOGIC: Multiple Parents linked to ONE child? IMPOSSIBLE.
-                        // A child can only have one parent (ID_ANCLAJE).
-
-                        if (count($ids) > 1) {
-                            throw new \Exception("No se puede asignar un mismo componente a múltiples equipos remolcadores simultáneamente. Seleccione un solo equipo Padre.");
-                        }
-
-                        // Tengo 1 Padre (ids[0]) y quiero asignarle 1 Hijo (targetId)
-                        $padreId = $ids[0];
-                        $hijo = Equipo::findOrFail($targetId);
-
-                        // Set the child's parent to be this selected father
-                        $hijo->ID_ANCLAJE = $padreId;
-                        $hijo->save();
-                    }
-                }
-            });
-
-            return response()->json(['success' => true]);
-
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Get available equipos for anchoring in a specific front
-     */
-    public function getEquiposByFrente(Request $request)
-    {
-        $request->validate([
-            'id_frente' => 'required',
-            'exclude_ids' => 'nullable|array'
-        ]);
-
-        $equipos = Equipo::where('ID_FRENTE_ACTUAL', $request->id_frente)
-            ->whereHas('tipo', function ($q) use ($request) {
-                if ($request->source_role === 'REMOLCADOR') {
-                    $q->where('ROL_ANCLAJE', 'REMOLCABLE');
-                } elseif ($request->source_role === 'REMOLCABLE') {
-                    $q->where('ROL_ANCLAJE', 'REMOLCADOR');
-                } else {
-                    // Fallback or handle neutro (though button shouldn't show)
-                    $q->where('ROL_ANCLAJE', 'NONE');
-                }
-            })
-            ->when($request->exclude_ids, function ($q) use ($request) {
-                $q->whereNotIn('ID_EQUIPO', $request->exclude_ids);
-            })
-            ->with(['especificaciones', 'documentacion', 'tipo'])
-            ->select('ID_EQUIPO', 'CODIGO_PATIO', 'MARCA', 'MODELO', 'ID_ESPEC', 'FOTO_EQUIPO', 'SERIAL_CHASIS', 'id_tipo_equipo')
-            ->orderBy('CODIGO_PATIO')
-            ->get()
-            ->map(function ($eq) {
-                return [
-                    'ID_EQUIPO'    => $eq->ID_EQUIPO,
-                    'CODIGO_PATIO' => $eq->CODIGO_PATIO,
-                    'TIPO_NOMBRE'  => $eq->tipo->nombre ?? $eq->CODIGO_PATIO,
-                    'SERIAL_CHASIS'=> $eq->SERIAL_CHASIS,
-                    'PLACA'        => $eq->documentacion->PLACA ?? null,
-                    'MARCA'        => $eq->MARCA,
-                    'MODELO'       => $eq->MODELO,
-                    'FOTO'         => $eq->especificaciones->FOTO_REFERENCIAL ?? $eq->FOTO_EQUIPO
-                ];
-            });
-
-        return response()->json($equipos);
-    }
-
-    /**
-     * Perform bulk anchoring of equipment
-     */
-    public function bulkAnchor(Request $request)
-    {
-        $request->validate([
-            'ids' => 'required|array',
-            'ids.*' => 'exists:equipos,ID_EQUIPO',
-            'master_id' => 'required|exists:equipos,ID_EQUIPO'
-        ]);
-
-        try {
-            DB::beginTransaction();
-
-            $sourceId = $request->ids[0]; // Single-selection logic
-            $targetId = $request->master_id;
-
-            // Update source to point to target
-            Equipo::where('ID_EQUIPO', $sourceId)->update([
-                'ID_ANCLAJE' => $targetId
-            ]);
-
-            // Update target to point to source
-            Equipo::where('ID_EQUIPO', $targetId)->update([
-                'ID_ANCLAJE' => $sourceId
-            ]);
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Equipos anclados mutuamente con éxito.'
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Clear anchor relationship between two equipments
-     */
-    public function clearAnchor(Request $request)
-    {
-        $request->validate([
-            'ids' => 'required|array|size:2',
-            'ids.*' => 'exists:equipos,ID_EQUIPO'
-        ]);
-
-        try {
-            DB::beginTransaction();
-
-            Equipo::whereIn('ID_EQUIPO', $request->ids)->update([
-                'ID_ANCLAJE' => null
-            ]);
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Vínculo de anclaje eliminado.'
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
-        }
-    }
-    /**
-     * Módulo de Configuración de Flota (Anclajes Visuales)
-     */
-    public function configuracionFlota(Request $request)
-    {
-        // Si no se especifica frente, usar el frente del usuario autenticado
-        $frenteId = $request->input('id_frente');
-
-        if (!$frenteId) {
-            $usuario = auth()->user();
-            if ($usuario && $usuario->ID_FRENTE) {
-                $frenteId = $usuario->ID_FRENTE;
-            }
-        }
-
-        // Obtener Frentes directamente de la base de datos (tabla: frentes_trabajo)
-        $frentes = \DB::table('frentes_trabajo')->select('ID_FRENTE', 'NOMBRE_FRENTE')->orderBy('NOMBRE_FRENTE')->get();
-
-        // Base Query Builder
-        $queryRemolcadores = Equipo::whereHas('tipo', function ($q) {
-            $q->where('ROL_ANCLAJE', 'REMOLCADOR');
-        })
-            ->with(['tipo', 'especificaciones', 'equiposAnclados.tipo', 'equiposAnclados.especificaciones', 'equiposAnclados.documentacion', 'documentacion'])
-            ->whereIn('ESTADO_OPERATIVO', ['OPERATIVO', 'EN MANTENIMIENTO']);
-
-        $queryRemolcables = Equipo::whereHas('tipo', function ($q) {
-            $q->where('ROL_ANCLAJE', 'REMOLCABLE');
-        })
-            ->whereNull('ID_ANCLAJE')
-            ->with(['tipo', 'especificaciones', 'documentacion'])
-            ->whereIn('ESTADO_OPERATIVO', ['OPERATIVO', 'EN MANTENIMIENTO']);
-
-        // Filter by Frente if present (Correct column: ID_FRENTE_ACTUAL)
-        if ($frenteId) {
-            $queryRemolcadores->where('ID_FRENTE_ACTUAL', $frenteId);
-            $queryRemolcables->where('ID_FRENTE_ACTUAL', $frenteId);
-        }
-
-        $remolcadores = $queryRemolcadores->orderBy('CODIGO_PATIO', 'asc')->get();
-        $remolcablesLibres = $queryRemolcables->orderBy('CODIGO_PATIO', 'asc')->get();
-
-        return view('admin.equipos.configuracion_flota', compact('remolcadores', 'remolcablesLibres', 'frentes', 'frenteId'));
-    }
-
-    public function vincularEquipos(Request $request)
-    {
-        $padreId = $request->input('padre_id');
-        $hijoId = $request->input('hijo_id');
-
-        try {
-            DB::transaction(function () use ($padreId, $hijoId) {
-                $hijo = Equipo::findOrFail($hijoId);
-                $padre = Equipo::findOrFail($padreId); // Load Parent to check its Front
-
-                // Validar que el hijo sea Remolcable
-                if (!$hijo->tipo || $hijo->tipo->ROL_ANCLAJE !== 'REMOLCABLE') {
-                    throw new \Exception("El equipo {$hijo->CODIGO_PATIO} no es remolcable.");
-                }
-
-                // Validar que pertenezcan al mismo frente (CONSISTENCIA LOGÍSTICA CRÍTICA)
-                if ($hijo->ID_FRENTE_ACTUAL !== $padre->ID_FRENTE_ACTUAL) {
-                    throw new \Exception("Error Crítico: No se puede vincular equipos de diferentes frentes de trabajo ({$padre->CODIGO_PATIO} vs {$hijo->CODIGO_PATIO}).");
-                }
-
-                // Asignar
-                $hijo->ID_ANCLAJE = $padreId;
-                $hijo->save();
-            });
-
-            return response()->json(['success' => true]);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
-        }
-    }
-
-    public function desvincularEquipos(Request $request)
-    {
-        $hijoId = $request->input('hijo_id');
-
-        try {
-            DB::transaction(function () use ($hijoId) {
-                $hijo = Equipo::findOrFail($hijoId);
-                $hijo->ID_ANCLAJE = null;
-                $hijo->save();
-            });
-            return response()->json(['success' => true]);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
         }
     }
 }

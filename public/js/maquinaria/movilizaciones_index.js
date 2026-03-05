@@ -258,7 +258,7 @@ window.buscarEquiposRD = function () {
                 const radiusStyle = isSelected ? 'border-top-left-radius:10px; border-bottom-left-radius:10px;' : '';
 
                 if (eq.FOTO) {
-                    const driveId = eq.FOTO.replace('/storage/google/', '').split('?')[0];
+                    const driveId = eq.FOTO.replace(/^.*\/storage\/google\//, "").split('?')[0];
                     fotoHtml = `
                         <div style="width:85px; min-width:85px; align-self:stretch; position:relative; overflow:hidden; background:#f1f5f9; ${radiusStyle}">
                             <img src="/storage/google/${driveId}" alt="" loading="lazy" 

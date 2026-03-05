@@ -65,11 +65,11 @@
 
                 <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible;">
                     <div class="dropdown-item-list" style="max-height: 250px; overflow-y: auto;">
-                        <div class="dropdown-item {{ !request('id_frente') || request('id_frente') == 'all' ? 'selected' : '' }}" data-value="all" onclick="selectOption('frenteFilterSelect', 'all', 'TODOS LOS FRENTES');">
+                        <div class="dropdown-item {{ !request('id_frente') || request('id_frente') == 'all' ? 'selected' : '' }}" data-value="all" onclick="selectOption('frenteFilterSelect', 'all', 'TODOS LOS FRENTES'); loadUsuarios();">
                             TODOS LOS FRENTES
                         </div>
                         @foreach($frentes as $frente)
-                            <div class="dropdown-item {{ request('id_frente') == $frente->ID_FRENTE ? 'selected' : '' }}" data-value="{{ $frente->ID_FRENTE }}" onclick="selectOption('frenteFilterSelect', '{{ $frente->ID_FRENTE }}', '{{ $frente->NOMBRE_FRENTE }}');">
+                            <div class="dropdown-item {{ request('id_frente') == $frente->ID_FRENTE ? 'selected' : '' }}" data-value="{{ $frente->ID_FRENTE }}" onclick="selectOption('frenteFilterSelect', '{{ $frente->ID_FRENTE }}', '{{ $frente->NOMBRE_FRENTE }}'); loadUsuarios();">
                                 {{ $frente->NOMBRE_FRENTE }}
                             </div>
                         @endforeach
@@ -136,8 +136,4 @@
 </div>
 
 
-@endsection
-
-@section('extra_js')
-<script src="{{ asset('js/maquinaria/usuarios_index.js') }}?v={{ time() }}"></script>
 @endsection

@@ -708,7 +708,7 @@ window.clearFilter = function (filterName) {
 ModuleManager.register(
     "uicomponents",
     () => false, // Return false prevents re-initialization since it's now globally handled
-    () => {}, // No-op initializer
+    () => { }, // No-op initializer
 );
 
 // Global Frentes Search Function (Called via inline attributes for SPA robustness)
@@ -902,12 +902,25 @@ window.showDetailsImproved = function (target, event) {
         }
     }
 
-    // General Info
-    set("d_marca", d.marca);
-    set("d_modelo", d.modelo);
+    // Foto
+    const photoImg = document.getElementById("d_foto_equipo");
+    const photoIcon = document.getElementById("d_foto_placeholder");
+    if (photoImg && photoIcon) {
+        if (isValid(d.foto)) {
+            const driveId = d.foto.replace(/^.*\/storage\/google\//, "").split("?")[0];
+            photoImg.src = `/storage/google/${driveId}`;
+            photoImg.style.display = "block";
+            photoIcon.style.display = "none";
+        } else {
+            photoImg.style.display = "none";
+            photoImg.src = "";
+            photoIcon.style.display = "block";
+        }
+    }
+
+    // General Info (d_marca, d_modelo, d_motor_serial ocultos — ya aparecen en la tabla principal)
     set("d_anio", d.anio);
     set("d_categoria", d.categoria);
-    set("d_motor_serial", d.motorSerial);
     set("d_combustible", d.combustible);
     set("d_consumo", d.consumo);
 
@@ -1087,20 +1100,9 @@ window.uploadDocument = function (input, type, equipoId, containerId, label) {
                         window.refreshDashboardAlerts();
                     }
 
-                    // Auto-Open PDF Preview (Serves as success confirmation)
-                    console.log(
-                        "✅ Upload successful, attempting to open PDF preview...",
-                    );
-                    console.log("📄 PDF Link:", data.link);
-                    console.log(
-                        "🔍 openPdfPreview available?",
-                        typeof window.openPdfPreview,
-                    );
-
                     if (typeof window.openPdfPreview === "function") {
                         // Small delay to ensure DOM is ready and preloader has shown
                         setTimeout(() => {
-                            console.log("🚀 Opening PDF modal...");
                             window.openPdfPreview(
                                 data.link,
                                 type,
@@ -1115,7 +1117,6 @@ window.uploadDocument = function (input, type, equipoId, containerId, label) {
                             }, 150);
                         }, 50);
                     } else {
-                        console.error("❌ openPdfPreview function not found!");
                         if (window.hidePreloader) window.hidePreloader();
                     }
                 } else {

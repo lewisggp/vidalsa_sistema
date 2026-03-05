@@ -1146,10 +1146,7 @@ window.openAnchorModal = async function (event) {
                 // Photo Handling
                 let fotoHtml = "";
                 if (eq.FOTO) {
-                    const driveId = eq.FOTO.replace(
-                        "/storage/google/",
-                        "",
-                    ).split("?")[0];
+                    const driveId = eq.FOTO.replace(/^.*\/storage\/google\//, "").split("?")[0];
                     fotoHtml = `<img src="/storage/google/${driveId}" style="width:100%; height:100%; object-fit:cover;">`;
                 } else {
                     fotoHtml = `<i class="material-icons" style="font-size:20px; color:#cbd5e0;">image_not_supported</i>`;
@@ -1266,10 +1263,10 @@ window.exportEquipos = function () {
         : document.querySelector('input[name="marca"]');
     const categoriaInput = advancedPanel
         ? advancedPanel.querySelector('input[name="categoria"]')
-        : null;
+        : document.querySelector('input[name="categoria"]');
     const estadoInput = advancedPanel
-        ? advancedPanel.querySelector('input[name="estado"]')
-        : null;
+        ? (advancedPanel.querySelector('input[name="estado"]') || document.querySelector('input[name="estado"]'))
+        : document.querySelector('input[name="estado"]');
 
     const params = new URLSearchParams();
 
@@ -1461,94 +1458,22 @@ window.selectAdvancedFilter = function (type, value) {
     if (input) input.value = value;
 };
 
-window.clearDropdownFilter = function (dropdownId) {
-    const dd = document.getElementById(dropdownId);
-    if (!dd) return;
+// NOTE: clearDropdownFilter and filterDropdownOptions are defined in uicomponents.js
+// (superior versions with accent normalization and scroll reset).
 
-    const hiddenInput = dd.querySelector("[data-filter-value]");
-    if (hiddenInput) hiddenInput.value = "";
-
-    const searchInput = dd.querySelector("[data-filter-search]");
-    if (searchInput) {
-        searchInput.value = "";
-        searchInput.placeholder = dd.dataset.defaultLabel || "Seleccionar...";
-        window.filterDropdownOptions(searchInput);
-    }
-
-    const displayInput = dd.querySelector("input[readonly]");
-    if (displayInput) {
-        displayInput.placeholder = dd.dataset.defaultLabel || "Seleccionar...";
-    }
-
-    const clearBtn = dd.querySelector("[data-clear-btn]");
-    if (clearBtn) clearBtn.style.display = "none";
-
-    dd.querySelectorAll(".dropdown-item.selected").forEach((el) =>
-        el.classList.remove("selected"),
-    );
-
-    dd.classList.remove("active");
-};
-
-window.filterDropdownOptions = function (input) {
-    const filter = input.value.toUpperCase();
-    const list = input
-        .closest(".custom-dropdown")
-        .querySelector(".dropdown-item-list");
-    if (!list) return;
-
-    const items = list.querySelectorAll(".dropdown-item");
-    items.forEach((item) => {
-        const txt = item.dataset.value || item.textContent;
-        item.style.display =
-            txt.toUpperCase().indexOf(filter) > -1 ? "" : "none";
-    });
-};
-
-window.selectOption = function (dropdownId, value, displayLabel) {
-    const dd = document.getElementById(dropdownId);
-    if (!dd) return;
-
-    // Set Hidden Value
-    const hiddenInput = dd.querySelector("[data-filter-value]");
-    if (hiddenInput) hiddenInput.value = value;
-
-    // Update Display
-    const searchInput = dd.querySelector("[data-filter-search]");
-    if (searchInput) {
-        searchInput.value = ""; // Clear search
-        searchInput.placeholder = displayLabel;
-    }
-
-    const displayInput = dd.querySelector("input[readonly]");
-    if (displayInput) {
-        displayInput.placeholder = displayLabel;
-    }
-
-    // Show Clear Button
-    const clearBtn = dd.querySelector("[data-clear-btn]");
-    if (clearBtn) clearBtn.style.display = "block";
-
-    // Mark Selected
-    dd.querySelectorAll(".dropdown-item").forEach((el) =>
-        el.classList.remove("selected"),
-    );
-    const selectedItem = dd.querySelector(
-        `.dropdown-item[data-value="${value}"]`,
-    );
-    if (selectedItem) selectedItem.classList.add("selected");
-
-    // Close Dropdown
-    dd.classList.remove("active");
-
-    // Highlight Advanced Button
+// NOTE: selectOption is defined in uicomponents.js (global, supports 4-param legacy).
+// Equipos-specific visual side-effect (btnAdvancedFilter highlight) is applied via
+// the dropdown-selection event so it does NOT override the global function.
+window.addEventListener("dropdown-selection", function (e) {
+    // Only apply Equipos advanced-filter button highlight when on the equipos page
+    if (!document.getElementById("equiposTableBody")) return;
     const advBtn = document.getElementById("btnAdvancedFilter");
-    if (advBtn) {
+    if (advBtn && e.detail.value) {
         advBtn.style.background = "#e1effa";
         advBtn.style.color = "#0067b1";
         advBtn.style.border = "1px solid #0067b1";
     }
-};
+});
 
 // ==========================================
 // FLEET DASHBOARD LOGIC (Restored)

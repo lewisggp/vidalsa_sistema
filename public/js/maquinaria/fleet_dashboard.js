@@ -7,28 +7,103 @@ let currentFrenteId = ''; // Track selected frente
 // Color palettes
 const CHART_COLORS = {
     status: {
-        'OPERATIVO': '#110a50ff',      // Operativo
-        'MANTENIMIENTO': '#69696dff',    // Mantenimiento
-        'INOPERATIVO': '#a31616ff',    // Inoperativo
-        'DESINCORPORADO': '#07090aff'    // Desincorporado
+        'OPERATIVO': '#110a50ff',
+        'EN MANTENIMIENTO': '#69696dff',
+        'INOPERATIVO': '#a31616ff',
+        'DESINCORPORADO': '#07090aff'
     },
-    age: ['#110a50ff', '#a31616ff'], // New (Brand Blue), Old (Dark Red)
-    category: ['#a31616ff', '#110a50ff', '#69696dff'] // Pesada, Liviana, Sin Asignar (Gris)
+    age: ['#110a50ff', '#a31616ff'],
+    category: ['#a31616ff', '#110a50ff', '#69696dff'],
+    inoperative: ['#dc2626', '#f59e0b', '#0f172a']
+};
+
+// Shared professional legend style
+const LEGEND_STYLE = {
+    position: 'bottom',
+    labels: {
+        padding: 18,
+        font: { size: 12, weight: '600', family: "'Inter', 'Segoe UI', sans-serif" },
+        boxWidth: 12,
+        boxHeight: 12,
+        color: '#374151',
+        usePointStyle: true,
+        pointStyle: 'rectRounded'
+    }
+};
+
+// Common tooltip styles
+const TOOLTIP_STYLES = {
+    backgroundColor: '#1e293b',
+    titleColor: '#ffffff',
+    bodyColor: '#e2e8f0',
+    borderColor: '#334155',
+    borderWidth: 1,
+    padding: 10,
+    cornerRadius: 8,
+    displayColors: true,
+    boxWidth: 10,
+    boxHeight: 10
 };
 
 /**
  * Update stat cards with data
  */
 function updateStatCards(stats) {
-    document.getElementById('stat_total').textContent = stats.total || 0;
-    document.getElementById('stat_fleet_new').textContent = stats.fleet_new || 0;
-    document.getElementById('stat_fleet_old').textContent = stats.fleet_old || 0;
+    const total = document.getElementById('stat_total');
+    const fleetNew = document.getElementById('stat_fleet_new');
+    const fleetOld = document.getElementById('stat_fleet_old');
+    const consumption = document.getElementById('stat_consumption');
 
-    // Update Consumption (if element exists)
-    const consumptionEl = document.getElementById('stat_consumption');
-    if (consumptionEl) {
-        consumptionEl.textContent = stats.total_consumption || 0;
+    if (total) total.textContent = stats.total || 0;
+    if (fleetNew) fleetNew.textContent = stats.fleet_new || 0;
+    if (fleetOld) fleetOld.textContent = stats.fleet_old || 0;
+    if (consumption) consumption.textContent = stats.total_consumption || 0;
+}
+
+/**
+ * Render Equipos Asignados por Frente panel (cajitas estilo consumibles)
+ */
+function renderEquiposPorFrente(lista) {
+    const loading = document.getElementById('fleetEqAsigLoading');
+    const body = document.getElementById('fleetEqAsigBody');
+    if (!body) return;
+
+    if (loading) loading.style.display = 'none';
+    body.style.display = 'block';
+
+    if (!lista || lista.length === 0) {
+        body.innerHTML = '<p style="color:#94a3b8;font-size:13px;text-align:center;padding:20px;">Sin datos de equipos asignados.</p>';
+        return;
     }
+
+    const COLOR = '#475569'; // gris corporativo fijo
+
+    body.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:10px;">${lista.map((row, i) => `
+            <div style="
+                background:${COLOR};
+                color:#fff;
+                border-radius:12px;
+                padding:12px 16px;
+                min-width:180px;
+                flex:1;
+                display:flex;
+                flex-direction:column;
+                align-items:flex-start;
+                justify-content:center;
+                gap:8px;
+                box-shadow:0 2px 8px rgba(0,0,0,.15);
+            ">
+                <div style="display:flex; align-items:center; gap:8px; width:100%;">
+                    <span style="font-size:12px;font-weight:700;color:#94a3b8;">#${i + 1}</span>
+                    <span style="font-size:12px;font-weight:700;line-height:1.2;word-break:break-word;flex:1;" title="${row.frente}">${row.frente}</span>
+                </div>
+                <div style="display:flex;align-items:baseline;gap:5px;">
+                    <span style="font-size:26px;font-weight:900;line-height:1;">${row.total}</span>
+                    <span style="font-size:13px;font-weight:600;opacity:.85;">equipo${row.total !== 1 ? 's' : ''}</span>
+                </div>
+            </div>`
+    ).join('')
+        }</div>`;
 }
 
 /**
@@ -39,27 +114,24 @@ window.openFleetDashboard = async function () {
     if (!modal) return;
 
     modal.classList.add('active');
-    modal.style.display = 'flex'; // Ensure display is flex
+    modal.style.display = 'flex';
 
-    // Load Chart.js and Datalabels Plugin if not already loaded
     if (typeof Chart === 'undefined') {
         await loadChartJS();
     }
 
-    // Setup Dropdown Events (Close on outside click)
     setupDropdownEvents();
 
-    // Get first frente from hidden inputs (New IDs)
     const firstFrenteId = document.getElementById('dashboardSelectedFrenteId')?.value || '';
     const firstFrenteName = document.getElementById('dashboardSelectedFrenteNombre')?.value || '';
 
-    // Set initial value in search input
     const searchInput = document.getElementById('dashboardFrenteSearch');
-    if (searchInput) searchInput.value = firstFrenteName;
+    if (searchInput) {
+        searchInput.value = firstFrenteName;
+        dashboardToggleClearBtn();
+    }
 
     currentFrenteId = firstFrenteId;
-
-    // Fetch and render data for first frente
     await loadFleetDashboardData(firstFrenteId);
 };
 
@@ -67,44 +139,69 @@ window.openFleetDashboard = async function () {
  * Export Fleet Statistics to Excel (CSV)
  */
 window.exportFleetStats = function () {
-    // Use current global or fallback to dom
     const frenteId = currentFrenteId || document.getElementById('dashboardSelectedFrenteId')?.value;
-
     const url = new URL('/admin/equipos/fleet-export', window.location.origin);
     if (frenteId && frenteId !== 'all') {
         url.searchParams.set('frente_id', frenteId);
     }
-
-    // Trigger download
     window.location.href = url.toString();
 };
 
-
 /**
- * Setup Dropdown Events (Close when clicking outside)
- * Initializes only once by checking a global flag.
+ * Setup Dropdown Events (Close when clicking outside) — runs only once
  */
 let dropdownEventsInitialized = false;
 
 function setupDropdownEvents() {
     if (dropdownEventsInitialized) return;
 
-    const input = document.getElementById('dashboardFrenteSearch');
-    const dropdown = document.getElementById('dashboardFrenteList');
-    const container = document.getElementById('dashboardFrenteDropdown'); // Container
+    const container = document.getElementById('dashboardFrenteDropdown');
+    if (!container) return;
 
-    if (!input || !dropdown || !container) return;
-
-    // Close dropdown when clicking outside
     document.addEventListener('click', function (event) {
-        // If click is outside container, close it
-        if (!container.contains(event.target)) {
+        const dropdown = document.getElementById('dashboardFrenteList');
+        if (dropdown && !container.contains(event.target)) {
             dropdown.style.display = 'none';
         }
     });
 
     dropdownEventsInitialized = true;
 }
+
+/**
+ * Toggle visibility of the X clear button
+ */
+window.dashboardToggleClearBtn = function () {
+    const input = document.getElementById('dashboardFrenteSearch');
+    const clearBtn = document.getElementById('dashboardFrenteClearBtn');
+    if (!input || !clearBtn) return;
+    clearBtn.style.display = input.value.trim() !== '' ? 'inline-flex' : 'none';
+};
+
+/**
+ * Clear the frente search input — NO data reload (just clears the field)
+ */
+window.dashboardClearFrenteSearch = function () {
+    const input = document.getElementById('dashboardFrenteSearch');
+    const clearBtn = document.getElementById('dashboardFrenteClearBtn');
+    const dropdown = document.getElementById('dashboardFrenteList');
+
+    if (input) {
+        input.value = '';
+        input.focus();
+    }
+    if (clearBtn) clearBtn.style.display = 'none';
+
+    // Restore all dropdown options visibility
+    if (dropdown) {
+        const options = dropdown.getElementsByClassName('dashboard-frente-option');
+        for (let i = 0; i < options.length; i++) {
+            options[i].style.display = '';
+        }
+        dropdown.style.display = 'block';
+    }
+    // NOTE: intentionally NOT calling loadFleetDashboardData here
+};
 
 /**
  * Toggle Dropdown Visibility
@@ -117,12 +214,10 @@ window.dashboardToggleFrente = function (event) {
 
     const dropdown = document.getElementById('dashboardFrenteList');
     if (dropdown) {
-        // Simple toggle
         const isHidden = (dropdown.style.display === 'none' || dropdown.style.display === '');
         dropdown.style.display = isHidden ? 'block' : 'none';
 
         if (isHidden) {
-            // Focus search logic
             const search = document.getElementById('dashboardFrenteSearch');
             if (search) setTimeout(() => search.focus(), 100);
         }
@@ -130,27 +225,25 @@ window.dashboardToggleFrente = function (event) {
 };
 
 /**
- * Filter Frentes List
+ * Filter Frentes List by typed text
  */
 window.dashboardFilterFrentes = function () {
     const input = document.getElementById('dashboardFrenteSearch');
-    const filter = input.value.toUpperCase();
     const dropdown = document.getElementById('dashboardFrenteList');
+    if (!input || !dropdown) return;
+
+    const filter = input.value.toUpperCase();
     const options = dropdown.getElementsByClassName('dashboard-frente-option');
 
     for (let i = 0; i < options.length; i++) {
-        const txtValue = options[i].textContent || options[i].innerText;
-        if (txtValue.toUpperCase().indexOf(filter) > -1) {
-            options[i].style.display = "";
-        } else {
-            options[i].style.display = "none";
-        }
+        const txt = options[i].textContent || options[i].innerText;
+        options[i].style.display = txt.toUpperCase().includes(filter) ? '' : 'none';
     }
     dropdown.style.display = 'block';
 };
 
 /**
- * Select a Frente
+ * Select a Frente from the dropdown
  */
 window.dashboardSelectFrente = async function (id, name, event) {
     if (event) {
@@ -162,13 +255,15 @@ window.dashboardSelectFrente = async function (id, name, event) {
     if (hiddenId) hiddenId.value = id;
 
     const search = document.getElementById('dashboardFrenteSearch');
-    if (search) search.value = name;
+    if (search) {
+        search.value = name;
+        dashboardToggleClearBtn();
+    }
 
     const list = document.getElementById('dashboardFrenteList');
     if (list) list.style.display = 'none';
 
     currentFrenteId = id;
-
     await loadFleetDashboardData(id);
 };
 
@@ -181,8 +276,6 @@ window.closeFleetDashboard = function () {
         modal.classList.remove('active');
         modal.style.display = 'none';
     }
-
-    // Destroy charts to free memory
     destroyAllCharts();
 };
 
@@ -191,27 +284,21 @@ window.closeFleetDashboard = function () {
  */
 async function loadChartJS() {
     return new Promise((resolve, reject) => {
-        if (typeof Chart !== 'undefined') {
-            resolve();
-            return;
-        }
+        if (typeof Chart !== 'undefined') { resolve(); return; }
 
-        // Load Chart.js
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
 
         script.onload = () => {
-            // Load DataLabels Plugin after Chart.js is loaded
             const pluginScript = document.createElement('script');
             pluginScript.src = 'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js';
             pluginScript.onload = () => {
-                // Register plugin globally
                 Chart.register(ChartDataLabels);
                 resolve();
             };
             pluginScript.onerror = () => {
                 console.warn('Failed to load DataLabels plugin, charts will work without it.');
-                resolve(); // Resolve anyway to at least show charts
+                resolve();
             };
             document.head.appendChild(pluginScript);
         };
@@ -222,14 +309,19 @@ async function loadChartJS() {
 }
 
 /**
- * Fetch fleet statistics from backend with frente filter
+ * Fetch fleet statistics from backend
  */
 async function loadFleetDashboardData(frenteId) {
     const spinner = document.getElementById('fleetDashboardSpinner');
 
     try {
-        // Show spinner
         if (spinner) spinner.style.display = 'flex';
+
+        // Reset equipos panel to loading state
+        const eqLoading = document.getElementById('fleetEqAsigLoading');
+        const eqBody = document.getElementById('fleetEqAsigBody');
+        if (eqLoading) eqLoading.style.display = 'flex';
+        if (eqBody) eqBody.style.display = 'none';
 
         const url = new URL('/admin/equipos/fleet-stats', window.location.origin);
         if (frenteId && frenteId !== 'all') {
@@ -243,32 +335,38 @@ async function loadFleetDashboardData(frenteId) {
             }
         });
 
-        if (!response.ok) throw new Error('Failed to fetch fleet data');
+        if (!response.ok) {
+            const errText = await response.text();
+            console.error('Fleet Stats HTTP error:', response.status, errText);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
 
         const data = await response.json();
 
-        // Update stat cards
+        if (!data || data.success === false) {
+            throw new Error(data.message || 'El servidor devolvió un error');
+        }
+
         updateStatCards(data.stats);
 
-        // Create/update charts
+        // Render equipos asignados por frente panel
+        renderEquiposPorFrente(data.equiposPorFrente || []);
+
         createCharts(data);
 
-        // Hide spinner after everything is rendered
         setTimeout(() => {
             if (spinner) spinner.style.display = 'none';
         }, 300);
 
     } catch (error) {
-        console.error('Fleet Dashboard Error:', error);
-
-        // Hide spinner on error
+        console.error('Fleet Dashboard Error:', error.message, error);
         if (spinner) spinner.style.display = 'none';
 
         if (window.showModal) {
             showModal({
                 type: 'error',
                 title: 'Error',
-                message: 'No se pudieron cargar las estadísticas de la flota.',
+                message: 'No se pudieron cargar las estadísticas de la flota. Detalle: ' + error.message,
                 confirmText: 'Cerrar',
                 hideCancel: true
             });
@@ -280,48 +378,23 @@ async function loadFleetDashboardData(frenteId) {
  * Create all charts with data from selected frente
  */
 function createCharts(data) {
-    // Destroy existing charts first
+    if (typeof Chart === 'undefined') {
+        throw new Error('Chart.js no está disponible. Verifique su conexión a internet.');
+    }
+
+    const canvasStatus = document.getElementById('chartStatusByFront');
+    const canvasAge = document.getElementById('chartAgeByType');
+    const canvasCat = document.getElementById('chartCategoryByType');
+    const canvasInop = document.getElementById('chartInoperativeByType');
+
+    if (!canvasStatus || !canvasAge || !canvasCat) {
+        throw new Error('No se encontraron los contenedores de gráficos en el DOM.');
+    }
+
     destroyAllCharts();
 
-    // Tooltip style: black background, white text (consistent across all charts)
-    const tooltipStyles = {
-        backgroundColor: '#1e293b',
-        titleColor: '#ffffff',
-        bodyColor: '#e2e8f0',
-        borderColor: '#334155',
-        borderWidth: 1,
-        padding: 10,
-        cornerRadius: 8,
-        displayColors: true,
-        boxWidth: 10,
-        boxHeight: 10
-    };
-
-    // Common options for clean look
-    const commonOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'bottom',
-                labels: {
-                    padding: 15,
-                    font: { size: 14, weight: '600' },
-                    boxWidth: 14,
-                    boxHeight: 14
-                }
-            },
-            tooltip: tooltipStyles,
-            datalabels: {
-                color: 'white',
-                font: { weight: 'bold', size: 12 },
-                formatter: (value) => value > 0 ? value : ''
-            }
-        }
-    };
-
-    // 1. Estado Operativo - Doughnut Chart
-    fleetCharts.byStatus = new Chart(document.getElementById('chartStatusByFront'), {
+    // 1. Estado Operativo - Doughnut
+    fleetCharts.byStatus = new Chart(canvasStatus, {
         type: 'doughnut',
         data: {
             labels: data.byStatus.labels,
@@ -332,40 +405,86 @@ function createCharts(data) {
                 borderColor: '#fff'
             }]
         },
-        options: commonOptions
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: LEGEND_STYLE,
+                tooltip: TOOLTIP_STYLES,
+                datalabels: {
+                    color: 'white',
+                    font: { weight: 'bold', size: 12, family: "'Inter', 'Segoe UI', sans-serif" },
+                    formatter: (value) => value > 0 ? value : ''
+                }
+            }
+        }
     });
 
-    // 3. Flota Nueva vs Vieja por Tipo - Stacked Bar (Horizontal)
-    fleetCharts.ageByType = createCleanStackedBarChart('chartAgeByType', {
+    // 2. Flota Nueva vs Vieja por Tipo - Stacked Horizontal Bar
+    fleetCharts.ageByType = createStackedBarChart('chartAgeByType', {
         labels: data.ageByType.labels,
         datasets: data.ageByType.datasets.map((ds, idx) => ({
             label: ds.label,
             data: ds.data,
             backgroundColor: CHART_COLORS.age[idx],
             borderWidth: 0,
-            borderRadius: 4
+            borderRadius: 8,
+            borderSkipped: false
         }))
     });
 
-    // 4. Flota Pesada vs Liviana por Tipo - Stacked Bar (Horizontal)
-    fleetCharts.categoryByType = createCleanStackedBarChart('chartCategoryByType', {
+    // 3. Flota Pesada vs Liviana por Tipo - Stacked Horizontal Bar
+    fleetCharts.categoryByType = createStackedBarChart('chartCategoryByType', {
         labels: data.categoryByType.labels,
         datasets: data.categoryByType.datasets.map((ds, idx) => ({
             label: ds.label,
             data: ds.data,
             backgroundColor: CHART_COLORS.category[idx],
             borderWidth: 0,
-            borderRadius: 4
+            borderRadius: 8,
+            borderSkipped: false
         }))
     });
+
+    // 4. Inoperatividad por Tipo de Equipo - Stacked Horizontal Bar
+    if (canvasInop && data.inoperativeByType && data.inoperativeByType.labels.length > 0) {
+        fleetCharts.inoperativeByType = createStackedBarChart('chartInoperativeByType', {
+            labels: data.inoperativeByType.labels,
+            datasets: data.inoperativeByType.datasets.map((ds, idx) => ({
+                label: ds.label,
+                data: ds.data,
+                backgroundColor: CHART_COLORS.inoperative[idx] || '#64748b',
+                borderWidth: 0,
+                borderRadius: 8,
+                borderSkipped: false
+            }))
+        });
+    } else if (canvasInop) {
+        // Show empty state
+        const parent = canvasInop.parentElement;
+        const msg = document.createElement('p');
+        msg.style.cssText = 'color:#94a3b8;font-size:13px;text-align:center;padding:30px 0;';
+        msg.textContent = 'Sin equipos inoperativos en esta selección.';
+        canvasInop.style.display = 'none';
+        if (!parent.querySelector('.fleet-empty-msg')) {
+            msg.classList.add('fleet-empty-msg');
+            parent.appendChild(msg);
+        }
+    }
 }
 
 /**
- * Create Clean Stacked Bar Chart (No X Axis, Data inside bars)
+ * Create Clean Stacked Horizontal Bar Chart with rounded bars
  */
-function createCleanStackedBarChart(canvasId, config) {
+function createStackedBarChart(canvasId, config) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return null;
+
+    // Remove any empty state message if re-rendering
+    const parent = ctx.parentElement;
+    const emptyMsg = parent.querySelector('.fleet-empty-msg');
+    if (emptyMsg) emptyMsg.remove();
+    ctx.style.display = '';
 
     return new Chart(ctx, {
         type: 'bar',
@@ -374,30 +493,14 @@ function createCleanStackedBarChart(canvasId, config) {
             datasets: config.datasets
         },
         options: {
-            indexAxis: 'y', // Horizontal
+            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 15,
-                        font: { size: 14, weight: '600' },
-                        boxWidth: 14,
-                        boxHeight: 14
-                    }
-                },
-
+                legend: LEGEND_STYLE,
                 tooltip: {
-                    backgroundColor: '#1e293b',
-                    titleColor: '#ffffff',
-                    bodyColor: '#e2e8f0',
-                    borderColor: '#334155',
-                    borderWidth: 1,
-                    padding: 10,
-                    cornerRadius: 8,
+                    ...TOOLTIP_STYLES,
                     callbacks: {
-                        // Muestra el nombre completo en el tooltip (útil cuando el eje Y trunca nombres largos)
                         title: function (tooltipItems) {
                             return tooltipItems[0]?.label || '';
                         }
@@ -405,9 +508,9 @@ function createCleanStackedBarChart(canvasId, config) {
                 },
                 datalabels: {
                     color: 'white',
-                    font: { weight: 'bold', size: 12 },
+                    font: { weight: 'bold', size: 12, family: "'Inter', 'Segoe UI', sans-serif" },
                     display: function (context) {
-                        return context.dataset.data[context.dataIndex] > 0; // Hide 0 values
+                        return context.dataset.data[context.dataIndex] > 0;
                     },
                     formatter: Math.round
                 }
@@ -415,14 +518,14 @@ function createCleanStackedBarChart(canvasId, config) {
             scales: {
                 x: {
                     stacked: true,
-                    display: false, // HIDE X AXIS
+                    display: false,
                     grid: { display: false }
                 },
                 y: {
                     stacked: true,
                     grid: { display: false },
                     ticks: {
-                        font: { size: 12, weight: '600' },
+                        font: { size: 12, weight: '600', family: "'Inter', 'Segoe UI', sans-serif" },
                         color: '#475569'
                     }
                 }

@@ -56,9 +56,14 @@
                 @endif
             </div>
 
-            @if($equipo->especificaciones && $equipo->especificaciones->FOTO_REFERENCIAL)
+            @php
+                $fotoToShow = ($equipo->especificaciones && $equipo->especificaciones->FOTO_REFERENCIAL) 
+                              ? $equipo->especificaciones->FOTO_REFERENCIAL 
+                              : $equipo->FOTO_EQUIPO;
+            @endphp
+            @if($fotoToShow)
                 <div class="table-image-wrapper" style="cursor: default;">
-                    <img src="{{ route('drive.file', ['path' => str_replace('/storage/google/', '', $equipo->especificaciones->FOTO_REFERENCIAL)]) }}"
+                    <img src="{{ route('drive.file', ['path' => str_replace('/storage/google/', '', $fotoToShow)]) }}"
                         alt="Foto Modelo" loading="lazy" onload="this.style.opacity='1'">
                 </div>
             @else
@@ -84,6 +89,9 @@
         <td class="table-cell-custom"
             style="max-width: 160px; word-wrap: break-word; overflow-wrap: break-word; font-size: 14px;">
             <div style="color: #4a5568;"><strong>S:</strong> {{ $equipo->SERIAL_CHASIS }}</div>
+            @if($equipo->SERIAL_DE_MOTOR)
+                <div style="color: #64748b; margin-top: 1px; font-size: 13px;"><strong>M:</strong> {{ $equipo->SERIAL_DE_MOTOR }}</div>
+            @endif
             @if($equipo->documentacion && $equipo->documentacion->PLACA)
                 <div style="color: var(--maquinaria-blue); margin-top: 1px;"><strong>P:</strong>
                     {{ $equipo->documentacion->PLACA }}</div>
@@ -171,6 +179,7 @@
                     data-fecha-racda="{{ $equipo->documentacion->FECHA_RACDA ?? '' }}"
                     data-link-adicional="{{ $equipo->documentacion->LINK_DOC_ADICIONAL ?? '' }}"
                     data-link-gps="{{ $equipo->LINK_GPS ?? '' }}" data-frente-id="{{ $equipo->ID_FRENTE_ACTUAL }}"
+                    data-foto="{{ $fotoToShow }}"
                     data-rol-anclaje="{{ $equipo->tipo->ROL_ANCLAJE ?? 'NEUTRO' }}"
                     data-anchor-id="{{ $equipo->ID_ANCLAJE ?? '' }}"
                     data-anchor-code="{{ $equipo->ancladoA->CODIGO_PATIO ?? '' }}"

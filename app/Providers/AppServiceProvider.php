@@ -30,19 +30,12 @@ class AppServiceProvider extends ServiceProvider
         Paginator::useBootstrapFive();
         Schema::defaultStringLength(191);
         
-        // GLOBAL PERMISSION GATE - The definitive source of truth
+        // GLOBAL PERMISSION GATE - Basado ÚNICAMENTE en claves (columna PERMISOS)
+        // El ROL no otorga acceso automático. Solo la clave 'super.admin' en PERMISOS da acceso total.
         \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
-            // 1. Super Admin Bypass (ID 1 OR 'SUPER ADMIN' Role Name)
-            // Use strict robust check to avoid PHP 8.1+ deprecation warnings on null
-            $roleName = optional($user->rol)->NOMBRE_ROL;
-            if ($user->ID_ROL == 1 || ($roleName && strtoupper($roleName) === 'SUPER ADMIN')) {
-                return true;
-            }
-
-            // 2. Specific Permission Check (PERMISOS column array)
-            // Ensure PERMISOS is treated as array (via accessor or manual explode)
+            // Leer PERMISOS como array
             $permisosRaw = $user->PERMISOS;
-            
+
             if (is_string($permisosRaw)) {
                 $permisos = explode(',', $permisosRaw);
             } elseif (is_array($permisosRaw)) {
@@ -50,13 +43,30 @@ class AppServiceProvider extends ServiceProvider
             } else {
                 $permisos = [];
             }
-            
-            // Normalize for case-insensitivity safely (filter out non-strings)
-            $permisos = array_map('strtolower', array_filter($permisos, 'is_string'));
-            
+
+            // Normalizar (eliminar espacios, lowercase)
+            $permisos = array_map('strtolower', array_map('trim', array_filter($permisos, 'is_string')));
+
+            // ── manage.users: requiere AMBAS condiciones SIEMPRE (no es bypaseable) ──
+            // Se evalúa ANTES del shortcut de super.admin para garantizar ambas condiciones.
+            if ($ability === 'manage.users') {
+                $tieneClaveAdmin = in_array('super.admin', $permisos);
+                $tieneRolAdmin   = optional($user->rol)->NOMBRE_ROL === 'SUPER ADMIN';
+                return $tieneClaveAdmin && $tieneRolAdmin; // true o false definitivo
+            }
+
+            // Clave maestra: super.admin en PERMISOS = acceso total (para todo lo demás)
+            if (in_array('super.admin', $permisos)) {
+                return true;
+            }
+
+            // Verificar permiso específico
             if (in_array(strtolower($ability), $permisos)) {
                 return true;
             }
+
+            // Ninguna clave coincide → acceso denegado (null = continúa evaluación normal)
+            return null;
         });
 
         Equipo::observe(EquipoObserver::class);

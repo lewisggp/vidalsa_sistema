@@ -48,14 +48,10 @@
                 <i class="material-icons" title="Sólo puedes ver tu frente asignado" style="font-size:16px; color:#64748b; margin-left:auto; flex-shrink:0;">lock</i>
             </div>
         @else
-            {{-- ── USUARIO GLOBAL: dropdown completo, frente del usuario ya seleccionado ── --}}
+            {{-- ── USUARIO GLOBAL: dropdown completo sin frente pre-seleccionado ── --}}
             @php
                 $currentFrenteId = request('id_frente');
-                // Si no viene filtro en el request (primer load), usamos el frente asignado del usuario
-                if (!$currentFrenteId && $userFrenteAsig) {
-                    $currentFrenteId = $userFrenteAsig;
-                }
-                $currentFrente = $currentFrenteId ? $frentes->firstWhere('ID_FRENTE', $currentFrenteId) : null;
+                $currentFrente   = $currentFrenteId ? $frentes->firstWhere('ID_FRENTE', $currentFrenteId) : null;
             @endphp
             <div class="custom-dropdown" id="frenteFilterSelect" data-filter-type="id_frente" data-default-label="Filtrar Frente...">
                 <input type="hidden" name="id_frente" data-filter-value value="{{ $currentFrenteId }}" form="search-form">
@@ -384,13 +380,13 @@
                     <span style="font-size: 14px; font-weight: 500;">Dashboard de Flota</span>
                 </button>
 
-                <!-- Configurar Anclajes (NUEVO) -->
-                <a href="{{ route('equipos.configuracionFlota') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #0f766e; text-decoration: none; transition: all 0.2s; border-bottom: 1px solid #f1f5f9;">
-                    <div style="background: #ccfbf1; padding: 6px; border-radius: 6px; display: flex;">
-                        <i class="material-icons" style="font-size: 18px; color: #0f766e;">link</i>
+                <!-- Configurar Anclajes -->
+                <button type="button" disabled class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #94a3b8; text-decoration: none; transition: all 0.2s; border-bottom: 1px solid #f1f5f9; background: transparent; border: none; width: 100%; text-align: left; cursor: not-allowed;" title="Próximamente">
+                    <div style="background: #f1f5f9; padding: 6px; border-radius: 6px; display: flex;">
+                        <i class="material-icons" style="font-size: 18px; color: #94a3b8;">link</i>
                     </div>
                     <span style="font-size: 14px; font-weight: 600;">Configurar Anclajes</span>
-                </a>
+                </button>
 
                 <!-- Exportar -->
                 <a href="#" onclick="exportEquipos(); return false;" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; transition: all 0.2s; border-bottom: 1px solid #f1f5f9;">
@@ -448,7 +444,13 @@
 
 <!-- Right Column: Simple Counter -->
 <div class="counter-sidebar" style="position: sticky; top: 20px; display: flex; flex-direction: column; gap: 15px;">
-    @php $hasFilter = request('search_query') || request('id_frente') || request('id_tipo'); @endphp
+    @php
+        $hasFilter = request('search_query') || request('id_frente') || request('id_tipo')
+                  || request('modelo') || request('marca') || request('anio')
+                  || request('categoria') || request('estado')
+                  || request('filter_propiedad') || request('filter_poliza')
+                  || request('filter_rotc') || request('filter_racda');
+    @endphp
     
     <!-- Main Total Card -->
     <div style="background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%); border-radius: 12px; padding: 15px; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; overflow: hidden;">
@@ -463,21 +465,21 @@
             
             <div style="display: flex; align-items: center; gap: 8px;">
                 <!-- Main Total -->
-                <div onclick="filterByStatus('')" style="cursor: pointer; display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.15); padding: 8px 6px; border-radius: 10px; min-width: 65px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'; this.style.transform='translateY(0)'">
+                <div onclick="filterByStatus('')" title="Ver todos los equipos" style="display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.15); padding: 8px 6px; border-radius: 10px; min-width: 65px;">
                     <span id="stats_total" style="font-size: 36px; font-weight: 800; line-height: 1;">
                         {{ $hasFilter ? $stats['total'] : '--' }}
                     </span>
                     <span style="font-size: 13px; opacity: 0.8; font-weight: 700; margin-top: 2px;">TOTAL</span>
                 </div>
-                
+
                 <!-- Detailed Stats Row -->
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; flex: 1;">
-                    <div onclick="filterByStatus('INOPERATIVO')" style="cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.15); padding: 6px 2px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.25); transition: all 0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.25)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='rgba(239, 68, 68, 0.15)'; this.style.transform='translateY(0)'">
+                    <div onclick="filterByStatus('INOPERATIVO')" title="Filtrar: Inoperativos" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.15); padding: 6px 2px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.25);">
                         <i class="material-icons" style="font-size: 20px; color: #ef4444; margin-bottom: 2px;">cancel</i>
                         <strong id="stats_inactivos" style="font-weight: 800; font-size: 20px;">{{ $hasFilter ? $stats['inactivos'] : '--' }}</strong>
                         <span style="font-size: 11px; opacity: 0.8; font-weight: 700; text-transform: uppercase;">Inoperativos</span>
                     </div>
-                    <div onclick="filterByStatus('EN MANTENIMIENTO')" style="cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(245, 158, 11, 0.15); padding: 6px 2px; border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.25); transition: all 0.2s;" onmouseover="this.style.background='rgba(245, 158, 11, 0.25)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='rgba(245, 158, 11, 0.15)'; this.style.transform='translateY(0)'">
+                    <div onclick="filterByStatus('EN MANTENIMIENTO')" title="Filtrar: En Mantenimiento" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(245, 158, 11, 0.15); padding: 6px 2px; border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.25);">
                         <i class="material-icons" style="font-size: 20px; color: #f59e0b; margin-bottom: 2px;">engineering</i>
                         <strong id="stats_mantenimiento" style="font-weight: 800; font-size: 20px;">{{ $hasFilter ? $stats['mantenimiento'] : '--' }}</strong>
                         <span style="font-size: 11px; opacity: 0.8; font-weight: 700;">MANTENIMIENTO</span>
@@ -545,6 +547,8 @@
 
     <!-- Fleet Dashboard Modal -->
     <style>
+        @keyframes fleetSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
         .fleet-dashboard-header {
             background: linear-gradient(135deg, #00004d 0%, #000033 100%);
             padding: 15px 25px;
@@ -582,35 +586,21 @@
         
         .fleet-filter-container {
             position: relative;
-            width: 200px;
+            width: 300px;
+        }
+
+        .fleet-filter-container .dropdown-trigger {
+            height: 44px !important;
+        }
+
+        .fleet-filter-container input[type="text"] {
+            font-size: 14px !important;
         }
         
-        /* Mobile responsive */
-        @media (max-width: 768px) {
-            .fleet-header-wrapper {
-                flex-wrap: wrap;
-            }
-            
-            .fleet-header-left {
-                width: 100%;
-                justify-content: space-between;
-            }
-            
-            .fleet-header-controls {
-                width: 100%;
-                order: 3;
-            }
-            
-            .fleet-filter-container {
-                flex: 1;
-                min-width: 0;
-                width: auto;
-            }
-        }
     </style>
     
     <div id="fleetDashboardModal" class="modal-overlay">
-        <div class="modal-content" style="width: 95%; max-width: 1400px; height: 90vh; padding: 0; display: flex; flex-direction: column; background: #f8fafc;">
+        <div class="modal-content" style="width: 95%; max-width: 1400px; height: 90vh; padding: 0; display: flex; flex-direction: column; background: #f8fafc; position: relative;">
             <!-- Header -->
             <div class="fleet-dashboard-header">
                 <div class="fleet-header-wrapper">
@@ -660,17 +650,19 @@
                                 <input type="hidden" id="dashboardSelectedFrenteId" value="{{ $defaultDashboardId }}">
                                 <input type="hidden" id="dashboardSelectedFrenteNombre" value="{{ $defaultDashboardNombre }}">
                                 <div class="custom-dropdown" id="dashboardFrenteDropdown" style="width: 100%;">
-                                    <div class="dropdown-trigger" onclick="dashboardToggleFrente(event)" style="padding: 0; display: flex; align-items: center; background: rgba(255,255,255,0.95); overflow: hidden; border: none; border-radius: 8px; height: 38px;">
-                                        <div style="padding: 0 10px; display: flex; align-items: center; color: #64748b;">
-                                            <i class="material-icons" style="font-size: 18px;">search</i>
-                                        </div>
-                                        <input type="text" id="dashboardFrenteSearch"
-                                            placeholder="Buscar frente..."
-                                            onkeyup="dashboardFilterFrentes()"
-                                            style="width: 100%; border: none; background: transparent; padding: 8px 5px; font-size: 13px; font-weight: 500; outline: none; color: #1e293b;"
-                                            autocomplete="off">
-                                        <i class="material-icons" style="padding: 0 8px; color: #64748b; font-size: 20px;">arrow_drop_down</i>
+                                <div class="dropdown-trigger" onclick="dashboardToggleFrente(event)" style="padding: 0; display: flex; align-items: center; background: rgba(255,255,255,0.95); overflow: hidden; border: none; border-radius: 8px; height: 38px; cursor: default;">
+                                    <div style="padding: 0 10px; display: flex; align-items: center; color: #64748b; flex-shrink:0;">
+                                        <i class="material-icons" style="font-size: 18px;">search</i>
                                     </div>
+                                    <input type="text" id="dashboardFrenteSearch"
+                                        placeholder="Buscar frente..."
+                                        onkeyup="dashboardFilterFrentes(); dashboardToggleClearBtn()"
+                                        style="flex: 1; min-width: 0; border: none; background: transparent; padding: 8px 5px; font-size: 13px; font-weight: 500; outline: none; color: #1e293b; cursor: text;"
+                                        autocomplete="off">
+                                    <i id="dashboardFrenteClearBtn" class="material-icons"
+                                       onclick="event.stopPropagation(); dashboardClearFrenteSearch()"
+                                       style="padding: 0 8px; color: #64748b; font-size: 20px; display: none; flex-shrink:0;">close</i>
+                                </div>
                                     <!-- Custom Dropdown List -->
                                     <div id="dashboardFrenteList" style="display: none; position: absolute; top: 105%; left: 0; right: 0; max-height: 250px; overflow-y: auto; background: white; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 50; padding: 5px;">
                                         @foreach($frentes as $frente)
@@ -701,8 +693,8 @@
             <!-- Dashboard Content -->
             <div style="flex: 1; overflow-y: auto; padding: 25px;">
                 <!-- Stats Cards Row -->
-                <!-- Stats Cards Row (Compressed) -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 0 0 25px 0; max-width: 900px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 0 0 25px 0;">
+
                     <!-- Total Equipment -->
                     <div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #08234dff;">
                         <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -716,7 +708,7 @@
                         </div>
                     </div>
 
-                    <!-- Fleet Age -->
+                    <!-- Fleet New -->
                     <div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #10b981;">
                         <div style="display: flex; align-items: center; justify-content: space-between;">
                             <div>
@@ -729,7 +721,7 @@
                         </div>
                     </div>
 
-                    <!-- Old Fleet -->
+                    <!-- Fleet Old -->
                     <div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #f59e0b;">
                         <div style="display: flex; align-items: center; justify-content: space-between;">
                             <div>
@@ -742,7 +734,7 @@
                         </div>
                     </div>
 
-                    <!-- Estimated Consumption (New) -->
+                    <!-- Estimated Consumption -->
                     <div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #7e1010ff;">
                         <div style="display: flex; align-items: center; justify-content: space-between;">
                             <div>
@@ -756,8 +748,9 @@
                     </div>
                 </div>
 
+
                 <!-- Charts Row -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px;">
+                <div id="fleetChartsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px;">
                     <!-- Estado Operativo -->
                     <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
                         <h4 style="margin: 0 0 20px 0; font-size: 16px; color: #1e293b; font-weight: 700; display: flex; align-items: center; gap: 10px;">
@@ -784,7 +777,32 @@
                         </h4>
                         <canvas id="chartCategoryByType" style="max-height: 350px;"></canvas>
                     </div>
+
+                    <!-- Inoperatividad por Tipo de Equipo -->
+                    <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                        <h4 style="margin: 0 0 20px 0; font-size: 16px; color: #1e293b; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+                            <i class="material-icons" style="font-size: 20px; color: #ef4444;">warning_amber</i>
+                            Inoperatividad por Tipo de Equipo
+                        </h4>
+                        <canvas id="chartInoperativeByType" style="max-height: 350px;"></canvas>
+                    </div>
                 </div>
+
+                <!-- Equipos Asignados por Frente (al final) -->
+                <div style="background: white; border-radius: 12px; padding: 20px 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-top: 20px;">
+                    <div style="display:flex; align-items:center; margin-bottom: 16px;">
+                        <span style="font-size:14px; font-weight:700; color:#1e293b; display:flex; align-items:center; gap:8px;">
+                            <i class="material-icons" style="font-size:18px; color:#475569;">directions_bus</i>
+                            Equipos Asignados por Frente
+                            <span style="font-size:11px; color:#94a3b8; font-weight:400; margin-left:4px;">— flota actual en cada frente</span>
+                        </span>
+                    </div>
+                    <div id="fleetEqAsigLoading" style="display:flex; align-items:center; justify-content:center; height:80px; color:#94a3b8; font-size:13px; gap:8px;">
+                        <i class="material-icons" style="animation:fleetSpin 1s linear infinite; font-size:18px;">refresh</i> Cargando...
+                    </div>
+                    <div id="fleetEqAsigBody" style="display:none;"></div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -856,15 +874,15 @@
             }
 
             /* Adjust Charts Grid to Single Column */
-            #fleetDashboardModal .modal-content > div:nth-child(3) > div {
+            #fleetChartsGrid {
                 grid-template-columns: 1fr !important;
             }
         }
     </style>
 <script>
-    // Global Permission Flags injected from Backend
-    window.CAN_UPDATE_INFO = @json(Auth::user()->can('equipos.edit'));
-    window.CAN_CREATE_INFO = @json(Auth::user()->can('equipos.create'));
+    // Alias: CAN_CREATE_INFO → CAN_CREATE_EQUIPOS (definido globalmente en estructura_base)
+    // Se mantiene por compatibilidad con equipos_index.js
+    window.CAN_CREATE_INFO = window.CAN_CREATE_EQUIPOS;
     window.CREATE_URL = "{{ route('equipos.create') }}";
 </script>
 @endsection

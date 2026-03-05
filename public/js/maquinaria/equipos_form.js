@@ -335,7 +335,6 @@ function initEquiposForm() {
                         }
                     }
                 } else if (status === 422) {
-                    console.error('❌ Validation Failed (422):', body.errors);
 
                     if (submitBtn) {
                         submitBtn.disabled = false;

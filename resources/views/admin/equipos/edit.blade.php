@@ -21,7 +21,11 @@
             <a href="{{ route('equipos.index') }}" class="btn-primary-maquinaria" style="background-color: #edf2f7; color: #4a5568;">
                 Cancelar
             </a>
-            <button type="submit" class="btn-primary-maquinaria">
+            <button type="submit" class="btn-primary-maquinaria"
+                @cannot('equipos.edit')
+                onclick="event.preventDefault(); showModal({ type: 'error', title: 'Acceso Denegado', message: 'No tienes permiso para actualizar equipos.', confirmText: 'Entendido', hideCancel: true });"
+                @endcannot
+            >
                 <i class="material-icons">save</i>
                 Actualizar Equipo
             </button>
