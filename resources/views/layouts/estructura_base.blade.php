@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  CO<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -233,12 +233,12 @@
                         <i class="material-icons" style="font-size: 16px;">download</i> Descargar
                     </button>
                     
-                    @can('equipos.edit')
+                    @if(auth()->user() && (auth()->user()->can('equipos.edit') || auth()->user()->can('user.edit') || auth()->user()->can('super.admin')))
                     <label id="pdfUpdateLabel" for="pdfUpdateInput" style="background: #059669; border: none; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: white; border-radius: 50%; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Actualizar Documento">
                         <i class="material-icons" style="font-size: 18px;">add</i>
                         <input type="file" id="pdfUpdateInput" accept="application/pdf" style="display: none;">
                     </label>
-                    @endcan
+                    @endif
 
                     <button onclick="closePdfPreview()" style="background: none; border: none; color: #cbd5e0; padding: 4px; display: flex; align-items: center;">
                         <i class="material-icons" style="font-size: 20px;">close</i>
@@ -283,11 +283,11 @@
                             <!-- Dynamic Content -->
                             <div id="metaFieldsContainer"></div>
 
-                            @can('equipos.edit')
+                            @if(auth()->user() && (auth()->user()->can('equipos.edit') || auth()->user()->can('user.edit') || auth()->user()->can('super.admin')))
                             <button type="submit" id="btnSaveMeta" style="margin-top: 8px; background: #3182ce; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; width: 100%; box-sizing: border-box;">
                                 <i class="material-icons" style="font-size: 16px;">save</i> Guardar Cambios
                             </button>
-                            @endcan
+                            @endif
                         </form>
                     </div>
                 </div>
@@ -436,7 +436,7 @@
     
     {{-- Core Scripts (Always Loaded) --}}
     <script src="{{ asset('js/maquinaria/module_manager.js') }}?v=2.0"></script>
-    <script src="{{ asset('js/maquinaria/uicomponents.js') }}?v=15.6"></script>
+    <script src="{{ asset('js/maquinaria/uicomponents.js') }}?v=15.9"></script>
     <script src="{{ asset('js/maquinaria/navegacion.js') }}?v=10.0"></script>
     <script src="{{ asset('js/maquinaria/form_logic.js') }}?v=4.0"></script>
     <script src="{{ asset('js/maquinaria/equipo_catalog_linking.js') }}?v=3.0"></script>
@@ -650,176 +650,7 @@
             }
         };
 
-        window.showDetailsImproved = function(button, e) {
-            if(e) e.preventDefault();
-            const d = button.dataset;
-            const modal = document.getElementById('detailsModal');
-            if(!modal) return;
-            
-            // Reset tab to general details
-            window.switchModalTab('general');
-
-            // Reset Accordions (Close all)
-            const details = modal.querySelectorAll('details');
-            details.forEach(d => d.removeAttribute('open'));
-
-            // Highlight the row
-            document.querySelectorAll('.admin-table tr').forEach(tr => tr.classList.remove('row-blue-active'));
-            const row = button.closest('tr');
-            if(row) row.classList.add('row-blue-active');
-
-            // Save reference for updates
-            window.activeEquipoButton = button;
-
-            // Reset Tab to General
-            if(typeof switchModalTab === 'function') {
-                switchModalTab('general');
-            }
-
-            // Header info
-            const titleEl = document.getElementById('modal_equipo_title');
-            const subtitleEl = document.getElementById('modal_equipo_subtitle');
-            const gpsBtn = document.getElementById('modal_gps_btn');
-            
-            if(titleEl) {
-                 // Force update title with type
-                 const typeText = button.getAttribute('data-tipo') || d.tipo || 'Equipo';
-                 titleEl.textContent = (typeText !== 'undefined' && typeText !== 'null') ? typeText : 'Equipo';
-                 titleEl.style.textTransform = 'uppercase';
-            }
-            
-            // Show Serial and Placa in Subtitle
-            if(subtitleEl) {
-                const serialVal = d.chasis || 'Sin Registro';
-                const placaVal = (d.placa && d.placa !== 'N/A') ? d.placa : 'Sin Placa';
-                
-                const naStyle = "color: #a0aec0; font-style: italic; font-weight: 400;";
-                const valStyle = "color: #fff; font-weight: 700;";
-                
-                const serialHtml = serialVal === 'Sin Registro' ? `<span style="${naStyle}">${serialVal}</span>` : `<strong style="${valStyle}">${serialVal}</strong>`;
-                const placaHtml = placaVal === 'Sin Placa' ? `<span style="${naStyle}">${placaVal}</span>` : `<strong style="${valStyle}">${placaVal}</strong>`;
-                
-                subtitleEl.innerHTML = `<span style="font-weight: 500; opacity: 0.9;">Serial:</span> ${serialHtml} &nbsp;&nbsp;<span style="opacity: 0.4;">|</span>&nbsp;&nbsp; <span style="font-weight: 500; opacity: 0.9;">Placa:</span> ${placaHtml}`;
-                subtitleEl.style.display = 'block';
-                subtitleEl.style.color = '#cbd5e0';
-                subtitleEl.style.fontSize = '15px';
-            }
-            
-            // GPS Button
-            if(gpsBtn) {
-                if(d.linkGps && d.linkGps !== '') {
-                    gpsBtn.href = d.linkGps;
-                    gpsBtn.style.display = 'flex';
-                } else {
-                    gpsBtn.style.display = 'none';
-                }
-            }
-
-            // Technical Specs
-            const setVal = (id, val) => { 
-                const el = document.getElementById(id); 
-                if(!el) return;
-                if(!val || val === 'N/A' || val === 'undefined') {
-                    el.innerText = 'NO REGISTRA';
-                    el.style.color = '#a0aec0';
-                    el.style.fontStyle = 'italic';
-                    el.style.fontWeight = '400';
-                } else {
-                    el.innerText = val;
-                    el.style.color = '#4a5568';
-                    el.style.fontStyle = 'normal';
-                    el.style.fontWeight = '600';
-                }
-            };
-            
-            // Helper function to format dates from YYYY-MM-DD to DD/MM/YYYY
-            const formatDateDisplay = (dateStr) => {
-                if (!dateStr || dateStr === 'N/A' || dateStr === 'undefined' || dateStr === '') {
-                    return null;
-                }
-                // Check if it's already in YYYY-MM-DD format
-                const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
-                if (match) {
-                    return `${match[3]}/${match[2]}/${match[1]}`;
-                }
-                return dateStr; // Return as-is if not in expected format
-            };
-            
-            const fields = {
-                'd_marca': 'marca', 'd_modelo': 'modelo',
-                'd_anio': 'anio', 'd_categoria': 'categoria', 'd_motor_serial': 'motorSerial',
-                'd_combustible': 'combustible', 'd_consumo': 'consumo',
-                'd_titular': 'titular', 'd_nro_doc': 'nroDoc',
-                'd_placa': 'placa', 'd_seguro': 'seguro'
-            };
-            Object.entries(fields).forEach(([id, key]) => setVal(id, d[key]));
-            
-            // Format date fields separately
-            const vencSeguro = formatDateDisplay(d.vencSeguro);
-            const fechaRotc = formatDateDisplay(d.fechaRotc);
-            const fechaRacda = formatDateDisplay(d.fechaRacda);
-            
-            setVal('d_venc_seguro', vencSeguro);
-            setVal('d_fecha_rotc', fechaRotc);
-            setVal('d_fecha_racda', fechaRacda);
-
-
-            // PDF Buttons Generation (Updated with AJAX Upload & Internal Preview)
-            const generatePdfBtn = (doc, containerId, docType) => {
-                const container = document.getElementById(containerId);
-                if (!container) return;
-                
-                // Unique Input ID for "First Time Upload"
-                const inputId = `input_upload_${docType}_${d.equipoId}`;
-                const inputHtml = `<input type="file" id="${inputId}" accept="application/pdf" style="display: none;" onchange="uploadDocument(this, '${docType}', '${d.equipoId}', '${containerId}', '${doc.label}')">`;
-                
-                if(doc.link && doc.link !== '') {
-                    container.innerHTML = `
-                        <div class="pdf-btn-container">
-                            <button type="button" 
-                                onclick="openPdfPreview('${doc.link}', '${docType}', '${doc.label}', '${d.equipoId}')" 
-                                style="width: 36px; height: 36px; border-radius: 8px; background: #f8f9fa; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: default;"
-                                onmouseover="this.style.background='#e9ecef'" 
-                                onmouseout="this.style.background='#f8f9fa'"
-                                title="Ver PDF: ${doc.label}">
-                                <i class="material-icons" style="font-size: 20px; color: #6c757d;">picture_as_pdf</i>
-                            </button>
-                        </div>
-                    `;
-                } else {
-                    // Permission Check for New Uploads
-                    if (window.CAN_UPDATE_INFO) {
-                        container.innerHTML = `
-                            <div class="upload-placeholder-mini" style="border-radius: 50%;">
-                                ${inputHtml}
-                                <label for="${inputId}" title="Cargar ${doc.label}" style="border-radius: 50%; border-style: solid; border-width: 2px;">
-                                    <i class="material-icons" style="font-size: 18px;">add</i>
-                                </label>
-                            </div>
-                        `;
-                    } else {
-                         // Read Only - No Document
-                        container.innerHTML = `<span style="color: #94a3b8; font-size: 12px; font-style: italic; display: flex; align-items: center; justify-content: flex-end; height: 36px;">Sin Documento</span>`;
-                    }
-                }
-            };
-
-            generatePdfBtn({ label: 'Propiedad', link: d.linkPropiedad }, 'd_btn_propiedad', 'propiedad');
-            generatePdfBtn({ label: 'Póliza', link: d.linkSeguro }, 'd_btn_poliza', 'poliza');
-            generatePdfBtn({ label: 'ROTC', link: d.linkRotc }, 'd_btn_rotc', 'rotc');
-            generatePdfBtn({ label: 'RACDA', link: d.linkRacda }, 'd_btn_racda', 'racda');
-            generatePdfBtn({ label: 'Documento Adicional', link: d.linkAdicional }, 'd_btn_adicional', 'adicional');
-            
-            modal.classList.add('active');
-        };
-
-        // AJAX Upload Handler (with Progress)
-
-        window.closeDetailsModal = function(e) {
-            if(e) e.preventDefault();
-            const modal = document.getElementById('detailsModal');
-            if(modal) modal.classList.remove('active');
-        };
+        // showDetailsImproved and closeDetailsModal are defined in uicomponents.js (loaded after)
 
         // --- PDF Preview System (Internal View) - OPTIMIZED ---
         
@@ -997,7 +828,7 @@
         };
 
         // Permission Flag (Global & Exposed to External Scripts)
-        window.CAN_UPDATE_INFO = {{ auth()->user() && auth()->user()->can('equipos.edit') ? 'true' : 'false' }};
+        window.CAN_UPDATE_INFO = {{ auth()->user() && (auth()->user()->can('equipos.edit') || auth()->user()->can('user.edit') || auth()->user()->can('super.admin')) ? 'true' : 'false' }};
         window.CAN_CREATE_EQUIPOS = {{ auth()->user() && auth()->user()->can('equipos.create') ? 'true' : 'false' }};
         window.CAN_ASSIGN_EQUIPOS = {{ auth()->user() && auth()->user()->can('equipos.assign') ? 'true' : 'false' }};
         window.CAN_CHANGE_STATUS = {{ auth()->user() && auth()->user()->can('equipos.edit') ? 'true' : 'false' }};
@@ -1392,6 +1223,7 @@
                                 if (type === 'poliza') d.linkSeguro = data.link;
                                 if (type === 'rotc') d.linkRotc = data.link;
                                 if (type === 'racda') d.linkRacda = data.link;
+                                if (type === 'adicional') d.linkAdicional = data.link;
                             }
 
                             // FIX: Also update the button in the currently open Details Modal
@@ -1401,6 +1233,7 @@
                             else if (type === 'poliza') containerId = 'd_btn_poliza';
                             else if (type === 'rotc') containerId = 'd_btn_rotc';
                             else if (type === 'racda') containerId = 'd_btn_racda';
+                            else if (type === 'adicional') containerId = 'd_btn_adicional';
 
                             const btnContainer = document.getElementById(containerId);
                             if (btnContainer) {
@@ -1568,16 +1401,7 @@
             });
         };
 
-        // Preloader Functions
-        window.showPreloader = function() {
-            const preloader = document.getElementById('preloader');
-            if (preloader) preloader.style.display = 'flex';
-        };
-
-        window.hidePreloader = function() {
-            const preloader = document.getElementById('preloader');
-            if (preloader) preloader.style.display = 'none';
-        };
+        // showPreloader / hidePreloader are defined earlier in this file (with fade-out animation)
 
         // Re-initialize dynamic elements after SPA load
         window.addEventListener('spa:contentLoaded', () => {

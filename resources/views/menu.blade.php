@@ -271,11 +271,7 @@
 
 @endsection
 
-@section('scripts')
-    <!-- Inject Scripts for Equipment Modal Logic on Dashboard -->
-    <script src="{{ asset('js/maquinaria/uicomponents.js') }}"></script>
-    <script src="{{ asset('js/maquinaria/equipos_index.js') }}"></script>
-    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}"></script>
+@section('extra_js')
     <script>
         // Animación del modal de recepción directa
         const _styleRD = document.createElement('style');

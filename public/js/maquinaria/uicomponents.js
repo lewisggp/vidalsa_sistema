@@ -126,30 +126,7 @@ document.addEventListener("focusin", function (e) {
 });
 
 // Manual toggle function for inline handlers (forms, etc.)
-window.toggleDropdown = function (dropdownId, event) {
-    if (event) {
-        event.stopPropagation();
-        event.preventDefault();
-    }
-
-    const dropdown = document.getElementById(dropdownId);
-    if (!dropdown) return;
-
-    const isOpen = dropdown.classList.contains("active");
-
-    // Close ALL OTHER dropdowns first
-    window.closeAllDropdowns(dropdown);
-
-    // Toggle state
-    if (isOpen) {
-        dropdown.classList.remove("active");
-    } else {
-        dropdown.classList.add("active");
-        // Focus input if exists
-        const input = dropdown.querySelector('input[type="text"]');
-        if (input) setTimeout(() => input.focus(), 50);
-    }
-};
+// toggleDropdown is defined below (complete version with input/label guard)
 
 /**
  * ═══════════════════════════════════════════════════════════════════════
@@ -944,13 +921,13 @@ window.showDetailsImproved = function (target, event) {
         if (!container) return;
 
         if (isValid(link)) {
-            // View PDF Button
+            // PDF existe — solo botón de Ver
             container.innerHTML = `
                 <div class="pdf-btn-container">
-                    <button type="button" 
-                        onclick="openPdfPreview('${link}', '${type}', '${label}', '${equipoId}')" 
+                    <button type="button"
+                        onclick="openPdfPreview('${link}', '${type}', '${label}', '${equipoId}')"
                         style="width: 36px; height: 36px; border-radius: 8px; background: #f8f9fa; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: default;"
-                        onmouseover="this.style.background='#e9ecef'" 
+                        onmouseover="this.style.background='#e9ecef'"
                         onmouseout="this.style.background='#f8f9fa'"
                         title="Ver PDF: ${label}">
                         <i class="material-icons" style="font-size: 20px; color: #6c757d;">picture_as_pdf</i>
@@ -958,12 +935,8 @@ window.showDetailsImproved = function (target, event) {
                 </div>
             `;
         } else {
-            // Upload Button
-            // Permission Check for New Uploads
-            if (
-                typeof window.CAN_UPDATE_INFO !== "undefined" &&
-                window.CAN_UPDATE_INFO === false
-            ) {
+            // Sin PDF — mostrar botón de carga solo si tiene permiso
+            if (typeof window.CAN_UPDATE_INFO !== "undefined" && window.CAN_UPDATE_INFO === false) {
                 container.innerHTML = `<span style="color: #94a3b8; font-size: 12px; font-style: italic; display: flex; align-items: center; justify-content: flex-end; height: 36px;">Sin Documento</span>`;
                 return;
             }
@@ -972,16 +945,17 @@ window.showDetailsImproved = function (target, event) {
             container.innerHTML = `
                 <div style="position: relative; width: 30px; height: 30px;">
                     <input type="file" id="${inputId}" accept="application/pdf" style="display: none;" onchange="uploadDocument(this, '${type}', '${equipoId}', '${containerId}', '${label}')">
-                    <label for="${inputId}" 
-                        style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #fbfcfd; color: #3b82f6; border: 1px dashed #3b82f6; border-radius: 6px; transition: 0.2s; cursor: default;" 
-                        onmouseover="this.style.background='#eff6ff'" 
-                        onmouseout="this.style.background='#fbfcfd'" 
+                    <label for="${inputId}"
+                        style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #fbfcfd; color: #3b82f6; border: 1px dashed #3b82f6; border-radius: 6px; transition: 0.2s; cursor: default;"
+                        onmouseover="this.style.background='#eff6ff'"
+                        onmouseout="this.style.background='#fbfcfd'"
                         title="Cargar ${label}">
                         <i class="material-icons" style="font-size: 18px;">cloud_upload</i>
                     </label>
                 </div>
-             `;
+            `;
         }
+
     };
 
     const eqId = d.equipoId;
@@ -1094,6 +1068,7 @@ window.uploadDocument = function (input, type, equipoId, containerId, label) {
                         if (type === "poliza") d.linkSeguro = data.link;
                         if (type === "rotc") d.linkRotc = data.link;
                         if (type === "racda") d.linkRacda = data.link;
+                        if (type === "adicional") d.linkAdicional = data.link;
                     }
 
                     if (typeof window.refreshDashboardAlerts === "function") {

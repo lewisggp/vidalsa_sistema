@@ -21,7 +21,7 @@ class EquipoController extends Controller
         $this->middleware('auth');
         $this->middleware('can:equipos.create')->only(['store']);
         $this->middleware('can:equipos.edit')->only(['edit', 'update', 'changeStatus']);
-        // Permission check for uploadDoc/updateMetadata handled inside methods to allow OR logic (delete or edit)
+        // uploadDoc/deleteDoc/updateMetadata: permission handled inside methods (user.edit OR equipos.edit OR super.admin)
     }
 
     public function index(Request $request)
@@ -1024,8 +1024,8 @@ class EquipoController extends Controller
 
     public function uploadDoc(Request $request, $id)
     {
-        if (!auth()->user()->can('user.delete') && !auth()->user()->can('user.edit')) {
-            abort(403, 'No tiene permiso para realizar esta acción.');
+        if (!auth()->user()->can('user.edit') && !auth()->user()->can('equipos.edit') && !auth()->user()->can('super.admin')) {
+            return response()->json(['success' => false, 'message' => 'No tiene permiso para realizar esta acción.'], 403);
         }
         set_time_limit(600);
         ini_set('memory_limit', '512M');
@@ -1278,12 +1278,61 @@ class EquipoController extends Controller
     }
 
     /**
+     * Delete a specific document from an equipo
+     */
+    public function deleteDoc(Request $request, $id)
+    {
+        if (!auth()->user()->can('user.edit') && !auth()->user()->can('equipos.edit') && !auth()->user()->can('super.admin')) {
+            return response()->json(['success' => false, 'message' => 'No tiene permiso para realizar esta acción.'], 403);
+        }
+
+        $request->validate([
+            'doc_type' => 'required|in:propiedad,poliza,rotc,racda,adicional',
+        ]);
+
+        $equipo = Equipo::with('documentacion')->findOrFail($id);
+        $doc = $equipo->documentacion;
+
+        if (!$doc) {
+            return response()->json(['success' => false, 'message' => 'No existe documentación para este equipo.'], 404);
+        }
+
+        $type = $request->input('doc_type');
+
+        $fieldMap = [
+            'propiedad' => 'LINK_DOC_PROPIEDAD',
+            'poliza'    => 'LINK_POLIZA_SEGURO',
+            'rotc'      => 'LINK_ROTC',
+            'racda'     => 'LINK_RACDA',
+            'adicional' => 'LINK_DOC_ADICIONAL',
+        ];
+
+        $field = $fieldMap[$type] ?? null;
+
+        if (!$field) {
+            return response()->json(['success' => false, 'message' => 'Tipo de documento no válido.'], 400);
+        }
+
+        // Clear the link field
+        $doc->update([$field => null]);
+
+        // Clear dashboard cache
+        \Illuminate\Support\Facades\Cache::forget('dashboard_total_alerts');
+        \Illuminate\Support\Facades\Cache::forget('dashboard_expired_list_v3');
+
+        Log::info("Documento '{$type}' eliminado del equipo ID {$id} por usuario " . auth()->id());
+
+        return response()->json(['success' => true, 'message' => 'Documento eliminado correctamente.']);
+    }
+
+
+    /**
      * Update metadata for a specific document type
      */
     public function updateMetadata(Request $request, $id)
     {
-        if (!auth()->user()->can('user.delete') && !auth()->user()->can('user.edit')) {
-            abort(403, 'No tiene permiso para realizar esta acción.');
+        if (!auth()->user()->can('user.edit') && !auth()->user()->can('equipos.edit') && !auth()->user()->can('super.admin')) {
+            return response()->json(['success' => false, 'message' => 'No tiene permiso para realizar esta acción.'], 403);
         }
         $equipo = Equipo::with('documentacion')->findOrFail($id);
         $type = $request->input('doc_type');

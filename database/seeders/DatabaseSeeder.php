@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -23,12 +23,14 @@ class DatabaseSeeder extends Seeder
         ]);
 
         \App\Models\Usuario::create([
-            'NOMBRE_COMPLETO' => 'Francisco Sanchez',
-            'CORREO_ELECTRONICO' => 'fsanchez@cvidalsa27.com',
-            'PASSWORD_HASH' => Hash::make('12345678'),
-            'ID_ROL' => 1, // SUPER ADMIN
-            'NIVEL_ACCESO' => 1,
-            'ESTATUS' => 'ACTIVO',
+            'NOMBRE_COMPLETO'      => 'Francisco Sanchez',
+            'CORREO_ELECTRONICO'   => 'fsanchez@cvidalsa27.com',
+            'PASSWORD_HASH'        => Hash::make('12345678'),
+            'ID_ROL'               => 1, // SUPER ADMIN
+            'ID_FRENTE_ASIGNADO'   => 1, // Primer frente creado por FrentesSeeder
+            'NIVEL_ACCESO'         => 1, // Global
+            'ESTATUS'              => 'ACTIVO',
+            'PERMISOS'             => ['super.admin'],
         ]);
     }
 }

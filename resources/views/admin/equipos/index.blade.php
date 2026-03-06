@@ -13,7 +13,7 @@
 </style>
 
 
-    <div style="display: flex; justify-content: space-between; align-items: center;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <h1 class="page-title">
             <span class="page-title-line2" style="color: #000;">Gestión de Equipos y Maquinaria</span>
         </h1>
