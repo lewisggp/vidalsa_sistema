@@ -45,10 +45,10 @@
         <div class="activity-actions" style="display: flex; gap: 6px; flex-shrink: 0; align-items: center;">
             @if($puedeRecibir)
                 <button type="button"
-                    onclick="recibirMovilizacion({{ $activity->ID_MOVILIZACION }}, this)"
+                    onclick="iniciarRecepcionDesdeDashboard({{ $activity->ID_MOVILIZACION }}, '{{ addslashes($activity->frenteDestino->NOMBRE_FRENTE ?? '') }}', '{{ addslashes($activity->frenteDestino->SUBDIVISIONES ?? '') }}', {{ $activity->ID_FRENTE_DESTINO }})"
                     class="btn-recibir-dashboard"
-                    title="Confirmar recepción rápida"
-                    style="background: rgb(0, 103, 177); border: none; color: white; padding: 4px 8px; height: 32px; border-radius: 8px; font-weight: 800; display: flex; align-items: center; gap: 5px; cursor: default;">
+                    title="Confirmar recepción"
+                    style="background: #1e293b; border: none; color: white; padding: 4px 8px; height: 32px; border-radius: 8px; font-weight: 800; display: flex; align-items: center; gap: 5px; cursor: default;">
                     <i class="material-icons" style="font-size: 16px;">check_circle</i>
                     <span style="font-size: 10px;">RECIBIR</span>
                 </button>

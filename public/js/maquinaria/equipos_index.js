@@ -505,6 +505,14 @@ window.loadEquipos = function (url = null, silent = false) {
             if (statsMantenimiento)
                 statsMantenimiento.textContent = data.stats.mantenimiento;
 
+            // Sincronizar pills móviles
+            const mTotal = document.getElementById("mobile_stats_total");
+            const mInop  = document.getElementById("mobile_stats_inactivos");
+            const mMant  = document.getElementById("mobile_stats_mantenimiento");
+            if (mTotal) mTotal.textContent = data.stats.total;
+            if (mInop)  mInop.textContent  = data.stats.inactivos;
+            if (mMant)  mMant.textContent  = data.stats.mantenimiento;
+
             const distroContainer = document.getElementById(
                 "distributionStatsContainer",
             );
@@ -1209,7 +1217,7 @@ window.openAnchorModal = async function (event) {
                     hideCancel: true,
                 });
             } else {
-                alert(data.error || "Error al anclar equipos");
+                showModal({ type: 'error', title: 'Error', message: data.error || 'Error al anclar equipos.', confirmText: 'Cerrar', hideCancel: true });
             }
         } catch (error) {
             console.error(error);
@@ -1234,10 +1242,24 @@ window.updateLocalStats = function (oldStatus, newStatus) {
         }
     };
 
+    // Espejo: actualizar también las pills móviles
+    const adjustMirror = (mobileId, amount) => {
+        const el = document.getElementById(mobileId);
+        if (el) {
+            let val = parseInt(el.textContent.replace(/\D/g, "")) || 0;
+            val += amount;
+            el.textContent = val < 0 ? 0 : val;
+        }
+    };
+
     if (oldStatus === "OPERATIVO") adjust(elOper, -1);
     if (oldStatus === "INOPERATIVO" || oldStatus === "DESINCORPORADO")
         adjust(elInop, -1);
     if (oldStatus === "EN MANTENIMIENTO") adjust(elMant, -1);
+
+    // Espejo móvil
+    if (oldStatus === "INOPERATIVO" || oldStatus === "DESINCORPORADO") adjustMirror("mobile_stats_inactivos", -1);
+    if (oldStatus === "EN MANTENIMIENTO") adjustMirror("mobile_stats_mantenimiento", -1);
 
     if (newStatus === "OPERATIVO") adjust(elOper, 1);
     if (newStatus === "INOPERATIVO" || newStatus === "DESINCORPORADO")

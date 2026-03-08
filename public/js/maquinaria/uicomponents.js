@@ -607,9 +607,11 @@ window.selectAdvancedFilter = function (key, value) {
         if (btn) btn.style.display = value ? "block" : "none";
     }
 
-    // Trigger equipos load if function exists
-    if (typeof window.loadEquipos === "function") {
+    // Dispatch al módulo activo según el DOM (no por typeof — ambas funciones siempre existen)
+    if (document.getElementById('equiposTableBody') && typeof window.loadEquipos === 'function') {
         window.loadEquipos();
+    } else if (document.getElementById('movilizacionesTableBody') && typeof window.loadMovilizaciones === 'function') {
+        window.loadMovilizaciones();
     }
 };
 
@@ -659,9 +661,11 @@ window.clearAdvancedFilters = function () {
         if (el) el.checked = false;
     });
 
-    // Trigger reload if function exists
-    if (typeof window.loadEquipos === "function") {
+    // Dispatch al módulo activo según el DOM
+    if (document.getElementById('equiposTableBody') && typeof window.loadEquipos === 'function') {
         window.loadEquipos();
+    } else if (document.getElementById('movilizacionesTableBody') && typeof window.loadMovilizaciones === 'function') {
+        window.loadMovilizaciones();
     }
 };
 

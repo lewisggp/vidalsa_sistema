@@ -406,7 +406,7 @@
 <script>
 Chart.register(ChartDataLabels);
 // Paleta corporativa: variada y profunda
-const COLORES = {
+var COLORES = {
     'GASOIL':       '#003a70',   // azul marino
     'GASOLINA':     '#c41c00',   // rojo intenso
     'ACEITE':       '#0077cc',   // azul eléctrico
@@ -414,19 +414,19 @@ const COLORES = {
     'REFRIGERANTE': '#00838f',   // teal
     'OTRO':         '#546e7a',   // gris azulado
 };
-const TIPO_LABEL = {
+var TIPO_LABEL = {
     'GASOIL':'Gasoil','GASOLINA':'Gasolina','ACEITE':'Aceite',
     'CAUCHO':'Caucho','REFRIGERANTE':'Refrigerante','OTRO':'Otro'
 };
 
-let chartFrente = null, chartTipoEq = null, chartEqFrente = null, chartCauchoModelo = null;
+var chartFrente = null, chartTipoEq = null, chartEqFrente = null, chartCauchoModelo = null;
 
 function getParams() {
-    const p = new URLSearchParams();
-    const frente = document.getElementById('fFrente').value;
-    const tipo   = document.getElementById('fTipo').value;
-    const desde  = document.getElementById('fDesde').value;
-    const hasta  = document.getElementById('fHasta').value;
+    var p = new URLSearchParams();
+    var frente = document.getElementById('fFrente') ? document.getElementById('fFrente').value : '';
+    var tipo   = document.getElementById('fTipo') ? document.getElementById('fTipo').value : '';
+    var desde  = document.getElementById('fDesde') ? document.getElementById('fDesde').value : '';
+    var hasta  = document.getElementById('fHasta') ? document.getElementById('fHasta').value : '';
     if (frente) p.set('id_frente', frente);
     if (tipo)   p.set('tipo', tipo);
     if (desde)  p.set('desde', desde);
@@ -1075,7 +1075,7 @@ window.descargarPanelInoperativos = function() {
 
 
 // ── TOP EQUIPOS — Grid de tarjetas compactas ───────────────────────
-let _rankingData = [];
+var _rankingData = [];
 function renderRanking(datos) {
     hide('loadingRanking');
     _rankingData = datos || [];
@@ -1233,7 +1233,7 @@ function descargarRanking() {
 }
 
 // ── TODOS LOS EQUIPOS — Tabla completa con buscador ─────────────━
-let _todosData = [];
+var _todosData = [];
 
 function renderTodosEquipos(datos) {
     hide('loadingTodosEq');
@@ -1281,7 +1281,7 @@ function filtrarTablaEquipos(q) {
     ));
 }
 
-let _sortDir = -1; // -1=desc, 1=asc
+var _sortDir = -1; // -1=desc, 1=asc
 function sortTabla(col) {
     _sortDir *= -1;
     const keys = ['tipo', 'identificadores', 'MARCA', 'despachos', 'total'];
@@ -1920,7 +1920,17 @@ function descargarPanelEspecFrente(nombre) {
 </script>
 <script src="{{ asset('js/maquinaria/consumibles_graficos.js') }}?v=2.0"></script>
 <script>
+    console.log("🟢 [graficos.blade] Inline script final inyectado y ejecutándose.");
+    
     // Carga inicial de datos — se ejecuta tras cargar todos los scripts
-    if (typeof cargarDatos === 'function') cargarDatos();
+    if (typeof window.cargarDatos === 'function') {
+        console.log("🟢 [graficos.blade] window.cargarDatos existe. Llamando ahora...");
+        window.cargarDatos();
+    } else if (typeof cargarDatos === 'function') {
+        console.log("🟢 [graficos.blade] cargarDatos (local) existe. Llamando ahora...");
+        cargarDatos();
+    } else {
+        console.error("🔴 [graficos.blade] ERROR: cargarDatos NO existe.");
+    }
 </script>
 @endsection

@@ -410,7 +410,42 @@
 
         <!-- Advanced Filter Logic migrated to equipos_index.js -->
     </div>
+
+    {{-- ── $hasFilter: definido aquí para estar disponible tanto en el bloque móvil como en el sidebar ── --}}
+    @php
+        $hasFilter = request('search_query') || request('id_frente') || request('id_tipo')
+                  || request('modelo') || request('marca') || request('anio')
+                  || request('categoria') || request('estado')
+                  || request('filter_propiedad') || request('filter_poliza')
+                  || request('filter_rotc') || request('filter_racda');
+    @endphp
+
+    {{-- ── Stats compactas solo en móvil ── --}}
+    <div class="equipos-mobile-stats">
+
+        <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; opacity: 0.75; margin-bottom: 6px; display: flex; align-items: center; gap: 5px;">
+            <i class="material-icons" style="font-size: 13px;">pie_chart</i>
+            Consolidado de Equipos
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <div onclick="filterByStatus('')" class="eq-mobile-stat-pill eq-pill-total">
+                <span id="mobile_stats_total">{{ $hasFilter ? $stats['total'] : '--' }}</span>
+                <span>TOTAL</span>
+            </div>
+            <div onclick="filterByStatus('INOPERATIVO')" class="eq-mobile-stat-pill eq-pill-inop">
+                <i class="material-icons" style="font-size: 15px;">cancel</i>
+                <span id="mobile_stats_inactivos">{{ $hasFilter ? $stats['inactivos'] : '--' }}</span>
+                <span>Inoperativos</span>
+            </div>
+            <div onclick="filterByStatus('EN MANTENIMIENTO')" class="eq-mobile-stat-pill eq-pill-mant">
+                <i class="material-icons" style="font-size: 15px;">engineering</i>
+                <span id="mobile_stats_mantenimiento">{{ $hasFilter ? $stats['mantenimiento'] : '--' }}</span>
+            </div>
+        </div>
+    </div>
+
     <div class="custom-scrollbar-container" style="margin-top: 5px;">
+
         <table class="admin-table table-equipos-mobile" style="width: 100%; border-collapse: separate; border-spacing: 0 10px;">
             <thead>
                 <tr class="table-row-header">
@@ -444,15 +479,9 @@
 
 <!-- Right Column: Simple Counter -->
 <div class="counter-sidebar" style="position: sticky; top: 20px; display: flex; flex-direction: column; gap: 15px;">
-    @php
-        $hasFilter = request('search_query') || request('id_frente') || request('id_tipo')
-                  || request('modelo') || request('marca') || request('anio')
-                  || request('categoria') || request('estado')
-                  || request('filter_propiedad') || request('filter_poliza')
-                  || request('filter_rotc') || request('filter_racda');
-    @endphp
-    
+
     <!-- Main Total Card -->
+
     <div style="background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%); border-radius: 12px; padding: 15px; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; overflow: hidden;">
         <!-- Decorative Icon -->
         <i class="material-icons" style="position: absolute; right: -15px; bottom: -15px; font-size: 80px; opacity: 0.1; transform: rotate(-15deg);">agriculture</i>

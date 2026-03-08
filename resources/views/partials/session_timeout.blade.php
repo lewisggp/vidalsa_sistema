@@ -3,7 +3,7 @@
     <div id="sessionTimeoutModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center; backdrop-filter: blur(4px);">
         <div style="background: white; padding: 30px; border-radius: 16px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
             <h3 style="margin: 0 0 10px; color: #1e293b; font-size: 20px; font-weight: 700;">Tu sesión está por expirar</h3>
-            <p style="margin: 0 0 25px; color: #64748b; font-size: 15px; line-height: 1.5;">Por seguridad, tu sesión se cerrará automáticamente en <strong id="sessionCountdown" style="color: #dc2626;">120</strong> segundos debido a inactividad.</p>
+            <p style="margin: 0 0 25px; color: #64748b; font-size: 15px; line-height: 1.5;">Por seguridad, tu sesión se cerrará automáticamente en <strong id="sessionCountdown" style="color: #dc2626;">60</strong> segundos debido a inactividad.</p>
             
             <div style="display: flex; flex-direction: column; gap: 10px;">
                 <button id="btnExtendSession" onclick="extendSession()" style="width: 100%; padding: 12px; background: var(--maquinaria-blue); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 15px; transition: background 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 103, 177, 0.3); cursor: default;">
@@ -15,18 +15,20 @@
 
     <script>
         /**
-         * Session Timeout Manager (Corrected)
+         * Session Timeout Manager
+         * - Sesión: lee SESSION_LIFETIME de Laravel (local=10min, prod=120min)
          * - Throttle de 30s: actividad real no reinicia el timer en cada micro-evento
-         * - Solo escucha: click y keydown (elimina scroll/touchstart como ruido)
-         * - Ping real al servidor cada 5 minutos para verificar sesión backend
-         * - Contador del modal sincronizado con WARNING_DURATION_SECONDS
+         * - Solo escucha: click y keydown (sin scroll/touchstart para evitar ruido)
+         * - Ping al servidor al 80% del tiempo de sesión (dinámico)
+         * - Modal de aviso aparece con 60s de antelación al cierre
          */
         (function() {
             // ── Configuración ──────────────────────────────────────────
             const SESSION_LIFETIME_MS   = {{ config('session.lifetime') ?? 20 }} * 60 * 1000;
-            const WARNING_DURATION_SEC  = 120;   // Avisar 2 minutos antes
+            const WARNING_DURATION_SEC  = 60;    // Avisar 1 minuto antes
             const ACTIVITY_THROTTLE_MS  = 30000; // Mínimo 30s entre reinicios por actividad
-            const SERVER_PING_MS        = 5 * 60 * 1000; // Ping al servidor cada 5 minutos
+            // Ping cada 80% del tiempo de sesión (ej: 8min si sesión=10min, 96min si sesión=120min)
+            const SERVER_PING_MS        = Math.floor(SESSION_LIFETIME_MS * 0.80);
 
             // ── Estado interno ──────────────────────────────────────────
             let sessionExpirationTime;
@@ -41,7 +43,7 @@
                 startCheckInterval();
                 startServerPing();
                 setupEventListeners();
-                console.log(`✅ Session Monitor: Activo (Expira en ${SESSION_LIFETIME_MS / 60000}m, avisa con ${WARNING_DURATION_SEC}s de antelación)`);
+                console.log(`✅ Session Monitor: Activo | Sesión=${SESSION_LIFETIME_MS/60000}min | Aviso=${WARNING_DURATION_SEC}s | Ping=${SERVER_PING_MS/60000}min`);
             }
 
             // ── Timer Frontend ──────────────────────────────────────────
@@ -169,7 +171,18 @@
                     })
                     .catch(error => {
                         console.error('Error al renovar sesión:', error);
-                        alert('No se pudo renovar la sesión. Por favor recarga la página.');
+                        if (typeof showModal === 'function') {
+                            showModal({
+                                type: 'error',
+                                title: 'Error de Sesión',
+                                message: 'No se pudo renovar la sesión. Por favor recarga la página.',
+                                confirmText: 'Recargar',
+                                hideCancel: true,
+                                onConfirm: () => window.location.reload()
+                            });
+                        } else {
+                            window.location.reload();
+                        }
                     })
                     .finally(() => {
                         if (typeof window.hidePreloader === 'function') window.hidePreloader();

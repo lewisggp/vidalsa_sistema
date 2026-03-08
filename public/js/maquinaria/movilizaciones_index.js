@@ -24,55 +24,65 @@ window.selectMovilizacionFilter = function (type, value) {
     window.loadMovilizaciones();
 };
 
-
 window.loadMovilizaciones = function (url = null) {
     const tableBody = document.getElementById('movilizacionesTableBody');
     if (!tableBody) return;
 
-    let baseUrl = url || window.location.pathname;
-    const searchInput = document.getElementById('searchInput');
-    const frenteInput = document.querySelector('input[name="id_frente"]');
-    const tipoInput = document.querySelector('input[name="id_tipo"]');
+    // URL base siempre fija a /admin/movilizaciones para evitar problemas con
+    // window.location.pathname cuando se navega via SPA desde otras secciones.
+    let baseUrl = '/admin/movilizaciones';
 
-    // URL Construction
+    const container = tableBody.closest('.movilizaciones-main-card') || document;
+    const searchInput     = container.querySelector('#searchInput');
+    const frenteInput     = container.querySelector('input[name="id_frente"]');
+    const tipoInput       = container.querySelector('input[name="id_tipo"]');
+    const fechaDesde      = container.querySelector('#filterFechaDesde');
+    const fechaHasta      = container.querySelector('#filterFechaHasta');
+    const direccionFrente = container.querySelector('#filterDireccionFrente');
+
     const params = new URLSearchParams();
-    if (searchInput?.value) params.append('search', searchInput.value);
+    if (searchInput?.value)          params.append('search',           searchInput.value);
+    if (frenteInput?.value && frenteInput.value !== 'all')
+                                     params.append('id_frente',        frenteInput.value);
+    if (tipoInput?.value && tipoInput.value !== 'all')
+                                     params.append('id_tipo',          tipoInput.value);
+    if (fechaDesde?.value)           params.append('fecha_desde',      fechaDesde.value);
+    if (fechaHasta?.value)           params.append('fecha_hasta',      fechaHasta.value);
+    if (direccionFrente?.value)      params.append('direccion_frente', direccionFrente.value);
 
-    // Filter values
-    if (frenteInput?.value && frenteInput.value !== 'all') {
-        params.append('id_frente', frenteInput.value);
-    }
-    if (tipoInput?.value && tipoInput.value !== 'all') {
-        params.append('id_tipo', tipoInput.value);
-    }
-
-    // Date range filters
-    const fechaDesde = document.getElementById('filterFechaDesde');
-    const fechaHasta = document.getElementById('filterFechaHasta');
-    if (fechaDesde?.value) params.append('fecha_desde', fechaDesde.value);
-    if (fechaHasta?.value) params.append('fecha_hasta', fechaHasta.value);
-
-    // Maintain pagination if just switching pages via URL click
+    // Solo para paginación: extraer page de la url pasada como argumento
     if (url && url.includes('page=')) {
         try {
             const urlObj = new URL(url, window.location.origin);
             const page = urlObj.searchParams.get('page');
             if (page) params.set('page', page);
-            baseUrl = urlObj.pathname;
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error('[loadMovilizaciones] URL parse error:', e); }
     }
 
-    const finalUrl = baseUrl + (baseUrl.includes('?') ? '&' : '?') + params.toString();
+    const queryStr = params.toString();
+    const finalUrl = baseUrl + (queryStr ? '?' + queryStr : '');
+
+    console.log("🚀 [loadMovilizaciones] Inputs detectados:");
+    console.log("   - Frente:", frenteInput?.value);
+    console.log("   - Tipo:", tipoInput?.value);
+    console.log("   - URL generada:", finalUrl);
+
     tableBody.style.opacity = '0.5';
     if (window.showPreloader) window.showPreloader();
 
     fetch(finalUrl, {
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json'
-        }
+            'Accept':           'application/json',
+            'Cache-Control':    'no-cache, no-store, must-revalidate',
+            'Pragma':           'no-cache'
+        },
+        cache: 'no-store'
     })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            return response.json();
+        })
         .then(data => {
             tableBody.innerHTML = data.html;
             tableBody.style.opacity = '1';
@@ -81,89 +91,29 @@ window.loadMovilizaciones = function (url = null) {
             if (paginationContainer) paginationContainer.innerHTML = data.pagination;
 
             const statsContainer = document.getElementById('statusStatsContainer');
-            if (statsContainer && data.statsHtml) {
-                statsContainer.innerHTML = data.statsHtml;
-            }
+            if (statsContainer && data.statsHtml) statsContainer.innerHTML = data.statsHtml;
 
-            // Update Global Transit Count (Purple Card)
             const totalTransitoEl = document.getElementById('totalTransitoCount');
-            if (totalTransitoEl && data.totalTransito !== undefined) {
+            if (totalTransitoEl && data.totalTransito !== undefined)
                 totalTransitoEl.innerText = data.totalTransito;
-            }
+
+            const mobileTransitoEl = document.getElementById('mobileTransitoCount');
+            if (mobileTransitoEl && data.totalTransito !== undefined)
+                mobileTransitoEl.innerText = data.totalTransito;
 
             window.history.pushState(null, '', finalUrl);
             if (window.hidePreloader) window.hidePreloader();
         })
         .catch(error => {
-            console.error('Error:', error);
+            console.error('[loadMovilizaciones] Error:', error);
             tableBody.style.opacity = '1';
             if (window.hidePreloader) window.hidePreloader();
         });
 };
 
-// ===========================================
-// RECEPCIÓN DE MOVILIZACIONES (Flujo Normal)
-// ===========================================
-
-/**
- * Inicia el proceso de recepción de un equipo en tránsito
- */
-window.iniciarRecepcion = function (idMovilizacion, nombreFrente, subdivisiones, idFrenteDestino) {
-    const modal = document.getElementById('recepcionModal');
-    const form = document.getElementById('formRecepcion');
-    const labelFrente = document.getElementById('modalFrenteNombre');
-    const inputUbicacion = document.getElementById('input_ubicacion_recepcion');
-
-    if (!modal || !form || !labelFrente) return;
-
-    // Configurar form
-    form.action = `/admin/movilizaciones/${idMovilizacion}/status`;
-    labelFrente.textContent = nombreFrente;
-    inputUbicacion.value = '';
-
-    // Configurar subdivisiones como sugerencias en el input de ubicación
-    const allSubs = (subdivisiones && subdivisiones.trim() !== '') ? subdivisiones.split(',').map(s => s.trim()).filter(Boolean) : [];
-    loadUbicacionSuggestions('ubicacion-suggestions', allSubs);
-
-    form.onsubmit = function (e) {
-        e.preventDefault();
-        const btn = document.getElementById('btnConfirmarRecepcion');
-        if (btn.disabled) return;
-
-        btn.disabled = true;
-        btn.innerHTML = '<i class="material-icons spin">sync</i> Procesando...';
-
-        const formData = new FormData(this);
-        fetch(this.action, {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    modal.style.display = 'none';
-                    window.loadMovilizaciones();
-                } else {
-                    // Mostrar error real del servidor al usuario
-                    alert('Error: ' + (data.error || 'No se pudo procesar la recepción'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error de comunicación con el servidor. Intente de nuevo.');
-            })
-            .finally(() => {
-                btn.disabled = false;
-                btn.innerHTML = 'Confirmar Recepción';
-            });
-    };
-
-    modal.style.display = 'flex';
-};
 
 // ===========================================
-// RECEPCIÓN DIRECTA (NUEVO)
+// RECEPCIÓN DIRECTA
 // ===========================================
 
 let rdEquiposSeleccionados = [];
@@ -202,10 +152,20 @@ window.cerrarRecepcionDirecta = function () {
 
 window.buscarEquiposRD = function () {
     const search = document.getElementById('rdSearchInput').value.trim();
-    if (search.length < 3) return alert('Ingrese al menos 3 caracteres');
-
     const list = document.getElementById('rdResultadosList');
     const container = document.getElementById('rdResultados');
+
+    if (search.length === 0) {
+        container.style.display = 'none';
+        list.innerHTML = '';
+        return;
+    }
+
+    if (search.length < 4) {
+        // Just wait until they type more, no alert
+        return;
+    }
+
     list.innerHTML = '<div style="padding: 15px; text-align: center; color: #94a3b8;"><i class="material-icons spin">sync</i> Buscando...</div>';
     container.style.display = 'block';
 
@@ -430,22 +390,24 @@ function rdToggleVisual(card, isSelected) {
     }
 }
 
-
-
-
 window.confirmarRecepcionDirecta = function () {
     const ids = rdEquiposSeleccionados.map(s => s.ID_EQUIPO);
     const idFrente = document.getElementById('rdFrenteInput').value;
     const ubicacion = document.getElementById('rdUbicacionInput').value;
 
-    if (ids.length === 0) return alert('Seleccione al menos un equipo');
-
+    if (ids.length === 0) {
+        if (typeof showModal === 'function') {
+            showModal({ type: 'warning', title: 'Atención', message: 'Seleccione al menos un equipo para continuar.', confirmText: 'Entendido', hideCancel: true });
+        }
+        return;
+    }
 
     const btn = document.getElementById('btnConfirmarRD');
     if (btn.disabled) return;
 
     btn.disabled = true;
     btn.innerHTML = '<i class="material-icons spin">sync</i> Procesando...';
+    if (window.showPreloader) window.showPreloader();
 
     const csrf = document.querySelector('meta[name="csrf-token"]').content;
 
@@ -466,19 +428,26 @@ window.confirmarRecepcionDirecta = function () {
         .then(data => {
             if (data.success) {
                 window.cerrarRecepcionDirecta();
-                window.loadMovilizaciones();
-                alert(data.message);
+                if (typeof window.loadMovilizaciones === 'function') window.loadMovilizaciones();
+                if (typeof showModal === 'function') {
+                    showModal({ type: 'success', title: 'Recepción Exitosa', message: data.message, confirmText: 'Aceptar', hideCancel: true });
+                }
             } else {
-                alert('Error: ' + data.error);
+                if (typeof showModal === 'function') {
+                    showModal({ type: 'error', title: 'Error', message: data.error || 'No se pudo procesar la recepción.', confirmText: 'Cerrar', hideCancel: true });
+                }
             }
         })
         .catch(e => {
             console.error(e);
-            alert('Error inesperado al procesar');
+            if (typeof showModal === 'function') {
+                showModal({ type: 'error', title: 'Error de Conexión', message: 'Error de comunicación con el servidor. Intente de nuevo.', confirmText: 'Cerrar', hideCancel: true });
+            }
         })
         .finally(() => {
             btn.disabled = false;
             btn.innerHTML = '<i class="material-icons">check_circle</i> Confirmar Recepción';
+            if (window.hidePreloader) window.hidePreloader();
         });
 };
 
@@ -489,7 +458,11 @@ window.confirmarRecepcionDirecta = function () {
 function initMovilizacionesListeners() {
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
-        searchInput.addEventListener('keyup', function () {
+        // Remover listener previo para evitar acumulación en navegación SPA
+        const newInput = searchInput.cloneNode(true);
+        searchInput.parentNode.replaceChild(newInput, searchInput);
+
+        newInput.addEventListener('keyup', function () {
             const val = this.value;
             const clearBtn = document.getElementById('btn_clear_search');
             if (clearBtn) clearBtn.style.display = (val.length > 0) ? 'block' : 'none';
@@ -501,25 +474,39 @@ function initMovilizacionesListeners() {
         });
     }
 }
-
 function initMovilizaciones() {
     if (!document.getElementById('movilizacionesTableBody')) return;
+    // Sincronizar estado del panel con el DOM real
+    const panel = document.getElementById('advancedFilterPanel');
+    if (panel) window.advancedFilterOpen = panel.style.display === 'block';
     initMovilizacionesListeners();
 }
+// ── Inicialización en carga directa (F5 / URL directa) ──────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+    if (document.getElementById('movilizacionesTableBody')) {
+        initMovilizaciones();
+    }
+});
 
-// Register module
-if (typeof ModuleManager !== 'undefined') {
-    ModuleManager.register('movilizaciones',
-        () => document.getElementById('movilizacionesTableBody') !== null,
-        initMovilizaciones
-    );
-}
-
+// ── Inicialización vía SPA (navegar desde otra sección) ─────────────────────
 window.addEventListener('spa:contentLoaded', function () {
     if (document.getElementById('movilizacionesTableBody')) {
         initMovilizaciones();
     }
 });
+
+// ── Listener global del evento dropdown-selection (disparado por selectOption) ──
+// Esto garantiza que los filtros de dropdown regulares funcionen.
+window.addEventListener('dropdown-selection', function (e) {
+    // Solo actuar si estamos en la página de movilizaciones
+    if (!document.getElementById('movilizacionesTableBody')) return;
+
+    const filterName = e.detail && e.detail.inputName;
+    if (filterName === 'id_frente' || filterName === 'id_tipo') {
+        window.loadMovilizaciones();
+    }
+});
+
 
 // ─── Date Filter Toggle ─────────────────────────────────────────────────────
 window.advancedFilterOpen = false;
@@ -545,19 +532,24 @@ window.toggleAdvancedFilter = function (e) {
     }
 };
 
-// Cerrar el panel al hacer click fuera
-document.addEventListener('click', function (e) {
-    const panel = document.getElementById('advancedFilterPanel');
-    const btn = document.getElementById('btnAdvancedFilter');
-    if (!panel || !window.advancedFilterOpen) return;
-    if (!panel.contains(e.target) && !btn.contains(e.target)) {
-        panel.style.display = 'none';
-        btn.style.background = 'white';
-        btn.style.borderColor = '#cbd5e0';
-        btn.style.color = '#64748b';
-        window.advancedFilterOpen = false;
-    }
-});
+// Cerrar el panel al hacer click fuera (registrado una sola vez)
+if (!window._mvPanelClickListenerRegistered) {
+    window._mvPanelClickListenerRegistered = true;
+    document.addEventListener('click', function (e) {
+        const panel = document.getElementById('advancedFilterPanel');
+        const btn = document.getElementById('btnAdvancedFilter');
+        if (!panel || !window.advancedFilterOpen) return;
+        if (!panel.contains(e.target) && btn && !btn.contains(e.target)) {
+            panel.style.display = 'none';
+            if (btn) {
+                btn.style.background = 'white';
+                btn.style.borderColor = '#cbd5e0';
+                btn.style.color = '#64748b';
+            }
+            window.advancedFilterOpen = false;
+        }
+    });
+}
 
 
 window.clearDateFilters = function () {
@@ -565,7 +557,55 @@ window.clearDateFilters = function () {
     const hasta = document.getElementById('filterFechaHasta');
     if (desde) desde.value = '';
     if (hasta) hasta.value = '';
+    // Resetear filtro de dirección
+    setDireccionFilter('', false);
     window.loadMovilizaciones();
+};
+
+// ─── Filtro Dirección Frente (Entrada / Salida) ──────────────────────────────
+window.setDireccionFilter = function (value, reload = true) {
+    const input = document.getElementById('filterDireccionFrente');
+    if (input) input.value = value;
+
+    // Estilos botón Todas
+    const btnTodas = document.getElementById('filterDireccionTodas');
+    if (btnTodas) {
+        const active = !value;
+        btnTodas.style.border = `1px solid ${active ? '#0067b1' : '#e2e8f0'}`;
+        btnTodas.style.background = active ? '#e1effa' : 'white';
+        btnTodas.style.color = active ? '#0067b1' : '#64748b';
+    }
+
+    // Estilos botón Entrada
+    const btnEntrada = document.getElementById('filterDireccionEntrada');
+    if (btnEntrada) {
+        const active = value === 'entrada';
+        btnEntrada.style.border = `1px solid ${active ? '#16a34a' : '#e2e8f0'}`;
+        btnEntrada.style.background = active ? '#dcfce7' : 'white';
+        btnEntrada.style.color = active ? '#16a34a' : '#64748b';
+    }
+
+    // Estilos botón Salida
+    const btnSalida = document.getElementById('filterDireccionSalida');
+    if (btnSalida) {
+        const active = value === 'salida';
+        btnSalida.style.border = `1px solid ${active ? '#dc2626' : '#e2e8f0'}`;
+        btnSalida.style.background = active ? '#fee2e2' : 'white';
+        btnSalida.style.color = active ? '#dc2626' : '#64748b';
+    }
+
+    // Actualizar color del botón principal del filtro avanzado
+    const btnAdv = document.getElementById('btnAdvancedFilter');
+    if (btnAdv) {
+        const fechaDesde = document.getElementById('filterFechaDesde');
+        const fechaHasta = document.getElementById('filterFechaHasta');
+        const anyActive = value || fechaDesde?.value || fechaHasta?.value;
+        btnAdv.style.background = anyActive ? '#e1effa' : 'white';
+        btnAdv.style.borderColor = anyActive ? '#0067b1' : '#cbd5e0';
+        btnAdv.style.color = anyActive ? '#0067b1' : '#64748b';
+    }
+
+    if (reload) window.loadMovilizaciones();
 };
 
 // ─── Sugerencias de Ubicación ────────────────────────────────────────────────

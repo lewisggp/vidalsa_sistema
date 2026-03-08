@@ -1,4 +1,4 @@
-  CO<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -361,6 +361,12 @@
             // GLOBAL EVENT DELEGATION FOR EQUIPOS MODULE (SPA COMPATIBLE)
             // This ensures that "Acciones" and "Filter" buttons work even after AJAX content replacement
             window.equiposGlobalClickHandler = function(event) {
+                // GUARD: Este handler solo actúa en la página de Equipos
+                // (donde existe #splitDropdownMenu). En otras páginas (movilizaciones, etc.)
+                // salimos inmediatamente para no interferir con sus propios handlers.
+                const isEquiposPage = !!document.getElementById('splitDropdownMenu');
+                if (!isEquiposPage) return;
+
                 // Toggle Acciones Dropdown
                 if (event.target.closest('#btnAcciones')) {
                     event.preventDefault();
@@ -368,7 +374,6 @@
                     const menu = document.getElementById('splitDropdownMenu');
                     const panel = document.getElementById('advancedFilterPanel');
                     
-                    // Close other panel if open
                     if (panel) panel.style.display = 'none'; 
                     
                     if (menu) {
@@ -385,7 +390,6 @@
                     const panel = document.getElementById('advancedFilterPanel');
                     const menu = document.getElementById('splitDropdownMenu');
                     
-                    // Close other menu if open
                     if (menu) menu.style.display = 'none'; 
                     
                     if (panel) {
@@ -395,7 +399,7 @@
                     return;
                 }
 
-                // Close when clicking outside
+                // Close when clicking outside (solo en página de equipos)
                 if (!event.target.closest('#advancedFilterPanel') && 
                     !event.target.closest('#splitDropdownMenu') &&
                     !event.target.closest('#btnAcciones') && 
@@ -436,8 +440,8 @@
     
     {{-- Core Scripts (Always Loaded) --}}
     <script src="{{ asset('js/maquinaria/module_manager.js') }}?v=2.0"></script>
-    <script src="{{ asset('js/maquinaria/uicomponents.js') }}?v=15.9"></script>
-    <script src="{{ asset('js/maquinaria/navegacion.js') }}?v=10.0"></script>
+    <script src="{{ asset('js/maquinaria/uicomponents.js') }}?v=16.2"></script>
+    <script src="{{ asset('js/maquinaria/navegacion.js') }}?v=10.2"></script>
     <script src="{{ asset('js/maquinaria/form_logic.js') }}?v=4.0"></script>
     <script src="{{ asset('js/maquinaria/equipo_catalog_linking.js') }}?v=3.0"></script>
     
@@ -449,7 +453,7 @@
     <script src="{{ asset('js/maquinaria/catalogo_create.js') }}?v=12.0"></script>
     <script src="{{ asset('js/maquinaria/equipos_index.js') }}?v=20.3"></script>
     <script src="{{ asset('js/maquinaria/catalogo_index.js') }}?v=3.6"></script>
-    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=6.0"></script>
+    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=6.10"></script>
     <script src="{{ asset('js/maquinaria/usuarios_index.js') }}?v=10.0"></script>
     <script src="{{ asset('js/maquinaria/fleet_dashboard.js') }}?v=105.3"></script>
 

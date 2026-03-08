@@ -12,7 +12,7 @@ class MovilizacionController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        // Permiso para MOVER equipos (Crear movilizaciones o recibir directamente sin despacho)
+        // Permiso para MOVER equipos (Crear movilizaciones o registrar recepción directa sin despacho previo)
         $this->middleware('can:equipos.assign')->only(['create', 'store', 'bulkStore', 'recepcionDirecta']);
     }
 
@@ -80,20 +80,27 @@ class MovilizacionController extends Controller
         }
 
         if ($request->filled('id_frente') && $request->id_frente !== 'all') {
-            $query->where(function ($q) use ($request) {
-                $q->where('ID_FRENTE_DESTINO', $request->id_frente)
-                    ->orWhere('ID_FRENTE_ORIGEN', $request->id_frente);
-            });
+            $direccion = $request->input('direccion_frente'); // 'entrada', 'salida', o vacío
+
+            if ($direccion === 'entrada') {
+                // Solo registros donde el frente seleccionado es el DESTINO (equipos que ENTRARON)
+                $query->where('ID_FRENTE_DESTINO', $request->id_frente);
+            } elseif ($direccion === 'salida') {
+                // Solo registros donde el frente seleccionado es el ORIGEN (equipos que SALIERON)
+                $query->where('ID_FRENTE_ORIGEN', $request->id_frente);
+            } else {
+                // Sin filtro de dirección: mostrar ambos (comportamiento original)
+                $query->where(function ($q) use ($request) {
+                    $q->where('ID_FRENTE_DESTINO', $request->id_frente)
+                        ->orWhere('ID_FRENTE_ORIGEN', $request->id_frente);
+                });
+            }
         }
 
         if ($request->filled('id_tipo') && $request->id_tipo !== 'all') {
             $query->whereHas('equipo', function ($q) use ($request) {
                 $q->where('id_tipo_equipo', $request->id_tipo);
             });
-        }
-
-        if ($request->filled('id_frente_origen')) {
-            $query->where('ID_FRENTE_ORIGEN', $request->id_frente_origen);
         }
 
         // Filtro por rango de fechas (FECHA_DESPACHO)
@@ -106,10 +113,42 @@ class MovilizacionController extends Controller
 
         $movilizaciones = $query->orderBy('FECHA_DESPACHO', 'desc')->paginate(12);
 
-        // Stats: Total In Transit & In Transit by Destination Front
-        $totalTransito = Movilizacion::where('ESTADO_MVO', 'TRANSITO')->count();
+        // Stats: Total In Transit — filtrado con los mismos criterios activos
+        $statsQuery = Movilizacion::where('ESTADO_MVO', 'TRANSITO');
 
-        $transitoPorFrente = Movilizacion::where('ESTADO_MVO', 'TRANSITO')
+        // Aplicar filtro de frente a las stats (mismo criterio que la tabla)
+        if ($request->filled('id_frente') && $request->id_frente !== 'all') {
+            $direccion = $request->input('direccion_frente');
+            if ($direccion === 'entrada') {
+                $statsQuery->where('ID_FRENTE_DESTINO', $request->id_frente);
+            } elseif ($direccion === 'salida') {
+                $statsQuery->where('ID_FRENTE_ORIGEN', $request->id_frente);
+            } else {
+                $statsQuery->where(function ($q) use ($request) {
+                    $q->where('ID_FRENTE_DESTINO', $request->id_frente)
+                      ->orWhere('ID_FRENTE_ORIGEN', $request->id_frente);
+                });
+            }
+        }
+
+        // Aplicar filtro de tipo a las stats
+        if ($request->filled('id_tipo') && $request->id_tipo !== 'all') {
+            $statsQuery->whereHas('equipo', function ($q) use ($request) {
+                $q->where('id_tipo_equipo', $request->id_tipo);
+            });
+        }
+
+        // Aplicar filtro de fechas a las stats
+        if ($request->filled('fecha_desde')) {
+            $statsQuery->whereDate('FECHA_DESPACHO', '>=', $request->fecha_desde);
+        }
+        if ($request->filled('fecha_hasta')) {
+            $statsQuery->whereDate('FECHA_DESPACHO', '<=', $request->fecha_hasta);
+        }
+
+        $totalTransito = (clone $statsQuery)->count();
+
+        $transitoPorFrente = (clone $statsQuery)
             ->join('frentes_trabajo', 'movilizacion_historial.ID_FRENTE_DESTINO', '=', 'frentes_trabajo.ID_FRENTE')
             ->select('frentes_trabajo.NOMBRE_FRENTE', DB::raw('count(*) as total'))
             ->groupBy('frentes_trabajo.NOMBRE_FRENTE')
@@ -118,9 +157,6 @@ class MovilizacionController extends Controller
 
         $frentes = FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')->orderBy('NOMBRE_FRENTE')->get();
         $allTipos = \App\Models\TipoEquipo::orderBy('nombre')->get();
-
-        // Para recepción directa: todos los frentes con sus subdivisiones
-        $allFrentes = FrenteTrabajo::orderBy('NOMBRE_FRENTE')->get();
 
         // Check if JSON specifically requested (for filters)
         if ($request->wantsJson()) {
@@ -153,7 +189,7 @@ class MovilizacionController extends Controller
             ]);
         }
 
-        return view('admin.movilizaciones.index', compact('movilizaciones', 'totalTransito', 'transitoPorFrente', 'frentes', 'allTipos', 'allFrentes'));
+        return view('admin.movilizaciones.index', compact('movilizaciones', 'totalTransito', 'transitoPorFrente', 'frentes', 'allTipos'));
     }
 
     public function create()
@@ -266,84 +302,6 @@ class MovilizacionController extends Controller
     }
 
     /**
-     * Confirmar recepción de una movilización en tránsito (RECIBIR)
-     */
-    public function updateStatus(Request $request, $id)
-    {
-        DB::beginTransaction();
-        try {
-            $mov = Movilizacion::with('equipo', 'frenteOrigen', 'frenteDestino')->findOrFail($id);
-            $usuario = auth()->user();
-
-            $request->validate([
-                'status' => 'required|in:RECIBIDO',
-                'DETALLE_UBICACION' => 'nullable|string|max:150'
-            ]);
-
-            // Validar autorización
-            $esGlobal = ($usuario->NIVEL_ACCESO == 1);
-            $usuarioFrente = $usuario->ID_FRENTE_ASIGNADO;
-
-            if (!$esGlobal) {
-                if ($request->status == 'RECIBIDO' && $usuarioFrente != $mov->ID_FRENTE_DESTINO) {
-                    $errorMsg = 'Solo el frente destino puede confirmar la recepción';
-                    if ($request->ajax()) {
-                        return response()->json(['success' => false, 'error' => $errorMsg], 403);
-                    }
-                    abort(403, $errorMsg);
-                }
-            }
-
-            // Validar que esté en tránsito
-            if ($mov->ESTADO_MVO != 'TRANSITO') {
-                $errorMsg = 'Esta movilización ya fue procesada';
-                if ($request->ajax()) {
-                    return response()->json(['success' => false, 'error' => $errorMsg], 422);
-                }
-                return back()->withErrors(['error' => $errorMsg]);
-            }
-
-            // 1. Actualizar movilización
-            $mov->update([
-                'ESTADO_MVO' => 'RECIBIDO',
-                'FECHA_RECEPCION' => now(),
-                'DETALLE_UBICACION' => $request->DETALLE_UBICACION,
-                'USUARIO_RECEPCION' => $usuario->CORREO_ELECTRONICO ?? 'SISTEMA',
-            ]);
-
-            // 2. Actualizar equipo: confirmar en el frente destino
-            $mov->equipo->update([
-                'ID_FRENTE_ACTUAL' => $mov->ID_FRENTE_DESTINO,
-                'DETALLE_UBICACION_ACTUAL' => $request->DETALLE_UBICACION,
-                'CONFIRMADO_EN_SITIO' => 1
-            ]);
-
-            // Mensaje personalizado
-            $nombreUbicacion = $mov->frenteDestino->NOMBRE_FRENTE;
-            if ($request->filled('DETALLE_UBICACION')) {
-                $nombreUbicacion .= ' (' . $request->DETALLE_UBICACION . ')';
-            }
-            $message = 'Equipo recibido exitosamente en ' . $nombreUbicacion;
-
-            DB::commit();
-
-            // Responder según tipo de petición
-            if ($request->ajax()) {
-                return response()->json(['success' => true, 'message' => $message]);
-            }
-            return back()->with('success', $message);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Error en updateStatus: ' . $e->getMessage());
-            if ($request->ajax()) {
-                return response()->json(['success' => false, 'error' => 'Error al actualizar: ' . $e->getMessage()], 500);
-            }
-            return back()->withErrors(['error' => 'Error al actualizar: ' . $e->getMessage()]);
-        }
-    }
-
-    /**
      * RECEPCIÓN DIRECTA: Registrar equipos que llegan sin movilización previa
      */
     public function recepcionDirecta(Request $request)
@@ -364,10 +322,6 @@ class MovilizacionController extends Controller
             $now = now();
             $frenteDestino = FrenteTrabajo::findOrFail($request->ID_FRENTE_DESTINO);
 
-            // Generar código de control para este lote
-            $lastLog = Movilizacion::latest('ID_MOVILIZACION')->lockForUpdate()->first();
-            $nextId = $lastLog ? ($lastLog->ID_MOVILIZACION + 1) : 1;
-
             $equipos = \App\Models\Equipo::with('frenteActual')
                 ->whereIn('ID_EQUIPO', $request->ids)
                 ->get();
@@ -375,7 +329,7 @@ class MovilizacionController extends Controller
             $insertData = [];
             foreach ($equipos as $equipo) {
                 $insertData[] = [
-                    'CODIGO_CONTROL' => $nextId,
+                    'CODIGO_CONTROL' => null, // Recepciones directas no tienen código de control
                     'ID_EQUIPO' => $equipo->ID_EQUIPO,
                     'ID_FRENTE_ORIGEN' => $equipo->ID_FRENTE_ACTUAL ?? $request->ID_FRENTE_DESTINO,
                     'ID_FRENTE_DESTINO' => $request->ID_FRENTE_DESTINO,
@@ -431,13 +385,40 @@ class MovilizacionController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('SERIAL_CHASIS', 'like', "%{$search}%")
-                    ->orWhere('CODIGO_PATIO', 'like', "%{$search}%")
-                    ->orWhereHas('documentacion', function ($qDoc) use ($search) {
-                        $qDoc->where('PLACA', 'like', "%{$search}%");
-                    });
-            });
+            $searchUpper = strtoupper(trim($search));
+
+            if (strpos($searchUpper, '#') !== false) {
+                // Mode: Tag Number Search
+                $tagSearch = str_replace('#', '', $searchUpper);
+                $query->where('NUMERO_ETIQUETA', 'like', "%{$tagSearch}%");
+
+            } elseif (strpos($searchUpper, '-') !== false) {
+                // Mode: Yard Code Search
+                $query->where('CODIGO_PATIO', 'like', "%{$searchUpper}%");
+
+            } else {
+                // Standard search — O/0 ambiguity applied ONLY to PLACA
+                $placaVariants = collect([
+                    $searchUpper,
+                    str_replace('O', '0', $searchUpper),
+                    str_replace('0', 'O', $searchUpper),
+                    str_replace(['O', '0'], ['0', 'O'], $searchUpper),
+                ])->unique()->values()->all();
+
+                $query->where(function ($q) use ($searchUpper, $placaVariants) {
+                    $q->where('SERIAL_CHASIS', 'like', "%{$searchUpper}%")
+                      ->orWhere('SERIAL_DE_MOTOR', 'like', "%{$searchUpper}%")
+                      ->orWhere('CODIGO_PATIO', 'like', "%{$searchUpper}%")
+                      ->orWhere('NUMERO_ETIQUETA', 'like', "%{$searchUpper}%")
+                      ->orWhereHas('documentacion', function ($d) use ($placaVariants) {
+                          $d->where(function ($pq) use ($placaVariants) {
+                              foreach ($placaVariants as $variant) {
+                                  $pq->orWhere('PLACA', 'like', "%{$variant}%");
+                              }
+                          });
+                      });
+                });
+            }
         }
 
         $equipos = $query->orderBy('CODIGO_PATIO')->limit(20)->get();

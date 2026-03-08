@@ -67,27 +67,48 @@ class EquipoController extends Controller
         }
 
         if ($search) {
-            // Smart Search
-            if (strpos($search, '#') !== false) {
-                // Mode: Tag Number Search (Clean # symbol)
-                $tagSearch = str_replace('#', '', $search);
+            $searchUpper = strtoupper(trim($search));
+
+            // Smart Search by prefix
+            if (strpos($searchUpper, '#') !== false) {
+                // Mode: Tag Number Search
+                $tagSearch = str_replace('#', '', $searchUpper);
                 $equipos->where('NUMERO_ETIQUETA', 'like', "%{$tagSearch}%");
-            } elseif (strpos($search, '-') !== false) {
-                // Mode: Yard Code Search (Hyphens are typical for these codes)
-                $equipos->where('CODIGO_PATIO', 'like', "%{$search}%");
+
+            } elseif (strpos($searchUpper, '-') !== false) {
+                // Mode: Yard Code Search
+                $equipos->where('CODIGO_PATIO', 'like', "%{$searchUpper}%");
+
             } else {
-                // Standard search across all identified identifying columns
-                $equipos->where(function ($q) use ($search) {
-                    $q->where('SERIAL_CHASIS', 'like', "%{$search}%")
-                        ->orWhereHas('documentacion', function ($d) use ($search) {
-                            $d->where('PLACA', 'like', "%{$search}%");
-                        })
-                        ->orWhere('SERIAL_DE_MOTOR', 'like', "%{$search}%")
-                        ->orWhere('CODIGO_PATIO', 'like', "%{$search}%")
-                        ->orWhere('NUMERO_ETIQUETA', 'like', "%{$search}%");
+                // Standard search — O/0 ambiguity applied ONLY to PLACA
+                // (plates are the only field where O and 0 are visually confused)
+                $placaVariants = collect([
+                    $searchUpper,
+                    str_replace('O', '0', $searchUpper),
+                    str_replace('0', 'O', $searchUpper),
+                    str_replace(['O', '0'], ['0', 'O'], $searchUpper),
+                ])->unique()->values()->all();
+
+                $equipos->where(function ($q) use ($searchUpper, $placaVariants) {
+                    // Exact search for non-plate fields
+                    $q->where('SERIAL_CHASIS', 'like', "%{$searchUpper}%")
+                      ->orWhere('SERIAL_DE_MOTOR', 'like', "%{$searchUpper}%")
+                      ->orWhere('CODIGO_PATIO', 'like', "%{$searchUpper}%")
+                      ->orWhere('NUMERO_ETIQUETA', 'like', "%{$searchUpper}%")
+                      // O/0-aware search only for PLACA
+                      ->orWhereHas('documentacion', function ($d) use ($placaVariants) {
+                          $d->where(function ($pq) use ($placaVariants) {
+                              foreach ($placaVariants as $variant) {
+                                  $pq->orWhere('PLACA', 'like', "%{$variant}%");
+                              }
+                          });
+                      });
                 });
             }
         }
+
+
+
 
         // --- Documentation Filters ---
         if ($request->filled('filter_propiedad') && $request->filter_propiedad === 'true') {
@@ -1136,7 +1157,6 @@ class EquipoController extends Controller
             // 4. DELETE OLD FILE (Only after success)
             if ($oldFileIdToDelete) {
                 \App\Jobs\DeleteGoogleDriveFile::dispatch($oldFileIdToDelete);
-                // Invalidate local cache immediately
                 \Illuminate\Support\Facades\Storage::disk('local')->delete('google_cache/' . $oldFileIdToDelete);
                 \Illuminate\Support\Facades\Cache::forget('gdrive_meta_' . $oldFileIdToDelete);
             }
@@ -1147,7 +1167,9 @@ class EquipoController extends Controller
 
             if (ob_get_length())
                 ob_end_clean();
+
             return response()->json(['success' => true, 'link' => $fullUrl, 'message' => 'Documento actualizado correctamente']);
+
         } catch (\Exception $e) {
             Log::error('Error subiendo archivo a Google Drive: ' . $e->getMessage());
             if (ob_get_length())
@@ -1810,6 +1832,83 @@ class EquipoController extends Controller
         } catch (\Exception $e) {
             Log::error('Fleet Export Error: ' . $e->getMessage());
             return response()->json(['error' => 'Error generating report'], 500);
+        }
+    }
+
+    /**
+     * Get equipos in a given frente filtered by anchor role (REMOLCADOR/REMOLCABLE)
+     */
+    public function getEquiposByFrente(Request $request)
+    {
+        $request->validate([
+            'id_frente'   => 'required',
+            'exclude_ids' => 'nullable|array',
+        ]);
+
+        $equipos = Equipo::where('ID_FRENTE_ACTUAL', $request->id_frente)
+            ->whereHas('tipo', function ($q) use ($request) {
+                if ($request->source_role === 'REMOLCADOR') {
+                    $q->where('ROL_ANCLAJE', 'REMOLCABLE');
+                } elseif ($request->source_role === 'REMOLCABLE') {
+                    $q->where('ROL_ANCLAJE', 'REMOLCADOR');
+                } else {
+                    $q->where('ROL_ANCLAJE', 'NONE');
+                }
+            })
+            ->when($request->exclude_ids, function ($q) use ($request) {
+                $q->whereNotIn('ID_EQUIPO', $request->exclude_ids);
+            })
+            ->with(['especificaciones', 'documentacion', 'tipo'])
+            ->select('ID_EQUIPO', 'CODIGO_PATIO', 'MARCA', 'MODELO', 'ID_ESPEC', 'FOTO_EQUIPO', 'SERIAL_CHASIS', 'id_tipo_equipo')
+            ->orderBy('CODIGO_PATIO')
+            ->get()
+            ->map(function ($eq) {
+                return [
+                    'ID_EQUIPO'     => $eq->ID_EQUIPO,
+                    'CODIGO_PATIO'  => $eq->CODIGO_PATIO,
+                    'TIPO_NOMBRE'   => $eq->tipo->nombre ?? $eq->CODIGO_PATIO,
+                    'SERIAL_CHASIS' => $eq->SERIAL_CHASIS,
+                    'PLACA'         => $eq->documentacion->PLACA ?? null,
+                    'MARCA'         => $eq->MARCA,
+                    'MODELO'        => $eq->MODELO,
+                    'FOTO'          => $eq->especificaciones->FOTO_REFERENCIAL ?? $eq->FOTO_EQUIPO,
+                ];
+            });
+
+        return response()->json($equipos);
+    }
+
+    /**
+     * Perform bulk anchoring of equipment (mutual link between two equipos)
+     */
+    public function bulkAnchor(Request $request)
+    {
+        $request->validate([
+            'ids'       => 'required|array',
+            'ids.*'     => 'exists:equipos,ID_EQUIPO',
+            'master_id' => 'required|exists:equipos,ID_EQUIPO',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $sourceId = $request->ids[0];
+            $targetId = $request->master_id;
+
+            // Create mutual anchor link
+            Equipo::where('ID_EQUIPO', $sourceId)->update(['ID_ANCLAJE' => $targetId]);
+            Equipo::where('ID_EQUIPO', $targetId)->update(['ID_ANCLAJE' => $sourceId]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Equipos anclados mutuamente con éxito.',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('bulkAnchor error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
 }

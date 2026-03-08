@@ -38,11 +38,62 @@ document.addEventListener('DOMContentLoaded', () => {
         await loadPage(url, true);
     }
 
+    // Re-ejecuta los scripts del contenido inyectado via innerHTML, EN ORDEN.
+    // El browser NO ejecuta scripts insertados por innerHTML (seguridad).
+    // Scripts externos (src) se cargan secuencialmente esperando el evento load
+    // para garantizar que las dependencias (ej: Chart.js) estén disponibles
+    // antes de ejecutar los scripts inline de inicialización.
+    async function executeScripts(container) {
+        const scripts = Array.from(container.querySelectorAll('script'));
+
+        for (const oldScript of scripts) {
+            await new Promise(resolve => {
+                const newScript = document.createElement('script');
+
+                // Copiar atributos (src, type, etc.)
+                Array.from(oldScript.attributes).forEach(attr => {
+                    newScript.setAttribute(attr.name, attr.value);
+                });
+
+                if (newScript.src) {
+                    // Script externo (CDN / asset):
+                    // Si ya está cargado en el documento, no lo duplicamos
+                    const alreadyLoaded = document.querySelector(`script[src="${newScript.src}"]`);
+                    if (alreadyLoaded) {
+                        resolve();
+                        return;
+                    }
+                    // Esperar a que cargue antes de continuar con el siguiente
+                    newScript.onload = resolve;
+                    newScript.onerror = resolve; // Continuar aunque falle
+                } else {
+                    // Script inline: se ejecuta de forma síncrona al añadirse
+                    if (oldScript.textContent) {
+                        newScript.textContent = oldScript.textContent;
+                    }
+                    resolve(); // No hay evento load para inline scripts
+                }
+
+                // Añadir al document.head para que ejecute correctamente
+                document.head.appendChild(newScript);
+            });
+        }
+    }
+
     async function loadPage(url, pushHistory = true) {
         try {
             if (window.showPreloader) window.showPreloader();
 
-            const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            // Deshabilitar caché para garantizar que SIEMPRE se obtenga el HTML
+            // actualizado y nunca el código viejo roto en la navegación SPA.
+            const response = await fetch(url, { 
+                headers: { 
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache'
+                },
+                cache: 'no-store'
+            });
 
             // Respuesta HTTP con error → navegación normal
             if (!response.ok) {
@@ -77,6 +128,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const titleEl = doc.querySelector('title');
             document.title = titleEl ? titleEl.innerText : document.title;
             mainViewport.innerHTML = newContent.innerHTML;
+
+            // Re-ejecutar scripts del contenido inyectado EN ORDEN y esperando
+            // cada externo (CDN) antes de continuar — crítico para Chart.js, etc.
+            await executeScripts(mainViewport);
 
             updateActiveLinks(url);
             window.dispatchEvent(new CustomEvent('spa:contentLoaded'));

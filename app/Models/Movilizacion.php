@@ -29,6 +29,7 @@ class Movilizacion extends Model
     // Accessor for formatted CODIGO_CONTROL (MV-0000X)
     public function getFormattedCodigoControlAttribute()
     {
+        if ($this->CODIGO_CONTROL === null) return 'R.D.'; // Recepción Directa, sin código
         $code = preg_replace('/[^0-9]/', '', $this->CODIGO_CONTROL);
         if (empty($code)) return $this->CODIGO_CONTROL;
         return 'MV-' . str_pad($code, 5, '0', STR_PAD_LEFT);

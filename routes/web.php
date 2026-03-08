@@ -50,12 +50,12 @@ Route::middleware(['auth'])->group(function () {
             Route::get('equipos/fleet-export', [App\Http\Controllers\EquipoController::class, 'fleetExport'])->name('equipos.fleetExport');
             Route::post('equipos/bulk-mobilize', [App\Http\Controllers\MovilizacionController::class, 'bulkStore'])->name('equipos.bulkMobilize');
             Route::get('equipos/get-equipos-by-frente', [App\Http\Controllers\EquipoController::class, 'getEquiposByFrente'])->name('equipos.getByFrente');
+            Route::post('equipos/bulk-anchor', [App\Http\Controllers\EquipoController::class, 'bulkAnchor'])->name('equipos.bulkAnchor');
             Route::resource('equipos', App\Http\Controllers\EquipoController::class);
             // Rutas específicas de Movilizaciones ANTES del resource (evita conflicto de wildcard)
             Route::post('movilizaciones/recepcion-directa', [App\Http\Controllers\MovilizacionController::class, 'recepcionDirecta'])->name('movilizaciones.recepcionDirecta');
             Route::get('movilizaciones/buscar-equipos-recepcion', [App\Http\Controllers\MovilizacionController::class, 'buscarEquiposParaRecepcion'])->name('movilizaciones.buscarEquipos');
             Route::get('movilizaciones/subdivisiones/{id}', [App\Http\Controllers\MovilizacionController::class, 'getSubdivisiones'])->name('movilizaciones.subdivisiones');
-            Route::patch('movilizaciones/{id}/status', [App\Http\Controllers\MovilizacionController::class, 'updateStatus'])->name('movilizaciones.updateStatus');
             Route::get('movilizaciones/{id}/acta-traslado', [App\Http\Controllers\MovilizacionController::class, 'generarActaTraslado'])->name('movilizaciones.actaTraslado');
             // Resource route al final para que sus wildcards no capturen las rutas estáticas de arriba
             Route::resource('movilizaciones', App\Http\Controllers\MovilizacionController::class);

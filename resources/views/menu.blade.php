@@ -65,9 +65,10 @@
                                onclick="abrirRecepcionDirecta()"
                                class="btn-recibir-dashboard"
                                title="Recepción Directa (sin movilización previa)"
-                               style="background: rgb(0, 103, 177); border: none; color: white; padding: 0 10px; height: 36px; border-radius: 6px; font-weight: 700; display: flex; align-items: center; gap: 4px; text-decoration: none; flex-shrink: 0; cursor: default;">
-                                <i class="material-icons" style="font-size: 18px;">input</i>
-                                <span class="desktop-only" style="font-size: 10px; font-weight: 800;">RECEP. DIRECTA</span>
+                               style="background: #1e293b; border: none; color: white; padding: 0 8px; height: 28px; border-radius: 6px; font-weight: 700; display: flex; align-items: center; gap: 3px; text-decoration: none; flex-shrink: 0; cursor: default; transition: background 0.2s;"
+                               onmouseover="this.style.background='#0f172a'" onmouseout="this.style.background='#1e293b'">
+                                <i class="material-icons" style="font-size: 15px;">input</i>
+                                <span class="desktop-only" style="font-size: 9px; font-weight: 800;">RECEP. DIRECTA</span>
                             </button>
                         </div>
                         <div class="activity-list" id="pendingMovsList">
@@ -107,7 +108,7 @@
                                class="btn-export-pdf"
                                title="Descargar Reporte PDF"
                                style="display: inline-flex; align-items: center; justify-content: center; padding: 8px; background: transparent; color: #94a3b8; border: none; text-decoration: none; transition: all 0.2s; cursor: default;"
-                               onmouseover="this.style.color='#ef4444'"
+                               onmouseover="this.style.color='#0067b1'"
                                onmouseout="this.style.color='#94a3b8'">
                                 <i class="material-icons" style="font-size: 20px;">file_download</i>
                             </a>
@@ -182,7 +183,7 @@
         <div style="background: white; width: 95%; max-width: 450px; max-height: 90vh; border-radius: 16px; padding: 0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: slideDown 0.3s ease-out; display: flex; flex-direction: column; overflow: hidden;">
 
             {{-- Header --}}
-            <div style="background: linear-gradient(135deg, #0067b1, #004e8c); padding: 14px 18px; color: white; flex-shrink: 0;">
+            <div style="background: linear-gradient(135deg, #1e293b, #0f172a); padding: 14px 18px; color: white; flex-shrink: 0;">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <i class="material-icons" style="font-size: 22px;">input</i>
@@ -203,21 +204,16 @@
                 {{-- PASO 1: Buscar equipos --}}
                 <div style="margin-bottom: 20px;">
                     <label for="rdSearchInput" style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px;">
-                        <span style="background: #0067b1; color: white; padding: 2px 8px; border-radius: 50%; font-size: 11px; font-weight: 800; margin-right: 6px;">1</span>
-                        Buscar Equipo (Serial, Placa o Código)
+                        <span style="background: #1e293b; color: white; padding: 2px 8px; border-radius: 50%; font-size: 11px; font-weight: 800; margin-right: 6px;">1</span>
+                        Buscar Equipo (Serial, Placa, Motor o Código)
                     </label>
                     <div style="display: flex; gap: 8px;">
                         <input type="text" id="rdSearchInput"
-                            placeholder="Buscar por serial, placa o código..."
+                            placeholder="Buscar por serial, placa, motor o código..."
                             style="flex: 1; padding: 10px 14px; border: 1px solid #cbd5e0; border-radius: 10px; font-size: 14px; background: #f8fafc; outline: none;"
                             autocomplete="off"
-                            onfocus="this.style.borderColor='#0067b1'" onblur="this.style.borderColor='#cbd5e0'"
-                            onkeyup="if(event.key==='Enter') buscarEquiposRD()">
-                        <button type="button" onclick="buscarEquiposRD()"
-                            style="padding: 10px 16px; background: #0067b1; border: none; border-radius: 10px; color: white; font-weight: 700; display: flex; align-items: center; gap: 4px; transition: background 0.2s;"
-                            onmouseover="this.style.background='#005a9e'" onmouseout="this.style.background='#0067b1'">
-                            <i class="material-icons" style="font-size: 18px;">search</i>
-                        </button>
+                            onfocus="this.style.borderColor='#1e293b'" onblur="this.style.borderColor='#cbd5e0'"
+                            onkeyup="if(window.rdSearchTimeout) clearTimeout(window.rdSearchTimeout); window.rdSearchTimeout = setTimeout(() => buscarEquiposRD(), 500)">
                     </div>
                 </div>
 
@@ -232,10 +228,10 @@
                 {{-- Frente receptor: hidden, siempre el frente asignado al usuario --}}
                 <input type="hidden" id="rdFrenteInput" value="{{ $menuFrenteAsig }}">
 
-                {{-- PASO 2: Ubicación específica --}}
+                {{-- PASO 2: Ubicación específica (opcional) --}}
                 <div style="margin-bottom: 15px;">
                     <label for="rdUbicacionInput" style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px;">
-                        <span style="background: #0067b1; color: white; padding: 2px 8px; border-radius: 50%; font-size: 11px; font-weight: 800; margin-right: 6px;">2</span>
+                        <span style="background: #1e293b; color: white; padding: 2px 8px; border-radius: 50%; font-size: 11px; font-weight: 800; margin-right: 6px;">2</span>
                         UBICACIÓN DETALLADA EN: <span style="color: #0f172a; font-weight: 900; text-transform: uppercase;">
                             {{ $menuFrenteObj ? $menuFrenteObj->NOMBRE_FRENTE : 'SIN ASIGNAR' }}
                         </span>
@@ -244,7 +240,7 @@
                         <input type="text" id="rdUbicacionInput"
                             placeholder=""
                             style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e0; border-radius: 10px; font-size: 14px; background: #f8fafc; outline: none; box-sizing: border-box;"
-                            onfocus="this.style.borderColor='#0067b1'; showUbicacionSuggestions('rd-ubicacion-suggestions')"
+                            onfocus="this.style.borderColor='#1e293b'; showUbicacionSuggestions('rd-ubicacion-suggestions')"
                             onblur="this.style.borderColor='#cbd5e0'; setTimeout(()=>hideUbicacionSuggestions('rd-ubicacion-suggestions'), 200)"
                             oninput="filterUbicacionSuggestions(this, 'rd-ubicacion-suggestions')">
                         <div id="rd-ubicacion-suggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1px solid #cbd5e0; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:500; max-height:160px; overflow-y:auto; margin-top:4px;"></div>
@@ -259,9 +255,9 @@
                     Cancelar
                 </button>
                 <button type="button" id="btnConfirmarRD" onclick="confirmarRecepcionDirecta()"
-                    style="flex: 1; padding: 12px; background: #0067b1; border: none; border-radius: 10px; font-weight: 700; color: white; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 103, 177, 0.3);"
-                    onmouseover="this.style.background='#005a9e'; this.style.transform='translateY(-1px)'"
-                    onmouseout="this.style.background='#0067b1'; this.style.transform='translateY(0)'">
+                    style="flex: 1; padding: 12px; background: #1e293b; border: none; border-radius: 10px; font-weight: 700; color: white; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(30,41,59,0.3);"
+                    onmouseover="this.style.background='#0f172a'; this.style.transform='translateY(-1px)'"
+                    onmouseout="this.style.background='#1e293b'; this.style.transform='translateY(0)'">
                     <i class="material-icons" style="font-size: 16px;">check_circle</i>
                     Confirmar
                 </button>

@@ -10,16 +10,6 @@
 </section>
 
 <style>
-
-    @keyframes pulse-alert {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.6; }
-    }
-    @keyframes slideIn {
-        from { transform: translateY(-20px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-
     @media (max-width: 1024px) {
         .mv-mobile-hidden {
             display: none !important;
@@ -94,13 +84,13 @@
                     <div class="dropdown-item-list" style="max-height:250px; overflow-y:auto;">
                         <div class="dropdown-item {{ !$currentFrenteId || $currentFrenteId == 'all' ? 'selected' : '' }}"
                              data-value="all"
-                             onclick="selectOption('frenteFilterSelect', 'all', 'TODOS LOS FRENTES'); loadMovilizaciones();">
+                             onclick="selectOption('frenteFilterSelect', 'all', 'TODOS LOS FRENTES');">
                             TODOS LOS FRENTES
                         </div>
                         @foreach($frentes as $frente)
                             <div class="dropdown-item {{ $currentFrenteId == $frente->ID_FRENTE ? 'selected' : '' }}"
                                  data-value="{{ $frente->ID_FRENTE }}"
-                                 onclick="selectOption('frenteFilterSelect', '{{ $frente->ID_FRENTE }}', '{{ $frente->NOMBRE_FRENTE }}'); loadMovilizaciones();">
+                                 onclick="selectOption('frenteFilterSelect', '{{ $frente->ID_FRENTE }}', '{{ addslashes($frente->NOMBRE_FRENTE) }}');">
                                 {{ $frente->NOMBRE_FRENTE }}
                             </div>
                         @endforeach
@@ -134,11 +124,11 @@
 
                     <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible;">
                         <div class="dropdown-item-list" style="max-height: 250px; overflow-y: auto;">
-                            <div class="dropdown-item {{ !request('id_tipo') || request('id_tipo') == 'all' ? 'selected' : '' }}" data-value="all" onclick="selectOption('tipoFilterSelect', 'all', 'TODOS LOS TIPOS'); loadMovilizaciones();">
+                            <div class="dropdown-item {{ !request('id_tipo') || request('id_tipo') == 'all' ? 'selected' : '' }}" data-value="all" onclick="selectOption('tipoFilterSelect', 'all', 'TODOS LOS TIPOS');">
                                 TODOS LOS TIPOS
                             </div>
                             @foreach($allTipos as $tipo)
-                                <div class="dropdown-item {{ request('id_tipo') == $tipo->id ? 'selected' : '' }}" data-value="{{ $tipo->id }}" onclick="selectOption('tipoFilterSelect', '{{ $tipo->id }}', '{{ $tipo->nombre }}'); loadMovilizaciones();">
+                                <div class="dropdown-item {{ request('id_tipo') == $tipo->id ? 'selected' : '' }}" data-value="{{ $tipo->id }}" onclick="selectOption('tipoFilterSelect', '{{ $tipo->id }}', '{{ addslashes($tipo->nombre) }}');">
                                     {{ $tipo->nombre }}
                                 </div>
                             @endforeach
@@ -167,7 +157,7 @@
                 <!-- Botón Filtro Avanzado (Fechas) -->
                 <div class="mv-adv-filter-wrap" style="position: relative; flex-shrink: 0;">
                     <button type="button" id="btnAdvancedFilter" class="btn-primary-maquinaria"
-                        style="height: 45px; width: 45px; padding: 0; display: flex; align-items: center; justify-content: center; background: {{ request('fecha_desde') || request('fecha_hasta') ? '#e1effa' : 'white' }}; border: 1px solid {{ request('fecha_desde') || request('fecha_hasta') ? '#0067b1' : '#cbd5e0' }}; color: {{ request('fecha_desde') || request('fecha_hasta') ? '#0067b1' : '#64748b' }}; box-shadow: none; border-radius: 12px; cursor: pointer; transition: all 0.2s;"
+                        style="height: 45px; width: 45px; padding: 0; display: flex; align-items: center; justify-content: center; background: {{ request('fecha_desde') || request('fecha_hasta') || request('direccion_frente') ? '#e1effa' : 'white' }}; border: 1px solid {{ request('fecha_desde') || request('fecha_hasta') || request('direccion_frente') ? '#0067b1' : '#cbd5e0' }}; color: {{ request('fecha_desde') || request('fecha_hasta') || request('direccion_frente') ? '#0067b1' : '#64748b' }}; box-shadow: none; border-radius: 12px; cursor: default; transition: all 0.2s;"
                         onclick="toggleAdvancedFilter(event)">
                         <i class="material-icons">filter_list</i>
                     </button>
@@ -191,7 +181,7 @@
                         </div>
 
                         <!-- Fecha Hasta -->
-                        <div>
+                        <div style="margin-bottom: 15px;">
                             <span style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px;">Fecha Hasta</span>
                             <input type="date" id="filterFechaHasta"
                                 value="{{ request('fecha_hasta') }}"
@@ -200,23 +190,40 @@
                                 onblur="this.style.borderColor='#e2e8f0'"
                                 onchange="loadMovilizaciones()">
                         </div>
+
+                        <!-- Dirección del Frente (Entrada / Salida) -->
+                        <div>
+                            <span style="display:flex; align-items:center; gap:5px; font-size:12px; font-weight:600; color:#64748b; margin-bottom:6px;">
+                                <i class="material-icons" style="font-size:13px;">swap_horiz</i>
+                                Dirección del Frente
+                            </span>
+                            <div style="display: flex; gap: 6px;">
+                                <button type="button" id="filterDireccionTodas"
+                                    onclick="setDireccionFilter('')"
+                                    style="flex:1; height:32px; border-radius:8px; border:1px solid {{ !request('direccion_frente') ? '#0067b1' : '#e2e8f0' }}; background:{{ !request('direccion_frente') ? '#e1effa' : 'white' }}; color:{{ !request('direccion_frente') ? '#0067b1' : '#64748b' }}; font-size:11px; font-weight:600; cursor:default; transition:all 0.2s;">
+                                    Todas
+                                </button>
+                                <button type="button" id="filterDireccionEntrada"
+                                    onclick="setDireccionFilter('entrada')"
+                                    style="flex:1; height:32px; border-radius:8px; border:1px solid {{ request('direccion_frente') == 'entrada' ? '#16a34a' : '#e2e8f0' }}; background:{{ request('direccion_frente') == 'entrada' ? '#dcfce7' : 'white' }}; color:{{ request('direccion_frente') == 'entrada' ? '#16a34a' : '#64748b' }}; font-size:11px; font-weight:600; cursor:default; transition:all 0.2s;">
+                                    <i class="material-icons" style="font-size:13px; vertical-align:middle;">arrow_downward</i>
+                                    Entrada
+                                </button>
+                                <button type="button" id="filterDireccionSalida"
+                                    onclick="setDireccionFilter('salida')"
+                                    style="flex:1; height:32px; border-radius:8px; border:1px solid {{ request('direccion_frente') == 'salida' ? '#dc2626' : '#e2e8f0' }}; background:{{ request('direccion_frente') == 'salida' ? '#fee2e2' : 'white' }}; color:{{ request('direccion_frente') == 'salida' ? '#dc2626' : '#64748b' }}; font-size:11px; font-weight:600; cursor:default; transition:all 0.2s;">
+                                    <i class="material-icons" style="font-size:13px; vertical-align:middle;">arrow_upward</i>
+                                    Salida
+                                </button>
+                            </div>
+                            <input type="hidden" id="filterDireccionFrente" value="{{ request('direccion_frente') }}">
+                        </div>
                     </div>
                 </div>
 
             </div>{{-- /mv-search-adv-row --}}
 
 
-            <!-- Botón Recepción Directa -->
-            <div class="mv-filter-btn-row">
-                <button type="button" id="btnRecepcionDirecta"
-                    style="height: 45px; padding: 0 16px; display: flex; align-items: center; gap: 6px; background: #0067b1; border: none; color: white; border-radius: 12px; font-weight: 700; font-size: 13px; box-shadow: 0 4px 6px -1px rgba(0, 103, 177, 0.3); transition: all 0.2s;"
-                    onmouseover="this.style.background='#005a9e'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 8px -1px rgba(0, 103, 177, 0.4)'"
-                    onmouseout="this.style.background='#0067b1'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0, 103, 177, 0.3)'"
-                    onclick="abrirRecepcionDirecta()">
-                    <i class="material-icons" style="font-size: 18px;">input</i>
-                    Recepción Directa
-                </button>
-            </div>
         </div>
 
 
@@ -238,7 +245,7 @@
             </table>
         </div>
         
-         <!-- Pagination -->
+        <!-- Pagination -->
         <div id="movilizacionesPagination" style="margin-top: 25px;">
             {{ $movilizaciones->links() }}
         </div>
@@ -285,160 +292,122 @@
 
 </div>
 
+</div>
+
 <!-- Image Overlay Modal -->
 <div id="imageOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; cursor: default;" onclick="this.style.display='none'">
     <img id="enlargedImg" style="max-width: 90%; max-height: 90%; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); transition: transform 0.3s ease;">
 </div>
 
-<!-- Modal de Recepción con Sub-Ubicación (TODOS los frentes) -->
-<div id="recepcionModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; justify-content: center; align-items: center;">
-    <div style="background: white; width: 90%; max-width: 450px; border-radius: 16px; padding: 25px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); animation: slideIn 0.3s ease-out;">
-        
-        <div style="text-align: center; margin-bottom: 20px;">
-            <div style="width: 50px; height: 50px; background: #e0eff8; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto;">
-                <i class="material-icons" style="font-size: 30px; color: #0067b1;">check_circle</i>
-            </div>
-            <h3 style="font-size: 18px; font-weight: 800; color: #1e293b; margin: 0;">Confirmar Recepción</h3>
-            <p style="font-size: 14px; color: #64748b; margin-top: 5px;">
-                El equipo ha llegado a <strong id="modalFrenteNombre" style="color: #0f172a;"></strong>
-            </p>
-        </div>
+<script>
+// OVERRIDE URGENTE PARA BURLAR EL CACHÉ DEL NAVEGADOR
+// Este script sobreescribe la función y se inyecta directamente con el SPA
+window.loadMovilizaciones = function (url = null) {
+    const tableBody = document.getElementById('movilizacionesTableBody');
+    if (!tableBody) return;
 
-        <form id="formRecepcion" action="" method="POST">
-            @csrf
-            @method('PATCH')
-            <input type="hidden" name="status" value="RECIBIDO">
-            
+    let baseUrl = '/admin/movilizaciones';
+    
+    // Anclamos la búsqueda al contenedor de movilizaciones, evitando inputs viejos fantasma del DOM
+    const container = tableBody.closest('.movilizaciones-main-card') || document;
+    
+    const searchInput     = container.querySelector('#searchInput');
+    const frenteInput     = container.querySelector('input[name="id_frente"]');
+    const tipoInput       = container.querySelector('input[name="id_tipo"]');
+    const fechaDesde      = container.querySelector('#filterFechaDesde');
+    const fechaHasta      = container.querySelector('#filterFechaHasta');
+    const direccionFrente = container.querySelector('#filterDireccionFrente');
 
-            {{-- Input de ubicación con sugerencias de subdivisiones --}}
-            <div style="margin-bottom: 20px; position: relative;">
-                <label for="input_ubicacion_recepcion" style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px;">
-                    <i class="material-icons" style="font-size: 14px; vertical-align: middle;">place</i>
-                    Ubicación / Sección <span style="font-weight: 400; color: #94a3b8; font-size: 12px;">(Opcional)</span>
-                </label>
-                <input type="text" id="input_ubicacion_recepcion" name="DETALLE_UBICACION"
-                    placeholder=""
-                    style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e0; border-radius: 10px; font-size: 14px; background: #f8fafc; outline: none; transition: border 0.2s; box-sizing: border-box;"
-                    onfocus="this.style.borderColor='#0067b1'; showUbicacionSuggestions('ubicacion-suggestions')"
-                    onblur="this.style.borderColor='#cbd5e0'; setTimeout(()=>hideUbicacionSuggestions('ubicacion-suggestions'), 200)"
-                    oninput="filterUbicacionSuggestions(this, 'ubicacion-suggestions')">
-                <!-- Sugerencias -->
-                <div id="ubicacion-suggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1px solid #cbd5e0; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:500; max-height:160px; overflow-y:auto; margin-top:4px;"></div>
-            </div>
+    const params = new URLSearchParams();
+    if (searchInput?.value)          params.append('search',           searchInput.value);
+    if (frenteInput?.value && frenteInput.value !== 'all')
+                                     params.append('id_frente',        frenteInput.value);
+    if (tipoInput?.value && tipoInput.value !== 'all')
+                                     params.append('id_tipo',          tipoInput.value);
+    if (fechaDesde?.value)           params.append('fecha_desde',      fechaDesde.value);
+    if (fechaHasta?.value)           params.append('fecha_hasta',      fechaHasta.value);
+    if (direccionFrente?.value)      params.append('direccion_frente', direccionFrente.value);
 
+    if (url && url.includes('page=')) {
+        try {
+            const urlObj = new URL(url, window.location.origin);
+            const page = urlObj.searchParams.get('page');
+            if (page) params.set('page', page);
+        } catch (e) { console.error('[loadMovilizaciones] URL parse:', e); }
+    }
 
-            <div style="display: flex; gap: 10px;">
-                <button type="button" onclick="document.getElementById('recepcionModal').style.display='none'" 
-                    style="flex: 1; padding: 10px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 600; color: #64748b; transition: all 0.2s;"
-                    onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='white'">
-                    Cancelar
-                </button>
-                <button type="submit" id="btnConfirmarRecepcion"
-                    style="flex: 1; padding: 10px; background: #0067b1; border: none; border-radius: 8px; font-weight: 700; color: white; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 103, 177, 0.2);"
-                    onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 8px -1px rgba(0, 103, 177, 0.3)'" 
-                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0, 103, 177, 0.2)'">
-                    Confirmar Recepción
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
+    const queryStr = params.toString();
+    const finalUrl = baseUrl + (queryStr ? '?' + queryStr : '');
 
-<!-- ============================================== -->
-<!-- MODAL DE RECEPCIÓN DIRECTA                     -->
-<!-- ============================================== -->
-<div id="recepcionDirectaModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center;">
-    <div style="background: white; width: 95%; max-width: 450px; max-height: 90vh; border-radius: 16px; padding: 0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: slideIn 0.3s ease-out; display: flex; flex-direction: column; overflow: hidden;">
-        
-        {{-- Header --}}
-        <div style="background: linear-gradient(135deg, #0067b1, #004e8c); padding: 14px 18px; color: white; flex-shrink: 0;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <i class="material-icons" style="font-size: 22px;">input</i>
-                    <div>
-                        <h3 style="margin: 0; font-size: 15px; font-weight: 800;">Recepción Directa</h3>
-                        <p style="margin: 0; font-size: 11px; opacity: 0.85;">Sin movilización previa</p>
-                    </div>
-                </div>
-                <button type="button" onclick="cerrarRecepcionDirecta()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                    <i class="material-icons" style="font-size: 18px;">close</i>
-                </button>
-            </div>
-        </div>
+    console.log("🚀 [loadMovilizaciones INLINE] Ejecutado! Frente:", frenteInput?.value);
 
-        {{-- Body --}}
-        <div style="padding: 20px 25px; overflow-y: auto; flex: 1;">
-            
-            {{-- PASO 1: Buscar equipos --}}
-            <div style="margin-bottom: 20px;">
-                <label for="rdSearchInput" style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px;">
-                    <span style="background: #0067b1; color: white; padding: 2px 8px; border-radius: 50%; font-size: 11px; font-weight: 800; margin-right: 6px;">1</span>
-                    Buscar Equipo (Serial, Placa o Código)
-                </label>
-                <div style="display: flex; gap: 8px;">
-                    <input type="text" id="rdSearchInput" 
-                        placeholder="Buscar por serial, placa o código..." 
-                        style="flex: 1; padding: 10px 14px; border: 1px solid #cbd5e0; border-radius: 10px; font-size: 14px; background: #f8fafc; outline: none;"
-                        autocomplete="off"
-                        onfocus="this.style.borderColor='#0067b1'" onblur="this.style.borderColor='#cbd5e0'"
-                        onkeyup="if(event.key==='Enter') buscarEquiposRD()">
-                    <button type="button" onclick="buscarEquiposRD()" 
-                        style="padding: 10px 16px; background: #0067b1; border: none; border-radius: 10px; color: white; font-weight: 700; display: flex; align-items: center; gap: 4px; transition: background 0.2s;"
-                        onmouseover="this.style.background='#005a9e'" onmouseout="this.style.background='#0067b1'">
-                        <i class="material-icons" style="font-size: 18px;">search</i>
-                    </button>
-                </div>
-            </div>
+    tableBody.style.opacity = '0.5';
+    if (window.showPreloader) window.showPreloader();
 
-            {{-- Resultados de búsqueda --}}
-            <div id="rdResultados" style="margin-bottom: 20px; display: none;">
-                <p style="font-size: 12px; font-weight: 600; color: #94a3b8; margin-bottom: 6px; margin-top: 0; text-transform: uppercase;">Resultados</p>
-                <div id="rdResultadosList" style="min-height: 100px; max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; background: #fafbfc;">
-                    <!-- populated by JS -->
-                </div>
-            </div>
+    fetch(finalUrl, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept':           'application/json',
+            'Cache-Control':    'no-cache, no-store, must-revalidate',
+            'Pragma':           'no-cache'
+        },
+        cache: 'no-store'
+    })
+    .then(response => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+    })
+    .then(data => {
+        tableBody.innerHTML = data.html;
+        tableBody.style.opacity = '1';
 
-            {{-- Frente receptor: hidden, siempre el frente asignado al usuario --}}
-            <input type="hidden" id="rdFrenteInput" value="{{ $userFrenteAsig }}">
+        const paginationContainer = document.getElementById('movilizacionesPagination');
+        if (paginationContainer) paginationContainer.innerHTML = data.pagination;
 
-            {{-- PASO 2: Ubicación específica (opcional) --}}
-            <div style="margin-bottom: 15px;">
-                <label for="rdUbicacionInput" style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px;">
-                    <span style="background: #0067b1; color: white; padding: 2px 8px; border-radius: 50%; font-size: 11px; font-weight: 800; margin-right: 6px;">2</span>
-                    UBICACIÓN DETALLADA EN: <span style="color: #0f172a; font-weight: 900; text-transform: uppercase;">
-                        {{ $userFrenteObj ? $userFrenteObj->NOMBRE_FRENTE : 'SIN ASIGNAR' }}
-                    </span>
-                </label>
-                {{-- Input con sugerencias --}}
-                <div style="position: relative;">
-                    <input type="text" id="rdUbicacionInput"
-                        placeholder=""
-                        style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e0; border-radius: 10px; font-size: 14px; background: #f8fafc; outline: none; box-sizing: border-box;"
-                        onfocus="this.style.borderColor='#0067b1'; showUbicacionSuggestions('rd-ubicacion-suggestions')"
-                        onblur="this.style.borderColor='#cbd5e0'; setTimeout(()=>hideUbicacionSuggestions('rd-ubicacion-suggestions'), 200)"
-                        oninput="filterUbicacionSuggestions(this, 'rd-ubicacion-suggestions')">
-                    <!-- Sugerencias -->
-                    <div id="rd-ubicacion-suggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1px solid #cbd5e0; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:500; max-height:160px; overflow-y:auto; margin-top:4px;"></div>
-                </div>
+        const statsContainer = document.getElementById('statusStatsContainer');
+        if (statsContainer && data.statsHtml) statsContainer.innerHTML = data.statsHtml;
 
-            </div>
-        </div>
+        const totalTransitoEl = document.getElementById('totalTransitoCount');
+        if (totalTransitoEl && data.totalTransito !== undefined)
+            totalTransitoEl.innerText = data.totalTransito;
 
-        {{-- Footer --}}
-        <div style="padding: 15px 25px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; flex-shrink: 0; background: #fafbfc;">
-            <button type="button" onclick="cerrarRecepcionDirecta()" 
-                style="flex: 1; padding: 12px; background: white; border: 1px solid #e2e8f0; border-radius: 10px; font-weight: 600; color: #64748b;">
-                Cancelar
-            </button>
-            <button type="button" id="btnConfirmarRD" onclick="confirmarRecepcionDirecta()"
-                style="flex: 1; padding: 12px; background: #0067b1; border: none; border-radius: 10px; font-weight: 700; color: white; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 103, 177, 0.3);"
-                onmouseover="this.style.background='#005a9e'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 8px -1px rgba(0, 103, 177, 0.4)'"
-                onmouseout="this.style.background='#0067b1'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0, 103, 177, 0.3)'">
-                <i class="material-icons" style="font-size: 16px;">check_circle</i>
-                Confirmar
-            </button>
-        </div>
-    </div>
-</div>
+        const mobileTransitoEl = document.getElementById('mobileTransitoCount');
+        if (mobileTransitoEl && data.totalTransito !== undefined)
+            mobileTransitoEl.innerText = data.totalTransito;
+
+        // Limpieza de URL
+        if (window.history.pushState && queryStr) {
+            window.history.replaceState(null, '', window.location.pathname);
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching table data:', error);
+        tableBody.style.opacity = '1';
+    })
+    .finally(() => {
+        if (window.hidePreloader) window.hidePreloader();
+    });
+};
+
+// También resguardamos la función del botón "x" de búsqueda
+window.selectMovilizacionFilter = function (type, value) {
+    if (type === 'search') {
+        const input = document.getElementById('searchInput');
+        if (input) input.value = value;
+        const btn = document.getElementById('btn_clear_search');
+        if (btn) btn.style.display = value ? 'block' : 'none';
+        window.loadMovilizaciones();
+    }
+};
+
+window.addEventListener('dropdown-selection', function (e) {
+    if (!document.getElementById('movilizacionesTableBody')) return;
+    const filterName = e.detail && e.detail.inputName;
+    if (filterName === 'id_frente' || filterName === 'id_tipo') {
+        window.loadMovilizaciones();
+    }
+});
+</script>
 
 @endsection
+

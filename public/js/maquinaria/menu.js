@@ -374,3 +374,138 @@ async function _ejecutarRecepcion(movId, btn) {
         }
     }
 }
+
+/**
+ * Abre el modal de recepción con campo de ubicación desde el dashboard/menú.
+ * Reutiliza el modal #recepcionModal si está disponible en la página,
+ * de lo contrario crea un mini-modal inline.
+ */
+window.iniciarRecepcionDesdeDashboard = function (movId, nombreFrente, subdivisiones, idFrenteDestino) {
+    // Intentar usar el modal principal de movilizaciones si está en el DOM
+    const modal = document.getElementById('recepcionModal');
+    if (modal && typeof window.iniciarRecepcion === 'function') {
+        window.iniciarRecepcion(movId, nombreFrente, subdivisiones, idFrenteDestino);
+        return;
+    }
+
+    // Si no está en la página de movilizaciones, crear mini-modal
+    const existing = document.getElementById('dashboardRecepcionModal');
+    if (existing) existing.remove();
+
+    const subs = (subdivisiones && subdivisiones.trim() !== '')
+        ? subdivisiones.split(',').map(s => s.trim()).filter(Boolean)
+        : [];
+
+    const overlay = document.createElement('div');
+    overlay.id = 'dashboardRecepcionModal';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:20000;display:flex;justify-content:center;align-items:center;';
+
+    overlay.innerHTML = `
+        <div style="background:white;width:95%;max-width:400px;border-radius:16px;overflow:hidden;box-shadow:0 25px 50px -12px rgba(0,0,0,0.3);">
+            <div style="background:linear-gradient(135deg,#1e293b,#0f172a);padding:14px 18px;color:white;display:flex;justify-content:space-between;align-items:center;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <i class="material-icons" style="font-size:20px;">check_circle</i>
+                    <div>
+                        <h3 style="margin:0;font-size:14px;font-weight:800;">Confirmar Recepción</h3>
+                        <p style="margin:0;font-size:11px;opacity:0.8;">El equipo ha llegado a ${nombreFrente}</p>
+                    </div>
+                </div>
+                <button onclick="document.getElementById('dashboardRecepcionModal').remove()"
+                    style="background:rgba(255,255,255,0.2);border:none;color:white;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:default;">
+                    <i class="material-icons" style="font-size:16px;">close</i>
+                </button>
+            </div>
+            <div style="padding:20px;">
+                <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;">
+                    <i class="material-icons" style="font-size:14px;vertical-align:middle;color:#64748b;">place</i>
+                    Ubicación / Sección (Opcional)
+                </label>
+                <div style="position:relative;">
+                    <input type="text" id="dashRdUbicacion"
+                        placeholder=""
+                        autocomplete="off"
+                        style="width:100%;padding:9px 12px;border:1px solid #cbd5e0;border-radius:10px;font-size:13px;background:#f8fafc;outline:none;box-sizing:border-box;"
+                        onfocus="this.style.borderColor='#1e293b'" onblur="this.style.borderColor='#cbd5e0'">
+                    <div id="dashRdSuggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #cbd5e0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:500;max-height:140px;overflow-y:auto;margin-top:4px;"></div>
+                </div>
+            </div>
+            <div style="padding:0 20px 20px;display:flex;gap:10px;">
+                <button onclick="document.getElementById('dashboardRecepcionModal').remove()"
+                    style="flex:1;padding:10px;background:white;border:1px solid #e2e8f0;border-radius:10px;font-weight:600;color:#64748b;cursor:default;">
+                    Cancelar
+                </button>
+                <button id="dashBtnConfirmarRecep"
+                    style="flex:1;padding:10px;background:#1e293b;border:none;border-radius:10px;font-weight:700;color:white;cursor:default;transition:background 0.2s;"
+                    onmouseover="this.style.background='#0f172a'" onmouseout="this.style.background='#1e293b'">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Cargar sugerencias de subdivisiones
+    if (subs.length > 0) {
+        const input = document.getElementById('dashRdUbicacion');
+        const sugBox = document.getElementById('dashRdSuggestions');
+        subs.forEach(s => {
+            const opt = document.createElement('div');
+            opt.textContent = s;
+            opt.style.cssText = 'padding:8px 12px;cursor:default;font-size:13px;border-bottom:1px solid #f1f5f9;';
+            opt.onmouseover = () => opt.style.background = '#f1f5f9';
+            opt.onmouseout = () => opt.style.background = '';
+            opt.onclick = () => { input.value = s; sugBox.style.display = 'none'; };
+            sugBox.appendChild(opt);
+        });
+        input.onfocus = () => { input.style.borderColor = '#1e293b'; if (subs.length > 0) sugBox.style.display = 'block'; };
+        document.addEventListener('click', function handler(e) {
+            if (!overlay.contains(e.target)) { sugBox.style.display = 'none'; document.removeEventListener('click', handler); }
+        });
+    }
+
+    // Confirmación
+    document.getElementById('dashBtnConfirmarRecep').onclick = async function () {
+        const ubicacion = document.getElementById('dashRdUbicacion').value.trim();
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="material-icons spin">sync</i> Procesando...';
+
+        try {
+            const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            const response = await fetch(`/admin/movilizaciones/${movId}/status`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    status: 'RECIBIDO',
+                    DETALLE_UBICACION: ubicacion || null
+                })
+            });
+            const data = await response.json();
+
+            overlay.remove();
+
+            if (data.success) {
+                await window.refreshPendingMovs();
+                if (typeof showModal === 'function') {
+                    showModal({ type: 'success', title: '¡Recepción Confirmada!', message: data.message || 'Equipo recibido exitosamente.', confirmText: 'Entendido', hideCancel: true });
+                }
+            } else {
+                throw new Error(data.error || 'Error al confirmar recepción');
+            }
+        } catch (error) {
+            overlay.remove();
+            console.error(error);
+            if (typeof showModal === 'function') {
+                showModal({ type: 'error', title: 'Error', message: error.message, confirmText: 'Cerrar', hideCancel: true });
+            }
+        }
+    };
+};
+

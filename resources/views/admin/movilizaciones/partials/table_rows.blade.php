@@ -1,12 +1,7 @@
 @forelse($movilizaciones as $mov)
     @php
-        $equipoFoto = $mov->equipo->especificaciones->FOTO_REFERENCIAL ?? null;
-        $usuario = auth()->user();
-        $usuarioFrenteId = $usuario->ID_FRENTE_ASIGNADO;
-        $esGlobal = ($usuario->NIVEL_ACCESO == 1);
-        $esDestinatario = ($usuarioFrenteId == $mov->ID_FRENTE_DESTINO);
-        $puedeRecibir = $esDestinatario || $esGlobal;
-    @endphp
+    $equipoFoto = optional(optional($mov->equipo)->especificaciones)->FOTO_REFERENCIAL;
+@endphp
     <tr class="mv-row-card">
         {{-- 1. Equipo --}}
         <td class="mv-td-equipo">
@@ -73,7 +68,11 @@
         {{-- 4. N° Operación (oculto en mobile) --}}
         <td class="mv-col-op mv-mobile-hidden">
             <div style="display: flex; flex-direction: column; align-items: center; line-height: 1.2; gap: 2px;">
-                <span style="font-weight: 800; color: #1e293b; font-size: 13px;">{{ $mov->formatted_codigo_control }}</span>
+                @if($mov->CODIGO_CONTROL)
+                    <span style="font-weight: 800; color: #1e293b; font-size: 13px;">MV-{{ str_pad($mov->CODIGO_CONTROL, 5, '0', STR_PAD_LEFT) }}</span>
+                @else
+                    <span style="background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;">R.D.</span>
+                @endif
                 <div style="display: flex; align-items: center; gap: 4px; color: #64748b; font-size: 13px; font-weight: 600;">
                     <i class="material-icons" style="font-size: 15px;">person</i>
                     {{ $mov->usuario->NOMBRE_COMPLETO ?? $mov->USUARIO_REGISTRO }}
@@ -86,24 +85,6 @@
             <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
                 @if($mov->ESTADO_MVO == 'TRANSITO')
                     <span class="mv-estado-label" style="color: #ef4444; font-size: 13px; font-weight: 800; text-transform: uppercase;">{{ $mov->ESTADO_MVO }}</span>
-                    <div style="display: flex; flex-direction: column; gap: 4px; width: 100%;">
-                        @if($puedeRecibir)
-                            <button type="button" class="btn-details-mini"
-                                onclick='iniciarRecepcion({{ $mov->ID_MOVILIZACION }}, "{{ $mov->frenteDestino->NOMBRE_FRENTE }}", "{{ $mov->frenteDestino->SUBDIVISIONES ?? "" }}", {{ $mov->frenteDestino->ID_FRENTE }})'
-                                style="background: #0067b1; color: white; border: none; padding: 6px 10px; min-height: 32px; width: 100%; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;"
-                                title="Confirmar recepción en {{ $mov->frenteDestino->NOMBRE_FRENTE }}"
-                                onmouseover="this.style.background='#005a9e'; this.style.transform='scale(1.05)'"
-                                onmouseout="this.style.background='#0067b1'; this.style.transform='scale(1)'">
-                                <i class="material-icons" style="font-size: 16px;">check_circle</i>
-                                <span>RECIBIR</span>
-                            </button>
-                        @else
-                            <div style="background: #f1f5f9; color: #94a3b8; border: 1px dashed #cbd5e0; padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 3px; font-size: 10px; font-weight: 600; min-height: 32px;">
-                                <i class="material-icons" style="font-size: 14px;">block</i>
-                                <span>Sin Acceso</span>
-                            </div>
-                        @endif
-                    </div>
                 @elseif($mov->ESTADO_MVO == 'RECIBIDO')
                     <div style="background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; padding: 4px 6px; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 11px; font-weight: 700;">
                         <i class="material-icons" style="font-size: 14px;">done_all</i>
