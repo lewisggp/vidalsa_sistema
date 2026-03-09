@@ -1879,6 +1879,66 @@ class EquipoController extends Controller
     }
 
     /**
+     * Get anchored equipment pairs for a specific frente (or all if not specified)
+     */
+    public function getAnchoredEquipos(Request $request)
+    {
+        $frenteId = $request->input('frente_id');
+        $query = Equipo::with(['ancladoA', 'tipo', 'especificaciones', 'documentacion'])->whereNotNull('ID_ANCLAJE');
+
+        if ($frenteId && $frenteId !== 'all') {
+            $query->where('ID_FRENTE_ACTUAL', $frenteId);
+        }
+
+        $anchored = $query->get()->map(function ($eq) {
+            // Get mutual pair to avoid duplicates, we can just return all since we'll group them in JS, or we can format it here.
+            // A mutual pair means Eq A is anchored to Eq B. In this system Eq A has ID_ANCLAJE = B.ID, and Eq B has ID_ANCLAJE = A.ID
+            // Let's standardise so we only return one pair, where master is the one with smaller ID_EQUIPO, just for uniqueness if mutual.
+            $mainImg = $eq->especificaciones->FOTO_REFERENCIAL ?? $eq->FOTO_EQUIPO;
+            $anchImg = $eq->ancladoA ? ($eq->ancladoA->especificaciones->FOTO_REFERENCIAL ?? $eq->ancladoA->FOTO_EQUIPO) : null;
+
+            return [
+                'ID_A' => $eq->ID_EQUIPO,
+                'ID_B' => $eq->ID_ANCLAJE,
+                'eq_a' => [
+                    'id' => $eq->ID_EQUIPO,
+                    'codigo' => $eq->CODIGO_PATIO ?? 'N/A',
+                    'marca_modelo' => ($eq->MARCA ?? '') . ' ' . ($eq->MODELO ?? ''),
+                    'foto' => $mainImg ? asset($mainImg) : null,
+                    'tipo' => $eq->tipo->nombre ?? 'N/A',
+                    'estado' => $eq->ESTADO_OPERATIVO ?? 'N/A'
+                ],
+                'eq_b' => $eq->ancladoA ? [
+                    'id' => $eq->ancladoA->ID_EQUIPO,
+                    'codigo' => $eq->ancladoA->CODIGO_PATIO ?? 'N/A',
+                    'marca_modelo' => ($eq->ancladoA->MARCA ?? '') . ' ' . ($eq->ancladoA->MODELO ?? ''),
+                    'foto' => $anchImg ? asset($anchImg) : null,
+                    'tipo' => $eq->ancladoA->tipo->nombre ?? 'N/A',
+                    'estado' => $eq->ancladoA->ESTADO_OPERATIVO ?? 'N/A'
+                ] : null
+            ];
+        });
+
+        // Filter out the duplicates based on mutual anchorage (A->B and B->A)
+        $uniquePairs = [];
+        $seen = [];
+        foreach ($anchored as $item) {
+            if (!$item['eq_b']) continue;
+            
+            $id1 = $item['ID_A'];
+            $id2 = $item['ID_B'];
+            $key = $id1 < $id2 ? "{$id1}_{$id2}" : "{$id2}_{$id1}";
+            
+            if (!isset($seen[$key])) {
+                $seen[$key] = true;
+                $uniquePairs[] = $item;
+            }
+        }
+
+        return response()->json($uniquePairs);
+    }
+
+    /**
      * Perform bulk anchoring of equipment (mutual link between two equipos)
      */
     public function bulkAnchor(Request $request)

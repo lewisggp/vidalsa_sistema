@@ -1417,62 +1417,11 @@ window.addEventListener("spa:contentLoaded", function () {
 });
 
 // ==========================================
-// ADVANCED FILTER LOGIC (Restored)
+// ADVANCED FILTER LOGIC
+// NOTE: clearAdvancedFilters is defined in uicomponents.js (authoritative source).
+// It only clears advanced filters (modelo/marca/año/checkboxes) — intentionally
+// does NOT touch the main Frente/Tipo dropdowns so their X buttons stay visible.
 // ==========================================
-
-window.clearAdvancedFilters = function () {
-    // 1. Clear Advanced Panel Inputs
-    const panel = document.getElementById("advancedFilterPanel");
-    if (panel) {
-        panel
-            .querySelectorAll('input[type="text"], input[type="hidden"]')
-            .forEach((el) => (el.value = ""));
-        panel
-            .querySelectorAll('input[type="checkbox"]')
-            .forEach((el) => (el.checked = false));
-    }
-
-    // 2. Clear Global Inputs (if matched)
-    ["modelo", "anio", "marca"].forEach((name) => {
-        const el = document.querySelector(`input[name="${name}"]`);
-        if (el) el.value = "";
-    });
-
-    // 3. Reset Dropdown Displays
-    document.querySelectorAll(".custom-dropdown").forEach((dd) => {
-        const display = dd.querySelector("input[readonly]");
-        const label = dd.dataset.defaultLabel || "Seleccionar...";
-        if (display) display.placeholder = label;
-
-        // Hide clear btn
-        const clearBtn = dd.querySelector("[data-clear-btn]");
-        if (clearBtn) clearBtn.style.display = "none";
-
-        // Remove 'selected' class from options
-        dd.querySelectorAll(".dropdown-item.selected").forEach((opt) =>
-            opt.classList.remove("selected"),
-        );
-
-        // Reset search inputs inside dropdowns
-        const searchInDD = dd.querySelector("[data-filter-search]");
-        if (searchInDD) {
-            searchInDD.value = "";
-            window.filterDropdownOptions(searchInDD); // Show all options
-        }
-    });
-
-    // 4. Reset Button Styles
-    const advBtn = document.getElementById("btnAdvancedFilter");
-    if (advBtn) {
-        advBtn.style.background = "white";
-        advBtn.style.color = "#64748b";
-        advBtn.style.border = "1px solid #cbd5e0";
-    }
-
-    // 5. Hide Clear Search button
-    const clearSearch = document.getElementById("btn_clear_search");
-    if (clearSearch) clearSearch.style.display = "none";
-};
 
 window.selectAdvancedFilter = function (type, value) {
     // Generic setter if needed (mostly handled by inputs directly)

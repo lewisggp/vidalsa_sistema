@@ -68,7 +68,7 @@
                         autocomplete="off">
                     <i class="material-icons" data-clear-btn
                        style="padding:0 5px; color:var(--maquinaria-gray-text); font-size:18px; display:{{ $currentFrenteId && $currentFrenteId != 'all' ? 'block' : 'none' }};"
-                       onclick="event.stopPropagation(); clearDropdownFilter('frenteFilterSelect'); clearAdvancedFilters(); loadEquipos();">close</i>
+                       onclick="event.stopPropagation(); clearDropdownFilter('frenteFilterSelect'); loadEquipos();">close</i>
                 </div>
 
                 <div class="dropdown-content" style="padding:5px; max-height:none; overflow:visible; z-index:1000;">
@@ -112,7 +112,7 @@
                         autocomplete="off">
                      <i class="material-icons" data-clear-btn
                        style="padding: 0 5px; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_tipo') ? 'block' : 'none' }};"
-                       onclick="event.preventDefault(); event.stopPropagation(); clearDropdownFilter('tipoFilterSelect'); clearAdvancedFilters(); loadEquipos();">close</i>
+                       onclick="event.preventDefault(); event.stopPropagation(); clearDropdownFilter('tipoFilterSelect'); loadEquipos();">close</i>
                 </div>
 
                 <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible; z-index: 1000;">
@@ -145,7 +145,7 @@
                         onkeyup="if(this.value.length >= 4 || this.value.length == 0) { /* Debounce handled in script */ }">
                      <i id="btn_clear_search" class="material-icons clear-icon" 
                        style="display: {{ request('search_query') ? 'block' : 'none' }};" 
-                       onclick="event.preventDefault(); event.stopPropagation(); clearAdvancedFilters(); selectAdvancedFilter('search', ''); document.getElementById('searchInput').value='';">close</i>
+                       onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('searchInput').value=''; this.style.display='none'; loadEquipos();">close</i>
                 </div>
             </form>
 
@@ -381,11 +381,11 @@
                 </button>
 
                 <!-- Configurar Anclajes -->
-                <button type="button" disabled class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #94a3b8; text-decoration: none; transition: all 0.2s; border-bottom: 1px solid #f1f5f9; background: transparent; border: none; width: 100%; text-align: left; cursor: not-allowed;" title="Próximamente">
-                    <div style="background: #f1f5f9; padding: 6px; border-radius: 6px; display: flex;">
-                        <i class="material-icons" style="font-size: 18px; color: #94a3b8;">link</i>
+                <button type="button" onclick="openAnclajesListModal()" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; transition: all 0.2s; border-bottom: 1px solid #f1f5f9; background: transparent; border: none; width: 100%; text-align: left;">
+                    <div style="background: #e0f2fe; padding: 6px; border-radius: 6px; display: flex;">
+                        <i class="material-icons" style="font-size: 18px; color: #0284c7;">link</i>
                     </div>
-                    <span style="font-size: 14px; font-weight: 600;">Configurar Anclajes</span>
+                    <span style="font-size: 14px; font-weight: 500;">Configurar Anclajes</span>
                 </button>
 
                 <!-- Exportar -->
@@ -908,7 +908,99 @@
             }
         }
     </style>
+<!-- Anclajes Dashboard Modal -->
+<div id="anclajesListModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
+    <div class="modal-content" style="width: 90%; max-width: 800px; max-height: 90vh; background: #fff; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 8px;">
+                    <i class="material-icons" style="color: #fff; font-size: 20px;">link</i>
+                </div>
+                <h3 style="margin: 0; color: #fff; font-size: 16px; font-weight: 600;">Anclaje de Equipos</h3>
+            </div>
+            <button type="button" onclick="document.getElementById('anclajesListModal').style.display='none'" style="background: transparent; border: none; color: #94a3b8; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+        
+        <!-- Loading -->
+        <div id="anclajesLoading" style="padding: 40px; text-align: center; color: #64748b;">
+            <i class="material-icons" style="font-size: 32px; animation: fleetSpin 1s linear infinite;">refresh</i>
+            <p style="margin-top: 10px; font-size: 14px;">Cargando equipos anclados...</p>
+        </div>
+
+        <!-- Body -->
+        <div id="anclajesBody" style="display: none; padding: 20px; overflow-y: auto; flex: 1; background: #f8fafc;">
+            <div id="anclajesGrid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+    function openAnclajesListModal() {
+        document.getElementById('splitDropdownMenu').style.display = 'none';
+        const modal = document.getElementById('anclajesListModal');
+        modal.style.display = 'flex';
+        document.getElementById('anclajesLoading').style.display = 'block';
+        document.getElementById('anclajesBody').style.display = 'none';
+
+        // Fetch active front
+        let fValue = '';
+        const fInput = document.querySelector('input[name="id_frente"][data-filter-value]');
+        if (fInput && fInput.value && fInput.value !== 'all') {
+            fValue = fInput.value;
+        }
+
+        fetch('{{ route("equipos.getAnchors") }}?frente_id=' + fValue)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('anclajesLoading').style.display = 'none';
+                document.getElementById('anclajesBody').style.display = 'block';
+                
+                const grid = document.getElementById('anclajesGrid');
+                if (data.length === 0) {
+                    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 30px; color: #94a3b8; background: #fff; border-radius: 8px; border: 1px dashed #cbd5e1;">No hay equipos anclados en este frente.</div>';
+                    return;
+                }
+
+                let html = '';
+                data.forEach(pair => {
+                    const a = pair.eq_a;
+                    const b = pair.eq_b;
+                    if(!a || !b) return;
+
+                    html += `
+                    <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <div style="display: flex; flex-direction: column; align-items: center; width: 42%; text-align: center;">
+                            <img src="${a.foto || '/images/equipos-placeholder.png'}" onerror="this.src='/images/equipos-placeholder.png'" style="width: 60px; height: 45px; object-fit: contain; border-radius: 4px; background: #f1f5f9; margin-bottom: 6px; border: 1px solid #e2e8f0;">
+                            <span style="font-size: 11px; font-weight: 700; color: #1e293b; line-height: 1.1; margin-bottom: 2px;">${a.codigo}</span>
+                            <span style="font-size: 9px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;" title="${a.marca_modelo}">${a.marca_modelo}</span>
+                        </div>
+                        
+                        <div style="display: flex; flex-direction: column; align-items: center; color: #10b981; padding: 0 5px;">
+                            <i class="material-icons" style="font-size: 20px;">link</i>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; align-items: center; width: 42%; text-align: center;">
+                            <img src="${b.foto || '/images/equipos-placeholder.png'}" onerror="this.src='/images/equipos-placeholder.png'" style="width: 60px; height: 45px; object-fit: contain; border-radius: 4px; background: #f1f5f9; margin-bottom: 6px; border: 1px solid #e2e8f0;">
+                            <span style="font-size: 11px; font-weight: 700; color: #1e293b; line-height: 1.1; margin-bottom: 2px;">${b.codigo}</span>
+                            <span style="font-size: 9px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;" title="${b.marca_modelo}">${b.marca_modelo}</span>
+                        </div>
+                    </div>`;
+                });
+                grid.innerHTML = html;
+            })
+            .catch(err => {
+                console.error('Error loading anchors:', err);
+                document.getElementById('anclajesLoading').style.display = 'none';
+                document.getElementById('anclajesBody').style.display = 'block';
+                document.getElementById('anclajesGrid').innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #ef4444; padding: 20px;">Error al cargar anclajes.</div>';
+            });
+    }
+
     // Alias: CAN_CREATE_INFO → CAN_CREATE_EQUIPOS (definido globalmente en estructura_base)
     // Se mantiene por compatibilidad con equipos_index.js
     window.CAN_CREATE_INFO = window.CAN_CREATE_EQUIPOS;
