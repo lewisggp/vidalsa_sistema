@@ -9,22 +9,7 @@ if (typeof window.ModuleManager !== 'undefined') {
             const appRoot = document.getElementById('consumiblesAppRoot');
             if (!appRoot) return;
 
-            // 1. Initialize Tom Select for all searchable selects
-            const selects = document.querySelectorAll('select.searchable-select');
-            selects.forEach(selectEl => {
-                if (selectEl.tomselect) {
-                    selectEl.tomselect.destroy();
-                }
-                new TomSelect(selectEl, {
-                    create: false,
-                    sortField: {
-                        field: "text",
-                        direction: "asc"
-                    },
-                    placeholder: "Seleccionar/Buscar...",
-                    maxOptions: null
-                });
-            });
+
 
             // Expose logic to global scope so inline onclicks work
             window.CSRF = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
@@ -236,7 +221,11 @@ if (typeof window.ModuleManager !== 'undefined') {
             };
 
             window.cancelarFrente = function (id) {
-                location.reload();
+                if (window.submitConsumiblesFilters) {
+                    window.submitConsumiblesFilters();
+                } else {
+                    location.reload();
+                }
             };
         }
     );

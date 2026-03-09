@@ -76,20 +76,12 @@
             <span class="page-title-line2" style="color:#000;">Análisis de Consumibles</span>
         </h1>
     </div>
-    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <a href="{{ route('consumibles.index') }}" class="btn-secondary">
-            <i class="material-icons" style="font-size:17px;">list</i> Registros
-        </a>
-        <button class="btn-primary-maquinaria btn-green" onclick="descargarCsv()">
-            <i class="material-icons" style="font-size:17px;">download</i> Exportar CSV
-        </button>
-    </div>
 </div>
 
 <div class="admin-card" style="box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); padding: 20px 25px; margin-bottom: 20px;">
 {{-- FILTROS --}}
 <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-    <div style="flex: 2; min-width: 200px;">
+    <div style="flex: 1; min-width: 180px;">
         <div class="custom-dropdown" id="frenteFilterSelect" data-filter-type="frente" data-default-label="Todos los frentes">
             <input type="hidden" id="fFrente" data-filter-value value="">
 
@@ -104,20 +96,20 @@
                     autocomplete="off">
                 <i class="material-icons" data-clear-btn
                    style="padding:0 5px; color:var(--maquinaria-gray-text, #94a3b8); font-size:18px; display:none; cursor:pointer;"
-                   onclick="event.stopPropagation(); window.clearDropdownFilter('frenteFilterSelect'); setTimeout(cargarDatos, 50);">close</i>
+                   onclick="event.stopPropagation(); window.clearDropdownFilter('frenteFilterSelect'); setTimeout(window.cargarDatos, 50);">close</i>
             </div>
 
             <div class="dropdown-content" style="padding:5px; max-height:none; overflow:visible; z-index:1000;">
                 <div class="dropdown-item-list" style="max-height:250px; overflow-y:auto;">
                     <div class="dropdown-item selected"
                          data-value=""
-                         onclick="window.selectOption('frenteFilterSelect', '', 'Todos los frentes'); cargarDatos();">
+                         onclick="window.selectOption('frenteFilterSelect', '', 'Todos los frentes'); window.cargarDatos();">
                         Todos los frentes
                     </div>
                     @foreach($frentes as $f)
                         <div class="dropdown-item"
                              data-value="{{ $f->ID_FRENTE }}"
-                             onclick="window.selectOption('frenteFilterSelect', '{{ $f->ID_FRENTE }}', '{{ $f->NOMBRE_FRENTE }}'); cargarDatos();">
+                             onclick="window.selectOption('frenteFilterSelect', '{{ $f->ID_FRENTE }}', '{{ $f->NOMBRE_FRENTE }}'); window.cargarDatos();">
                             {{ $f->NOMBRE_FRENTE }}
                         </div>
                     @endforeach
@@ -126,27 +118,92 @@
         </div>
     </div>
 
-    <div style="flex: 1.5; min-width: 140px;">
-        <select id="fTipo" onchange="cargarDatos()" style="width:100%; height:42px; border-radius:10px; border:1px solid #cbd5e0; background:#fbfcfd; outline:none; padding:0 12px; font-size:13px; color:#1e293b;">
-            <option value="">Todos los tipos</option>
-            @foreach(\App\Models\Consumible::tiposLabel() as $v => $l)
-                <option value="{{ $v }}">{{ $l }}</option>
-            @endforeach
-        </select>
+    <div style="flex: 1; min-width: 140px;">
+        <div class="custom-dropdown" id="tipoFilterSelect" data-filter-type="tipo" data-default-label="Gasoil">
+            <input type="hidden" id="fTipo" data-filter-value value="GASOIL">
+
+            <div class="dropdown-trigger" style="padding:0; display:flex; align-items:center; background:#fbfcfd; overflow:hidden; border:1px solid #cbd5e0; border-radius:10px; height:42px; cursor:pointer;">
+                <div style="padding:0 10px; display:flex; align-items:center; color:var(--maquinaria-gray-text, #94a3b8);">
+                    <i class="material-icons" style="font-size:18px;">local_gas_station</i>
+                </div>
+                <input type="text" data-filter-search
+                    readonly
+                    value="Gasoil"
+                    style="width:100%; border:none; background:transparent; padding:0 5px; font-size:13px; outline:none; height:100%; cursor:pointer;"
+                    autocomplete="off">
+                <i class="material-icons" style="padding:0 10px; color:var(--maquinaria-gray-text, #94a3b8); font-size:18px;">arrow_drop_down</i>
+            </div>
+
+            <div class="dropdown-content" style="padding:5px; max-height:none; overflow:visible; z-index:1000;">
+                <div class="dropdown-item-list" style="max-height:250px; overflow-y:auto;">
+                    @foreach(\App\Models\Consumible::tiposLabel() as $v => $l)
+                        @if(!in_array($v, ['REFRIGERANTE', 'OTRO']))
+                            <div class="dropdown-item {{ $v == 'GASOIL' ? 'selected' : '' }}"
+                                 data-value="{{ $v }}"
+                                 onclick="window.selectOption('tipoFilterSelect', '{{ $v }}', '{{ $l }}'); window.cargarDatos();">
+                                {{ $l }}
+                            </div>
+                        @endif
+                    @endforeach
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div style="display:flex; gap:8px;">
-        <input type="date" id="fDesde" title="Desde" style="width: 100%; height:42px; border-radius:10px; border:1px solid #cbd5e0; background:#fbfcfd; outline:none; padding:0 12px; font-size:13px; color:#1e293b;">
-        <input type="date" id="fHasta" title="Hasta" style="width: 100%; height:42px; border-radius:10px; border:1px solid #cbd5e0; background:#fbfcfd; outline:none; padding:0 12px; font-size:13px; color:#1e293b;">
-    </div>
-
-    <div style="flex: 0 0 auto;">
-        <button class="btn-primary-maquinaria" onclick="cargarDatos()" style="height:42px; display:flex; align-items:center; padding:0 20px; border-radius:10px;">
-            <i class="material-icons" style="font-size:17px; margin-right:5px;">refresh</i> Aplicar
+    <div style="position: relative;">
+        <button type="button" id="btnAdvancedFilter" class="btn-primary-maquinaria" style="height: 42px; width: 42px; padding: 0; display: flex; align-items: center; justify-content: center; background: white; border: 1px solid #cbd5e0; color: #64748b; box-shadow: none;" onclick="document.getElementById('advancedFilterPanel').style.display = document.getElementById('advancedFilterPanel').style.display === 'none' ? 'block' : 'none'; event.stopPropagation();">
+            <i class="material-icons">filter_list</i>
         </button>
+        
+        <div id="advancedFilterPanel" class="no-close-on-click" style="display: none; position: absolute; top: 100%; right: 0; width: 300px; background: #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15); border: 1px solid #cbd5e1; z-index: 1000; margin-top: 10px; padding: 15px;">
+            <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: 700; color: #334155; display: flex; justify-content: space-between; align-items: center;">
+                Filtros Avanzados
+                <button type="button" onclick="window.clearAdvancedFilters(); window.cargarDatos();" style="font-size: 11px; color: #64748b; font-weight: 400; text-decoration: underline; cursor: pointer; border: none; background: transparent;">Limpiar Todo</button>
+            </h4>
+
+            <div style="margin-bottom: 15px;">
+                <span style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px;">Rango de Fechas</span>
+                <div style="display: flex; gap: 8px;">
+                    <input type="date" id="fDesde" onchange="window.cargarDatos()" title="Desde" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e0; background: #fbfcfd; outline: none; padding: 0 12px; font-size:12px; color: #1e293b; cursor: pointer;">
+                    <input type="date" id="fHasta" onchange="window.cargarDatos()" title="Hasta" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e0; background: #fbfcfd; outline: none; padding: 0 12px; font-size:12px; color: #1e293b; cursor: pointer;">
+                </div>
+            </div>
+
+        </div>
     </div>
+    <!-- Botón Acciones -->
+    <div style="position: relative; flex-shrink: 0;">
+        <button type="button" id="btnAcciones" onclick="document.getElementById('splitDropdownMenu').style.display = document.getElementById('splitDropdownMenu').style.display === 'none' ? 'block' : 'none'; event.stopPropagation();" class="btn-primary-maquinaria" style="padding: 0 15px; height: 42px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+            <i class="material-icons">settings</i>
+            <span>Acciones</span>
+            <i class="material-icons" style="font-size: 18px; margin-left: 2px;">expand_more</i>
+        </button>
+        <div id="splitDropdownMenu" style="display: none; position: absolute; top: 100%; right: 0; width: 230px; background: #e2e8f0; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; z-index: 1050; margin-top: 10px; overflow: hidden;">
+            <a href="{{ route('consumibles.index') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <div style="background: #eff6ff; padding: 6px; border-radius: 6px; display: flex;"><i class="material-icons" style="font-size:18px; color:#3b82f6;">list</i></div>
+                <span style="font-size:14px; font-weight:500;">Ver Registros</span>
+            </a>
+            <button type="button" onclick="document.getElementById('splitDropdownMenu').style.display='none'; descargarCsv()" class="dropdown-item-custom" style="width:100%; display:flex; align-items:center; gap:10px; padding:12px 15px; color:#475569; border:none; background:transparent; text-align:left; cursor:pointer; transition:all 0.2s; border-bottom: 1px solid #f1f5f9;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <div style="background: #ecfdf5; padding: 6px; border-radius: 6px; display: flex;"><i class="material-icons" style="font-size:18px; color:#10b981;">download</i></div>
+                <span style="font-size:14px; font-weight:500;">Exportar a CSV</span>
+            </button>
+        </div>
+    </div>
+
 </div>
 </div>
+<script>
+    document.addEventListener('click', function(e) {
+        let accMenu = document.getElementById('splitDropdownMenu');
+        if (accMenu && accMenu.style.display === 'block' && !e.target.closest('#btnAcciones') && !e.target.closest('#splitDropdownMenu')) {
+            accMenu.style.display = 'none';
+        }
+        let advMenu = document.getElementById('advancedFilterPanel');
+        if (advMenu && advMenu.style.display === 'block' && !e.target.closest('#btnAdvancedFilter') && !e.target.closest('#advancedFilterPanel')) {
+            advMenu.style.display = 'none';
+        }
+    });
+</script>
 
 {{-- TARJETAS RESUMEN --}}
 <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:12px;">
@@ -165,7 +222,7 @@
 </div>
 
 {{-- TOTAL POR FRENTE --}}
-<div class="g-grid-1">
+<div class="g-grid-1" id="totalFrenteWrapper">
     <div class="g-card" id="panelTotalFrente">
         <p class="g-title" style="justify-content:space-between;">
             <span style="display:flex;align-items:center;gap:8px;">
@@ -202,25 +259,6 @@
     </div>
 </div>
 
-{{-- BARRAS POR TIPO --}}
-<div class="g-grid-1">
-    <div class="g-card">
-        <p class="g-title" style="justify-content:space-between;">
-            <span style="display:flex;align-items:center;gap:8px;">
-                <i class="material-icons">stacked_bar_chart</i>
-                Por Frente Desglosado por Tipo
-            </span>
-            <button onclick="descargarGrafico('chartFrente','consumo_por_frente')" title="Descargar imagen" style="border:none;background:transparent;cursor:pointer;color:#94a3b8;display:flex;align-items:center;padding:4px 8px;border-radius:8px;transition:background .2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
-                <i class="material-icons" style="font-size:17px;">photo_camera</i>
-            </button>
-        </p>
-        <div id="loadingFrente" class="loading-overlay">
-            <i class="material-icons" style="animation:spin 1s linear infinite;">refresh</i>
-        </div>
-        <canvas id="chartFrente" style="display:none; max-height:300px;"></canvas>
-    </div>
-</div>
-
 
 {{-- CONSUMO POR TIPO DE EQUIPO × FRENTE --}}
 <div class="g-grid-1">
@@ -238,7 +276,9 @@
         <div id="loadingTipoEq" class="loading-overlay">
             <i class="material-icons" style="animation:spin 1s linear infinite;">refresh</i>
         </div>
-        <canvas id="chartTipoEq" style="display:none; max-height:320px;"></canvas>
+        <div style="position: relative; height:320px; width:100%;">
+            <canvas id="chartTipoEq" style="display:none;"></canvas>
+        </div>
     </div>
 </div>
 
@@ -258,12 +298,14 @@
         <div id="loadingEqFrente" class="loading-overlay">
             <i class="material-icons" style="animation:spin 1s linear infinite;">refresh</i>
         </div>
-        <canvas id="chartEqFrente" style="display:none;"></canvas>
+        <div style="position: relative; height:320px; width:100%;">
+            <canvas id="chartEqFrente" style="display:none;"></canvas>
+        </div>
     </div>
 </div>
 
 {{-- TOP EQUIPOS — GRID DE TARJETAS --}}
-<div class="g-grid-1">
+<div class="g-grid-1" id="panelRankingEquipos">
     <div class="g-card">
         <p class="g-title" style="justify-content:space-between;">
             <span style="display:flex;align-items:center;gap:8px;">
@@ -302,20 +344,6 @@
     </div>
 </div>
 
-{{-- TOTAL ABSOLUTO POR ESPECIFICACION (ACEITE/CAUCHO) --}}
-<div class="g-grid-1" id="secTotalEspec" style="display:none; margin-bottom: 24px;">
-    <div class="g-card">
-        <p class="g-title" id="titleTotalEspec">
-            <i class="material-icons" id="iconTotalEspec" style="color:#0067b1;">pie_chart</i>
-            <span id="txtTotalEspec">Consumo Total por Especificación</span>
-            <span class="g-subtitle">— global acumulado</span>
-        </p>
-        <div id="loadingTotalEspec" class="loading-overlay">
-            <i class="material-icons" style="animation:spin 1s linear infinite;">refresh</i>
-        </div>
-        <div id="totalEspecBody" style="display:none; flex-wrap:wrap; align-items:center; padding: 10px 0;"></div>
-    </div>
-</div>
 
 {{-- ESPECIFICACION POR FRENTE --}}
 <div class="g-grid-1" id="secEspecFrente" style="display:none;">
@@ -397,6 +425,7 @@
                 <tbody id="bodyTodosEq"></tbody>
             </table>
         </div>
+        <div id="paginacionEquipos"></div>
     </div>
 </div>
 
@@ -404,9 +433,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
-Chart.register(ChartDataLabels);
 // Paleta corporativa: variada y profunda
-var COLORES = {
+window.COLORES = window.COLORES || {
     'GASOIL':       '#003a70',   // azul marino
     'GASOLINA':     '#c41c00',   // rojo intenso
     'ACEITE':       '#0077cc',   // azul eléctrico
@@ -414,12 +442,28 @@ var COLORES = {
     'REFRIGERANTE': '#00838f',   // teal
     'OTRO':         '#546e7a',   // gris azulado
 };
-var TIPO_LABEL = {
+window.TIPO_LABEL = window.TIPO_LABEL || {
     'GASOIL':'Gasoil','GASOLINA':'Gasolina','ACEITE':'Aceite',
     'CAUCHO':'Caucho','REFRIGERANTE':'Refrigerante','OTRO':'Otro'
 };
 
-var chartFrente = null, chartTipoEq = null, chartEqFrente = null, chartCauchoModelo = null;
+window.chartTipoEq = window.chartTipoEq || null;
+window.chartEqFrente = window.chartEqFrente || null;
+window.chartCauchoModelo = window.chartCauchoModelo || null;
+
+const chartCheckInterval = setInterval(() => {
+    if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
+        Chart.register(ChartDataLabels);
+        clearInterval(chartCheckInterval);
+    }
+}, 100);
+setTimeout(() => clearInterval(chartCheckInterval), 5000);
+
+var COLORES = window.COLORES;
+var TIPO_LABEL = window.TIPO_LABEL;
+var chartTipoEq = window.chartTipoEq;
+var chartEqFrente = window.chartEqFrente;
+var chartCauchoModelo = window.chartCauchoModelo;
 
 function getParams() {
     var p = new URLSearchParams();
@@ -434,28 +478,41 @@ function getParams() {
     return p;
 }
 
+window.clearAdvancedFilters = function() {
+    if(document.getElementById('fDesde')) document.getElementById('fDesde').value = '';
+    if(document.getElementById('fHasta')) document.getElementById('fHasta').value = '';
+};
+
 function show(id)   { document.getElementById(id).style.display = ''; }
 function hide(id)   { document.getElementById(id).style.display = 'none'; }
 function canvas(id) { document.getElementById(id).style.display = 'block'; }
 
 function cargarDatos() {
+    if (window.showPreloader) window.showPreloader();
     const params = getParams();
 
+    const tipoFiltroPre = document.getElementById('fTipo') ? document.getElementById('fTipo').value : '';
+
     // ── Loading: mostrar spinners de las secciones siempre visibles ──
-    ['loadingTotalFrente','loadingEqAsig','loadingFrente','loadingTipoEq',
-     'loadingRanking','loadingTodosEq','loadingCauchoModelo', 'loadingInoperativos'].forEach(show);
+    ['loadingTotalFrente','loadingEqAsig','loadingTipoEq',
+     'loadingRanking','loadingTodosEq','loadingInoperativos'].forEach(show);
+
+    if (tipoFiltroPre === 'CAUCHO') {
+        show('secCauchoModelo');
+        show('loadingCauchoModelo');
+    } else {
+        hide('secCauchoModelo');
+    }
 
     // ── Ocultar contenido previo (prev carga) ────────────────────────
-    ['chartFrente','chartTipoEq','totalFrenteBody','eqAsigBody',
+    ['chartTipoEq','totalFrenteBody','eqAsigBody',
      'rankingBody','wrapTodosEq','chartCauchoModelo', 'inoperativosBody'].forEach(hide);
 
     // ── Secciones de especificación: ocultar antes de cada carga ─────
     // Evita que queden datos viejos visibles durante la nueva carga.
-    hide('secTotalEspec');
     hide('secEspecFrente');
     hide('secEspecEquipo');
     hide('secInoperativos');
-    hide('totalEspecBody');
     hide('aceiteFrente-body');
     hide('aceiteEquipoBody');
 
@@ -466,8 +523,16 @@ function cargarDatos() {
         .then(r => r.json())
         .then(data => {
             const frenteSeleccionado = document.getElementById('fFrente').value;
+            const tipoFiltro = document.getElementById('fTipo').value;
+
             renderResumen(data.resumen);
-            renderTotalFrente(data.por_frente);
+            
+            if (tipoFiltro === 'GASOIL') {
+                document.getElementById('totalFrenteWrapper').style.display = 'block';
+                renderTotalFrente(data.por_frente);
+            } else {
+                document.getElementById('totalFrenteWrapper').style.display = 'none';
+            }
             // ── Orden de frentes según gráfico de consumo (mayor a menor) ────────
             // 'let' porque luego insertamos AMBIENTE en la posición que le corresponde.
             let ordenFrente = (data.por_frente || [])
@@ -475,7 +540,6 @@ function cargarDatos() {
                 .filter((v, i, a) => a.indexOf(v) === i);  // únicos, en orden consumo
 
             // ── AMBIENTE en posición #3, excepto cuando se filtra por CAUCHO o ACEITE ──
-            const tipoFiltro = document.getElementById('fTipo').value;
             const tiposSinAmbiente = ['CAUCHO', 'ACEITE'];
             if (data.equipos_asignados && data.equipos_asignados['AMBIENTE']
                 && !tiposSinAmbiente.includes(tipoFiltro)) {
@@ -483,7 +547,6 @@ function cargarDatos() {
             }
 
             window.renderEquiposAsignados(data.equipos_asignados || {}, ordenFrente);
-            renderFrente(data.por_frente);
             renderTipoEquipo(data.por_tipo_equipo);
             // Solo mostrar equipos×frente cuando hay un frente específico seleccionado
             if (frenteSeleccionado) {
@@ -502,19 +565,26 @@ function cargarDatos() {
                 document.getElementById('secInoperativos').style.display = 'none';
             }
             renderRanking(data.top_equipos);
-            renderCauchosPorModelo(data.cauchos_por_modelo);
+            if (tipoFiltro === 'CAUCHO') {
+                renderCauchosPorModelo(data.cauchos_por_modelo);
+            }
             renderTodosEquipos(data.todos_equipos);
-            renderTotalEspec(data.espec_frente, data.tipo_activo);
             renderEspecFrente(data.espec_frente,  data.tipo_activo);
             renderEspecEquipo(data.espec_equipo, data.tipo_activo);
+            if (window.hidePreloader) window.hidePreloader();
         })
         .catch(err => {
+            if (window.hidePreloader) window.hidePreloader();
             console.error('Error cargando datos de gráficos:', err);
-            ['loadingTotalFrente','loadingEqAsig','loadingFrente','loadingTipoEq',
-             'loadingRanking','loadingTodosEq','loadingCauchoModelo', 'loadingInoperativos'].forEach(id => {
+            ['loadingTotalFrente','loadingEqAsig','loadingTipoEq',
+             'loadingRanking','loadingTodosEq','loadingInoperativos'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.innerHTML = '<span style="color:#ef4444;">Error al cargar datos</span>';
             });
+            if (tipoFiltroPre === 'CAUCHO') {
+                const elCaucho = document.getElementById('loadingCauchoModelo');
+                if (elCaucho) elCaucho.innerHTML = '<span style="color:#ef4444;">Error al cargar datos</span>';
+            }
         });
 }
 
@@ -665,66 +735,6 @@ function renderTotalFrente(datos) {
 
 
 
-// ── Barras por tipo por frente ─────────────────────────────────────
-function renderFrente(datos) {
-    if (!datos || datos.length === 0) {
-        const el = document.getElementById('loadingFrente');
-        el.innerHTML = '<span style="color:#94a3b8;font-size:13px;">Sin datos para mostrar.</span>';
-        el.style.display = 'flex';
-        return;
-    }
-    hide('loadingFrente');
-    canvas('chartFrente');
-    const frentes = [...new Set(datos.map(d => d.NOMBRE_FRENTE))];
-    const tipos   = [...new Set(datos.map(d => d.TIPO_CONSUMIBLE))];
-    const datasets = tipos.map(tipo => ({
-        label: TIPO_LABEL[tipo] || tipo,
-        data: frentes.map(f => {
-            const row = datos.find(d => d.NOMBRE_FRENTE === f && d.TIPO_CONSUMIBLE === tipo);
-            return row ? parseFloat(row.total) : 0;
-        }),
-        backgroundColor: COLORES[tipo] || '#94a3b8',
-        borderRadius: 5, borderSkipped: false,
-    }));
-    if (chartFrente) chartFrente.destroy();
-    chartFrente = new Chart(document.getElementById('chartFrente'), {
-        type: 'bar',
-        data: { labels: frentes, datasets },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { position: 'top' },
-                datalabels: {
-                    anchor:  'center',
-                    align:   'center',
-                    color:   '#fff',
-                    font:    { size: 11, weight: '700' },
-                    // Mostrar valor solo si la barra es suficientemente alta
-                    formatter: v => v > 0 ? v.toLocaleString('es-VE', {maximumFractionDigits:0}) : '',
-                    display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
-                },
-                tooltip: {
-                    callbacks: {
-                        label: ctx => {
-                            const tipo = tipos[ctx.datasetIndex];
-                            const row  = datos.find(d => d.NOMBRE_FRENTE === frentes[ctx.dataIndex] && d.TIPO_CONSUMIBLE === tipo);
-                            const u    = row?.unidad || '';
-                            const dep  = row?.despachos || 0;
-                            return [
-                                ` ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('es-VE')} ${u}`,
-                                ` ⛽ ${dep} llenado${dep !== 1 ? 's' : ''} de tanque`,
-                            ];
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: { grid: { display:false } },
-                y: { beginAtZero:true, grid: { color:'#f1f5f9' } }
-            }
-        }
-    });
-}
 
 
 // ── Consumo por tipo de equipo (barra por tipo, total sumado) ───────
@@ -750,52 +760,63 @@ function renderTipoEquipo(datos) {
     const PALETA_EQ = ['#003a70','#c41c00','#0077cc','#7b1fa2','#e65100','#1b5e20','#00838f','#546e7a','#f57f17','#4a148c'];
 
     document.getElementById('chartTipoEq').style.display = 'block';
-    if (chartTipoEq) chartTipoEq.destroy();
-    chartTipoEq = new Chart(document.getElementById('chartTipoEq'), {
-        type: 'bar',
-        data: {
-            labels:   ordenado.map(([t]) => t),
-            datasets: [{
-                label: 'Consumo total',
-                data:  ordenado.map(([, v]) => v),
-                backgroundColor: ordenado.map((_, i) => PALETA_EQ[i % PALETA_EQ.length]),
-                borderRadius: 6,
-                borderSkipped: false,
-            }]
-        },
-        options: {
-            responsive: true,
-            layout: { padding: { top: 22 } },
-            plugins: {
-                legend: { display: false },
-                datalabels: {
-                    anchor: 'end',
-                    align: 'end',
-                    color: '#1e293b',
-                    font: { size: 10, weight: '700' },
-                    formatter: v => v > 0 ? v.toLocaleString('es-VE', {maximumFractionDigits:0}) : '',
-                    clip: false,
+    let retriesT = 0;
+    const drawT = () => {
+        if (typeof Chart === 'undefined') {
+            if (retriesT++ < 50) setTimeout(drawT, 100);
+            return;
+        }
+        if (window.chartTipoEq) window.chartTipoEq.destroy();
+        try {
+            window.chartTipoEq = new Chart(document.getElementById('chartTipoEq'), {
+                type: 'bar',
+                data: {
+                    labels:   ordenado.map(([t]) => t),
+                    datasets: [{
+                        label: 'Consumo total',
+                        data:  ordenado.map(([, v]) => v),
+                        backgroundColor: ordenado.map((_, i) => PALETA_EQ[i % PALETA_EQ.length]),
+                        borderRadius: 6,
+                        borderSkipped: false,
+                    }]
                 },
-                tooltip: {
-                    callbacks: {
-                        label: ctx => {
-                            const tipo = ordenado[ctx.dataIndex][0];
-                            const dep  = mapaDespachos[tipo] || 0;
-                            const u    = mapaUnidad[tipo] || '';
-                            return [
-                                ` ${ctx.parsed.y.toLocaleString('es-VE')} ${u}`,
-                                ` ⛽ ${dep} despacho${dep !== 1 ? 's' : ''}`,
-                            ];
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: { padding: { top: 22 } },
+                    plugins: {
+                        legend: { display: false },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'end',
+                            color: '#1e293b',
+                            font: { size: 10, weight: '700' },
+                            formatter: v => v > 0 ? v.toLocaleString('es-VE', {maximumFractionDigits:0}) : '',
+                            clip: false,
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => {
+                                    const tipo = ordenado[ctx.dataIndex][0];
+                                    const dep  = mapaDespachos[tipo] || 0;
+                                    const u    = mapaUnidad[tipo] || '';
+                                    return [
+                                        ` ${ctx.parsed.y.toLocaleString('es-VE')} ${u}`,
+                                        ` ⛽ ${dep} despacho${dep !== 1 ? 's' : ''}`,
+                                    ];
+                                }
+                            }
                         }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } }
                     }
                 }
-            },
-            scales: {
-                x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-                y: { beginAtZero: true, grid: { color: '#f1f5f9' } }
-            }
-        }
-    });
+            });
+        } catch(e) { console.error(e); }
+    };
+    drawT();
 }
 
 // ── Cauchos por Tipo de Equipo y Medida ─────────────────────────────────────
@@ -829,65 +850,73 @@ function renderCauchosPorModelo(datos) {
             return row ? parseFloat(row.total) : 0;
         }),
         backgroundColor: PALETA_CAUCHO[mi % PALETA_CAUCHO.length],
-        borderRadius: 4,
+        borderRadius: 0,
         borderSkipped: false,
     }));
 
     const mapaInfo = {};
     datos.forEach(d => { mapaInfo[`${d.tipo_equipo}||${d.medida}`] = d; });
 
-    if (chartCauchoModelo) chartCauchoModelo.destroy();
-    chartCauchoModelo = new Chart(canvEl, {
-        type: 'bar',
-        data: { labels: tipos, datasets },
-        options: {
-            responsive: true,
-            layout: { padding: { top: 10 } },
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: { font: { size: 11 }, boxWidth: 14, padding: 12 }
-                },
-                datalabels: {
-                    anchor: 'center',
-                    align: 'center',
-                    color: '#fff',
-                    font: { size: 10, weight: '700' },
-                    formatter: v => v > 0 ? v.toLocaleString('es-VE', {maximumFractionDigits: 0}) : '',
-                    display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
-                },
-                tooltip: {
-                    callbacks: {
-                        label: ctx => {
-                            const medida = medidas[ctx.datasetIndex];
-                            const tipo   = tipos[ctx.dataIndex];
-                            const info   = mapaInfo[`${tipo}||${medida}`];
-                            const dep    = info?.despachos || 0;
-                            const u      = info?.unidad    || 'Un';
-                            return [
-                                ` Medida: ${medida}`,
-                                ` ${ctx.parsed.y.toLocaleString('es-VE')} ${u}`,
-                                ` 🔧 ${dep} reemplazo${dep !== 1 ? 's' : ''}`,
-                            ];
+    let retriesC = 0;
+    const drawC = () => {
+        if (typeof Chart === 'undefined') {
+            if (retriesC++ < 50) setTimeout(drawC, 100);
+            return;
+        }
+        if (window.chartCauchoModelo) window.chartCauchoModelo.destroy();
+        window.chartCauchoModelo = new Chart(canvEl, {
+            type: 'bar',
+            data: { labels: tipos, datasets },
+            options: {
+                responsive: true,
+                layout: { padding: { top: 10 } },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { font: { size: 11 }, boxWidth: 14, padding: 12 }
+                    },
+                    datalabels: {
+                        anchor: 'center',
+                        align: 'center',
+                        color: '#fff',
+                        font: { size: 10, weight: '700' },
+                        formatter: v => v > 0 ? v.toLocaleString('es-VE', {maximumFractionDigits: 0}) : '',
+                        display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => {
+                                const medida = medidas[ctx.datasetIndex];
+                                const tipo   = tipos[ctx.dataIndex];
+                                const info   = mapaInfo[`${tipo}||${medida}`];
+                                const dep    = info?.despachos || 0;
+                                const u      = info?.unidad    || 'Un';
+                                return [
+                                    ` Medida: ${medida}`,
+                                    ` ${ctx.parsed.y.toLocaleString('es-VE')} ${u}`,
+                                    ` 🔧 ${dep} reemplazo${dep !== 1 ? 's' : ''}`,
+                                ];
+                            }
                         }
                     }
-                }
-            },
-            scales: {
-                x: {
-                    stacked: true,
-                    grid: { display: false },
-                    ticks: { font: { size: 11, weight: '600' } }
                 },
-                y: {
-                    stacked: true,
-                    beginAtZero: true,
-                    grid: { color: '#f1f5f9' },
-                    title: { display: true, text: 'Unidades', font: { size: 11 } }
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: { display: false },
+                        ticks: { font: { size: 11, weight: '600' } }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        grid: { color: '#f1f5f9' },
+                        title: { display: true, text: 'Unidades', font: { size: 11 } }
+                    }
                 }
             }
-        }
-    });
+        });
+    };
+    drawC();
 }
 
 // ── Equipos individuales que surtieron en el frente seleccionado ────
@@ -904,7 +933,7 @@ function renderEquiposPorFrente(datos, frenteId) {
     loadEl.innerHTML = '<i class="material-icons" style="animation:spin 1s linear infinite;">refresh</i>';
     loadEl.style.display = 'flex';
     canvEl.style.display = 'none';
-    if (chartEqFrente) { chartEqFrente.destroy(); chartEqFrente = null; }
+    if (window.chartEqFrente) { window.chartEqFrente.destroy(); window.chartEqFrente = null; }
 
     if (!datos || datos.length === 0) {
         loadEl.innerHTML = '<span style="color:#94a3b8;font-size:13px;">Sin equipos identificados en este frente.</span>';
@@ -948,10 +977,12 @@ function renderEquiposPorFrente(datos, frenteId) {
     tiposUnicos.forEach((t, i) => { colorPorTipo[t] = PALETA_EQ[i % PALETA_EQ.length]; });
 
     // Si hay tipos repetidos, añadir sufijo ordinal (Camión #1, Camión #2…)
+    const countPorTipo = {};
+    equipos.forEach(e => countPorTipo[e.tipo] = (countPorTipo[e.tipo] || 0) + 1);
+
     const contadorIdx = {};
     const labelsFinal = equipos.map(e => {
-        const total_tipo = equipos.filter(x => x.tipo === e.tipo).length;
-        if (total_tipo === 1) return e.tipo;
+        if (countPorTipo[e.tipo] === 1) return e.tipo;
         contadorIdx[e.tipo] = (contadorIdx[e.tipo] || 0) + 1;
         return `${e.tipo} #${contadorIdx[e.tipo]}`;
     });
@@ -961,57 +992,67 @@ function renderEquiposPorFrente(datos, frenteId) {
 
     // Mostrar canvas y ocultar spinner
     loadEl.style.display = 'none';
-    canvEl.style.removeProperty('height');
     canvEl.style.display = 'block';
 
-    chartEqFrente = new Chart(canvEl, {
-        type: 'bar',
-        data: {
-            labels: labelsFinal,
-            datasets: [{
-                label: nombre,
-                data:  values,
-                backgroundColor: colors,
-                borderRadius: 6,
-                borderSkipped: false,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            layout: { padding: { top: 22 } },
-            plugins: {
-                legend: { display: false },
-                datalabels: {
-                    anchor: 'end', align: 'end',
-                    color:  '#1e293b',
-                    font:   { size: 10, weight: '700' },
-                    formatter: v => v > 0 ? v.toLocaleString('es-VE', {maximumFractionDigits:1}) : '',
-                    clip: false,
+    let retriesE = 0;
+    const drawE = () => {
+        if (typeof Chart === 'undefined') {
+            if (retriesE++ < 50) setTimeout(drawE, 100);
+            return;
+        }
+        if (window.chartEqFrente) window.chartEqFrente.destroy();
+        try {
+            window.chartEqFrente = new Chart(canvEl, {
+                type: 'bar',
+                data: {
+                    labels: labelsFinal,
+                    datasets: [{
+                        label: nombre,
+                        data:  values,
+                        backgroundColor: colors,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                    }]
                 },
-                tooltip: {
-                    callbacks: {
-                        title: ctx => {
-                            const eq = equipos[ctx[0].dataIndex];
-                            return `🎦 ${eq.idLabel}`;
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: { padding: { top: 22 } },
+                    plugins: {
+                        legend: { display: false },
+                        datalabels: {
+                            anchor: 'end', align: 'end',
+                            color:  '#1e293b',
+                            font:   { size: 10, weight: '700' },
+                            formatter: v => v > 0 ? v.toLocaleString('es-VE', {maximumFractionDigits:1}) : '',
+                            clip: false,
                         },
-                        label: ctx => {
-                            const eq = equipos[ctx.dataIndex];
-                            return ` ⛽ ${eq.desp} despacho${eq.desp !== 1 ? 's' : ''}`;
+                        tooltip: {
+                            callbacks: {
+                                title: ctx => {
+                                    const eq = equipos[ctx[0].dataIndex];
+                                    return `🎦 ${eq.idLabel}`;
+                                },
+                                label: ctx => {
+                                    const eq = equipos[ctx.dataIndex];
+                                    return ` ⛽ ${eq.desp} despacho${eq.desp !== 1 ? 's' : ''}`;
+                                },
+                                afterLabel: () => undefined,
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid:  { display: false },
+                            ticks: { font: { size: 11, weight: '600' } }
                         },
-                        afterLabel: () => undefined,
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } }
                     }
                 }
-            },
-            scales: {
-                x: {
-                    grid:  { display: false },
-                    ticks: { font: { size: 11, weight: '600' } }
-                },
-                y: { beginAtZero: true, grid: { color: '#f1f5f9' } }
-            }
-        }
-    });
+            });
+        } catch(e) { console.error(e); }
+    };
+    drawE();
 }
 
 // ── Equipos Inoperativos ────────────────────────────────────────────────
@@ -1075,10 +1116,12 @@ window.descargarPanelInoperativos = function() {
 
 
 // ── TOP EQUIPOS — Grid de tarjetas compactas ───────────────────────
-var _rankingData = [];
+window._rankingData = window._rankingData || [];
+var _rankingData = window._rankingData;
 function renderRanking(datos) {
     hide('loadingRanking');
-    _rankingData = datos || [];
+    window._rankingData = datos || [];
+    _rankingData = window._rankingData;
     const body = document.getElementById('rankingBody');
     body.style.display = 'block';
     if (!_rankingData.length) {
@@ -1122,142 +1165,55 @@ function renderRanking(datos) {
     }</div>`;
 }
 
-// ── DESCARGA el panel Top 15 como imagen PNG ──────────────────────────────
 function descargarRanking() {
     if (!_rankingData || !_rankingData.length) {
         alert('No hay datos para descargar. Carga los gráficos primero.');
         return;
     }
-
-    const DPR    = 2;
-    const PAD    = 20;
-    const COLS   = 3;
-    const CARD_W = 240;
-    const CARD_H = 122;
-    const GAP    = 12;
-    const TITLE_H = 50;
-    const ROWS   = Math.ceil(_rankingData.length / COLS);
-    const W      = PAD * 2 + COLS * CARD_W + (COLS - 1) * GAP;
-    const H      = TITLE_H + ROWS * (CARD_H + GAP) + PAD;
-
-    const cvs = document.createElement('canvas');
-    cvs.width  = W * DPR;
-    cvs.height = H * DPR;
-    const ctx = cvs.getContext('2d');
-    ctx.scale(DPR, DPR);
-
-    // Fondo blanco
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, W, H);
-
-    // Título
-    ctx.fillStyle = '#1e293b';
-    ctx.font = 'bold 14px system-ui, sans-serif';
-    ctx.fillText('🏆 Top 15 Equipos Mayor Consumo', PAD, PAD + 16);
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '11px system-ui, sans-serif';
-    ctx.fillText('total · despachos · frente asignado', PAD, PAD + 32);
-
-    const maxVal = Math.max(..._rankingData.map(d => parseFloat(d.total)));
-
-    _rankingData.forEach((d, i) => {
-        const col = i % COLS;
-        const row = Math.floor(i / COLS);
-        const cx  = PAD + col * (CARD_W + GAP);
-        const cy  = TITLE_H + row * (CARD_H + GAP);
-
-        // Fondo tarjeta
-        ctx.fillStyle = '#f8fafc';
-        ctx.strokeStyle = '#e2e8f0';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.roundRect(cx, cy, CARD_W, CARD_H, 8);
-        ctx.fill();
-        ctx.stroke();
-
-        const barColor = i === 0 ? '#003a70' : i <= 2 ? '#0077cc' : i <= 5 ? '#546e7a' : '#9ca3af';
-
-        const idTexto = (d.PLACA && d.PLACA.trim()) ? d.PLACA
-                      : (d.SERIAL_CHASIS && d.SERIAL_CHASIS.trim()) ? d.SERIAL_CHASIS
-                      : (d.CODIGO_PATIO && d.CODIGO_PATIO.trim()) ? d.CODIGO_PATIO
-                      : (d.MODELO || 'S/ID');
-
-        // Tipo equipo
-        ctx.fillStyle = '#0067b1';
-        ctx.font = 'bold 9px system-ui, sans-serif';
-        ctx.fillText((d.tipo || 'S/T').toUpperCase(), cx + 10, cy + 16);
-
-        // Identificador
-        ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 12px monospace';
-        ctx.fillText(idTexto.slice(0, 22), cx + 10, cy + 32);
-
-        // Frente asignado
-        ctx.fillStyle = '#475569';
-        ctx.font = '10px system-ui, sans-serif';
-        ctx.fillText('📍 ' + (d.frente ? d.frente.slice(0, 30) : 'Sin frente'), cx + 10, cy + 46);
-
-        // Total (número grande)
-        const total = parseFloat(d.total);
-        const totalStr = total.toLocaleString('es-VE', {maximumFractionDigits: 0});
-        ctx.fillStyle = '#003a70';
-        ctx.font = 'bold 18px system-ui, sans-serif';
-        ctx.fillText(totalStr, cx + 10, cy + 70);
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = '10px system-ui, sans-serif';
-        ctx.fillText(d.unidad || '', cx + 14 + ctx.measureText(totalStr).width, cy + 70);
-
-        // Despachos
-        ctx.fillStyle = '#0077cc';
-        ctx.font = 'bold 11px system-ui, sans-serif';
-        ctx.fillText(`⛽ ${d.despachos || 0} despacho${d.despachos !== 1 ? 's' : ''}`, cx + 10, cy + 88);
-
-        // Barra de progreso
-        const barW = CARD_W - 20;
-        const pct  = maxVal > 0 ? total / maxVal : 0;
-        ctx.fillStyle = '#e2e8f0';
-        ctx.beginPath();
-        ctx.roundRect(cx + 10, cy + CARD_H - 14, barW, 4, 2);
-        ctx.fill();
-        ctx.fillStyle = barColor;
-        ctx.beginPath();
-        ctx.roundRect(cx + 10, cy + CARD_H - 14, barW * pct, 4, 2);
-        ctx.fill();
-    });
-
-    const fecha = new Date().toISOString().slice(0, 10);
-    const link  = document.createElement('a');
-    link.download = `top_equipos_${fecha}.png`;
-    link.href     = cvs.toDataURL('image/png');
-    link.click();
+    capturaPanelHtml('panelRankingEquipos', 'top_equipos_consumo');
 }
 
 // ── TODOS LOS EQUIPOS — Tabla completa con buscador ─────────────━
-var _todosData = [];
+window._todosData = window._todosData || [];
+window._currentFilteredData = null;
+window._currentPageEq = 1;
 
 function renderTodosEquipos(datos) {
     hide('loadingTodosEq');
     document.getElementById('wrapTodosEq').style.display = 'block';
-    _todosData = datos || [];
+    window._todosData = datos || [];
+    window._currentFilteredData = window._todosData;
+    window._currentPageEq = 1;
     document.getElementById('subtotalEquipos').textContent =
-        `— ${_todosData.length} equipo${_todosData.length !== 1 ? 's' : ''} registrados`;
-    llenarTablaEquipos(_todosData);
+        `— ${window._todosData.length} equipo${window._todosData.length !== 1 ? 's' : ''} registrados`;
+    llenarTablaEquipos(window._currentFilteredData, window._currentPageEq);
 }
 
-function llenarTablaEquipos(datos) {
+const ITEMS_PER_PAGE = 15;
+
+function llenarTablaEquipos(datos, page = 1) {
     const body = document.getElementById('bodyTodosEq');
+    const containerPag = document.getElementById('paginacionEquipos');
+    
     if (!datos || datos.length === 0) {
         body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:#94a3b8;">Sin datos disponibles.</td></tr>`;
+        if (containerPag) containerPag.innerHTML = '';
         return;
     }
-    body.innerHTML = datos.map((d, i) => {
+
+    const totalPages = Math.ceil(datos.length / ITEMS_PER_PAGE);
+    window._currentPageEq = Math.min(Math.max(1, page), totalPages);
+
+    const start = (window._currentPageEq - 1) * ITEMS_PER_PAGE;
+    const paginated = datos.slice(start, start + ITEMS_PER_PAGE);
+
+    body.innerHTML = paginated.map((d, i) => {
         const total = parseFloat(d.total);
         const ids   = (d.identificadores || d.CODIGO_PATIO || '—');
         return `<tr>
             <td style="font-size:11px;font-weight:700;color:#0067b1;text-transform:uppercase;">${d.tipo}</td>
             <td>
                 <span style="font-family:monospace;font-weight:700;color:#1e293b;font-size:12px;">${ids}</span>
-                <span style="display:block;font-size:10px;color:#94a3b8;margin-top:1px;">${d.CODIGO_PATIO}</span>
             </td>
             <td style="font-size:12px;">${d.MARCA} ${d.MODELO}</td>
             <td style="text-align:right;"><span class="eq-desp-badge">⛽ ${d.despachos}</span></td>
@@ -1267,38 +1223,94 @@ function llenarTablaEquipos(datos) {
             </td>
         </tr>`;
     }).join('');
+
+    renderPaginacion(datos.length, totalPages);
 }
 
+function renderPaginacion(totalItems, totalPages) {
+    const container = document.getElementById('paginacionEquipos');
+    if (!container) return;
+    
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    let html = `<div style="display:flex; justify-content:space-between; align-items:center; padding-top:14px; color:#64748b; font-size:12px;">`;
+    const from = ((window._currentPageEq - 1) * ITEMS_PER_PAGE) + 1;
+    const to = Math.min(window._currentPageEq * ITEMS_PER_PAGE, totalItems);
+    
+    html += `<span>Mostrando <b style="color:#1e293b">${from}-${to}</b> de <b>${totalItems}</b></span>`;
+    html += `<div style="display:flex; gap:6px; align-items:center;">`;
+    
+    // Botón Anterior
+    html += `<button onclick="cambiarPaginaEq(${window._currentPageEq - 1})" 
+            style="border:1px solid #cbd5e0; background:#fff; padding:4px 10px; border-radius:6px; font-weight:600; color:#475569; transition:all .2s; cursor:${window._currentPageEq === 1 ? 'not-allowed; opacity:0.5' : 'pointer'};" 
+            onmouseover="if(${window._currentPageEq} > 1) this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'">
+            Anterior
+        </button>`;
+    
+    // Números (Página actual de Total)
+    html += `<span style="padding:4px 10px; font-weight:700; background:#eff6ff; color:#0067b1; border-radius:6px; border:1px solid #bfdbfe;">
+                ${window._currentPageEq} / ${totalPages}
+            </span>`;
+    
+    // Botón Siguiente
+    html += `<button onclick="cambiarPaginaEq(${window._currentPageEq + 1})" 
+            style="border:1px solid #cbd5e0; background:#fff; padding:4px 10px; border-radius:6px; font-weight:600; color:#475569; transition:all .2s; cursor:${window._currentPageEq === totalPages ? 'not-allowed; opacity:0.5' : 'pointer'};" 
+            onmouseover="if(${window._currentPageEq} < ${totalPages}) this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'">
+            Siguiente
+        </button>`;
+    
+    html += `</div></div>`;
+    container.innerHTML = html;
+}
+
+window.cambiarPaginaEq = function(newPage) {
+    const datos = window._currentFilteredData || window._todosData;
+    const totalPages = Math.ceil(datos.length / ITEMS_PER_PAGE);
+    if (newPage < 1 || newPage > totalPages) return;
+    llenarTablaEquipos(datos, newPage);
+};
+
 function filtrarTablaEquipos(q) {
-    if (!q) { llenarTablaEquipos(_todosData); return; }
+    if (!q) { 
+        window._currentFilteredData = window._todosData;
+        window._currentPageEq = 1;
+        llenarTablaEquipos(window._currentFilteredData, 1); 
+        return; 
+    }
     const lq = q.toLowerCase();
-    llenarTablaEquipos(_todosData.filter(d =>
+    window._currentFilteredData = window._todosData.filter(d =>
         (d.identificadores||'').toLowerCase().includes(lq) ||
         (d.CODIGO_PATIO||'').toLowerCase().includes(lq)    ||
         (d.MARCA||'').toLowerCase().includes(lq)           ||
         (d.MODELO||'').toLowerCase().includes(lq)          ||
         (d.tipo||'').toLowerCase().includes(lq)
-    ));
+    );
+    window._currentPageEq = 1;
+    llenarTablaEquipos(window._currentFilteredData, 1);
 }
 
-var _sortDir = -1; // -1=desc, 1=asc
+window._sortDir = window._sortDir || -1; // -1=desc, 1=asc
+
 function sortTabla(col) {
-    _sortDir *= -1;
+    window._sortDir *= -1;
     const keys = ['tipo', 'identificadores', 'MARCA', 'despachos', 'total'];
     const key  = keys[col];
-    const sorted = [..._todosData].sort((a, b) => {
+    
+    const currData = window._currentFilteredData || window._todosData;
+    
+    window._currentFilteredData = [...currData].sort((a, b) => {
         const av = isNaN(a[key]) ? (a[key]||'') : parseFloat(a[key]);
         const bv = isNaN(b[key]) ? (b[key]||'') : parseFloat(b[key]);
-        return av > bv ? _sortDir : av < bv ? -_sortDir : 0;
+        return av > bv ? window._sortDir : av < bv ? -window._sortDir : 0;
     });
-    llenarTablaEquipos(sorted);
+    
+    window._currentPageEq = 1;
+    llenarTablaEquipos(window._currentFilteredData, 1);
 }
 
-// ── Total absoluto por Especificación — panel oculto (info ya visible en los gráficos de barras)
-function renderTotalEspec(datos, tipoActivo) {
-    const sec = document.getElementById('secTotalEspec');
-    if (sec) sec.style.display = 'none';
-}
 
 // ── Especificación por frente (Aceite × Viscosidad ó Caucho × Modelo) ──────
 function renderEspecFrente(datos, tipoActivo) {
@@ -1391,6 +1403,16 @@ function renderEspecFrente(datos, tipoActivo) {
         `<div style="margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9;display:flex;flex-wrap:wrap;align-items:center;">
             <span style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-right:6px;">${LABEL_ESPEC}:</span>${leg}
         </div>`);
+}
+
+// ── DESCARGA PANEL ESPCFRENTE ────────────────────────────────────
+function descargarPanelEspecFrente(nombre) {
+    const body = document.getElementById('aceiteFrente-body');
+    if (!body || !body.innerHTML) {
+        alert('No hay datos para descargar.'); return;
+    }
+    const card = body.closest('.g-card') || body.parentElement;
+    capturaPanelHtml(card?.id || 'secEspecFrente', nombre);
 }
 
 // ── Especificación por equipo (tabla) ────────────────────────────────
@@ -1574,348 +1596,14 @@ function descargarPanelEquipos(nombre) {
 
 
 
-// ── Descargar "Tarjetas Resumen" como PNG (Canvas 2D puro) ─────────────────
+// ── Descargar "Tarjetas Resumen" como PNG ─────────────────
 function descargarPanelResumen(nombre) {
-    const grid = document.getElementById('resumenGrid');
-    if (!grid || grid.children.length === 0 || grid.querySelector('.loading-overlay')) {
-        alert('No hay datos para descargar.'); return; 
-    }
-    
-    // Extraer datos
-    const datos = [...grid.children].map(caja => {
-        const topDiv = caja.firstElementChild;
-        const botDiv = caja.lastElementChild;
-        const numTxt  = topDiv?.querySelector('span:first-child')?.textContent?.trim() || '';
-        const tipoTxt = topDiv?.querySelector('span:last-child')?.textContent?.trim() || '';
-        const botTxt  = botDiv?.textContent?.replace(/\s+/g, ' ').trim() || '';
-        return { numTxt, tipoTxt, botTxt };
-    });
-
-    const DPR = 2;
-    // Si hay menos de 4, usamos 200 de ancho, si no, intentamos distribuir bien
-    const cols = Math.min(datos.length, 4); 
-    const rows = Math.ceil(datos.length / cols);
-
-    const BOX_W = 260, BOX_H = 75; 
-    const GAP = 14, PAD_X = 25, PAD_Y = 25, TITLE_H = 50;
-    
-    const W = PAD_X * 2 + cols * BOX_W + Math.max(0, cols - 1) * GAP;
-    const H = TITLE_H + PAD_Y * 2 + rows * BOX_H + Math.max(0, rows - 1) * GAP;
-
-    const canvas = document.createElement('canvas');
-    canvas.width  = W * DPR;
-    canvas.height = H * DPR;
-    const ctx = canvas.getContext('2d');
-    ctx.scale(DPR, DPR);
-
-    function rr(x, y, w, h, r) {
-        ctx.beginPath();
-        ctx.moveTo(x + r, y);
-        ctx.lineTo(x + w - r, y);
-        ctx.arcTo(x + w, y, x + w, y + r, r);
-        ctx.lineTo(x + w, y + h - r);
-        ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
-        ctx.lineTo(x + r, y + h);
-        ctx.arcTo(x, y + h, x, y + h - r, r);
-        ctx.lineTo(x, y + r);
-        ctx.arcTo(x, y, x + r, y, r);
-        ctx.closePath();
-    }
-
-    // Fondo blanco del panel general
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, W, H);
-
-    // Título
-    ctx.fillStyle = '#1e293b';
-    ctx.font = 'bold 15px system-ui,sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('Resumen General - Análisis de Consumo', PAD_X, 30);
-    
-    // Línea separadora
-    ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(PAD_X, TITLE_H); ctx.lineTo(W - PAD_X, TITLE_H); ctx.stroke();
-
-    // Dibujar tarjetas
-    datos.forEach((d, i) => {
-        const c = i % cols;
-        const r = Math.floor(i / cols);
-        const x = PAD_X + c * (BOX_W + GAP);
-        const y = TITLE_H + PAD_Y + r * (BOX_H + GAP);
-
-        // Fondo degrade azul oscuro (similar al "admin-card")
-        const grad = ctx.createLinearGradient(x, y, x + BOX_W, y + BOX_H);
-        grad.addColorStop(0, '#1e293b');
-        grad.addColorStop(1, '#0f172a');
-        ctx.fillStyle = grad;
-        rr(x, y, BOX_W, BOX_H, 14);
-        ctx.fill();
-
-        ctx.textAlign = 'left';
-        
-        // Número gigante
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '800 28px system-ui,sans-serif';
-        const numW = ctx.measureText(d.numTxt).width;
-        ctx.fillText(d.numTxt, x + 16, y + 42);
-        
-        // Tipo de consumible y unidad (se asegura de no pasarse usando truncamiento visual o redimension)
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = '700 12px system-ui,sans-serif';
-        let subTxt = d.tipoTxt;
-        let maxW = BOX_W - numW - 16 - 12; // Ancho máximo permitido (Caja - Num - PaddingIzq - PaddingDer)
-        while(ctx.measureText(subTxt).width > maxW && subTxt.length > 5) {
-            subTxt = subTxt.slice(0, -1);
-        }
-        if(subTxt !== d.tipoTxt) subTxt += '…';
-        ctx.fillText(subTxt, x + 16 + numW + 8, y + 36);
-
-        // Despachos y eq
-        ctx.fillStyle = '#64748b';
-        ctx.font = '11px system-ui,sans-serif';
-        ctx.fillText(d.botTxt, x + 16, y + 60);
-    });
-
-    const fecha = new Date().toISOString().slice(0, 10);
-    const link  = document.createElement('a');
-    link.download = nombre + '_' + fecha + '.png';
-    link.href     = canvas.toDataURL('image/png');
-    link.click();
+    capturaPanelHtml('resumenGrid', nombre || 'resumen_general');
 }
 
-// ── Descargar "Desglose por Especificación" como PNG (Canvas 2D puro) ──────
-function descargarPanelEspecFrente(nombre) {
-    const body   = document.getElementById('aceiteFrente-body');
-    const titulo = document.getElementById('txtEspecFrente')?.textContent || 'Desglose por Especificación';
-    if (!body || body.children.length === 0) { alert('No hay datos para descargar.'); return; }
 
-    const rowsData = [];
-    const frows = body.querySelectorAll('.frow');
-    if (!frows.length) { alert('No hay datos para descargar.'); return; }
 
-    frows.forEach(row => {
-        const name = row.querySelector('.frow-name')?.textContent?.trim() || '';
-        const valTxt = row.querySelector('.frow-val')?.textContent?.trim() || '';
-        
-        // Segmentos de la barra
-        const barWrap = row.querySelector('.frow-bar-wrap > div');
-        const segs = [];
-        if (barWrap) {
-            [...barWrap.children].forEach(seg => {
-                segs.push({
-                    w: parseFloat(seg.style.width) || 0, // %
-                    c: seg.style.background || '#ccc'
-                });
-            });
-            // normalizar % si el wrap mismo no es 100%
-            const wrapW = parseFloat(barWrap.style.width) || 100;
-            segs.forEach(s => s.w = s.w * wrapW / 100); 
-        }
 
-        // Chips
-        const chipsDiv = row.nextElementSibling;
-        const chips = [];
-        if (chipsDiv && chipsDiv.tagName === 'DIV' && chipsDiv.style.padding.includes('32px')) {
-            [...chipsDiv.children].forEach(chip => {
-                 chips.push({
-                     txt: chip.textContent.replace(/\s+/g, ' ').trim(),
-                     c: chip.style.color || '#333',
-                     bg: chip.style.backgroundColor || '#eee',
-                     bc: chip.style.borderColor || '#ccc'
-                 });
-            });
-        }
-        
-        rowsData.push({ name, valTxt, segs, chips });
-    });
-
-    const legendDiv = body.lastElementChild;
-    const legends = [];
-    if (legendDiv && legendDiv.style.marginTop === '12px') {
-        const spans = legendDiv.querySelectorAll('span[style*="align-items:center"]');
-        spans.forEach(s => {
-            const circle = s.querySelector('span');
-            const color = circle ? circle.style.background : '#ccc';
-            const txt = s.textContent.replace(/\s+/g, ' ').trim();
-            legends.push({ txt, c: color });
-        });
-    }
-
-    const DPR = 2, W = 820, PAD = 24, TITLE_H = 52;
-    const NUM_W = 30, NAME_W = 185, VAL_W = 130;
-    const BAR_X = PAD + NUM_W + 8 + NAME_W + 8;
-    const BAR_W = W - BAR_X - VAL_W - PAD;
-
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-
-    // Pre-calcular la altura dinámica basada en los chips y barras
-    ctx.font = 'bold 11px system-ui,sans-serif';
-    let currentYOffset = TITLE_H + PAD;
-    rowsData.forEach(d => {
-        d.rowY = currentYOffset;
-        currentYOffset += 28; // row main height
-        
-        let chipX = PAD + 32;
-        let chipY = currentYOffset + 10;
-        let maxChipH = 0;
-        
-        d.chips.forEach(chip => {
-             const chipTxtW = ctx.measureText(chip.txt).width + 16;
-             if (chipX + chipTxtW > W - PAD) {
-                 chipX = PAD + 32;
-                 chipY += 22;
-             }
-             chip.x = chipX;
-             chip.y = chipY;
-             chip.w = chipTxtW;
-             chipX += chipTxtW + 4;
-             maxChipH = Math.max(maxChipH, chipY + 20 - currentYOffset);
-        });
-        
-        currentYOffset += maxChipH + 12; // padding bottom
-    });
-    
-    // Leyenda
-    let legY = currentYOffset + 24;
-    let legX = PAD;
-    legends.forEach(l => {
-        const w = ctx.measureText(l.txt).width + 20;
-        if(legX + w > W - PAD) { legX = PAD; legY += 20; }
-        l.x = legX; l.y = legY;
-        legX += w + 8;
-    });
-
-    const H = legY + 30;
-
-    canvas.width  = W * DPR;
-    canvas.height = H * DPR;
-    ctx.scale(DPR, DPR);
-
-    function rr(x, y, w, h, r) {
-        r = Math.min(r, w / 2, h / 2);
-        ctx.beginPath();
-        ctx.moveTo(x + r, y);
-        ctx.lineTo(x + w - r, y);
-        ctx.arcTo(x + w, y, x + w, y + r, r);
-        ctx.lineTo(x + w, y + h - r);
-        ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
-        ctx.lineTo(x + r, y + h);
-        ctx.arcTo(x, y + h, x, y + h - r, r);
-        ctx.lineTo(x, y + r);
-        ctx.arcTo(x, y, x + r, y, r);
-        ctx.closePath();
-    }
-
-    // Dibujado fondo
-    ctx.fillStyle = '#ffffff';
-    rr(0, 0, W, H, 16);
-    ctx.fill();
-    ctx.save();
-    rr(0, 0, W, H, 16);
-    ctx.clip();
-
-    // Titulo
-    ctx.fillStyle = '#1e293b';
-    ctx.font = 'bold 15px system-ui,sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText(titulo, PAD + 4, 34);
-    ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(PAD, TITLE_H); ctx.lineTo(W - PAD, TITLE_H); ctx.stroke();
-
-    // Dibujar datos
-    rowsData.forEach((d, i) => {
-        if (i > 0) {
-            ctx.strokeStyle = '#f8fafc'; ctx.lineWidth = 1;
-            ctx.beginPath(); ctx.moveTo(PAD, d.rowY - 8); ctx.lineTo(W - PAD, d.rowY - 8); ctx.stroke();
-        }
-
-        const midY = d.rowY + 14;
-
-        // Número # Numeral
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = 'bold 11px system-ui,sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('#' + (i+1), PAD + NUM_W / 2, midY + 4);
-
-        // Nombre
-        ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 12px system-ui,sans-serif';
-        ctx.textAlign = 'left';
-        let name = d.name;
-        while (ctx.measureText(name).width > NAME_W - 4 && name.length > 4) name = name.slice(0, -1);
-        if (name !== d.name) name += '…';
-        ctx.fillText(name, PAD + NUM_W + 8, midY + 4);
-
-        // Barra wrap
-        ctx.fillStyle = '#f1f5f9';
-        rr(BAR_X, midY - 5, BAR_W, 10, 5); ctx.fill();
-
-        // Recortar dibujo de segmentos a las esquinas redondeadas
-        ctx.save();
-        rr(BAR_X, midY - 5, BAR_W, 10, 5);
-        ctx.clip();
-        
-        let currentSegX = BAR_X;
-        d.segs.forEach(s => {
-            const sw = (s.w / 100) * BAR_W;
-            if (sw > 0) {
-                ctx.fillStyle = s.c;
-                ctx.fillRect(currentSegX, midY - 5, sw, 10);
-                currentSegX += sw;
-            }
-        });
-        
-        ctx.restore();
-
-        // Valor total
-        ctx.fillStyle = '#0f172a';
-        ctx.font = '900 13px system-ui,sans-serif';
-        ctx.textAlign = 'right';
-        ctx.fillText(d.valTxt, W - PAD, midY + 4);
-
-        // Chips
-        d.chips.forEach(chip => {
-            // Shadow / bg
-            ctx.fillStyle = chip.bg;
-            rr(chip.x, chip.y - 12, chip.w, 18, 9);
-            ctx.fill();
-            // border
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = chip.bc;
-            ctx.stroke();
-            
-            ctx.fillStyle = chip.c;
-            ctx.font = 'bold 10px system-ui,sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText(chip.txt, chip.x + chip.w/2, chip.y + 1);
-        });
-    });
-
-    // Leyenda
-    ctx.strokeStyle = '#f1f5f9'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(PAD, legY - 18); ctx.lineTo(W - PAD, legY - 18); ctx.stroke();
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = 'bold 10px system-ui,sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('LEYENDA:', PAD, legY);
-    
-    legends.forEach(l => {
-        ctx.fillStyle = l.c;
-        rr(l.x + 55, legY - 7, 10, 10, 3);
-        ctx.fill();
-        
-        ctx.fillStyle = l.c;
-        ctx.font = 'bold 11px system-ui,sans-serif';
-        ctx.fillText(l.txt, l.x + 70, legY + 1);
-    });
-
-    const fecha = new Date().toISOString().slice(0, 10);
-    const link  = document.createElement('a');
-    link.download = nombre + '_' + fecha + '.png';
-    link.href     = canvas.toDataURL('image/png');
-    link.click();
-}
 
 </script>
 <script src="{{ asset('js/maquinaria/consumibles_graficos.js') }}?v=2.0"></script>

@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function navigateTo(url) {
         await loadPage(url, true);
     }
+    window.navigateTo = navigateTo;
 
     // Re-ejecuta los scripts del contenido inyectado via innerHTML, EN ORDEN.
     // El browser NO ejecuta scripts insertados por innerHTML (seguridad).

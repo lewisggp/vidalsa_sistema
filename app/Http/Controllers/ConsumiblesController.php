@@ -336,20 +336,19 @@ class ConsumiblesController extends Controller
             $q->where('consumibles.ESTADO_EQUIPO', 'CONFIRMADO');
         };
 
-        // ── 1. Total por frente y tipo — TODOS los registros ─────────────────────
+        // ── 1. Total por frente — TODOS los registros ─────────────────────
         $porFrente = DB::table('consumibles')
             ->join('frentes_trabajo', 'frentes_trabajo.ID_FRENTE', '=', 'consumibles.ID_FRENTE')
             ->where(function($q) use ($filtrosTodos) { $filtrosTodos($q); })
             ->select(
                 'frentes_trabajo.NOMBRE_FRENTE',
-                'consumibles.TIPO_CONSUMIBLE',
                 DB::raw('SUM(consumibles.CANTIDAD) as total'),
                 DB::raw('COUNT(*) as despachos'),
                 DB::raw('MAX(consumibles.UNIDAD) as unidad'),
                 DB::raw('COUNT(DISTINCT consumibles.ID_EQUIPO) as equipos_distintos')
             )
-            ->groupBy('frentes_trabajo.NOMBRE_FRENTE', 'consumibles.TIPO_CONSUMIBLE')
-            ->orderBy('total', 'desc')
+            ->groupBy('frentes_trabajo.NOMBRE_FRENTE')
+            ->orderByDesc('total')
             ->get();
 
         // ── 2. Top 15 equipos mayor consumo — solo CONFIRMADOS ───────────────────
@@ -438,22 +437,20 @@ class ConsumiblesController extends Controller
             ->orderBy('despachos', 'desc')
             ->get();
 
-        // ── 5. Consumo por tipo de equipo × frente — solo CONFIRMADOS ────────────
+        // ── 5. Consumo por tipo de equipo — solo CONFIRMADOS ────────────
         $porTipoEquipo = DB::table('consumibles')
-            ->join('frentes_trabajo', 'frentes_trabajo.ID_FRENTE', '=', 'consumibles.ID_FRENTE')
             ->join('equipos',         'equipos.ID_EQUIPO',         '=', 'consumibles.ID_EQUIPO')
             ->leftJoin('tipo_equipos','tipo_equipos.id',           '=', 'equipos.id_tipo_equipo')
             ->where(function($q) use ($filtrosConfirmados) { $filtrosConfirmados($q); })
             ->whereNotNull('consumibles.ID_EQUIPO')
             ->select(
-                'frentes_trabajo.NOMBRE_FRENTE',
                 DB::raw("COALESCE(tipo_equipos.nombre, 'S/T') as tipo_equipo"),
                 DB::raw('SUM(consumibles.CANTIDAD) as total'),
                 DB::raw('COUNT(*) as despachos'),
                 DB::raw('MAX(consumibles.UNIDAD) as unidad')
             )
-            ->groupBy('frentes_trabajo.NOMBRE_FRENTE', 'tipo_equipos.id', 'tipo_equipos.nombre')
-            ->orderBy('frentes_trabajo.NOMBRE_FRENTE')
+            ->groupBy('tipo_equipos.id', 'tipo_equipos.nombre')
+            ->orderByDesc('total')
             ->get();
 
         // ── 6. Equipos individuales × frente — solo CONFIRMADOS ──────────────────

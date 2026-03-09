@@ -11,11 +11,7 @@
     <link rel="stylesheet" href="{{ asset('css/maquinaria/catalogo.css') }}?v=2.3">
     <!-- Local Fonts Optimization -->
     <link rel="stylesheet" href="{{ asset('css/fonts.css') }}?v=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.default.min.css" rel="stylesheet">
-    <style>
-        .ts-control { font-size: 13px !important; font-family: inherit !important; border-radius: 10px !important; border: 1px solid #cbd5e0 !important; cursor: text !important; min-height: 36px !important; padding: 7px 12px !important; background: #fbfcfd !important; }
-        .ts-control.focus { box-shadow: none !important; border-color: #0067b1 !important; }
-    </style>
+
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
         /* Standard Material Icons definition */

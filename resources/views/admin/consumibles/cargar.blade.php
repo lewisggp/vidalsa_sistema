@@ -65,34 +65,68 @@
 {{-- ═══ CONFIGURACIÓN DEL LOTE ═══ --}}
 <div class="admin-card" style="box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); padding: 25px; margin-bottom: 20px;">
 
-    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:16px; align-items:end;">
+    <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:end;">
         {{-- TIPO CONSUMIBLE --}}
-        <div>
+        <div style="flex: 1; min-width: 160px;">
             <label class="con-label">Tipo de Consumible *</label>
-            <select name="tipo_consumible" id="tipoSelect" class="con-select" onchange="actualizarUnidad()" required>
-                <option value="">— Seleccionar —</option>
-                @foreach($tipos as $val => $label)
-                    <option value="{{ $val }}" {{ old('tipo_consumible') == $val ? 'selected' : '' }}>{{ $label }}</option>
-                @endforeach
-            </select>
+            <div class="custom-dropdown" id="tipoDropdownCargar" data-default-label="— Seleccionar —">
+                <input type="hidden" name="tipo_consumible" id="tipoSelect" value="{{ old('tipo_consumible') }}" required>
+                <div class="dropdown-trigger" style="padding:0; display:flex; align-items:center; background:#fbfcfd; overflow:hidden; border:1px solid #cbd5e0; border-radius:10px; height:42px; cursor:pointer;">
+                    <input type="text" data-filter-search
+                        readonly
+                        value="{{ old('tipo_consumible') ? \App\Models\Consumible::tiposLabel()[old('tipo_consumible')] : '— Seleccionar —' }}"
+                        style="width:100%; border:none; background:transparent; padding:0 14px; font-size:13px; outline:none; height:100%; cursor:pointer;"
+                        autocomplete="off">
+                    <i class="material-icons" style="padding:0 10px; color:var(--maquinaria-gray-text, #94a3b8); font-size:18px;">arrow_drop_down</i>
+                </div>
+                <div class="dropdown-content" style="padding:5px; max-height:none; overflow:visible; z-index:1000;">
+                    <div class="dropdown-item-list" style="max-height:250px; overflow-y:auto;">
+                        @foreach($tipos as $val => $label)
+                            <div class="dropdown-item {{ old('tipo_consumible') == $val ? 'selected' : '' }}"
+                                 data-value="{{ $val }}"
+                                 onclick="window.selectOption('tipoDropdownCargar', '{{ $val }}', '{{ $label }}'); window.actualizarUnidad();">
+                                {{ $label }}
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
         </div>
 
         {{-- UNIDAD --}}
-        <div>
+        <div style="flex: 1; min-width: 120px;">
             <label class="con-label">Unidad *</label>
-            <select name="unidad" id="unidadSelect" class="con-select" required>
-                @foreach($unidades as $val => $label)
-                    <option value="{{ $val }}" {{ old('unidad', 'LITROS') == $val ? 'selected' : '' }}>{{ $label }}</option>
-                @endforeach
-            </select>
+            <div class="custom-dropdown" id="unidadDropdownCargar" data-default-label="Litros">
+                <input type="hidden" name="unidad" id="unidadSelect" value="{{ old('unidad', 'LITROS') }}" required>
+                <div class="dropdown-trigger" style="padding:0; display:flex; align-items:center; background:#fbfcfd; overflow:hidden; border:1px solid #cbd5e0; border-radius:10px; height:42px; cursor:pointer;">
+                    <input type="text" data-filter-search
+                        readonly
+                        value="{{ ['LITROS'=>'Litros', 'GALONES'=>'Galones', 'UNIDADES'=>'Unidades', 'KG'=>'Kg'][old('unidad', 'LITROS')] ?? 'Litros' }}"
+                        style="width:100%; border:none; background:transparent; padding:0 14px; font-size:13px; outline:none; height:100%; cursor:pointer;"
+                        autocomplete="off">
+                    <i class="material-icons" style="padding:0 10px; color:var(--maquinaria-gray-text, #94a3b8); font-size:18px;">arrow_drop_down</i>
+                </div>
+                <div class="dropdown-content" style="padding:5px; max-height:none; overflow:visible; z-index:1000;">
+                    <div class="dropdown-item-list" style="max-height:250px; overflow-y:auto;">
+                        @foreach($unidades as $val => $label)
+                            <div class="dropdown-item {{ old('unidad', 'LITROS') == $val ? 'selected' : '' }}"
+                                 data-value="{{ $val }}"
+                                 onclick="window.selectOption('unidadDropdownCargar', '{{ $val }}', '{{ $label }}');">
+                                {{ $label }}
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
         </div>
 
         {{-- FRENTE --}}
-        <div>
+        <div style="flex: 2; min-width: 250px;">
             <label class="con-label">Frente de Trabajo *</label>
             <div style="position:relative;">
                 <input type="text" id="frenteSearch" placeholder="Click para ver todos los frentes..."
                     class="con-input" autocomplete="off"
+                    style="height: 42px;"
                     oninput="filtrarFrentes(this.value)"
                     onfocus="mostrarTodosLosFrente()">
                 <input type="hidden" name="id_frente" id="idFrenteHidden" value="{{ old('id_frente') }}">
@@ -102,6 +136,26 @@
                             z-index:200; max-height:240px; overflow-y:auto; margin-top:4px;"></div>
             </div>
             <span id="frenteSeleccionado" style="font-size:12px; color:#059669; font-weight:600; margin-top:4px; display:none;"></span>
+        </div>
+        
+        {{-- ACCIONES --}}
+        <div style="position:relative; flex: 0 0 auto;">
+            <button type="button" id="btnAcciones" class="btn-primary-maquinaria" style="padding: 0 15px; height: 42px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);" onclick="document.getElementById('splitDropdownMenu').style.display = document.getElementById('splitDropdownMenu').style.display === 'none' ? 'block' : 'none'; event.stopPropagation();">
+                <i class="material-icons">settings</i>
+                <span>Acciones</span>
+                <i class="material-icons" style="font-size: 18px; margin-left: 2px;">expand_more</i>
+            </button>
+            <div id="splitDropdownMenu" style="display:none; position:absolute; top:100%; right:0; background:#fff; min-width:260px; border-radius:12px; box-shadow:0 12px 28px rgba(0,0,0,0.15); border:1px solid #e2e8f0; z-index:1000; margin-top:8px; overflow:hidden;">
+                <!-- Lista de acciones -->
+                <a href="javascript:void(0)" onclick="limpiarTabla(); document.getElementById('splitDropdownMenu').style.display='none'" style="display:flex; align-items:center; gap:12px; padding:12px 16px; color:#1e293b; text-decoration:none; font-size:13px; border-bottom:1px solid #f1f5f9; transition:background .2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='white'">
+                    <i class="material-icons" style="font-size:18px; color:#ef4444;">delete_sweep</i>
+                    Limpiar toda la tabla
+                </a>
+                <a href="javascript:void(0)" onclick="agregarFila(); document.getElementById('splitDropdownMenu').style.display='none'" style="display:flex; align-items:center; gap:12px; padding:12px 16px; color:#1e293b; text-decoration:none; font-size:13px; transition:background .2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='white'">
+                    <i class="material-icons" style="font-size:18px; color:#059669;">add</i>
+                    Agregar fila
+                </a>
+            </div>
         </div>
     </div>
 </div>
@@ -182,12 +236,12 @@
 
 {{-- ═══ JAVASCRIPT ═══ --}}
 <script>
-const FRENTES = @json($frentes->map(fn($f) => ['id' => $f->ID_FRENTE, 'nombre' => $f->NOMBRE_FRENTE]));
-let filaCount = 0;
+var FRENTES = @json($frentes->map(fn($f) => ['id' => $f->ID_FRENTE, 'nombre' => $f->NOMBRE_FRENTE]));
+var filaCount = 0;
 
 // ── Tipo helper ──────────────────────────────────────────────────────
-const TIPOS_ACEITE = ['ACEITE'];
-const TIPOS_CAUCHO = ['CAUCHO'];
+var TIPOS_ACEITE = ['ACEITE'];
+var TIPOS_CAUCHO = ['CAUCHO'];
 function tipoActual()     { return document.getElementById('tipoSelect').value; }
 function necesitaEspec()  { const t = tipoActual(); return TIPOS_ACEITE.includes(t) || TIPOS_CAUCHO.includes(t); }
 function datalistIdActual(){ return TIPOS_ACEITE.includes(tipoActual()) ? 'listAceite' : 'listCaucho'; }
@@ -199,7 +253,17 @@ function actualizarUnidad() {
     // Unidad automática
     const mapa = { 'GASOIL':'LITROS','GASOLINA':'LITROS','ACEITE':'LITROS',
                    'CAUCHO':'UNIDADES','REFRIGERANTE':'LITROS','OTRO':'LITROS' };
-    document.getElementById('unidadSelect').value = mapa[tipo] || 'LITROS';
+    const labelMapa = { 'GASOIL':'Litros','GASOLINA':'Litros','ACEITE':'Litros',
+                   'CAUCHO':'Unidades','REFRIGERANTE':'Litros','OTRO':'Litros' };               
+    const nuevaUnidad = mapa[tipo] || 'LITROS';
+    const nuevaLabel = labelMapa[tipo] || 'Litros';
+    
+    // Check if the dropdown UI exists (using custom dropdowns)
+    if (document.getElementById('unidadDropdownCargar')) {
+        window.selectOption('unidadDropdownCargar', nuevaUnidad, nuevaLabel);
+    } else {
+        document.getElementById('unidadSelect').value = nuevaUnidad;
+    }
 
     const espec = necesitaEspec();
     const th    = document.getElementById('thEspec');
@@ -329,7 +393,7 @@ function actualizarContador() {
 
 // ── PEGAR DESDE EXCEL ─────────────────────────────────────────────
 // Funciona en TODA la página (no solo dentro de la tabla)
-document.addEventListener('paste', function(e) {
+window.pasteLoteCargarHandler = window.pasteLoteCargarHandler || function(e) {
     // Si el foco está en un input del lote de configuración → no interceptar
     const active = document.activeElement;
     if (active && (active.id === 'frenteSearch' || active.id === 'tipoSelect' || active.id === 'unidadSelect')) return;
@@ -408,21 +472,35 @@ document.addEventListener('paste', function(e) {
             setTimeout(() => { pz.style.borderColor = ''; }, 1000);
         }
     }
-});
+};
+document.removeEventListener('paste', window.pasteLoteCargarHandler);
+document.addEventListener('paste', window.pasteLoteCargarHandler);
 
 // ── Validación antes de enviar ────────────────────────────────────
-document.getElementById('formLote').addEventListener('submit', function(e) {
-    const frente = document.getElementById('idFrenteHidden').value;
-    const tipo   = document.getElementById('tipoSelect').value;
-    const filas  = document.getElementById('cuerpoTabla').children.length;
-    if (!frente) { e.preventDefault(); alert('Selecciona un frente de trabajo.'); return; }
-    if (!tipo)   { e.preventDefault(); alert('Selecciona el tipo de consumible.'); return; }
-    if (!filas)  { e.preventDefault(); alert('Agrega al menos una fila.'); return; }
-});
+if(document.getElementById('formLote')) {
+    document.getElementById('formLote').onsubmit = function(e) {
+        const frente = document.getElementById('idFrenteHidden').value;
+        const tipo   = document.getElementById('tipoSelect').value;
+        const filas  = document.getElementById('cuerpoTabla').children.length;
+        if (!frente) { e.preventDefault(); alert('Selecciona un frente de trabajo.'); return; }
+        if (!tipo)   { e.preventDefault(); alert('Selecciona el tipo de consumible.'); return; }
+        if (!filas)  { e.preventDefault(); alert('Agrega al menos una fila.'); return; }
+    };
+}
 
 // ── Inicio: 5 filas vacías ────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', () => {
-    for (let i = 0; i < 5; i++) agregarFila();
-});
+function initCargarConsumibles() {
+    var tabla = document.getElementById('cuerpoTabla');
+    if (tabla && tabla.children.length === 0) {
+        for (var i = 0; i < 5; i++) agregarFila();
+    }
+}
+
+if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', initCargarConsumibles);
+} else {
+    // SPA Nav case
+    setTimeout(initCargarConsumibles, 50);
+}
 </script>
 @endsection
