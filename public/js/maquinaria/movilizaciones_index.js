@@ -220,9 +220,9 @@ window.buscarEquiposRD = function () {
                 if (eq.FOTO) {
                     const driveId = eq.FOTO.replace(/^.*\/storage\/google\//, "").split('?')[0];
                     fotoHtml = `
-                        <div style="width:85px; min-width:85px; align-self:stretch; position:relative; overflow:hidden; background:#f1f5f9; ${radiusStyle}">
+                        <div style="width:85px; min-width:85px; align-self:stretch; position:relative; overflow:hidden; background:#f1f5f9; padding:4px; box-sizing:border-box; ${radiusStyle}">
                             <img src="/storage/google/${driveId}" alt="" loading="lazy" 
-                                style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover;"
+                                style="width:100%; height:100%; object-fit:contain; border-radius:6px;"
                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                             <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center;">
                                 <span class="material-icons" style="font-size:32px; color:#cbd5e0;">directions_car</span>
@@ -404,10 +404,10 @@ window.confirmarRecepcionDirecta = function () {
 
     const btn = document.getElementById('btnConfirmarRD');
     if (btn.disabled) return;
-
     btn.disabled = true;
-    btn.innerHTML = '<i class="material-icons spin">sync</i> Procesando...';
-    if (window.showPreloader) window.showPreloader();
+
+    // Optimistic UI: Cerrar el modal instantáneamente
+    window.cerrarRecepcionDirecta();
 
     const csrf = document.querySelector('meta[name="csrf-token"]').content;
 
@@ -424,30 +424,43 @@ window.confirmarRecepcionDirecta = function () {
             DETALLE_UBICACION: ubicacion
         })
     })
-        .then(r => r.json())
+        .then(r => {
+            if (r.status === 403) {
+                if (typeof showModal === 'function') {
+                    showModal({
+                        type: 'warning',
+                        title: 'Sin Permisos',
+                        message: 'No tienes permiso para confirmar la recepción de equipos.',
+                        confirmText: 'Entendido',
+                        hideCancel: true
+                    });
+                } else {
+                    alert('Sin Permisos: No tienes permiso para confirmar la recepción de equipos.');
+                }
+                throw new Error('403 Forbidden');
+            }
+            return r.json();
+        })
         .then(data => {
             if (data.success) {
-                window.cerrarRecepcionDirecta();
+                // Actualización silenciosa en segundo plano
                 if (typeof window.loadMovilizaciones === 'function') window.loadMovilizaciones();
-                if (typeof showModal === 'function') {
-                    showModal({ type: 'success', title: 'Recepción Exitosa', message: data.message, confirmText: 'Aceptar', hideCancel: true });
-                }
             } else {
                 if (typeof showModal === 'function') {
-                    showModal({ type: 'error', title: 'Error', message: data.error || 'No se pudo procesar la recepción.', confirmText: 'Cerrar', hideCancel: true });
+                    showModal({ type: 'error', title: 'Error', message: data.error || data.message || 'No se pudo procesar la recepción.', confirmText: 'Cerrar', hideCancel: true });
                 }
             }
         })
         .catch(e => {
+            if (e.message === '403 Forbidden') return;
             console.error(e);
             if (typeof showModal === 'function') {
                 showModal({ type: 'error', title: 'Error de Conexión', message: 'Error de comunicación con el servidor. Intente de nuevo.', confirmText: 'Cerrar', hideCancel: true });
             }
         })
         .finally(() => {
+            // Restaurar estado del botón por si vuelven a abrir el modal
             btn.disabled = false;
-            btn.innerHTML = '<i class="material-icons">check_circle</i> Confirmar Recepción';
-            if (window.hidePreloader) window.hidePreloader();
         });
 };
 

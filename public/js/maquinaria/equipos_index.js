@@ -238,8 +238,6 @@ function handleRowClick(e) {
 
             if (isSelecting) {
                 window.showToast(`El equipo seleccionado está anclado a: ${identLabel}`, 'info');
-            } else {
-                window.showToast(`El equipo fue desanclado de: ${identLabel}`, 'info');
             }
         }
     }
@@ -270,59 +268,65 @@ window.unanchorEquipos = async function (e) {
 
     const ids = selections.map((s) => s.id);
 
-    const result = await showModal({
+    showModal({
         type: "warning",
         title: "Desanclar Equipos",
         message:
             "¿Estás seguro de que deseas eliminar el vínculo de anclaje entre estos dos equipos?",
-        confirmText: "Sí, Desanclar",
+        confirmText: "Sí",
         cancelText: "Cancelar",
-    });
+        onConfirm: async () => {
+            if (window.showPreloader) window.showPreloader();
+            try {
+                const response = await fetch("/admin/equipos/clear-anchor", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": document.querySelector(
+                            'meta[name="csrf-token"]',
+                        ).content,
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                    body: JSON.stringify({ ids: ids }),
+                });
 
-    if (result) {
-        try {
-            const response = await fetch("/admin/equipos/clear-anchor", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document.querySelector(
-                        'meta[name="csrf-token"]',
-                    ).content,
-                    "X-Requested-With": "XMLHttpRequest",
-                },
-                body: JSON.stringify({ ids: ids }),
-            });
+                if (response.status === 419 || response.status === 401) {
+                    window.location.reload();
+                    return;
+                }
 
-            if (response.status === 419 || response.status === 401) {
-                window.location.reload();
-                return;
-            }
+                const data = await response.json();
 
-            const data = await response.json();
-
-            if (data.success) {
-                window.selectedEquipos = {};
-                location.reload();
-            } else {
+                if (data.success) {
+                    window.clearSelection();
+                    window.loadEquipos(null, true); // Silent reload
+                    if (window.hidePreloader) window.hidePreloader();
+                    if (typeof showModal === 'function') {
+                        showModal({ type: 'success', title: 'Desanclaje Exitoso', message: 'Los equipos han sido desanclados correctamente.', confirmText: 'Aceptar', hideCancel: true });
+                    }
+                } else {
+                    if (window.hidePreloader) window.hidePreloader();
+                    showModal({
+                        type: "error",
+                        title: "Error",
+                        message: data.error || "Ocurrió un error al desanclar.",
+                        confirmText: "Entendido",
+                        hideCancel: true,
+                    });
+                }
+            } catch (error) {
+                console.error(error);
+                if (window.hidePreloader) window.hidePreloader();
                 showModal({
                     type: "error",
                     title: "Error",
-                    message: data.error || "Ocurrió un error al desanclar.",
+                    message: "Ocurrió un error de red.",
                     confirmText: "Entendido",
                     hideCancel: true,
                 });
             }
-        } catch (error) {
-            console.error(error);
-            showModal({
-                type: "error",
-                title: "Error",
-                message: "Ocurrió un error de red.",
-                confirmText: "Entendido",
-                hideCancel: true,
-            });
         }
-    }
+    });
 };
 
 document.addEventListener("click", function (e) {
@@ -695,7 +699,7 @@ window.openBulkModal = function (event) {
 
     // 7. Header
     const header = document.createElement("div");
-    header.style.cssText = "background:linear-gradient(135deg,#1e3a5f,#0067b1);padding:18px 22px;color:white;display:flex;justify-content:space-between;align-items:center;";
+    header.style.cssText = "background:linear-gradient(135deg,#1e293b,#0f172a);padding:18px 22px;color:white;display:flex;justify-content:space-between;align-items:center;";
     header.innerHTML = `
         <div style="display:flex;align-items:center;gap:12px;">
             <div style="background:rgba(255,255,255,0.15);border-radius:10px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;">
@@ -720,7 +724,7 @@ window.openBulkModal = function (event) {
         const placa = item.placa && item.placa !== 'N/A' && item.placa !== '' ? item.placa : null;
         const chasis = item.chasis && item.chasis !== '' ? item.chasis : null;
         const label = placa || chasis || (typeof item === 'object' ? item.code : item);
-        return `<span style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap;">${label}</span>`;
+        return `<span style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap;">${label}</span>`;
     }).join("");
 
     body.innerHTML = `
@@ -746,8 +750,14 @@ window.openBulkModal = function (event) {
                 </div>
                 <input type="hidden" id="bm-frente-value">
             </div>
+            <div style="margin-top: 15px; display: flex; align-items: center; gap: 8px; padding: 10px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <input type="checkbox" id="bm-generar-pdf" style="width: 16px; height: 16px; cursor: pointer; accent-color: #1e293b;">
+                <label for="bm-generar-pdf" style="font-size: 13px; font-weight: 600; color: #475569; cursor: pointer; user-select: none; margin: 0;">
+                    Generar Informe (Acta de Traslado)
+                </label>
+            </div>
         </div>
-        <button type="button" id="bm-submit-btn" style="width:100%;height:48px;border-radius:10px;font-weight:700;font-size:15px;background:#0067b1;color:white;border:none;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;transition:background 0.2s;">
+        <button type="button" id="bm-submit-btn" style="width:100%;height:48px;border-radius:10px;font-weight:700;font-size:15px;background:#1e293b;color:white;border:none;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;transition:background 0.2s;">
             <i class="material-icons" style="font-size:18px;">send</i> Confirmar Movilización
         </button>
     `;
@@ -835,6 +845,8 @@ window.openBulkModal = function (event) {
     // ── Submit ──
     overlay.querySelector("#bm-submit-btn").onclick = function () {
         const dest = (hiddenInput.value || searchInput.value).trim();
+        const generarPdfBox = overlay.querySelector("#bm-generar-pdf");
+        const generarPdf = generarPdfBox ? generarPdfBox.checked : true;
 
         if (!dest) {
             inputBox.style.borderColor = "#ef4444";
@@ -860,7 +872,7 @@ window.openBulkModal = function (event) {
                         ?.getAttribute("content") || "",
                 Accept: "application/json",
             },
-            body: JSON.stringify({ ids: ids, destination: dest }),
+            body: JSON.stringify({ ids: ids, destination: dest, generar_pdf: generarPdf }),
         })
             .then(function (res) {
                 if (res.status === 419) {
@@ -896,42 +908,58 @@ window.openBulkModal = function (event) {
                 if (!data) return;
 
                 // 1. Iniciar Descarga Automática (Si hay ID)
-                const firstId =
-                    data.movilizacion_ids && data.movilizacion_ids.length > 0
-                        ? data.movilizacion_ids[0]
-                        : null;
+                if (data.generar_pdf) {
+                    const firstId =
+                        data.movilizacion_ids && data.movilizacion_ids.length > 0
+                            ? data.movilizacion_ids[0]
+                            : null;
 
-                if (firstId) {
-                    const downloadLink = document.createElement("a");
-                    downloadLink.href = `/admin/movilizaciones/${firstId}/acta-traslado`;
-                    downloadLink.style.display = "none";
-                    document.body.appendChild(downloadLink);
+                    if (firstId) {
+                        const downloadLink = document.createElement("a");
+                        downloadLink.href = `/admin/movilizaciones/${firstId}/acta-traslado`;
+                        downloadLink.style.display = "none";
+                        document.body.appendChild(downloadLink);
 
-                    // Pequeño delay para asegurar que el DOM lo procese
-                    setTimeout(() => {
-                        downloadLink.click();
-                        setTimeout(
-                            () => document.body.removeChild(downloadLink),
-                            1000,
-                        );
-                    }, 100);
+                        // Pequeño delay para asegurar que el DOM lo procese
+                        setTimeout(() => {
+                            downloadLink.click();
+                            setTimeout(
+                                () => document.body.removeChild(downloadLink),
+                                1000,
+                            );
+                        }, 100);
+                    }
                 }
 
-                // 2. Mostrar Modal de Éxito usando el sistema global de la aplicación
-                if (window.showModal) {
+                // 2. Mostrar Modal de Éxito o Toast usando el sistema global de la aplicación
+                if (window.showToast && !data.generar_pdf) {
+                    window.showToast("Actualización de ubicación exitosa", "success");
+                } else if (window.showModal) {
+                    let msg = '';
+                    let title = '';
+                    if (data.generar_pdf) {
+                        msg = `Se generaron ${data.count} traslados exitosamente.<br><strong>Descargando Acta de Traslado...</strong>`;
+                        title = "¡Movilización Exitosa!";
+                    } else {
+                        msg = `Se actualizó la ubicación de ${data.count} equipo(s).`;
+                        title = "¡Actualización Exitosa!";
+                    }
+
                     showModal({
-                        type: "info",
-                        title: "¡Operación Exitosa!",
-                        message: `Se generaron ${data.count} traslados exitosamente.<br><strong>Descargando Acta de Traslado...</strong>`,
+                        type: data.generar_pdf ? "info" : "success",
+                        title: title,
+                        message: msg,
                         confirmText: "Aceptar",
                         hideCancel: true,
                     });
-                    // Auto-cerrar después de 3 segundos (Manipulación directa del DOM para garantizar cierre)
-                    setTimeout(() => {
-                        const modalEl =
-                            document.getElementById("standardModal");
-                        if (modalEl) modalEl.classList.remove("active");
-                    }, 3000);
+                    
+                    // Auto-cerrar después de 3 segundos solo si fue con PDF (para no interrumpir)
+                    if (data.generar_pdf) {
+                        setTimeout(() => {
+                            const modalEl = document.getElementById("standardModal");
+                            if (modalEl) modalEl.classList.remove("active");
+                        }, 3000);
+                    }
                 }
 
                 if (document.activeElement) document.activeElement.blur();
@@ -1447,30 +1475,10 @@ window.addEventListener("dropdown-selection", function (e) {
 });
 
 // ==========================================
-// FLEET DASHBOARD LOGIC (Restored)
+// FLEET DASHBOARD LOGIC
+// NOTE: openFleetDashboard / closeFleetDashboard / loadFleetDashboardData
+// are defined in fleet_dashboard.js (authoritative source).
 // ==========================================
-
-window.currentDashboardFrente = null;
-
-window.openFleetDashboard = function () {
-    const modal = document.getElementById("fleetDashboardModal");
-    if (modal) {
-        modal.classList.add("active"); // Use CSS class for visibility
-        // If your modal uses display:none/flex style directly:
-        modal.style.display = "flex";
-
-        // Initialize if not loaded
-        window.loadFleetStats();
-    }
-};
-
-window.closeFleetDashboard = function () {
-    const modal = document.getElementById("fleetDashboardModal");
-    if (modal) {
-        modal.classList.remove("active");
-        modal.style.display = "none";
-    }
-};
 
 // Permission Handler for Create Action
 window.handleCreateCheck = function (event) {

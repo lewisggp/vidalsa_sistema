@@ -1903,6 +1903,9 @@ class EquipoController extends Controller
                 'eq_a' => [
                     'id' => $eq->ID_EQUIPO,
                     'codigo' => $eq->CODIGO_PATIO ?? 'N/A',
+                    'etiqueta' => $eq->NUMERO_ETIQUETA ?? null,
+                    'placa' => $eq->documentacion->PLACA ?? null,
+                    'serial' => $eq->SERIAL_CHASIS ?? null,
                     'marca_modelo' => ($eq->MARCA ?? '') . ' ' . ($eq->MODELO ?? ''),
                     'foto' => $mainImg ? asset($mainImg) : null,
                     'tipo' => $eq->tipo->nombre ?? 'N/A',
@@ -1911,6 +1914,9 @@ class EquipoController extends Controller
                 'eq_b' => $eq->ancladoA ? [
                     'id' => $eq->ancladoA->ID_EQUIPO,
                     'codigo' => $eq->ancladoA->CODIGO_PATIO ?? 'N/A',
+                    'etiqueta' => $eq->ancladoA->NUMERO_ETIQUETA ?? null,
+                    'placa' => $eq->ancladoA->documentacion->PLACA ?? null,
+                    'serial' => $eq->ancladoA->SERIAL_CHASIS ?? null,
                     'marca_modelo' => ($eq->ancladoA->MARCA ?? '') . ' ' . ($eq->ancladoA->MODELO ?? ''),
                     'foto' => $anchImg ? asset($anchImg) : null,
                     'tipo' => $eq->ancladoA->tipo->nombre ?? 'N/A',
@@ -1968,6 +1974,35 @@ class EquipoController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('bulkAnchor error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Clear anchor links for specified equipos
+     */
+    public function clearAnchor(Request $request)
+    {
+        $request->validate([
+            'ids'   => 'required|array',
+            'ids.*' => 'exists:equipos,ID_EQUIPO',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Clear anchors for provided IDs
+            Equipo::whereIn('ID_EQUIPO', $request->ids)->update(['ID_ANCLAJE' => null]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Anclaje eliminado con éxito.',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('clearAnchor error: ' . $e->getMessage());
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }

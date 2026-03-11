@@ -239,6 +239,7 @@ class MovilizacionController extends Controller
             'ids' => 'required|array',
             'ids.*' => 'exists:equipos,ID_EQUIPO',
             'destination' => 'required|string|max:255',
+            'generar_pdf' => 'boolean'
         ]);
 
         try {
@@ -251,40 +252,73 @@ class MovilizacionController extends Controller
 
             $user = auth()->user()->CORREO_ELECTRONICO ?? 'SISTEMA';
             $now = now();
+            $generarPdf = $request->input('generar_pdf', true);
 
             $lastLog = Movilizacion::latest('ID_MOVILIZACION')->lockForUpdate()->first();
-            $nextId = $lastLog ? ($lastLog->ID_MOVILIZACION + 1) : 1;
+            $nextId = null;
+            if ($generarPdf) {
+                // Generar CODIGO_CONTROL solo si se requiere acta de traslado
+                $nextId = $lastLog && $lastLog->CODIGO_CONTROL ? ((int)$lastLog->CODIGO_CONTROL + 1) : ($lastLog ? ($lastLog->ID_MOVILIZACION + 1) : 1);
+            }
 
             $equipos = \App\Models\Equipo::whereIn('ID_EQUIPO', $request->ids)->get(['ID_EQUIPO', 'ID_FRENTE_ACTUAL']);
 
             $insertData = [];
             foreach ($equipos as $equipo) {
-                $insertData[] = [
-                    'CODIGO_CONTROL' => $nextId,
-                    'ID_EQUIPO' => $equipo->ID_EQUIPO,
-                    'ID_FRENTE_ORIGEN' => $equipo->ID_FRENTE_ACTUAL ?? 1,
-                    'ID_FRENTE_DESTINO' => $frente->ID_FRENTE,
-                    'FECHA_DESPACHO' => $now,
-                    'ESTADO_MVO' => 'TRANSITO',
-                    'TIPO_MOVIMIENTO' => 'DESPACHO',
-                    'USUARIO_REGISTRO' => $user,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
+                if ($generarPdf) {
+                    $insertData[] = [
+                        'CODIGO_CONTROL' => $nextId,
+                        'ID_EQUIPO' => $equipo->ID_EQUIPO,
+                        'ID_FRENTE_ORIGEN' => $equipo->ID_FRENTE_ACTUAL ?? 1,
+                        'ID_FRENTE_DESTINO' => $frente->ID_FRENTE,
+                        'FECHA_DESPACHO' => $now,
+                        'ESTADO_MVO' => 'TRANSITO',
+                        'TIPO_MOVIMIENTO' => 'DESPACHO',
+                        'USUARIO_REGISTRO' => $user,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                } else {
+                    $insertData[] = [
+                        'CODIGO_CONTROL' => null,
+                        'ID_EQUIPO' => $equipo->ID_EQUIPO,
+                        'ID_FRENTE_ORIGEN' => $equipo->ID_FRENTE_ACTUAL ?? 1,
+                        'ID_FRENTE_DESTINO' => $frente->ID_FRENTE,
+                        'FECHA_DESPACHO' => null,
+                        'FECHA_RECEPCION' => $now,
+                        'ESTADO_MVO' => 'RECIBIDO',
+                        'TIPO_MOVIMIENTO' => 'ACT.',
+                        'USUARIO_REGISTRO' => $user,
+                        'USUARIO_RECEPCION' => $user,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
             }
 
             $movilizacionIds = [];
             if (!empty($insertData)) {
                 Movilizacion::insert($insertData);
 
-                $movilizacionIds = Movilizacion::where('CODIGO_CONTROL', $nextId)
-                    ->pluck('ID_MOVILIZACION')
-                    ->toArray();
+                if ($nextId !== null) {
+                    $movilizacionIds = Movilizacion::where('CODIGO_CONTROL', $nextId)
+                        ->pluck('ID_MOVILIZACION')
+                        ->toArray();
+                } else {
+                    // Si no hay CODIGO_CONTROL igual trataremos de retornar los ids 
+                    // aunque no se va a generar acta
+                    $movilizacionIds = Movilizacion::whereIn('ID_EQUIPO', $request->ids)
+                        ->where('ID_FRENTE_DESTINO', $frente->ID_FRENTE)
+                        ->where('ESTADO_MVO', 'RECIBIDO')
+                        ->where('FECHA_RECEPCION', $now)
+                        ->pluck('ID_MOVILIZACION')
+                        ->toArray();
+                }
             }
 
             \App\Models\Equipo::whereIn('ID_EQUIPO', $request->ids)->update([
                 'ID_FRENTE_ACTUAL' => $frente->ID_FRENTE,
-                'CONFIRMADO_EN_SITIO' => 0
+                'CONFIRMADO_EN_SITIO' => $generarPdf ? 0 : 1
             ]);
 
             DB::commit();
@@ -292,12 +326,87 @@ class MovilizacionController extends Controller
             return response()->json([
                 'success' => true,
                 'movilizacion_ids' => $movilizacionIds,
-                'count' => count($movilizacionIds)
+                'count' => count($movilizacionIds),
+                'generar_pdf' => $generarPdf
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Confirmar recepción de una movilización en tránsito (RECIBIR)
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        DB::beginTransaction();
+        try {
+            $mov = Movilizacion::with('equipo', 'frenteOrigen', 'frenteDestino')->findOrFail($id);
+            $usuario = auth()->user();
+
+            $request->validate([
+                'status' => 'required|in:RECIBIDO,RECHAZADO,RETORNADO',
+                'DETALLE_UBICACION' => 'nullable|string|max:150'
+            ]);
+
+            // Validar autorización
+            $esGlobal = ($usuario->NIVEL_ACCESO == 1);
+            $usuarioFrente = $usuario->ID_FRENTE_ASIGNADO;
+
+            if (!$esGlobal) {
+                if ($request->status == 'RECIBIDO' && $usuarioFrente != $mov->ID_FRENTE_DESTINO) {
+                    $errorMsg = 'Solo el frente destino puede confirmar la recepción';
+                    if ($request->ajax()) {
+                        return response()->json(['success' => false, 'error' => $errorMsg], 403);
+                    }
+                    abort(403, $errorMsg);
+                }
+            }
+
+            // Validar que esté en tránsito
+            if ($mov->ESTADO_MVO != 'TRANSITO') {
+                $errorMsg = 'Esta movilización ya fue procesada';
+                if ($request->ajax()) {
+                    return response()->json(['success' => false, 'error' => $errorMsg], 422);
+                }
+                return back()->withErrors(['error' => $errorMsg]);
+            }
+
+            // 1. Actualizar movilización
+            $mov->update([
+                'ESTADO_MVO' => 'RECIBIDO',
+                'FECHA_RECEPCION' => now(),
+                'DETALLE_UBICACION' => $request->DETALLE_UBICACION,
+                'USUARIO_RECEPCION' => $usuario->CORREO_ELECTRONICO ?? 'SISTEMA',
+            ]);
+
+            // 2. Actualizar equipo: confirmar en el frente destino
+            if ($mov->equipo) {
+                $mov->equipo->update([
+                    'ID_FRENTE_ACTUAL' => $mov->ID_FRENTE_DESTINO,
+                    'DETALLE_UBICACION_ACTUAL' => $request->DETALLE_UBICACION,
+                    'CONFIRMADO_EN_SITIO' => 1
+                ]);
+            }
+
+            DB::commit();
+
+            $message = 'Equipo recibido exitosamente en ' . ($mov->frenteDestino->NOMBRE_FRENTE ?? 'Destino');
+
+            if ($request->ajax()) {
+                return response()->json(['success' => true, 'message' => $message]);
+            }
+            return back()->with('success', $message);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error en updateStatus: ' . $e->getMessage());
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'error' => 'Error al actualizar: ' . $e->getMessage()], 500);
+            }
+            return back()->withErrors(['error' => 'Error al actualizar: ' . $e->getMessage()]);
         }
     }
 

@@ -320,11 +320,17 @@ window.recibirMovilizacion = function (movId, btn) {
 };
 
 async function _ejecutarRecepcion(movId, btn) {
-    // Feedback visual inmediato en el botón
-    const originalHTML = btn ? btn.innerHTML : '';
+    // Feedback visual inmediato en el botón y optimistic UI
+    const cardItem = btn ? btn.closest('.activity-item') : null;
+    
     if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<i class="material-icons" style="font-size:16px;animation:spin 0.8s linear infinite;">hourglass_empty</i>';
+    }
+    
+    if (cardItem) {
+        // Optimistic UI: Hide the card immediately
+        cardItem.style.opacity = '0.5';
+        cardItem.style.pointerEvents = 'none';
     }
 
     try {
@@ -341,31 +347,45 @@ async function _ejecutarRecepcion(movId, btn) {
             body: JSON.stringify({ status: 'RECIBIDO' })
         });
 
-        const data = await response.json();
-
-        if (data.success) {
-            // Refrescar solo la lista sin recargar la página
-            await refreshPendingMovs();
-
+        // Interceptar 403 antes de parsear JSON
+        if (response.status === 403) {
+            if (cardItem) {
+                cardItem.style.opacity = '1';
+                cardItem.style.pointerEvents = 'auto';
+            }
+            if (btn) btn.disabled = false;
+            
             if (typeof showModal === 'function') {
                 showModal({
-                    type: 'success',
-                    title: '¡Recepción Confirmada!',
-                    message: data.message || 'El equipo fue recibido exitosamente.',
+                    type: 'warning',
+                    title: 'Sin Permisos',
+                    message: 'No tienes permiso para confirmar la recepción de equipos.',
                     confirmText: 'Entendido',
                     hideCancel: true
                 });
+            } else {
+                alert('Sin Permisos: No tienes permiso para confirmar la recepción de equipos.');
             }
+            return;
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Refrescar solo la lista en segundo plano y de manera silenciosa
+            await refreshPendingMovs();
         } else {
             throw new Error(data.error || data.message || 'Error al confirmar recepción');
         }
 
     } catch (error) {
-        // Restaurar botón en caso de error
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = originalHTML;
+        // Restaurar botón/card en caso de error
+        if (cardItem) {
+            cardItem.style.opacity = '1';
+            cardItem.style.pointerEvents = 'auto';
         }
+        if (btn) btn.disabled = false;
+        
         console.error('_ejecutarRecepcion error:', error);
         if (typeof showModal === 'function') {
             showModal({ type: 'error', title: 'Error', message: error.message });
@@ -469,7 +489,9 @@ window.iniciarRecepcionDesdeDashboard = function (movId, nombreFrente, subdivisi
         const ubicacion = document.getElementById('dashRdUbicacion').value.trim();
         const btn = this;
         btn.disabled = true;
-        btn.innerHTML = '<i class="material-icons spin">sync</i> Procesando...';
+
+        // Cerrar modal de inmediato para mayor fluidez (Optimistic UI)
+        overlay.remove();
 
         try {
             const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -487,20 +509,32 @@ window.iniciarRecepcionDesdeDashboard = function (movId, nombreFrente, subdivisi
                     DETALLE_UBICACION: ubicacion || null
                 })
             });
+
+            // Interceptar 403 antes de parsear JSON
+            if (response.status === 403) {
+                if (typeof showModal === 'function') {
+                    showModal({
+                        type: 'warning',
+                        title: 'Sin Permisos',
+                        message: 'No tienes permiso para confirmar la recepción de equipos.',
+                        confirmText: 'Entendido',
+                        hideCancel: true
+                    });
+                } else {
+                    alert('Sin Permisos: No tienes permiso para confirmar la recepción de equipos.');
+                }
+                return;
+            }
+
             const data = await response.json();
 
-            overlay.remove();
-
             if (data.success) {
+                // Actualizar la lista en segundo plano de manera silenciosa
                 await window.refreshPendingMovs();
-                if (typeof showModal === 'function') {
-                    showModal({ type: 'success', title: '¡Recepción Confirmada!', message: data.message || 'Equipo recibido exitosamente.', confirmText: 'Entendido', hideCancel: true });
-                }
             } else {
                 throw new Error(data.error || 'Error al confirmar recepción');
             }
         } catch (error) {
-            overlay.remove();
             console.error(error);
             if (typeof showModal === 'function') {
                 showModal({ type: 'error', title: 'Error', message: error.message, confirmText: 'Cerrar', hideCancel: true });

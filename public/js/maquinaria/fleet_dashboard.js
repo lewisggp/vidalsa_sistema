@@ -122,8 +122,40 @@ window.openFleetDashboard = async function () {
 
     setupDropdownEvents();
 
-    const firstFrenteId = document.getElementById('dashboardSelectedFrenteId')?.value || '';
-    const firstFrenteName = document.getElementById('dashboardSelectedFrenteNombre')?.value || '';
+    // ── Leer frente activo del filtro de la página ──
+    // Solo aplica para usuarios GLOBAL (el usuario LOCAL tiene su frente
+    // pre-inyectado desde el servidor en dashboardSelectedFrenteId y no
+    // tiene el selector de frente, por lo que no debemos sobreescribirlo).
+    const hiddenId   = document.getElementById('dashboardSelectedFrenteId');
+    const hiddenName = document.getElementById('dashboardSelectedFrenteNombre');
+
+    // La presencia del dropdown de búsqueda indica que el usuario es GLOBAL
+    const isGlobalUser = !!document.getElementById('dashboardFrenteSearch');
+
+    let firstFrenteId   = hiddenId?.value   || '';
+    let firstFrenteName = hiddenName?.value || '';
+
+    if (isGlobalUser) {
+        // Leer el frente activo en el filtro de la página de equipos
+        const pageFrente = document.querySelector('input[name="id_frente"][data-filter-value]');
+        const pageFrenteId = (pageFrente && pageFrente.value && pageFrente.value !== 'all')
+            ? pageFrente.value : '';
+
+        if (pageFrenteId) {
+            // Resolver el nombre desde el dropdown de la página
+            const selectedOption = document.querySelector(
+                `#frenteFilterSelect .dropdown-item[data-value="${pageFrenteId}"]`
+            );
+            const pageFrenteName = selectedOption ? selectedOption.textContent.trim() : '';
+
+            firstFrenteId   = pageFrenteId;
+            firstFrenteName = pageFrenteName;
+
+            // Sincronizar campos ocultos del dashboard
+            if (hiddenId)   hiddenId.value   = firstFrenteId;
+            if (hiddenName) hiddenName.value = firstFrenteName;
+        }
+    }
 
     const searchInput = document.getElementById('dashboardFrenteSearch');
     if (searchInput) {
@@ -294,11 +326,33 @@ async function loadChartJS() {
             pluginScript.src = 'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js';
             pluginScript.onload = () => {
                 Chart.register(ChartDataLabels);
-                resolve();
+                
+                // Also load html2canvas for downloads
+                if (typeof html2canvas === 'undefined') {
+                    const canvasScript = document.createElement('script');
+                    canvasScript.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+                    canvasScript.onload = () => resolve();
+                    canvasScript.onerror = () => {
+                        console.warn('Failed to load html2canvas, downloads might fail.');
+                        resolve();
+                    };
+                    document.head.appendChild(canvasScript);
+                } else {
+                    resolve();
+                }
             };
             pluginScript.onerror = () => {
                 console.warn('Failed to load DataLabels plugin, charts will work without it.');
-                resolve();
+                
+                if (typeof html2canvas === 'undefined') {
+                    const canvasScript = document.createElement('script');
+                    canvasScript.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+                    canvasScript.onload = () => resolve();
+                    canvasScript.onerror = () => resolve();
+                    document.head.appendChild(canvasScript);
+                } else {
+                    resolve();
+                }
             };
             document.head.appendChild(pluginScript);
         };
@@ -428,7 +482,7 @@ function createCharts(data) {
             data: ds.data,
             backgroundColor: CHART_COLORS.age[idx],
             borderWidth: 0,
-            borderRadius: 8,
+            borderRadius: 0,
             borderSkipped: false
         }))
     });
@@ -441,7 +495,7 @@ function createCharts(data) {
             data: ds.data,
             backgroundColor: CHART_COLORS.category[idx],
             borderWidth: 0,
-            borderRadius: 8,
+            borderRadius: 0,
             borderSkipped: false
         }))
     });
@@ -455,7 +509,7 @@ function createCharts(data) {
                 data: ds.data,
                 backgroundColor: CHART_COLORS.inoperative[idx] || '#64748b',
                 borderWidth: 0,
-                borderRadius: 8,
+                borderRadius: 0,
                 borderSkipped: false
             }))
         });
@@ -545,3 +599,63 @@ function destroyAllCharts() {
     }
     fleetCharts = {};
 }
+
+/**
+ * Capture DOM panel as image and download
+ */
+window.descargarPanelHtmlFDM = function(panelId, nombre) {
+    const el = document.getElementById(panelId);
+    if (!el || el.style.display === 'none') {
+        alert('El panel no está visible.'); return;
+    }
+    if (typeof html2canvas === 'undefined') {
+        alert('La librería de captura aún está cargando. Inténtalo en unos segundos.'); return;
+    }
+    const fecha = new Date().toISOString().slice(0, 10);
+    html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        onclone: function (clonedDoc) {
+            const clonedEl = clonedDoc.getElementById(panelId);
+            if (clonedEl) {
+                // Remove the camera button from the screenshot
+                const btns = clonedEl.querySelectorAll('button');
+                btns.forEach(b => b.style.display = 'none');
+                
+                // Fix Material Icons text misalignments in headings
+                const titles = clonedEl.querySelectorAll('span, h4');
+                titles.forEach(t => {
+                    if (t.style.display === 'flex') {
+                        t.style.alignItems = 'center'; // Ensure alignment is preserved
+                    }
+                });
+
+                // Force column layout for the "Equipos Asignados" panel list to avoid squeezing
+                if (panelId === 'fdm-panel-assigned') {
+                    const asigBody = clonedEl.querySelector('#fleetEqAsigBody > div');
+                    if (asigBody) {
+                        asigBody.style.flexDirection = 'column';
+                        asigBody.style.flexWrap = 'nowrap';
+                        
+                        // Shrink the card width so the column doesn't stretch weirdly across the screen
+                        clonedEl.style.width = '350px';
+                        clonedEl.style.margin = '0 auto';
+                    }
+                    
+                    // Fix the title wrapping specifically for Equipos Asignados
+                    const headerSpan = clonedEl.querySelector('.material-icons').parentElement;
+                    if (headerSpan) {
+                        headerSpan.style.flexWrap = 'wrap';
+                    }
+                }
+            }
+        }
+    }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = nombre + '_' + fecha + '.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    });
+};

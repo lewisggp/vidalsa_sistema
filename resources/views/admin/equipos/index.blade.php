@@ -781,50 +781,73 @@
                 <!-- Charts Row -->
                 <div id="fleetChartsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px;">
                     <!-- Estado Operativo -->
-                    <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-                        <h4 style="margin: 0 0 20px 0; font-size: 16px; color: #1e293b; font-weight: 700; display: flex; align-items: center; gap: 10px;">
-                            <i class="material-icons" style="font-size: 20px; color: #10b981;">donut_small</i>
-                            Estado Operativo de Equipos
+                    <div id="fdm-panel-status" style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                        <h4 style="margin: 0 0 20px 0; font-size: 16px; color: #1e293b; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
+                            <span style="display: flex; align-items: center; gap: 10px;">
+                                <i class="material-icons" style="font-size: 20px; color: #10b981;">donut_small</i>
+                                Estado Operativo de Equipos
+                            </span>
+                            <button onclick="window.descargarPanelHtmlFDM('fdm-panel-status', 'estado_operativo')" title="Descargar imagen" style="border:none;background:transparent;cursor:pointer;color:#94a3b8;display:flex;align-items:center;padding:4px 8px;border-radius:8px;transition:background .2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                                <i class="material-icons" style="font-size:17px;">photo_camera</i>
+                            </button>
                         </h4>
                         <canvas id="chartStatusByFront" style="max-height: 350px;"></canvas>
                     </div>
 
                     <!-- Flota Nueva vs Vieja por Tipo -->
-                    <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-                        <h4 style="margin: 0 0 20px 0; font-size: 16px; color: #1e293b; font-weight: 700; display: flex; align-items: center; gap: 10px;">
-                            <i class="material-icons" style="font-size: 20px; color: #3b82f6;">bar_chart</i>
-                            Flota Nueva vs Vieja por Tipo de Equipo
+                    <div id="fdm-panel-age" style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                        <h4 style="margin: 0 0 20px 0; font-size: 16px; color: #1e293b; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
+                            <span style="display: flex; align-items: center; gap: 10px;">
+                                <i class="material-icons" style="font-size: 20px; color: #3b82f6;">bar_chart</i>
+                                Flota Nueva vs Vieja por Tipo de Equipo
+                            </span>
+                            <button onclick="window.descargarPanelHtmlFDM('fdm-panel-age', 'flota_edad_tipo')" title="Descargar imagen" style="border:none;background:transparent;cursor:pointer;color:#94a3b8;display:flex;align-items:center;padding:4px 8px;border-radius:8px;transition:background .2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                                <i class="material-icons" style="font-size:17px;">photo_camera</i>
+                            </button>
                         </h4>
                         <canvas id="chartAgeByType" style="max-height: 350px;"></canvas>
                     </div>
 
                     <!-- Flota Pesada vs Liviana por Tipo -->
-                    <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-                        <h4 style="margin: 0 0 20px 0; font-size: 16px; color: #1e293b; font-weight: 700; display: flex; align-items: center; gap: 10px;">
-                            <i class="material-icons" style="font-size: 20px; color: #f59e0b;">category</i>
-                            Flota Pesada vs Liviana por Tipo
+                    <div id="fdm-panel-category" style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                        <h4 style="margin: 0 0 20px 0; font-size: 16px; color: #1e293b; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
+                            <span style="display: flex; align-items: center; gap: 10px;">
+                                <i class="material-icons" style="font-size: 20px; color: #f59e0b;">category</i>
+                                Flota Pesada vs Liviana por Tipo
+                            </span>
+                            <button onclick="window.descargarPanelHtmlFDM('fdm-panel-category', 'flota_pesada_liviana')" title="Descargar imagen" style="border:none;background:transparent;cursor:pointer;color:#94a3b8;display:flex;align-items:center;padding:4px 8px;border-radius:8px;transition:background .2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                                <i class="material-icons" style="font-size:17px;">photo_camera</i>
+                            </button>
                         </h4>
                         <canvas id="chartCategoryByType" style="max-height: 350px;"></canvas>
                     </div>
 
                     <!-- Inoperatividad por Tipo de Equipo -->
-                    <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-                        <h4 style="margin: 0 0 20px 0; font-size: 16px; color: #1e293b; font-weight: 700; display: flex; align-items: center; gap: 10px;">
-                            <i class="material-icons" style="font-size: 20px; color: #ef4444;">warning_amber</i>
-                            Inoperatividad por Tipo de Equipo
+                    <div id="fdm-panel-inoperative" style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                        <h4 style="margin: 0 0 20px 0; font-size: 16px; color: #1e293b; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
+                            <span style="display: flex; align-items: center; gap: 10px;">
+                                <i class="material-icons" style="font-size: 20px; color: #ef4444;">warning_amber</i>
+                                Inoperatividad por Tipo de Equipo
+                            </span>
+                            <button onclick="window.descargarPanelHtmlFDM('fdm-panel-inoperative', 'inoperatividad')" title="Descargar imagen" style="border:none;background:transparent;cursor:pointer;color:#94a3b8;display:flex;align-items:center;padding:4px 8px;border-radius:8px;transition:background .2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                                <i class="material-icons" style="font-size:17px;">photo_camera</i>
+                            </button>
                         </h4>
                         <canvas id="chartInoperativeByType" style="max-height: 350px;"></canvas>
                     </div>
                 </div>
 
                 <!-- Equipos Asignados por Frente (al final) -->
-                <div style="background: white; border-radius: 12px; padding: 20px 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-top: 20px;">
-                    <div style="display:flex; align-items:center; margin-bottom: 16px;">
+                <div id="fdm-panel-assigned" style="background: white; border-radius: 12px; padding: 20px 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-top: 20px;">
+                    <div style="display:flex; align-items:center; justify-content: space-between; margin-bottom: 16px;">
                         <span style="font-size:14px; font-weight:700; color:#1e293b; display:flex; align-items:center; gap:8px;">
                             <i class="material-icons" style="font-size:18px; color:#475569;">directions_bus</i>
                             Equipos Asignados por Frente
                             <span style="font-size:11px; color:#94a3b8; font-weight:400; margin-left:4px;">— flota actual en cada frente</span>
                         </span>
+                        <button onclick="window.descargarPanelHtmlFDM('fdm-panel-assigned', 'equipos_asignados_por_frente')" title="Descargar imagen" style="border:none;background:transparent;cursor:pointer;color:#94a3b8;display:flex;align-items:center;padding:4px 8px;border-radius:8px;transition:background .2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                            <i class="material-icons" style="font-size:17px;">photo_camera</i>
+                        </button>
                     </div>
                     <div id="fleetEqAsigLoading" style="display:flex; align-items:center; justify-content:center; height:80px; color:#94a3b8; font-size:13px; gap:8px;">
                         <i class="material-icons" style="animation:fleetSpin 1s linear infinite; font-size:18px;">refresh</i> Cargando...
@@ -909,7 +932,7 @@
         }
     </style>
 <!-- Anclajes Dashboard Modal -->
-<div id="anclajesListModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
+<div id="anclajesListModal" class="modal-overlay" style="z-index: 10000;">
     <div class="modal-content" style="width: 90%; max-width: 800px; max-height: 90vh; background: #fff; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
         <!-- Header -->
         <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
@@ -919,9 +942,14 @@
                 </div>
                 <h3 style="margin: 0; color: #fff; font-size: 16px; font-weight: 600;">Anclaje de Equipos</h3>
             </div>
-            <button type="button" onclick="document.getElementById('anclajesListModal').style.display='none'" style="background: transparent; border: none; color: #94a3b8; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'">
-                <i class="material-icons">close</i>
-            </button>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button type="button" onclick="window.exportAnclajesToCsv()" title="Exportar a Excel (CSV)" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.background='rgba(16, 185, 129, 0.25)'" onmouseout="this.style.background='rgba(16, 185, 129, 0.15)'">
+                    <i class="material-icons" style="font-size: 18px;">download</i>
+                </button>
+                <button type="button" onclick="document.getElementById('anclajesListModal').classList.remove('active')" style="background: transparent; border: none; color: #94a3b8; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'">
+                    <i class="material-icons">close</i>
+                </button>
+            </div>
         </div>
         
         <!-- Loading -->
@@ -943,7 +971,7 @@
     function openAnclajesListModal() {
         document.getElementById('splitDropdownMenu').style.display = 'none';
         const modal = document.getElementById('anclajesListModal');
-        modal.style.display = 'flex';
+        modal.classList.add('active');
         document.getElementById('anclajesLoading').style.display = 'block';
         document.getElementById('anclajesBody').style.display = 'none';
 
@@ -957,6 +985,7 @@
         fetch('{{ route("equipos.getAnchors") }}?frente_id=' + fValue)
             .then(res => res.json())
             .then(data => {
+                window.lastAnclajesData = data; // Store globally for export
                 document.getElementById('anclajesLoading').style.display = 'none';
                 document.getElementById('anclajesBody').style.display = 'block';
                 
@@ -972,22 +1001,40 @@
                     const b = pair.eq_b;
                     if(!a || !b) return;
 
+                    // Compute primary identification (Placa or Serial)
+                    const aPlacaOrSerial = (a.placa && a.placa !== 'S/P') ? a.placa : (a.serial || 'N/A');
+                    const bPlacaOrSerial = (b.placa && b.placa !== 'S/P') ? b.placa : (b.serial || 'N/A');
+
+                    // Compute Tags (Type + Label)
+                    const aEtiquetaHtml = a.etiqueta ? `<span style="background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; font-weight: 800; color: #475569; margin-left: 5px;">#${a.etiqueta}</span>` : '';
+                    const aTipoBlock = `<div style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 5px; display: flex; align-items: center; justify-content: center;">${a.tipo || 'Sin Tipo'}${aEtiquetaHtml}</div>`;
+
+                    const bEtiquetaHtml = b.etiqueta ? `<span style="background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; font-weight: 800; color: #475569; margin-left: 5px;">#${b.etiqueta}</span>` : '';
+                    const bTipoBlock = `<div style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 5px; display: flex; align-items: center; justify-content: center;">${b.tipo || 'Sin Tipo'}${bEtiquetaHtml}</div>`;
+
+
+                    const aFotoHtml = a.foto ? `<img src="${a.foto}" onerror="this.outerHTML='<div style=&quot;width: 50px; height: 35px; border-radius: 4px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; margin-bottom: 6px;&quot;><i class=&quot;material-icons&quot; style=&quot;color: #cbd5e1; font-size: 18px;&quot;>directions_car</i></div>'" style="width: 50px; height: 35px; object-fit: contain; border-radius: 4px; background: #f1f5f9; margin-bottom: 6px; border: 1px solid #e2e8f0;">` : `<div style="width: 50px; height: 35px; border-radius: 4px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; margin-bottom: 6px;"><i class="material-icons" style="color: #cbd5e1; font-size: 18px;">directions_car</i></div>`;
+                    const bFotoHtml = b.foto ? `<img src="${b.foto}" onerror="this.outerHTML='<div style=&quot;width: 50px; height: 35px; border-radius: 4px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; margin-bottom: 6px;&quot;><i class=&quot;material-icons&quot; style=&quot;color: #cbd5e1; font-size: 18px;&quot;>directions_car</i></div>'" style="width: 50px; height: 35px; object-fit: contain; border-radius: 4px; background: #f1f5f9; margin-bottom: 6px; border: 1px solid #e2e8f0;">` : `<div style="width: 50px; height: 35px; border-radius: 4px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; margin-bottom: 6px;"><i class="material-icons" style="color: #cbd5e1; font-size: 18px;">directions_car</i></div>`;
+
                     html += `
-                    <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                        <!-- Equipo A -->
                         <div style="display: flex; flex-direction: column; align-items: center; width: 42%; text-align: center;">
-                            <img src="${a.foto || '/images/equipos-placeholder.png'}" onerror="this.src='/images/equipos-placeholder.png'" style="width: 60px; height: 45px; object-fit: contain; border-radius: 4px; background: #f1f5f9; margin-bottom: 6px; border: 1px solid #e2e8f0;">
-                            <span style="font-size: 11px; font-weight: 700; color: #1e293b; line-height: 1.1; margin-bottom: 2px;">${a.codigo}</span>
-                            <span style="font-size: 9px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;" title="${a.marca_modelo}">${a.marca_modelo}</span>
+                            ${aFotoHtml}
+                            ${aTipoBlock}
+                            <span style="font-size: 13px; font-weight: 800; color: #1e293b; line-height: 1.1; margin-bottom: 2px; letter-spacing: 0.5px; word-break: break-all;">${aPlacaOrSerial}</span>
                         </div>
                         
-                        <div style="display: flex; flex-direction: column; align-items: center; color: #10b981; padding: 0 5px;">
-                            <i class="material-icons" style="font-size: 20px;">link</i>
+                        <!-- Icono Link -->
+                        <div style="display: flex; flex-direction: column; align-items: center; background: #e0f2fe; padding: 6px; border-radius: 50%; color: #0284c7; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
+                            <i class="material-icons" style="font-size: 18px;">link</i>
                         </div>
 
+                        <!-- Equipo B -->
                         <div style="display: flex; flex-direction: column; align-items: center; width: 42%; text-align: center;">
-                            <img src="${b.foto || '/images/equipos-placeholder.png'}" onerror="this.src='/images/equipos-placeholder.png'" style="width: 60px; height: 45px; object-fit: contain; border-radius: 4px; background: #f1f5f9; margin-bottom: 6px; border: 1px solid #e2e8f0;">
-                            <span style="font-size: 11px; font-weight: 700; color: #1e293b; line-height: 1.1; margin-bottom: 2px;">${b.codigo}</span>
-                            <span style="font-size: 9px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;" title="${b.marca_modelo}">${b.marca_modelo}</span>
+                            ${bFotoHtml}
+                            ${bTipoBlock}
+                            <span style="font-size: 13px; font-weight: 800; color: #1e293b; line-height: 1.1; margin-bottom: 2px; letter-spacing: 0.5px; word-break: break-all;">${bPlacaOrSerial}</span>
                         </div>
                     </div>`;
                 });
@@ -999,6 +1046,47 @@
                 document.getElementById('anclajesBody').style.display = 'block';
                 document.getElementById('anclajesGrid').innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #ef4444; padding: 20px;">Error al cargar anclajes.</div>';
             });
+    }
+
+    window.exportAnclajesToCsv = function() {
+        const data = window.lastAnclajesData;
+        if (!data || data.length === 0) {
+            alert('No hay datos para exportar.');
+            return;
+        }
+
+        let csvContent = 'TIPO EQUIPO 1,MARCA,IDENTIFICADOR 1,ANCLADO A (TIPO 2),IDENTIFICADOR 2\n';
+
+        data.forEach(pair => {
+            const a = pair.eq_a;
+            const b = pair.eq_b;
+            if (!a || !b) return;
+
+            const aPlacaOrSerial = (a.placa && a.placa !== 'S/P') ? a.placa : (a.serial || 'N/A');
+            const bPlacaOrSerial = (b.placa && b.placa !== 'S/P') ? b.placa : (b.serial || 'N/A');
+            
+            // Extract the core brand name (to simplify if needed, or use the full string)
+            // Just handling strings to avoid CSV injection or break with commas
+            const escapeCsv = (str) => '"' + (str || '').replace(/"/g, '""') + '"';
+
+            csvContent += escapeCsv(a.tipo) + ',' +
+                          escapeCsv(a.marca_modelo) + ',' +
+                          escapeCsv(aPlacaOrSerial) + ',' +
+                          escapeCsv(b.tipo) + ',' +
+                          escapeCsv(bPlacaOrSerial) + '\n';
+        });
+
+        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const fValueElement = document.querySelector('input[name="id_frente"][data-filter-value]');
+        let fValueStr = (fValueElement && fValueElement.value && fValueElement.value !== 'all') ? ('_frente_' + fValueElement.value) : '_todos_frentes';
+        
+        link.href = URL.createObjectURL(blob);
+        link.download = `Anclajes${fValueStr}_${new Date().toISOString().slice(0,10)}.csv`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     // Alias: CAN_CREATE_INFO → CAN_CREATE_EQUIPOS (definido globalmente en estructura_base)

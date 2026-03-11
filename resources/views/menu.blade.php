@@ -238,7 +238,7 @@
                     </label>
                     <div style="position: relative;">
                         <input type="text" id="rdUbicacionInput"
-                            placeholder=""
+                            placeholder="Ej. Patio de maniobras..."
                             style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e0; border-radius: 10px; font-size: 14px; background: #f8fafc; outline: none; box-sizing: border-box;"
                             onfocus="this.style.borderColor='#1e293b'; showUbicacionSuggestions('rd-ubicacion-suggestions')"
                             onblur="this.style.borderColor='#cbd5e0'; setTimeout(()=>hideUbicacionSuggestions('rd-ubicacion-suggestions'), 200)"
