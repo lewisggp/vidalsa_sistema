@@ -31,10 +31,7 @@ class DashboardController extends Controller
         // 2. Pending Mobilizations (TRÁNSITO) — LOCAL users see only their frentes
         $pendientesQuery = Movilizacion::where('ESTADO_MVO', 'TRANSITO');
         if (!$isGlobal && count($frenteIds) > 0) {
-            $pendientesQuery->where(function($q) use ($frenteIds) {
-                $q->whereIn('ID_FRENTE_ORIGEN', $frenteIds)
-                  ->orWhereIn('ID_FRENTE_DESTINO', $frenteIds);
-            });
+            $pendientesQuery->whereIn('ID_FRENTE_DESTINO', $frenteIds);
         } elseif (!$isGlobal) {
             $pendientesQuery->whereRaw('1 = 0');
         }
@@ -50,10 +47,7 @@ class DashboardController extends Controller
             ->orderBy('created_at', 'desc')
             ->limit(50);
         if (!$isGlobal && count($frenteIds) > 0) {
-            $recentActivityQuery->where(function($q) use ($frenteIds) {
-                $q->whereIn('ID_FRENTE_ORIGEN', $frenteIds)
-                  ->orWhereIn('ID_FRENTE_DESTINO', $frenteIds);
-            });
+            $recentActivityQuery->whereIn('ID_FRENTE_DESTINO', $frenteIds);
         } elseif (!$isGlobal) {
             $recentActivityQuery->whereRaw('1 = 0');
         }
@@ -132,10 +126,7 @@ class DashboardController extends Controller
             ->limit(50);
 
         if (!$isGlobal && count($frenteIds) > 0) {
-            $query->where(function ($q) use ($frenteIds) {
-                $q->whereIn('ID_FRENTE_ORIGEN', $frenteIds)
-                  ->orWhereIn('ID_FRENTE_DESTINO', $frenteIds);
-            });
+            $query->whereIn('ID_FRENTE_DESTINO', $frenteIds);
         } elseif (!$isGlobal) {
             $query->whereRaw('1 = 0');
         }
