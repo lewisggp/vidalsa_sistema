@@ -16,8 +16,8 @@
         $primaryId      = ($placa && strtoupper($placa) !== 'N/A') ? $placa : $serial;
         $nombreFrente   = $activity->frenteDestino->NOMBRE_FRENTE ?? 'Sin Frente';
     @endphp
-
-    <div class="activity-item"
+    @if($esDestinatario)
+    <div class="activity-item" id="mov-item-{{ $activity->ID_MOVILIZACION }}"
          data-chasis="{{ $activity->equipo->SERIAL_CHASIS ?? '' }}"
          data-placa="{{ $activity->equipo->documentacion->PLACA ?? '' }}"
          data-etiqueta="{{ $activity->equipo->NUMERO_ETIQUETA ?? '' }}"
@@ -56,25 +56,17 @@
 
         <!-- Botones de Acción -->
         <div class="activity-actions" style="display: flex; gap: 6px; flex-shrink: 0; align-items: center;">
-            @if($esDestinatario)
-                <button type="button"
-                    onclick="iniciarRecepcionDesdeDashboard({{ $activity->ID_MOVILIZACION }}, '{{ addslashes($activity->frenteDestino->NOMBRE_FRENTE ?? '') }}', '{{ addslashes($activity->frenteDestino->SUBDIVISIONES ?? '') }}', {{ $activity->ID_FRENTE_DESTINO }})"
-                    class="btn-recibir-dashboard"
-                    title="Confirmar recepción en {{ $nombreFrente }}"
-                    style="background: #1e293b; border: none; color: white; padding: 4px 8px; height: 32px; border-radius: 8px; font-weight: 800; display: flex; align-items: center; gap: 5px; cursor: default;">
-                    <i class="material-icons" style="font-size: 16px;">check_circle</i>
-                    <span style="font-size: 10px;">RECIBIR</span>
-                </button>
-            @else
-                <div class="btn-sin-acceso-dashboard"
-                    title="No tienes permisos para recibir este equipo"
-                    style="height: 32px; padding: 5px 12px; display: flex; align-items: center; gap: 4px;">
-                    <i class="material-icons" style="font-size: 18px;">block</i>
-                    <span style="font-size: 11px; font-weight: 800;">Sin Acceso</span>
-                </div>
-            @endif
+            <button type="button"
+                onclick="iniciarRecepcionDesdeDashboard({{ $activity->ID_MOVILIZACION }}, '{{ addslashes($activity->frenteDestino->NOMBRE_FRENTE ?? '') }}', '{{ addslashes($activity->frenteDestino->SUBDIVISIONES ?? '') }}', {{ $activity->ID_FRENTE_DESTINO }})"
+                class="btn-recibir-dashboard"
+                title="Confirmar recepción en {{ $nombreFrente }}"
+                style="background: #1e293b; border: none; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: default; transition: background 0.2s;"
+                onmouseover="this.style.background='#0f172a'" onmouseout="this.style.background='#1e293b'">
+                <i class="material-icons" style="font-size: 18px;">check_circle</i>
+            </button>
         </div>
     </div>
+    @endif
 @empty
     <div class="empty-state">
         <i class="material-icons">inbox</i>

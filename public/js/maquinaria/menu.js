@@ -260,7 +260,7 @@ async function ejecutarIniciarGestion(equipoId, docType) {
  * Refresca la lista de movilizaciones pendientes vía AJAX
  * y actualiza los contadores de las cards.
  */
-window.refreshPendingMovs = async function () {
+window.refreshPendingMovs = async function (silent = false) {
     const listContainer = document.getElementById('pendingMovsList');
     if (!listContainer) return;
 
@@ -272,12 +272,17 @@ window.refreshPendingMovs = async function () {
 
         // Actualizar lista
         if (data.html !== undefined) {
-            listContainer.style.opacity = '0';
-            setTimeout(() => {
+            if (silent) {
+                // Actualización silenciosa sin "titileo"
                 listContainer.innerHTML = data.html;
-                listContainer.style.transition = 'opacity 0.3s ease';
-                listContainer.style.opacity = '1';
-            }, 100);
+            } else {
+                listContainer.style.opacity = '0';
+                setTimeout(() => {
+                    listContainer.innerHTML = data.html;
+                    listContainer.style.transition = 'opacity 0.3s ease';
+                    listContainer.style.opacity = '1';
+                }, 100);
+            }
         }
 
         // Actualizar contador "Por Confirmar" (x|N Por Confirmar — card-subtext-inline)
@@ -436,15 +441,14 @@ window.iniciarRecepcionDesdeDashboard = function (movId, nombreFrente, subdivisi
                 </button>
             </div>
             <div style="padding:20px;">
-                <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;">
-                    <i class="material-icons" style="font-size:14px;vertical-align:middle;color:#64748b;">place</i>
-                    Ubicación / Sección (Opcional)
+                <label style="display:block;font-size:13px;font-weight:700;color:#475569;margin-bottom:8px;">
+                    UBICACIÓN DETALLADA <span style="font-weight:400;color:#94a3b8;">(Opcional)</span>
                 </label>
                 <div style="position:relative;">
                     <input type="text" id="dashRdUbicacion"
-                        placeholder=""
+                        placeholder="Ej. Patio de maniobras..."
                         autocomplete="off"
-                        style="width:100%;padding:9px 12px;border:1px solid #cbd5e0;border-radius:10px;font-size:13px;background:#f8fafc;outline:none;box-sizing:border-box;"
+                        style="width:100%;padding:10px 14px;border:1px solid #cbd5e0;border-radius:10px;font-size:14px;background:#f8fafc;outline:none;box-sizing:border-box;"
                         onfocus="this.style.borderColor='#1e293b'" onblur="this.style.borderColor='#cbd5e0'">
                     <div id="dashRdSuggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #cbd5e0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:500;max-height:140px;overflow-y:auto;margin-top:4px;"></div>
                 </div>
@@ -529,8 +533,32 @@ window.iniciarRecepcionDesdeDashboard = function (movId, nombreFrente, subdivisi
             const data = await response.json();
 
             if (data.success) {
-                // Actualizar la lista en segundo plano de manera silenciosa
-                await window.refreshPendingMovs();
+                if (typeof window.showToast === 'function') {
+                    window.showToast('Recepción confirmada con éxito', 'success');
+                }
+
+                // Animación elegante de salida optimista antes de refrescar DB
+                const rowItem = document.getElementById(`mov-item-${movId}`);
+                if (rowItem) {
+                    rowItem.style.transition = 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
+                    rowItem.style.opacity = '0';
+                    rowItem.style.transform = 'translateX(20px)';
+                    rowItem.style.padding = '0';
+                    rowItem.style.height = rowItem.offsetHeight + 'px'; // Fix height for sliding
+                    
+                    // Slide up after fade out
+                    setTimeout(() => {
+                        rowItem.style.height = '0px';
+                        rowItem.style.borderBottom = 'none';
+                        setTimeout(async () => {
+                            rowItem.remove();
+                            // Actualizar la lista en segundo plano de manera silenciosa
+                            await window.refreshPendingMovs(true);
+                        }, 350);
+                    }, 200);
+                } else {
+                    await window.refreshPendingMovs(true);
+                }
             } else {
                 throw new Error(data.error || 'Error al confirmar recepción');
             }

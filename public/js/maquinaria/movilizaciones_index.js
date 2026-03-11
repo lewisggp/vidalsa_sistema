@@ -443,6 +443,10 @@ window.confirmarRecepcionDirecta = function () {
         })
         .then(data => {
             if (data.success) {
+                // Notificación rápida elegante
+                if (typeof window.showToast === 'function') {
+                    window.showToast('¡Recepción Directa exitosa!', 'success');
+                }
                 // Actualización silenciosa en segundo plano
                 if (typeof window.loadMovilizaciones === 'function') window.loadMovilizaciones();
             } else {

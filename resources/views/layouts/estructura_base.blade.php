@@ -1608,7 +1608,7 @@
         };
     </script>
     {{-- Scripts de Formularios (Globales para soporte SPA) --}}
-    <script src="{{ asset('js/maquinaria/form_selects.js') }}?v=2.0"></script>
+    {{-- NOTE: form_selects.js removed (deprecated, merged into form_logic.js) --}}
     <script src="{{ asset('js/maquinaria/equipos_form.js') }}?v=5.0"></script>
     @yield('extra_js')
     @include('partials.session_timeout')

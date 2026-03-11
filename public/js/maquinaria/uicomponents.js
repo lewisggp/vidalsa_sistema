@@ -619,41 +619,13 @@ window.selectAdvancedFilter = function (key, value) {
 window.clearAdvancedFilters = function () {
     if (window.searchTimeout) clearTimeout(window.searchTimeout);
 
-    // Clear Modelo
-    const modeloContainer = document.querySelector(
-        '[data-advanced-filter="modelo"]',
-    );
-    if (modeloContainer) {
-        const input = modeloContainer.querySelector("[data-filter-search]");
-        const hidden = modeloContainer.querySelector("[data-filter-value]");
-        const btn = modeloContainer.querySelector("[data-clear-btn]");
-        if (input) input.value = "";
-        if (hidden) hidden.value = "";
-        if (btn) btn.style.display = "none";
-    }
-
-    // Clear Marca
-    const marcaContainer = document.querySelector(
-        '[data-advanced-filter="marca"]',
-    );
-    if (marcaContainer) {
-        const input = marcaContainer.querySelector("[data-filter-search]");
-        const hidden = marcaContainer.querySelector("[data-filter-value]");
-        const btn = marcaContainer.querySelector("[data-clear-btn]");
-        if (input) input.value = "";
-        if (hidden) hidden.value = "";
-        if (btn) btn.style.display = "none";
-    }
-
-    // Clear Año
-    const anioInput = document.querySelector('input[name="anio"]');
-    if (anioInput) anioInput.value = "";
-    const anioLabel = document
-        .querySelector("#yearList")
-        ?.previousElementSibling?.querySelector("span");
-    if (anioLabel) anioLabel.innerText = "Seleccionar Año";
-    const anioBtn = document.getElementById("btn_clear_anio");
-    if (anioBtn) anioBtn.style.display = "none";
+    // Clear all Custom Dropdown Advanced Filters
+    const advFilters = ['modeloAdvFilter', 'marcaAdvFilter', 'anioAdvFilter', 'categoriaAdvFilter', 'estadoAdvFilter'];
+    advFilters.forEach(id => {
+        if (document.getElementById(id) && typeof window.clearDropdownFilter === 'function') {
+            window.clearDropdownFilter(id);
+        }
+    });
 
     // Clear Doc Filters (Equipos specific)
     ["chk_propiedad", "chk_poliza", "chk_rotc", "chk_racda"].forEach((id) => {

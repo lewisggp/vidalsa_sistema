@@ -301,8 +301,8 @@ window.unanchorEquipos = async function (e) {
                     window.clearSelection();
                     window.loadEquipos(null, true); // Silent reload
                     if (window.hidePreloader) window.hidePreloader();
-                    if (typeof showModal === 'function') {
-                        showModal({ type: 'success', title: 'Desanclaje Exitoso', message: 'Los equipos han sido desanclados correctamente.', confirmText: 'Aceptar', hideCancel: true });
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('¡Desanclaje exitoso!', 'success');
                     }
                 } else {
                     if (window.hidePreloader) window.hidePreloader();
@@ -931,34 +931,12 @@ window.openBulkModal = function (event) {
                     }
                 }
 
-                // 2. Mostrar Modal de Éxito o Toast usando el sistema global de la aplicación
-                if (window.showToast && !data.generar_pdf) {
-                    window.showToast("Actualización de ubicación exitosa", "success");
-                } else if (window.showModal) {
-                    let msg = '';
-                    let title = '';
+                // 2. Notificación rápida de éxito
+                if (typeof window.showToast === 'function') {
                     if (data.generar_pdf) {
-                        msg = `Se generaron ${data.count} traslados exitosamente.<br><strong>Descargando Acta de Traslado...</strong>`;
-                        title = "¡Movilización Exitosa!";
+                        window.showToast(`¡Movilización exitosa! Descargando acta de ${data.count} traslado(s)...`, 'success');
                     } else {
-                        msg = `Se actualizó la ubicación de ${data.count} equipo(s).`;
-                        title = "¡Actualización Exitosa!";
-                    }
-
-                    showModal({
-                        type: data.generar_pdf ? "info" : "success",
-                        title: title,
-                        message: msg,
-                        confirmText: "Aceptar",
-                        hideCancel: true,
-                    });
-                    
-                    // Auto-cerrar después de 3 segundos solo si fue con PDF (para no interrumpir)
-                    if (data.generar_pdf) {
-                        setTimeout(() => {
-                            const modalEl = document.getElementById("standardModal");
-                            if (modalEl) modalEl.classList.remove("active");
-                        }, 3000);
+                        window.showToast('Actualización de ubicación exitosa', 'success');
                     }
                 }
 

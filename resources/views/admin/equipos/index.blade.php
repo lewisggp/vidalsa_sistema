@@ -59,7 +59,7 @@
                         autocomplete="off">
                     <i class="material-icons" data-clear-btn
                        style="padding:0 5px; color:var(--maquinaria-gray-text); font-size:18px; display:{{ $currentFrenteId && $currentFrenteId != 'all' ? 'block' : 'none' }};"
-                       onclick="event.stopPropagation(); clearDropdownFilter('frenteFilterSelect'); loadEquipos();">close</i>
+                       onclick="event.stopPropagation(); clearDropdownFilter('frenteFilterSelect'); window.clearAdvancedFilters();">close</i>
                 </div>
 
                 <div class="dropdown-content" style="padding:5px; max-height:none; overflow:visible; z-index:1000;">
@@ -102,7 +102,7 @@
                         autocomplete="off">
                      <i class="material-icons" data-clear-btn
                        style="padding: 0 5px; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_tipo') ? 'block' : 'none' }};"
-                       onclick="event.preventDefault(); event.stopPropagation(); clearDropdownFilter('tipoFilterSelect'); loadEquipos();">close</i>
+                       onclick="event.preventDefault(); event.stopPropagation(); clearDropdownFilter('tipoFilterSelect'); window.clearAdvancedFilters();">close</i>
                 </div>
 
                 <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible; z-index: 1000;">
@@ -135,7 +135,7 @@
                         onkeyup="if(this.value.length >= 4 || this.value.length == 0) { /* Debounce handled in script */ }">
                      <i id="btn_clear_search" class="material-icons clear-icon" 
                        style="display: {{ request('search_query') ? 'block' : 'none' }};" 
-                       onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('searchInput').value=''; this.style.display='none'; loadEquipos();">close</i>
+                       onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('searchInput').value=''; this.style.display='none'; window.clearAdvancedFilters();">close</i>
                 </div>
             </form>
 
@@ -675,47 +675,34 @@
                             </button>
 
                             <!-- Filter: LOCAL = locked | GLOBAL = dropdown -->
-                            <div class="fleet-filter-container">
-                            @if($dashIsLocal)
-                                {{-- LOCAL: frente fijo, no se puede cambiar --}}
-                                <input type="hidden" id="dashboardSelectedFrenteId" value="{{ $defaultDashboardId }}">
-                                <input type="hidden" id="dashboardSelectedFrenteNombre" value="{{ $defaultDashboardNombre }}">
-                                <div style="display:flex;align-items:center;background:rgba(255,255,255,0.15);border-radius:8px;height:38px;padding:0 12px;gap:8px;min-width:170px;">
-                                    <i class="material-icons" style="font-size:16px;color:rgba(255,255,255,0.8);flex-shrink:0;">location_on</i>
-                                    <span style="font-size:13px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;">
-                                        {{ $defaultDashboardNombre ?: 'Mi Frente' }}
-                                    </span>
-                                    <i class="material-icons" title="Solo puedes ver tu frente asignado" style="font-size:15px;color:rgba(255,255,255,0.6);flex-shrink:0;">lock</i>
-                                </div>
-                            @else
-                                {{-- GLOBAL: dropdown completo --}}
-                                <input type="hidden" id="dashboardSelectedFrenteId" value="{{ $defaultDashboardId }}">
-                                <input type="hidden" id="dashboardSelectedFrenteNombre" value="{{ $defaultDashboardNombre }}">
-                                <div class="custom-dropdown" id="dashboardFrenteDropdown" style="width: 100%;">
-                                <div class="dropdown-trigger" onclick="dashboardToggleFrente(event)" style="padding: 0; display: flex; align-items: center; background: rgba(255,255,255,0.95); overflow: hidden; border: none; border-radius: 8px; height: 38px; cursor: default;">
-                                    <div style="padding: 0 10px; display: flex; align-items: center; color: #64748b; flex-shrink:0;">
-                                        <i class="material-icons" style="font-size: 18px;">search</i>
-                                    </div>
-                                    <input type="text" id="dashboardFrenteSearch"
-                                        placeholder="Buscar frente..."
-                                        onkeyup="dashboardFilterFrentes(); dashboardToggleClearBtn()"
-                                        style="flex: 1; min-width: 0; border: none; background: transparent; padding: 8px 5px; font-size: 13px; font-weight: 500; outline: none; color: #1e293b; cursor: text;"
-                                        autocomplete="off">
-                                    <i id="dashboardFrenteClearBtn" class="material-icons"
-                                       onclick="event.stopPropagation(); dashboardClearFrenteSearch()"
-                                       style="padding: 0 8px; color: #64748b; font-size: 20px; display: none; flex-shrink:0;">close</i>
-                                </div>
-                                    <!-- Custom Dropdown List -->
-                                    <div id="dashboardFrenteList" style="display: none; position: absolute; top: 105%; left: 0; right: 0; max-height: 250px; overflow-y: auto; background: white; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 50; padding: 5px;">
-                                        @foreach($frentes as $frente)
-                                            <div onclick="dashboardSelectFrente('{{ $frente->ID_FRENTE }}', '{{ $frente->NOMBRE_FRENTE }}', event)" class="dashboard-frente-option dropdown-item" style="padding: 8px 12px; cursor: default; border-radius: 6px; color: #1e293b; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
-                                                {{ $frente->NOMBRE_FRENTE }}
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endif
-                            </div>
+                             <div class="fleet-filter-container">
+                                 {{-- LOCAL y GLOBAL usan el mismo dropdown, la variable $frentesDropdown ya viene filtrada del Controller --}}
+                                 <input type="hidden" id="dashboardSelectedFrenteId" value="{{ $defaultDashboardId }}">
+                                 <input type="hidden" id="dashboardSelectedFrenteNombre" value="{{ $defaultDashboardNombre }}">
+                                 <div class="custom-dropdown" id="dashboardFrenteDropdown" style="width: 100%;">
+                                 <div class="dropdown-trigger" onclick="dashboardToggleFrente(event)" style="padding: 0; display: flex; align-items: center; background: rgba(255,255,255,0.95); overflow: hidden; border: none; border-radius: 8px; height: 38px; cursor: default;">
+                                     <div style="padding: 0 10px; display: flex; align-items: center; color: #64748b; flex-shrink:0;">
+                                         <i class="material-icons" style="font-size: 18px;">search</i>
+                                     </div>
+                                     <input type="text" id="dashboardFrenteSearch"
+                                         placeholder="Buscar frente..."
+                                         onkeyup="dashboardFilterFrentes(); dashboardToggleClearBtn()"
+                                         style="flex: 1; min-width: 0; border: none; background: transparent; padding: 8px 5px; font-size: 13px; font-weight: 500; outline: none; color: #1e293b; cursor: text;"
+                                         autocomplete="off">
+                                     <i id="dashboardFrenteClearBtn" class="material-icons"
+                                        onclick="event.stopPropagation(); dashboardClearFrenteSearch()"
+                                        style="padding: 0 8px; color: #64748b; font-size: 20px; display: none; flex-shrink:0;">close</i>
+                                 </div>
+                                     <!-- Custom Dropdown List -->
+                                     <div id="dashboardFrenteList" style="display: none; position: absolute; top: 105%; left: 0; right: 0; max-height: 250px; overflow-y: auto; background: white; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 50; padding: 5px;">
+                                         @foreach($frentesDropdown as $frente)
+                                             <div onclick="dashboardSelectFrente('{{ $frente->ID_FRENTE }}', '{{ $frente->NOMBRE_FRENTE }}', event)" class="dashboard-frente-option dropdown-item" style="padding: 8px 12px; cursor: default; border-radius: 6px; color: #1e293b; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                                                 {{ $frente->NOMBRE_FRENTE }}
+                                             </div>
+                                         @endforeach
+                                     </div>
+                                 </div>
+                             </div>
                         </div>
                     </div>
 

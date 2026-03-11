@@ -203,11 +203,11 @@
                 <div style="margin-bottom: 20px;">
                     <label for="rdSearchInput" style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px;">
                         <span style="background: #1e293b; color: white; padding: 2px 8px; border-radius: 50%; font-size: 11px; font-weight: 800; margin-right: 6px;">1</span>
-                        Buscar Equipo (Serial, Placa, Motor o Código)
+                        Buscar Equipo (Serial, Placa, Motor o #Etiqueta)
                     </label>
                     <div style="display: flex; gap: 8px;">
                         <input type="text" id="rdSearchInput"
-                            placeholder="Buscar por serial, placa, motor o código..."
+                            placeholder="Buscar por serial, placa, motor o #Número de etiqueta..."
                             style="flex: 1; padding: 10px 14px; border: 1px solid #cbd5e0; border-radius: 10px; font-size: 14px; background: #f8fafc; outline: none;"
                             autocomplete="off"
                             onfocus="this.style.borderColor='#1e293b'" onblur="this.style.borderColor='#cbd5e0'"
