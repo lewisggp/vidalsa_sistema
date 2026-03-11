@@ -68,6 +68,16 @@ class Usuario extends Authenticatable
     }
 
     /**
+     * Get the frentes IDs as an array.
+     */
+    public function getIdFrenteAsignadoAttribute($value)
+    {
+        if (!$value) return null;
+        // Devolver el raw string para que ->ID_FRENTE_ASIGNADO siga funcionando en código legado
+        return $value;
+    }
+
+    /**
      * Get the password for the user.
      *
      * @return string
@@ -84,12 +94,30 @@ class Usuario extends Authenticatable
 
     public function frenteAsignado()
     {
-        return $this->belongsTo(FrenteTrabajo::class, 'ID_FRENTE_ASIGNADO', 'ID_FRENTE');
+        // Para compatibilidad hacia atrás: devuelve el primer frente asignado
+        $ids = $this->getFrentesIds();
+        $firstId = $ids[0] ?? null;
+        return $this->belongsTo(FrenteTrabajo::class, 'ID_FRENTE_ASIGNADO', 'ID_FRENTE')
+                    ->whereKey($firstId);
     }
 
-    public function solicitudesMantenimiento()
+    /**
+     * Devuelve todos los frentes asignados al usuario como colección.
+     */
+    public function frentesAsignados()
     {
-        return $this->hasMany(SolicitudMantenimiento::class, 'ID_USUARIO_SOLICITA', 'ID_USUARIO');
+        $ids = $this->getFrentesIds();
+        return FrenteTrabajo::whereIn('ID_FRENTE', $ids)->get();
+    }
+
+    /**
+     * Devuelve el array de IDs de frentes asignados.
+     */
+    public function getFrentesIds(): array
+    {
+        $raw = $this->attributes['ID_FRENTE_ASIGNADO'] ?? null;
+        if (!$raw) return [];
+        return array_filter(array_map('trim', explode(',', $raw)));
     }
 
     /**

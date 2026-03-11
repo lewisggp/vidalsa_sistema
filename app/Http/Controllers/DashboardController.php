@@ -14,42 +14,48 @@ class DashboardController extends Controller
     {
         $user      = auth()->user();
         $isGlobal  = $user && $user->NIVEL_ACCESO == 1;
-        $frenteId  = $user ? $user->ID_FRENTE_ASIGNADO : null;
+        $frenteIds = $user ? $user->getFrentesIds() : [];
 
-        // 1. Mobilizations Today — LOCAL users see only their frente
+        // 1. Mobilizations Today — LOCAL users see only their frentes
         $movilizacionesHoyQuery = Movilizacion::whereDate('FECHA_DESPACHO', Carbon::today());
-        if (!$isGlobal && $frenteId) {
-            $movilizacionesHoyQuery->where(function($q) use ($frenteId) {
-                $q->where('ID_FRENTE_ORIGEN', $frenteId)
-                  ->orWhere('ID_FRENTE_DESTINO', $frenteId);
+        if (!$isGlobal && count($frenteIds) > 0) {
+            $movilizacionesHoyQuery->where(function($q) use ($frenteIds) {
+                $q->whereIn('ID_FRENTE_ORIGEN', $frenteIds)
+                  ->orWhereIn('ID_FRENTE_DESTINO', $frenteIds);
             });
+        } elseif (!$isGlobal) {
+            $movilizacionesHoyQuery->whereRaw('1 = 0');
         }
         $movilizacionesHoy = $movilizacionesHoyQuery->count();
 
-        // 2. Pending Mobilizations (TRÁNSITO) — LOCAL users see only their frente
+        // 2. Pending Mobilizations (TRÁNSITO) — LOCAL users see only their frentes
         $pendientesQuery = Movilizacion::where('ESTADO_MVO', 'TRANSITO');
-        if (!$isGlobal && $frenteId) {
-            $pendientesQuery->where(function($q) use ($frenteId) {
-                $q->where('ID_FRENTE_ORIGEN', $frenteId)
-                  ->orWhere('ID_FRENTE_DESTINO', $frenteId);
+        if (!$isGlobal && count($frenteIds) > 0) {
+            $pendientesQuery->where(function($q) use ($frenteIds) {
+                $q->whereIn('ID_FRENTE_ORIGEN', $frenteIds)
+                  ->orWhereIn('ID_FRENTE_DESTINO', $frenteIds);
             });
+        } elseif (!$isGlobal) {
+            $pendientesQuery->whereRaw('1 = 0');
         }
         $pendientes = $pendientesQuery->count();
 
-        // 3. Alerts List — LOCAL users see only their frente's equipment
-        $expiredList = $this->generateAlertsList(!$isGlobal ? $frenteId : null);
+        // 3. Alerts List — LOCAL users see only their frentes' equipment
+        $expiredList = $this->generateAlertsList(!$isGlobal ? $frenteIds : null);
         $totalAlerts  = $expiredList->count();
 
-        // 4. Recent Activity (list) — LOCAL users see only their frente
+        // 4. Recent Activity (list) — LOCAL users see only their frentes
         $recentActivityQuery = Movilizacion::with(['equipo.tipo', 'equipo.documentacion', 'frenteDestino'])
             ->where('ESTADO_MVO', 'TRANSITO')
             ->orderBy('created_at', 'desc')
-            ->limit(50); // safety cap — never load unlimited records
-        if (!$isGlobal && $frenteId) {
-            $recentActivityQuery->where(function($q) use ($frenteId) {
-                $q->where('ID_FRENTE_ORIGEN', $frenteId)
-                  ->orWhere('ID_FRENTE_DESTINO', $frenteId);
+            ->limit(50);
+        if (!$isGlobal && count($frenteIds) > 0) {
+            $recentActivityQuery->where(function($q) use ($frenteIds) {
+                $q->whereIn('ID_FRENTE_ORIGEN', $frenteIds)
+                  ->orWhereIn('ID_FRENTE_DESTINO', $frenteIds);
             });
+        } elseif (!$isGlobal) {
+            $recentActivityQuery->whereRaw('1 = 0');
         }
         $recentActivity = $recentActivityQuery->get();
 
@@ -99,9 +105,9 @@ class DashboardController extends Controller
     {
         $user        = auth()->user();
         $isGlobal    = $user && $user->NIVEL_ACCESO == 1;
-        $frenteId    = $user ? $user->ID_FRENTE_ASIGNADO : null;
+        $frenteIds   = $user ? $user->getFrentesIds() : [];
 
-        $expiredList = $this->generateAlertsList(!$isGlobal ? $frenteId : null);
+        $expiredList = $this->generateAlertsList(!$isGlobal ? $frenteIds : null);
         $totalAlerts = $expiredList->count();
 
         return response()->json([
@@ -118,29 +124,33 @@ class DashboardController extends Controller
     {
         $user     = auth()->user();
         $isGlobal = $user && $user->NIVEL_ACCESO == 1;
-        $frenteId = $user ? $user->ID_FRENTE_ASIGNADO : null;
+        $frenteIds = $user ? $user->getFrentesIds() : [];
 
         $query = Movilizacion::with(['equipo.tipo', 'equipo.documentacion', 'frenteDestino'])
             ->where('ESTADO_MVO', 'TRANSITO')
             ->orderBy('created_at', 'desc')
             ->limit(50);
 
-        if (!$isGlobal && $frenteId) {
-            $query->where(function ($q) use ($frenteId) {
-                $q->where('ID_FRENTE_ORIGEN', $frenteId)
-                  ->orWhere('ID_FRENTE_DESTINO', $frenteId);
+        if (!$isGlobal && count($frenteIds) > 0) {
+            $query->where(function ($q) use ($frenteIds) {
+                $q->whereIn('ID_FRENTE_ORIGEN', $frenteIds)
+                  ->orWhereIn('ID_FRENTE_DESTINO', $frenteIds);
             });
+        } elseif (!$isGlobal) {
+            $query->whereRaw('1 = 0');
         }
 
         $recentActivity = $query->get();
         $pendientes     = $recentActivity->count();
 
         $hoyQuery = Movilizacion::whereDate('FECHA_DESPACHO', \Carbon\Carbon::today());
-        if (!$isGlobal && $frenteId) {
-            $hoyQuery->where(function ($q) use ($frenteId) {
-                $q->where('ID_FRENTE_ORIGEN', $frenteId)
-                  ->orWhere('ID_FRENTE_DESTINO', $frenteId);
+        if (!$isGlobal && count($frenteIds) > 0) {
+            $hoyQuery->where(function ($q) use ($frenteIds) {
+                $q->whereIn('ID_FRENTE_ORIGEN', $frenteIds)
+                  ->orWhereIn('ID_FRENTE_DESTINO', $frenteIds);
             });
+        } elseif (!$isGlobal) {
+            $hoyQuery->whereRaw('1 = 0');
         }
         $movilizacionesHoy = $hoyQuery->count();
 
@@ -155,9 +165,9 @@ class DashboardController extends Controller
      * Generate alerts list for expired and expiring documents.
      * Shared by index(), getAlertsHtml().
      *
-     * @param int|null $frenteId  When set, only returns alerts for equipment in that frente (LOCAL users).
+     * @param array|null $frenteIds  When set, only returns alerts for equipment in those frentes (LOCAL users).
      */
-    public function generateAlertsList(?int $frenteId = null)
+    public function generateAlertsList(?array $frenteIds = null)
     {
         $now      = \Carbon\Carbon::now();
         $in30Days = $now->copy()->addDays(30);
@@ -175,9 +185,13 @@ class DashboardController extends Controller
             'frenteActual'
         ]);
 
-        // LOCAL users only see alerts for their assigned frente
-        if ($frenteId) {
-            $query->where('ID_FRENTE_ACTUAL', $frenteId);
+        // LOCAL users only see alerts for their assigned frentes
+        if (is_array($frenteIds)) {
+            if (count($frenteIds) > 0) {
+                $query->whereIn('ID_FRENTE_ACTUAL', $frenteIds);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         $equipos = $query->get();
@@ -272,7 +286,7 @@ class DashboardController extends Controller
             return response()->json(['success' => false, 'message' => 'No tiene permisos para realizar esta acción.'], 403);
         }
 
-        if (!$user->ID_FRENTE_ASIGNADO) {
+        if (!$user->getFrentesIds()) {
             return response()->json(['success' => false, 'message' => 'Debe pertenecer a un frente para iniciar gestión'], 403);
         }
 
@@ -282,7 +296,9 @@ class DashboardController extends Controller
         $frenteField = $request->doc_type . '_gestion_frente_id';
         $fechaField = $request->doc_type . '_gestion_fecha';
 
-        $doc->$frenteField = $user->ID_FRENTE_ASIGNADO;
+        // Usar el primer frente asignado como frente de gestión
+        $primerFrente = $user->getFrentesIds()[0] ?? null;
+        $doc->$frenteField = $primerFrente;
         $doc->$fechaField = now();
         $doc->save();
 

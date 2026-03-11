@@ -20,6 +20,19 @@ window.updateSelectedCount = function () {
     }
 };
 
+window.updateFrentesCount = function () {
+    const checks = document.querySelectorAll('#frentesSelect input[type="checkbox"]:checked');
+    const span = document.getElementById('frentesSelectedCount');
+    if (!span) return;
+    if (checks.length === 0) {
+        span.textContent = 'Seleccione frentes de trabajo...';
+    } else if (checks.length === 1) {
+        span.textContent = checks[0].closest('label').querySelector('span').textContent.trim();
+    } else {
+        span.textContent = checks.length + ' frentes seleccionados';
+    }
+};
+
 // NOTE: selectOption is now in uicomponents.js (single source of truth)
 
 // --- RESTORED: Custom Form Autocomplete Logic (Requested by User) ---
@@ -682,11 +695,9 @@ window.addEventListener('spa:contentLoaded', function () {
                         // CREATE MODE: Reset Form without reload
                         form.reset();
 
-                        // Reset Custom Dropdowns UI
                         const resets = [
                             { id: 'input_rol', label: 'label_rol', text: 'Seleccione un rol...' },
                             { id: 'input_nivel', label: 'label_nivel', text: 'Seleccione nivel de acceso...' },
-                            { id: 'input_frente', label: 'label_frente', text: 'Seleccione frente de trabajo...' },
                             { id: 'input_estatus', label: 'label_estatus', text: 'ACTIVO', val: 'ACTIVO' } // Default Active
                         ];
 
@@ -702,6 +713,9 @@ window.addEventListener('spa:contentLoaded', function () {
                         const permLabel = document.getElementById('selectedCount');
                         if (permLabel) permLabel.innerText = 'Seleccione permisos...';
 
+                        // Reset Frentes Multiselect
+                        document.querySelectorAll('input[name="ID_FRENTE_ASIGNADO[]"]').forEach(cb => cb.checked = false);
+                        if (window.updateFrentesCount) window.updateFrentesCount();
                         // Remove 'selected' class from all dropdown items
                         document.querySelectorAll('.dropdown-item.selected').forEach(el => el.classList.remove('selected'));
                         // Re-select default ACTIVO
@@ -787,7 +801,9 @@ window.addEventListener('spa:contentLoaded', function () {
         if (!formData.get('ID_ROL')) errors['ID_ROL'] = ['Debes asignar un rol al usuario.'];
         if (!formData.get('NIVEL_ACCESO')) errors['NIVEL_ACCESO'] = ['El nivel de acceso es obligatorio.'];
         if (!formData.get('ESTATUS')) errors['ESTATUS'] = ['El estatus es obligatorio.'];
-        if (!formData.get('ID_FRENTE_ASIGNADO')) errors['ID_FRENTE_ASIGNADO'] = ['Debes asignar un frente de trabajo.'];
+        // ID_FRENTE_ASIGNADO es ahora un array (checkbox multiselect), usar getAll()
+        const frentesSeleccionados = formData.getAll('ID_FRENTE_ASIGNADO[]');
+        // Frentes son opcionales (usuarios GLOBAL no necesitan frente)
 
         // 3. Permissions
         let hasPermissions = false;

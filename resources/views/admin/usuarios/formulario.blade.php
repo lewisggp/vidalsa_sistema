@@ -122,23 +122,30 @@
             </div>
 
             <div>
-                <span id="lbl_usuario_frente_title" class="form-label">Frente Asignado</span>
-                <div class="custom-dropdown" id="frenteSelect">
-                    <input type="hidden" name="ID_FRENTE_ASIGNADO" id="input_frente" value="{{ old('ID_FRENTE_ASIGNADO', $user->ID_FRENTE_ASIGNADO ?? '') }}" aria-label="Frente Asignado">
-                    <div class="dropdown-trigger" id="trigger_frente" onclick="toggleDropdown('frenteSelect', event)" tabindex="0" role="button" aria-haspopup="listbox" aria-labelledby="lbl_usuario_frente_title label_frente" style="cursor: default;">
-                        <span id="label_frente">
-                            @php 
-                                $currentFrente = $frentes->firstWhere('ID_FRENTE', old('ID_FRENTE_ASIGNADO', $user->ID_FRENTE_ASIGNADO ?? ''));
-                            @endphp
-                            {{ $currentFrente ? $currentFrente->NOMBRE_FRENTE : 'Seleccione frente de trabajo...' }}
-                        </span>
+                <span id="lbl_usuario_frente_title" class="form-label">Frentes Asignados</span>
+
+                <div class="custom-multiselect" id="frentesSelect">
+                    <div class="multiselect-trigger" id="frentesMultiselectTrigger" onclick="toggleDropdown('frentesSelect', event)" tabindex="0" role="button" aria-haspopup="listbox" aria-labelledby="lbl_usuario_frente_title frentesSelectedCount" style="cursor: default;">
+                        <span id="frentesSelectedCount">Seleccione frentes de trabajo...</span>
                         <i class="material-icons">expand_more</i>
                     </div>
-                    <div class="dropdown-content">
+                    <div class="multiselect-content" id="frentesMultiselectContent">
+                        @php
+                            $rawFrente = old('ID_FRENTE_ASIGNADO', isset($user) ? $user->getRawOriginal('ID_FRENTE_ASIGNADO') : '');
+                            $selectedFrentes = is_array($rawFrente)
+                                ? $rawFrente
+                                : array_filter(array_map('trim', explode(',', $rawFrente ?? '')));
+                        @endphp
                         @foreach($frentes as $frente)
-                            <div class="dropdown-item {{ old('ID_FRENTE_ASIGNADO', $user->ID_FRENTE_ASIGNADO ?? '') == $frente->ID_FRENTE ? 'selected' : '' }}" onclick="selectOption('frenteSelect', '{{ $frente->ID_FRENTE }}', '{{ $frente->NOMBRE_FRENTE }}', 'frente')">
-                                {{ $frente->NOMBRE_FRENTE }}
-                            </div>
+                            <label class="multiselect-item" for="frente_{{ $frente->ID_FRENTE }}">
+                                <input type="checkbox"
+                                    id="frente_{{ $frente->ID_FRENTE }}"
+                                    name="ID_FRENTE_ASIGNADO[]"
+                                    value="{{ $frente->ID_FRENTE }}"
+                                    {{ in_array((string)$frente->ID_FRENTE, array_map('strval', (array)$selectedFrentes)) ? 'checked' : '' }}
+                                    onchange="updateFrentesCount()">
+                                <span>{{ $frente->NOMBRE_FRENTE }}</span>
+                            </label>
                         @endforeach
                     </div>
                 </div>
@@ -146,7 +153,7 @@
                     <span class="error-message-inline">{{ $message }}</span>
                 @enderror
                 <small style="color: var(--maquinaria-gray-text); font-size: 12px; display: block; margin-top: 5px;">
-                    Este campo es obligatorio para la asignación de recursos
+                    Selecciona uno o varios frentes de los que este usuario es responsable
                 </small>
             </div>
 
@@ -189,5 +196,11 @@
 @endsection
 
 @section('extra_js')
-<script src="{{ asset('js/maquinaria/form_logic.js') }}?v=2.1"></script>
+<script src="{{ asset('js/maquinaria/form_logic.js') }}?v=2.2"></script>
+<script>
+    // Restaurar contador de frentes al cargar (modo edición)
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.updateFrentesCount) window.updateFrentesCount();
+    });
+</script>
 @endsection

@@ -108,7 +108,8 @@ class UserController extends Controller
             ],
             'password' => 'required|string|min:6',
             'ID_ROL' => 'required|exists:roles,ID_ROL',
-            'ID_FRENTE_ASIGNADO' => 'required|exists:frentes_trabajo,ID_FRENTE',
+            'ID_FRENTE_ASIGNADO' => 'nullable|array',
+            'ID_FRENTE_ASIGNADO.*' => 'exists:frentes_trabajo,ID_FRENTE',
             'NIVEL_ACCESO' => 'required|integer|in:1,2',
             'ESTATUS' => 'required|in:ACTIVO,INACTIVO',
             'PERMISOS' => 'required|array',
@@ -123,8 +124,8 @@ class UserController extends Controller
             'password.min' => 'La clave de acceso debe tener al menos 6 caracteres.',
             'ID_ROL.required' => 'Debes asignar un rol al usuario.',
             'ID_ROL.exists' => 'El rol seleccionado no es válido.',
-            'ID_FRENTE_ASIGNADO.required' => 'Debes asignar un frente de trabajo.',
-            'ID_FRENTE_ASIGNADO.exists' => 'El frente asignado no es válido.',
+            'ID_FRENTE_ASIGNADO.required' => 'Debes asignar al menos un frente de trabajo.',
+            'ID_FRENTE_ASIGNADO.min' => 'Debes asignar al menos un frente de trabajo.',
             'NIVEL_ACCESO.required' => 'El nivel de acceso es obligatorio.',
             'NIVEL_ACCESO.in' => 'El nivel de acceso seleccionado no es válido.',
             'ESTATUS.required' => 'El estatus es obligatorio.',
@@ -133,18 +134,25 @@ class UserController extends Controller
         ]);
 
         // Create user with mass assignment for validated data
-        $user = new Usuario($validated);
+        $user = new Usuario();
         $user->NOMBRE_COMPLETO = mb_convert_case($request->NOMBRE_COMPLETO, MB_CASE_TITLE, 'UTF-8');
         $user->CORREO_ELECTRONICO = strtolower($request->CORREO_ELECTRONICO);
         $user->PASSWORD_HASH = Hash::make($request->password);
-        $user->REQUIERE_CAMBIO_CLAVE = 1; // Force password change for new users
+        $user->ID_ROL = $request->ID_ROL;
+        $user->NIVEL_ACCESO = $request->NIVEL_ACCESO;
+        $user->ESTATUS = $request->ESTATUS;
+        // Guardar frentes como CSV (igual que PERMISOS). NULL si usuario GLOBAL sin frente asignado.
+        $frentesSeleccionados = $request->input('ID_FRENTE_ASIGNADO', []);
+        $user->setAttribute('ID_FRENTE_ASIGNADO', !empty($frentesSeleccionados) ? implode(',', $frentesSeleccionados) : null);
+        $user->PERMISOS = $request->PERMISOS;
+        $user->REQUIERE_CAMBIO_CLAVE = 1;
         $user->save();
 
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
                 'message' => 'Usuario creado correctamente.',
-                'redirect' => route('usuarios.create') // Reload create form
+                'redirect' => route('usuarios.create')
             ]);
         }
 
@@ -190,7 +198,8 @@ class UserController extends Controller
             ],
             'password' => 'nullable|string|min:6',
             'ID_ROL' => 'required|exists:roles,ID_ROL',
-            'ID_FRENTE_ASIGNADO' => 'required|exists:frentes_trabajo,ID_FRENTE',
+            'ID_FRENTE_ASIGNADO' => 'nullable|array',
+            'ID_FRENTE_ASIGNADO.*' => 'exists:frentes_trabajo,ID_FRENTE',
             'NIVEL_ACCESO' => 'required|integer|in:1,2',
             'ESTATUS' => 'required|in:ACTIVO,INACTIVO',
             'PERMISOS' => 'required|array',
@@ -204,8 +213,8 @@ class UserController extends Controller
             'password.min' => 'La clave de acceso debe tener al menos 6 caracteres.',
             'ID_ROL.required' => 'Debes asignar un rol al usuario.',
             'ID_ROL.exists' => 'El rol seleccionado no es válido.',
-            'ID_FRENTE_ASIGNADO.required' => 'Debes asignar un frente de trabajo.',
-            'ID_FRENTE_ASIGNADO.exists' => 'El frente asignado no es válido.',
+            'ID_FRENTE_ASIGNADO.required' => 'Debes asignar al menos un frente de trabajo.',
+            'ID_FRENTE_ASIGNADO.min' => 'Debes asignar al menos un frente de trabajo.',
             'NIVEL_ACCESO.required' => 'El nivel de acceso es obligatorio.',
             'NIVEL_ACCESO.in' => 'El nivel de acceso seleccionado no es válido.',
             'ESTATUS.required' => 'El estatus es obligatorio.',
@@ -214,9 +223,15 @@ class UserController extends Controller
         ]);
 
         // Update user attributes
-        $user->fill($validated);
         $user->NOMBRE_COMPLETO = mb_convert_case($request->NOMBRE_COMPLETO, MB_CASE_TITLE, 'UTF-8');
         $user->CORREO_ELECTRONICO = strtolower($request->CORREO_ELECTRONICO);
+        $user->ID_ROL = $request->ID_ROL;
+        $user->NIVEL_ACCESO = $request->NIVEL_ACCESO;
+        $user->ESTATUS = $request->ESTATUS;
+        // Guardar frentes como CSV (igual que PERMISOS). NULL si usuario GLOBAL sin frente asignado.
+        $frentesSeleccionados = $request->input('ID_FRENTE_ASIGNADO', []);
+        $user->setAttribute('ID_FRENTE_ASIGNADO', !empty($frentesSeleccionados) ? implode(',', $frentesSeleccionados) : null);
+        $user->PERMISOS = $request->PERMISOS;
 
         if ($request->filled('password')) {
             $user->PASSWORD_HASH = Hash::make($request->password);

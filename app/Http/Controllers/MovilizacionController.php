@@ -23,18 +23,26 @@ class MovilizacionController extends Controller
         // When a GLOBAL user clears the filter (AJAX request), we respect the empty value.
         $user = auth()->user();
         $isLocalUser = $user && $user->NIVEL_ACCESO == 2;
+        $frentesPermitidos = $user ? $user->getFrentesIds() : [];
 
-        if ($isLocalUser && $user->ID_FRENTE_ASIGNADO) {
-            // LOCAL: Always force their assigned frente, ignore any request parameter
-            $request->merge(['id_frente' => $user->ID_FRENTE_ASIGNADO]);
-        } elseif (!$isLocalUser && $user && $user->ID_FRENTE_ASIGNADO) {
-            // GLOBAL: Only set default on initial page load (not AJAX / not when user explicitly cleared it)
-            if (!$request->wantsJson() && !$request->exists('id_frente')) {
-                $request->merge(['id_frente' => $user->ID_FRENTE_ASIGNADO]);
+        if (!$isLocalUser && $user && count($frentesPermitidos) > 0) {
+            // GLOBAL: Only set default on initial page load if assigned to exactly ONE frente
+            if (!$request->wantsJson() && !$request->exists('id_frente') && count($frentesPermitidos) === 1) {
+                $request->merge(['id_frente' => $frentesPermitidos[0]]);
             }
         }
 
         $query = Movilizacion::with(['equipo.tipo', 'equipo.especificaciones', 'equipo.documentacion', 'frenteOrigen', 'frenteDestino', 'usuario']);
+
+        // LOCAL User Security Scope
+        if ($isLocalUser && count($frentesPermitidos) > 0) {
+            $query->where(function($q) use ($frentesPermitidos) {
+                $q->whereIn('ID_FRENTE_ORIGEN', $frentesPermitidos)
+                  ->orWhereIn('ID_FRENTE_DESTINO', $frentesPermitidos);
+            });
+        } elseif ($isLocalUser) {
+            $query->whereRaw('1 = 0');
+        }
 
         // Smart Search Filters (Pattern-Based Optimization)
         if ($request->filled('search')) {
@@ -115,6 +123,16 @@ class MovilizacionController extends Controller
 
         // Stats: Total In Transit — filtrado con los mismos criterios activos
         $statsQuery = Movilizacion::where('ESTADO_MVO', 'TRANSITO');
+
+        // Apply Local User Scope to Stats
+        if ($isLocalUser && count($frentesPermitidos) > 0) {
+            $statsQuery->where(function($q) use ($frentesPermitidos) {
+                $q->whereIn('ID_FRENTE_ORIGEN', $frentesPermitidos)
+                  ->orWhereIn('ID_FRENTE_DESTINO', $frentesPermitidos);
+            });
+        } elseif ($isLocalUser) {
+            $statsQuery->whereRaw('1 = 0');
+        }
 
         // Aplicar filtro de frente a las stats (mismo criterio que la tabla)
         if ($request->filled('id_frente') && $request->id_frente !== 'all') {
@@ -353,10 +371,10 @@ class MovilizacionController extends Controller
 
             // Validar autorización
             $esGlobal = ($usuario->NIVEL_ACCESO == 1);
-            $usuarioFrente = $usuario->ID_FRENTE_ASIGNADO;
+            $frentesPermitidos = $usuario->getFrentesIds();
 
             if (!$esGlobal) {
-                if ($request->status == 'RECIBIDO' && $usuarioFrente != $mov->ID_FRENTE_DESTINO) {
+                if ($request->status == 'RECIBIDO' && !in_array($mov->ID_FRENTE_DESTINO, $frentesPermitidos)) {
                     $errorMsg = 'Solo el frente destino puede confirmar la recepción';
                     if ($request->ajax()) {
                         return response()->json(['success' => false, 'error' => $errorMsg], 403);
@@ -415,9 +433,8 @@ class MovilizacionController extends Controller
      */
     public function recepcionDirecta(Request $request)
     {
-        // El frente destino SIEMPRE es el frente del usuario que gestiona la recepción
-        $request->merge(['ID_FRENTE_DESTINO' => auth()->user()->ID_FRENTE_ASIGNADO]);
-
+        $usuario = auth()->user();
+        
         $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'exists:equipos,ID_EQUIPO',
@@ -425,9 +442,16 @@ class MovilizacionController extends Controller
             'DETALLE_UBICACION' => 'nullable|string|max:150',
         ]);
 
+        // Asegurar que el usuario tenga permisos sobre el frente destino (si no es global)
+        if ($usuario->NIVEL_ACCESO != 1) {
+            $frentesPermitidos = $usuario->getFrentesIds();
+            if (!in_array($request->ID_FRENTE_DESTINO, $frentesPermitidos)) {
+                return response()->json(['success' => false, 'error' => 'No tiene permisos para recibir equipos en este frente.'], 403);
+            }
+        }
+
         DB::beginTransaction();
         try {
-            $usuario = auth()->user();
             $now = now();
             $frenteDestino = FrenteTrabajo::findOrFail($request->ID_FRENTE_DESTINO);
 

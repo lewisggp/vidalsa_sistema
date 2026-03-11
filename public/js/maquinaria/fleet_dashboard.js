@@ -122,39 +122,38 @@ window.openFleetDashboard = async function () {
 
     setupDropdownEvents();
 
-    // ── Leer frente activo del filtro de la página ──
-    // Solo aplica para usuarios GLOBAL (el usuario LOCAL tiene su frente
-    // pre-inyectado desde el servidor en dashboardSelectedFrenteId y no
-    // tiene el selector de frente, por lo que no debemos sobreescribirlo).
+    // ── Leer frente con prioridades claras ──
+    // Prioridad 1: Filtro activo en la página (?id_frente=16) — aplica para TODOS
+    // Prioridad 2: Campo oculto inyectado por el servidor (Blade) — cubre usuarios locales
     const hiddenId   = document.getElementById('dashboardSelectedFrenteId');
     const hiddenName = document.getElementById('dashboardSelectedFrenteNombre');
-
-    // La presencia del dropdown de búsqueda indica que el usuario es GLOBAL
     const isGlobalUser = !!document.getElementById('dashboardFrenteSearch');
 
-    let firstFrenteId   = hiddenId?.value   || '';
-    let firstFrenteName = hiddenName?.value || '';
+    // Leer el filtro activo en la URL de la página
+    const pageFilterInput = document.querySelector('input[name="id_frente"][data-filter-value]');
+    const activeFrenteId  = (pageFilterInput && pageFilterInput.value && pageFilterInput.value !== 'all')
+        ? pageFilterInput.value : '';
 
-    if (isGlobalUser) {
-        // Leer el frente activo en el filtro de la página de equipos
-        const pageFrente = document.querySelector('input[name="id_frente"][data-filter-value]');
-        const pageFrenteId = (pageFrente && pageFrente.value && pageFrente.value !== 'all')
-            ? pageFrente.value : '';
+    let firstFrenteId   = '';
+    let firstFrenteName = '';
 
-        if (pageFrenteId) {
-            // Resolver el nombre desde el dropdown de la página
-            const selectedOption = document.querySelector(
-                `#frenteFilterSelect .dropdown-item[data-value="${pageFrenteId}"]`
-            );
-            const pageFrenteName = selectedOption ? selectedOption.textContent.trim() : '';
+    if (activeFrenteId) {
+        // Prioridad 1: Filtro activo en la página — igual para LOCAL y GLOBAL
+        firstFrenteId = activeFrenteId;
 
-            firstFrenteId   = pageFrenteId;
-            firstFrenteName = pageFrenteName;
+        // Intentar resolver el nombre desde el dropdown visible
+        const selectedOption = document.querySelector(
+            `#frenteFilterSelect .dropdown-item[data-value="${activeFrenteId}"]`
+        );
+        firstFrenteName = selectedOption ? selectedOption.textContent.trim() : (hiddenName?.value || '');
 
-            // Sincronizar campos ocultos del dashboard
-            if (hiddenId)   hiddenId.value   = firstFrenteId;
-            if (hiddenName) hiddenName.value = firstFrenteName;
-        }
+        // Actualizar los campos ocultos para que exportFleetStats también use el correcto
+        if (hiddenId)   hiddenId.value   = firstFrenteId;
+        if (hiddenName) hiddenName.value = firstFrenteName;
+    } else {
+        // Prioridad 2: Valor pre-inyectado por el servidor (el Blade ya calculó el mejor frente)
+        firstFrenteId   = hiddenId?.value   || '';
+        firstFrenteName = hiddenName?.value || '';
     }
 
     const searchInput = document.getElementById('dashboardFrenteSearch');

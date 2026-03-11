@@ -27,8 +27,9 @@
     @php
         $authUser        = auth()->user();
         $isLocalUser     = $authUser && $authUser->NIVEL_ACCESO == 2;
-        $userFrenteAsig  = $authUser ? $authUser->ID_FRENTE_ASIGNADO : null;
-        $userFrenteObj   = $userFrenteAsig ? $frentes->firstWhere('ID_FRENTE', $userFrenteAsig) : null;
+        $dashFrenteIds   = $authUser ? $authUser->getFrentesIds() : [];
+        $hasMultiple     = count($dashFrenteIds) > 1;
+        $userFrenteObj   = count($dashFrenteIds) === 1 ? $frentes->firstWhere('ID_FRENTE', $dashFrenteIds[0]) : null;
     @endphp
 
     <div class="filter-toolbar-container" style="margin-bottom: 5px;">
@@ -38,14 +39,14 @@
              ===================================================================== --}}
         <div class="filter-item aligned-filter">
         @if($isLocalUser)
-            {{-- ── USUARIO LOCAL: frente fijo, no se puede cambiar ── --}}
-            <input type="hidden" name="id_frente" value="{{ $userFrenteAsig }}" form="search-form">
+            {{-- ── USUARIO LOCAL: frente fijo (o múltiple implícito), no se envía en el form para que opere el scope de seguridad ── --}}
+            <input type="hidden" name="id_frente" value="" form="search-form">
             <div style="display:flex; align-items:center; background:#e8f4fd; border:1.5px solid #0067b1; border-radius:12px; height:45px; padding:0 14px; gap:8px; min-width:180px;">
                 <i class="material-icons" style="font-size:18px; color:#0067b1; flex-shrink:0;">location_on</i>
                 <span style="font-size:14px; font-weight:600; color:#0067b1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                    {{ $userFrenteObj ? $userFrenteObj->NOMBRE_FRENTE : 'Mi Frente' }}
+                    {{ $hasMultiple ? 'Mis Frentes (' . count($dashFrenteIds) . ')' : ($userFrenteObj ? $userFrenteObj->NOMBRE_FRENTE : 'Mi Frente') }}
                 </span>
-                <i class="material-icons" title="Sólo puedes ver tu frente asignado" style="font-size:16px; color:#64748b; margin-left:auto; flex-shrink:0;">lock</i>
+                <i class="material-icons" title="Sólo puedes ver tus frentes asignados" style="font-size:16px; color:#64748b; margin-left:auto; flex-shrink:0;">lock</i>
             </div>
         @else
             {{-- ── USUARIO GLOBAL: dropdown completo sin frente pre-seleccionado ── --}}
@@ -648,12 +649,35 @@
                         
                         <!-- Controls Group (Export + Filter) -->
                         @php
-                            $dashUser        = auth()->user();
-                            $dashIsLocal     = $dashUser && $dashUser->NIVEL_ACCESO == 2;
-                            $dashFrenteAsig  = $dashUser ? $dashUser->ID_FRENTE_ASIGNADO : null;
-                            $dashFrenteObj   = $dashFrenteAsig ? $frentes->firstWhere('ID_FRENTE', $dashFrenteAsig) : null;
-                            $defaultDashboardId     = $dashFrenteAsig ?? ($frentes->first()->ID_FRENTE ?? '');
-                            $defaultDashboardNombre = $dashFrenteObj ? $dashFrenteObj->NOMBRE_FRENTE : ($frentes->first()->NOMBRE_FRENTE ?? '');
+                            $dashUser       = auth()->user();
+                            $dashIsLocal    = $dashUser && $dashUser->NIVEL_ACCESO == 2;
+                            $dashFrenteIds  = $dashUser ? $dashUser->getFrentesIds() : [];
+
+                            // Prioridad 1: frente activo en el filtro de URL (id_frente=16)
+                            $activeFrenteId   = request('id_frente');
+                            $activeFrenteObj  = ($activeFrenteId && $activeFrenteId !== 'all')
+                                ? $frentes->firstWhere('ID_FRENTE', $activeFrenteId)
+                                : null;
+
+                            // Prioridad 2: primer frente asignado del usuario local
+                            $firstAsigFrenteObj = count($dashFrenteIds) > 0
+                                ? $frentes->firstWhere('ID_FRENTE', $dashFrenteIds[0])
+                                : null;
+
+                            // Prioridad 3: primer frente de la lista global
+                            $fallbackFrenteObj = $frentes->first();
+
+                            // Escoger el mejor frente default
+                            if ($activeFrenteObj) {
+                                $defaultDashboardId     = $activeFrenteObj->ID_FRENTE;
+                                $defaultDashboardNombre = $activeFrenteObj->NOMBRE_FRENTE;
+                            } elseif ($firstAsigFrenteObj) {
+                                $defaultDashboardId     = $firstAsigFrenteObj->ID_FRENTE;
+                                $defaultDashboardNombre = $firstAsigFrenteObj->NOMBRE_FRENTE;
+                            } else {
+                                $defaultDashboardId     = $fallbackFrenteObj->ID_FRENTE ?? '';
+                                $defaultDashboardNombre = $fallbackFrenteObj->NOMBRE_FRENTE ?? '';
+                            }
                         @endphp
                         <div class="fleet-header-controls">
                             <!-- Export Button -->

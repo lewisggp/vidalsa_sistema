@@ -173,9 +173,7 @@
     {{-- MODAL DE RECEPCIÓN DIRECTA (Abierto desde el menú) --}}
     {{-- ============================================================ --}}
     @php
-        $menuUser        = auth()->user();
-        $menuFrenteAsig  = $menuUser ? $menuUser->ID_FRENTE_ASIGNADO : null;
-        $menuFrenteObj   = $menuFrenteAsig ? $frentes->firstWhere('ID_FRENTE', $menuFrenteAsig) : null;
+        $menuUser = auth()->user();
     @endphp
 
     {{-- El modal reutiliza exactamente la misma lógica JS de movilizaciones_index.js --}}
@@ -225,16 +223,38 @@
                     </div>
                 </div>
 
-                {{-- Frente receptor: hidden, siempre el frente asignado al usuario --}}
-                <input type="hidden" id="rdFrenteInput" value="{{ $menuFrenteAsig }}">
+                {{-- Frente receptor --}}
+                @php
+                    $frentesIdsArray = $menuUser ? $menuUser->getFrentesIds() : [];
+                    $assignedFrentes = $frentes->whereIn('ID_FRENTE', $frentesIdsArray);
+                @endphp
 
-                {{-- PASO 2: Ubicación específica (opcional) --}}
+                @if($assignedFrentes->count() > 1)
+                    {{-- Si tiene varios frentes asignados, debe elegir uno para la recepción --}}
+                    <div style="margin-bottom: 15px;">
+                        <label for="rdFrenteInput" style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px;">
+                            <span style="background: #1e293b; color: white; padding: 2px 8px; border-radius: 50%; font-size: 11px; font-weight: 800; margin-right: 6px;">2</span>
+                            FRENTE DE RECEPCIÓN
+                        </label>
+                        <select id="rdFrenteInput" style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e0; border-radius: 10px; font-size: 14px; background: #f8fafc; outline: none;">
+                            @foreach($assignedFrentes as $fA)
+                                <option value="{{ $fA->ID_FRENTE }}">{{ $fA->NOMBRE_FRENTE }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @else
+                    {{-- Si tiene solo 1 (o es GLOBAL y no tiene asignado, usamos null/hidden) --}}
+                    @php
+                        $singleFrenteObj = $assignedFrentes->first();
+                    @endphp
+                    <input type="hidden" id="rdFrenteInput" value="{{ $singleFrenteObj ? $singleFrenteObj->ID_FRENTE : '' }}">
+                @endif
+
+                {{-- PASO 3: Ubicación específica (opcional) --}}
                 <div style="margin-bottom: 15px;">
                     <label for="rdUbicacionInput" style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px;">
-                        <span style="background: #1e293b; color: white; padding: 2px 8px; border-radius: 50%; font-size: 11px; font-weight: 800; margin-right: 6px;">2</span>
-                        UBICACIÓN DETALLADA EN: <span style="color: #0f172a; font-weight: 900; text-transform: uppercase;">
-                            {{ $menuFrenteObj ? $menuFrenteObj->NOMBRE_FRENTE : 'SIN ASIGNAR' }}
-                        </span>
+                        <span style="background: #1e293b; color: white; padding: 2px 8px; border-radius: 50%; font-size: 11px; font-weight: 800; margin-right: 6px;">{{ $assignedFrentes->count() > 1 ? '3' : '2' }}</span>
+                        UBICACIÓN DETALLADA (Opcional)
                     </label>
                     <div style="position: relative;">
                         <input type="text" id="rdUbicacionInput"

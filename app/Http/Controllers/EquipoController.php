@@ -31,10 +31,13 @@ class EquipoController extends Controller
 
         $user = auth()->user();
         $isLocalUser = $user && $user->NIVEL_ACCESO == 2;
+        $frentesPermitidos = $user ? $user->getFrentesIds() : [];
 
-        // LOCAL users are scoped to their frente (security restriction remains)
-        if ($isLocalUser && $user->ID_FRENTE_ASIGNADO) {
-            $request->merge(['id_frente' => $user->ID_FRENTE_ASIGNADO]);
+        // LOCAL users are scoped to their frentes (security restriction remains)
+        if ($isLocalUser && count($frentesPermitidos) > 0) {
+            $equipos->whereIn('ID_FRENTE_ACTUAL', $frentesPermitidos);
+        } elseif ($isLocalUser) {
+            $equipos->whereRaw('1 = 0'); // Empty result if no frentes
         }
         // GLOBAL users: no default filter applied — show all equipos on load
 
@@ -150,6 +153,11 @@ class EquipoController extends Controller
         // Check if any filter is applied (with non-empty values)
         $hasFilter = $request->filled('id_frente') || $request->filled('id_tipo') || $request->filled('search_query') || $request->filled('modelo') || $request->filled('marca') || $request->filled('anio') || $request->filled('categoria') || $request->filled('estado') || $request->filled('filter_propiedad') || $request->filled('filter_poliza') || $request->filled('filter_rotc') || $request->filled('filter_racda');
 
+        if ($isLocalUser) {
+            // Local users always show the table with their scoped frentes by default
+            $hasFilter = true;
+        }
+
         if ($hasFilter) {
             // Get ALL records matching filters (no pagination limit)
             $allResults = $equipos->get();
@@ -259,16 +267,17 @@ class EquipoController extends Controller
     {
         $user = auth()->user();
         $isLocalUser = $user && $user->NIVEL_ACCESO == 2;
+        $frentesPermitidos = $user ? $user->getFrentesIds() : [];
 
-        // LOCAL users are scoped to their frente (security restriction remains)
-        if ($isLocalUser && $user->ID_FRENTE_ASIGNADO) {
-            $request->merge(['id_frente' => $user->ID_FRENTE_ASIGNADO]);
+        if ($isLocalUser) {
+            // Allow local user to bypass the "no filter" check because they have an implicit filter 
+            $request->merge(['_local_user_forced_filter' => true]);
         }
-        // GLOBAL users: export respects only the filters explicitly set in the request
 
         // CRITICAL: Prevent exporting entire database without filters.
         // 'id_frente=all' es un filtro explícito válido (el usuario seleccionó "Todos los Frentes").
         $hasFilter = $request->filled('id_frente')   // incluye 'all' como filtro válido
+            || $request->filled('_local_user_forced_filter')
             || $request->filled('id_tipo')
             || $request->filled('search_query')
             || $request->filled('modelo')
@@ -288,6 +297,13 @@ class EquipoController extends Controller
         $fileName = 'equipos_export_' . date('Y-m-d_H-i') . '.xls';
 
         $equipos = Equipo::query();
+
+        // Apply Local User Scope
+        if ($isLocalUser && count($frentesPermitidos) > 0) {
+            $equipos->whereIn('ID_FRENTE_ACTUAL', $frentesPermitidos);
+        } elseif ($isLocalUser) {
+            $equipos->whereRaw('1 = 0');
+        }
 
         // Apply same filters
         if ($request->filled('id_frente') && $request->id_frente != 'all') {
@@ -1542,19 +1558,24 @@ class EquipoController extends Controller
         try {
             $user = auth()->user();
             $isLocal = $user && $user->NIVEL_ACCESO == 2;
-
-            // LOCAL: always force their assigned frente (ignore any request param)
-            // GLOBAL: use the frente_id from the request (can be null = all frentes)
-            if ($isLocal && $user->ID_FRENTE_ASIGNADO) {
-                $frenteId = $user->ID_FRENTE_ASIGNADO;
-            } else {
-                $frenteId = $request->input('frente_id');
-            }
+            $frentesPermitidos = $user ? $user->getFrentesIds() : [];
+            $requestedFrenteId = $request->input('frente_id');
 
             // Base query builder for filtering
             $baseQuery = Equipo::query();
-            if ($frenteId && $frenteId !== 'all') {
-                $baseQuery->where('ID_FRENTE_ACTUAL', $frenteId);
+
+            if ($isLocal && count($frentesPermitidos) > 0) {
+                if ($requestedFrenteId && $requestedFrenteId !== 'all') {
+                    // Si pidió uno en particular, lo aceptamos si tiene permiso (aunque ya whereIn filtra, lo hacemos explícito)
+                    $baseQuery->where('ID_FRENTE_ACTUAL', $requestedFrenteId);
+                    $baseQuery->whereIn('ID_FRENTE_ACTUAL', $frentesPermitidos); 
+                } else {
+                    $baseQuery->whereIn('ID_FRENTE_ACTUAL', $frentesPermitidos);
+                }
+            } elseif ($isLocal) {
+                $baseQuery->whereRaw('1 = 0');
+            } elseif ($requestedFrenteId && $requestedFrenteId !== 'all') {
+                $baseQuery->where('ID_FRENTE_ACTUAL', $requestedFrenteId);
             }
 
             // Basic Stats
@@ -1721,25 +1742,31 @@ class EquipoController extends Controller
         try {
             $user = auth()->user();
             $isLocal = $user && $user->NIVEL_ACCESO == 2;
-
-            // LOCAL: always force their assigned frente
-            // GLOBAL: use the frente_id from the request
-            if ($isLocal && $user->ID_FRENTE_ASIGNADO) {
-                $frenteId = $user->ID_FRENTE_ASIGNADO;
-            } else {
-                $frenteId = $request->input('frente_id');
-            }
+            $frentesPermitidos = $user ? $user->getFrentesIds() : [];
+            $requestedFrenteId = $request->input('frente_id');
 
             $frenteNombre = 'Todos los Frentes';
 
-            // Base query builder
+            // Base query builder for filtering
             $baseQuery = Equipo::query();
-            if ($frenteId && $frenteId !== 'all') {
-                $baseQuery->where('ID_FRENTE_ACTUAL', $frenteId);
-                $frenteObj = FrenteTrabajo::find($frenteId);
-                if ($frenteObj) {
-                    $frenteNombre = $frenteObj->NOMBRE_FRENTE;
+
+            if ($isLocal && count($frentesPermitidos) > 0) {
+                if ($requestedFrenteId && $requestedFrenteId !== 'all') {
+                    $baseQuery->where('ID_FRENTE_ACTUAL', $requestedFrenteId);
+                    $baseQuery->whereIn('ID_FRENTE_ACTUAL', $frentesPermitidos);
+                    // Nombre del frente exportado
+                    $frenteObj = FrenteTrabajo::find($requestedFrenteId);
+                    $frenteNombre = $frenteObj ? $frenteObj->NOMBRE_FRENTE : 'Frente Variante';
+                } else {
+                    $baseQuery->whereIn('ID_FRENTE_ACTUAL', $frentesPermitidos);
+                    $frenteNombre = 'Mis Frentes Asignados';
                 }
+            } elseif ($isLocal) {
+                $baseQuery->whereRaw('1 = 0');
+            } elseif ($requestedFrenteId && $requestedFrenteId !== 'all') {
+                $baseQuery->where('ID_FRENTE_ACTUAL', $requestedFrenteId);
+                $frenteObj = FrenteTrabajo::find($requestedFrenteId);
+                $frenteNombre = $frenteObj ? $frenteObj->NOMBRE_FRENTE : 'Frente Específico';
             }
 
             // --- 1. DATA FOR "FLOTA NUEVA VS VIEJA" ---
