@@ -38,23 +38,13 @@
              FILTRO FRENTE: LOCAL = bloqueado | GLOBAL = dropdown con default real
              ===================================================================== --}}
         <div class="filter-item aligned-filter">
-        @if($isLocalUser)
-            {{-- ── USUARIO LOCAL: frente fijo (o múltiple implícito), no se envía en el form para que opere el scope de seguridad ── --}}
-            <input type="hidden" name="id_frente" value="" form="search-form">
-            <div style="display:flex; align-items:center; background:#e8f4fd; border:1.5px solid #0067b1; border-radius:12px; height:45px; padding:0 14px; gap:8px; min-width:180px;">
-                <i class="material-icons" style="font-size:18px; color:#0067b1; flex-shrink:0;">location_on</i>
-                <span style="font-size:14px; font-weight:600; color:#0067b1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                    {{ $hasMultiple ? 'Mis Frentes (' . count($dashFrenteIds) . ')' : ($userFrenteObj ? $userFrenteObj->NOMBRE_FRENTE : 'Mi Frente') }}
-                </span>
-                <i class="material-icons" title="Sólo puedes ver tus frentes asignados" style="font-size:16px; color:#64748b; margin-left:auto; flex-shrink:0;">lock</i>
-            </div>
-        @else
-            {{-- ── USUARIO GLOBAL: dropdown completo sin frente pre-seleccionado ── --}}
             @php
                 $currentFrenteId = request('id_frente');
                 $currentFrente   = $currentFrenteId ? $frentes->firstWhere('ID_FRENTE', $currentFrenteId) : null;
+                $frentesDropdown = $isLocalUser ? $frentes->whereIn('ID_FRENTE', $dashFrenteIds) : $frentes;
+                $placeholderText = $currentFrente ? $currentFrente->NOMBRE_FRENTE : ($isLocalUser ? 'Todos Mis Frentes' : 'Filtrar Frente...');
             @endphp
-            <div class="custom-dropdown" id="frenteFilterSelect" data-filter-type="id_frente" data-default-label="Filtrar Frente...">
+            <div class="custom-dropdown" id="frenteFilterSelect" data-filter-type="id_frente" data-default-label="{{ $isLocalUser ? 'Todos Mis Frentes' : 'Filtrar Frente...' }}">
                 <input type="hidden" name="id_frente" data-filter-value value="{{ $currentFrenteId }}" form="search-form">
 
                 <div class="dropdown-trigger {{ $currentFrenteId && $currentFrenteId != 'all' ? 'filter-active' : '' }}" style="padding:0; display:flex; align-items:center; background:#fbfcfd; overflow:hidden; border:1px solid #cbd5e0; border-radius:12px; height:45px;">
@@ -62,7 +52,7 @@
                         <i class="material-icons" style="font-size:18px;">search</i>
                     </div>
                     <input type="text" name="filter_search_dropdown" data-filter-search
-                        placeholder="{{ $currentFrente ? $currentFrente->NOMBRE_FRENTE : 'Filtrar Frente...' }}"
+                        placeholder="{{ $placeholderText }}"
                         aria-label="Filtrar Frente"
                         style="width:100%; border:none; background:transparent; padding:10px 5px; font-size:14px; outline:none;"
                         oninput="window.filterDropdownOptions(this)"
@@ -76,10 +66,10 @@
                     <div class="dropdown-item-list" style="max-height:250px; overflow-y:auto;">
                         <div class="dropdown-item {{ !$currentFrenteId || $currentFrenteId == 'all' ? 'selected' : '' }}"
                              data-value="all"
-                             onclick="selectOption('frenteFilterSelect', 'all', 'TODOS LOS FRENTES'); loadEquipos();">
-                            TODOS LOS FRENTES
+                             onclick="selectOption('frenteFilterSelect', 'all', '{{ $isLocalUser ? 'Todos Mis Frentes' : 'TODOS LOS FRENTES' }}'); loadEquipos();">
+                            {{ $isLocalUser ? 'TODOS MIS FRENTES' : 'TODOS LOS FRENTES' }}
                         </div>
-                        @foreach($frentes as $frente)
+                        @foreach($frentesDropdown as $frente)
                             <div class="dropdown-item {{ $currentFrenteId == $frente->ID_FRENTE ? 'selected' : '' }}"
                                  data-value="{{ $frente->ID_FRENTE }}"
                                  onclick="selectOption('frenteFilterSelect', '{{ $frente->ID_FRENTE }}', '{{ $frente->NOMBRE_FRENTE }}'); loadEquipos();">
@@ -89,7 +79,6 @@
                     </div>
                 </div>
             </div>
-        @endif
         </div>
 
         <!-- Tipo Filter -->
