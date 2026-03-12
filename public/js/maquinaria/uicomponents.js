@@ -962,6 +962,55 @@ window.showDetailsImproved = function (target, event) {
     }
 
     window.activeEquipoButton = target;
+
+    // ── Cargar Sub-activos vinculados ────────────────────────
+    const saAccordion = document.getElementById('sa_accordion');
+    const saList      = document.getElementById('sa_list');
+    const saBadge     = document.getElementById('sa_count_badge');
+    if (saAccordion && saList && eqId) {
+        saAccordion.style.display = 'none';
+        saList.innerHTML = '<p style="color:#94a3b8;font-size:12px;text-align:center;padding:8px;">Cargando...</p>';
+        const SA_TIPO_CFG = {
+            MAQUINA_SOLDADURA: { icon: 'construction', color: '#f59e0b', bg: '#fff7ed', label: 'Máq. Soldadura' },
+            PLANTA_ELECTRICA:  { icon: 'bolt',          color: '#eab308', bg: '#fefce8', label: 'Planta Eléc.'   },
+            CONTENEDOR:        { icon: 'inventory_2',   color: '#6366f1', bg: '#eef2ff', label: 'Contenedor'     },
+            COMPRESOR:         { icon: 'air',           color: '#0ea5e9', bg: '#f0f9ff', label: 'Compresor'      },
+            OTRO:              { icon: 'handyman',       color: '#64748b', bg: '#f1f5f9', label: 'Otro'           },
+        };
+        fetch(`/admin/sub-activos?host=${eqId}`, { headers:{'X-Requested-With':'XMLHttpRequest'} })
+            .then(r => r.json())
+            .then(json => {
+                if (!json.ok || json.data.length === 0) {
+                    saAccordion.style.display = 'none';
+                    return;
+                }
+                saAccordion.style.display = 'block';
+                if (saBadge) saBadge.textContent = json.data.length;
+                saList.innerHTML = json.data.map(sa => {
+                    const tc = SA_TIPO_CFG[sa.tipo] || SA_TIPO_CFG.OTRO;
+                    const estadoColor = sa.estado === 'OPERATIVO' ? '#16a34a' : (sa.estado === 'INOPERATIVO' ? '#dc2626' : '#64748b');
+                    const estadoBg    = sa.estado === 'OPERATIVO' ? '#f0fdf4'  : (sa.estado === 'INOPERATIVO' ? '#fef2f2'  : '#f1f5f9');
+
+                    // Foto: placeholder gris sin fondo colorido amarillento
+                    const foto = `<div style="width:44px;height:44px;border-radius:9px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;border:1px solid #cbd5e0;flex-shrink:0;">
+                                      <span class="material-icons" style="font-size:22px;color:#94a3b8;">${tc.icon}</span>
+                                  </div>`;
+
+                    const infoExtra = [sa.marca, sa.modelo, sa.capacidad, sa.anio].filter(Boolean).join(' · ');
+
+                    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;transition:background .15s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
+                        ${foto}
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-size:12px;font-weight:700;color:#334155;">${tc.label}</div>
+                            <div style="font-family:monospace;font-size:12px;color:#1e293b;font-weight:700;margin-top:1px;">${sa.serial || '—'}</div>
+                            ${infoExtra ? `<div style="font-size:10px;color:#94a3b8;margin-top:1px;">${infoExtra}</div>` : ''}
+                        </div>
+                        <span style="font-size:10px;font-weight:800;color:${estadoColor};background:${estadoBg};padding:3px 9px;border-radius:10px;flex-shrink:0;letter-spacing:.3px;">${sa.estado.replace('_',' ')}</span>
+                    </div>`;
+                }).join('');
+            })
+            .catch(() => { saAccordion.style.display = 'none'; });
+    }
 };
 
 window.closeDetailsModal = function (event) {

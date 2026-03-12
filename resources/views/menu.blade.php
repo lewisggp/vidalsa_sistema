@@ -68,7 +68,7 @@
                                style="background: #1e293b; border: none; color: white; padding: 0 8px; height: 28px; border-radius: 6px; font-weight: 700; display: flex; align-items: center; gap: 3px; text-decoration: none; flex-shrink: 0; cursor: default; transition: background 0.2s;"
                                onmouseover="this.style.background='#0f172a'" onmouseout="this.style.background='#1e293b'">
                                 <i class="material-icons" style="font-size: 15px;">input</i>
-                                <span class="desktop-only" style="font-size: 9px; font-weight: 800;">RECEP. DIRECTA</span>
+                                <span class="desktop-only" style="font-size: 9px; font-weight: 800;">DIRECTA</span>
                             </button>
                         </div>
                         <div class="activity-list" id="pendingMovsList">
@@ -211,7 +211,7 @@
                             style="flex: 1; padding: 10px 14px; border: 1px solid #cbd5e0; border-radius: 10px; font-size: 14px; background: #f8fafc; outline: none;"
                             autocomplete="off"
                             onfocus="this.style.borderColor='#1e293b'" onblur="this.style.borderColor='#cbd5e0'"
-                            onkeyup="if(window.rdSearchTimeout) clearTimeout(window.rdSearchTimeout); window.rdSearchTimeout = setTimeout(() => buscarEquiposRD(), 500)">
+                            onkeyup="if(event.key === 'Enter') { if(window.rdSearchTimeout) clearTimeout(window.rdSearchTimeout); buscarEquiposRD(true); } else { if(window.rdSearchTimeout) clearTimeout(window.rdSearchTimeout); window.rdSearchTimeout = setTimeout(() => buscarEquiposRD(), 500); }">
                     </div>
                 </div>
 

@@ -150,7 +150,7 @@ window.cerrarRecepcionDirecta = function () {
     document.getElementById('recepcionDirectaModal').style.display = 'none';
 };
 
-window.buscarEquiposRD = function () {
+window.buscarEquiposRD = function (fromEnter = false) {
     const search = document.getElementById('rdSearchInput').value.trim();
     const list = document.getElementById('rdResultadosList');
     const container = document.getElementById('rdResultados');
@@ -161,8 +161,8 @@ window.buscarEquiposRD = function () {
         return;
     }
 
-    if (search.length < 4) {
-        // Just wait until they type more, no alert
+    // Require 4 chars unless triggered by Enter key
+    if (!fromEnter && search.length < 4) {
         return;
     }
 

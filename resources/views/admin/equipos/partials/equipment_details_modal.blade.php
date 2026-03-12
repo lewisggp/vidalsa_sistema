@@ -128,8 +128,24 @@
                         </div>
                     </div>
                 </details>
+
+                <!-- Section 3: Sub-activos vinculados (solo si el equipo tiene) -->
+                <details id="sa_accordion" name="equipment_accordion" style="background: white; border-radius: 12px; border: 1px solid #fed7aa; overflow: hidden; display: none;">
+                    <summary style="padding: 15px 20px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 10px; background: #fff7ed; list-style: none; cursor: default;">
+                        <i class="material-icons" style="font-size: 20px; color: #f59e0b;">construction</i>
+                        <span style="color: #1e293b;">Sub-activos vinculados</span>
+                        <span id="sa_count_badge" style="margin-left:6px; background:#f59e0b; color:white; font-size:11px; font-weight:800; padding:1px 8px; border-radius:20px;">0</span>
+                    </summary>
+                    <div style="padding: 16px 20px; border-top: 1px solid #fed7aa;">
+                        <div id="sa_list" style="display: flex; flex-direction: column; gap: 8px;">
+                            <!-- se llena con JS -->
+                        </div>
+                    </div>
+                </details>
+
             </div>
 
     </div>
 </div>
 </div>
+

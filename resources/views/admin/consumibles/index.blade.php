@@ -24,6 +24,23 @@
     .mr-id    { font-family:monospace; color:#475569; font-weight:600; min-width:130px; }
     .mr-match { color:#059669; font-weight: 600; }
     .mr-none  { color:#ef4444; font-weight: 600; font-style:italic; }
+
+    /* Encabezados tabla consumibles — mismo tono que tabla Equipos */
+    .admin-table thead th {
+        background: #cbd5e0 !important;
+        color: var(--maquinaria-dark-blue, #00004d) !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        padding: 10px 20px !important;
+        border-right: 1px solid #a0aec0 !important;
+        border-bottom: 2px solid #a0aec0 !important;
+    }
+    .admin-table thead th:last-child { border-right: none !important; }
+    .admin-table thead th.th-center { text-align: center !important; }
+    .admin-table thead th.th-right  { text-align: right  !important; }
+    .admin-table thead th.th-left   { text-align: left   !important; }
 </style>
 
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
@@ -356,15 +373,15 @@
     <table class="admin-table">
         <thead>
             <tr>
-                <th style="width:38px; text-align:center; color:#94a3b8;">#</th>
-                <th>Fecha</th>
-                <th>Tipo</th>
-                <th>Cantidad</th>
-                <th>Frente</th>
-                <th>Identificador</th>
-                <th>Equipo Resuelto</th>
-                <th>Responsable</th>
-                <th>Estado</th>
+                <th class="th-center" style="width:38px;">#</th>
+                <th class="th-left">Fecha</th>
+                <th class="th-left">Tipo</th>
+                <th class="th-right">Cantidad</th>
+                <th class="th-left">Frente</th>
+                <th class="th-left">Identificador</th>
+                <th class="th-left">Equipo Resuelto</th>
+                <th class="th-left">Responsable</th>
+                <th class="th-left">Estado</th>
                 <th style="width:40px;"></th>
             </tr>
         </thead>
@@ -397,7 +414,17 @@
                 </td>
                 <td style="font-weight:700; text-align:right; white-space:nowrap;">
                     {{ number_format($c->CANTIDAD, 1) }}
-                    <span style="color:#94a3b8; font-size:11px;">{{ $c->UNIDAD }}</span>
+                    @php
+                        $unidadAbrev = match(strtoupper(trim($c->UNIDAD ?? ''))) {
+                            'LITROS', 'LITRO'         => 'L',
+                            'GALONES', 'GALON'        => 'Gal',
+                            'UNIDADES', 'UNIDAD'      => 'Un',
+                            'KILOGRAMOS', 'KILOGRAMO' => 'Kg',
+                            'GRAMOS', 'GRAMO'         => 'g',
+                            default                   => $c->UNIDAD,
+                        };
+                    @endphp
+                    <span style="color:#94a3b8; font-size:11px;">{{ $unidadAbrev }}</span>
                 </td>
                 <td style="font-size:12px;" id="frente-cell-{{ $c->ID_CONSUMIBLE }}">
                     <div style="display:flex; align-items:center; gap:4px;">

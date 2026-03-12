@@ -79,7 +79,15 @@ Route::middleware(['auth'])->group(function () {
             Route::get ('consumibles/graficos',           [App\Http\Controllers\ConsumiblesController::class, 'graficos'])       ->name('consumibles.graficos');
             Route::get ('consumibles/exportar-csv',       [App\Http\Controllers\ConsumiblesController::class, 'exportarCsv'])    ->name('consumibles.exportarCsv');
             Route::post('consumibles/match-automatico',   [App\Http\Controllers\ConsumiblesController::class, 'matchAutomatico'])->name('consumibles.matchAutomatico');
+
+            // ── Sub-activos (Herramientas / Equipos Menores) ─────────────────
+            Route::get ('sub-activos',        [App\Http\Controllers\SubActivoController::class, 'index'])  ->name('sub-activos.index');
+            Route::get ('sub-activos/count',  [App\Http\Controllers\SubActivoController::class, 'count'])  ->name('sub-activos.count');
+            Route::post('sub-activos',        [App\Http\Controllers\SubActivoController::class, 'store'])  ->name('sub-activos.store');
+            Route::patch('sub-activos/{id}',  [App\Http\Controllers\SubActivoController::class, 'update']) ->name('sub-activos.update');
+            Route::delete('sub-activos/{id}', [App\Http\Controllers\SubActivoController::class, 'destroy'])->name('sub-activos.destroy');
         });
+
     });
 });
 
