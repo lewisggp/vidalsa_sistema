@@ -1245,19 +1245,19 @@
 
 <script>
 // ── Sub-activos Modal JS ─────────────────────────────────────────────
-const SA_INDEX_URL  = "{{ route('sub-activos.index') }}";
-const SA_STORE_URL  = "{{ route('sub-activos.store') }}";
-const SA_COUNT_URL  = "{{ route('sub-activos.count') }}";
+var SA_INDEX_URL  = "{{ route('sub-activos.index') }}";
+var SA_STORE_URL  = "{{ route('sub-activos.store') }}";
+var SA_COUNT_URL  = "{{ route('sub-activos.count') }}";
 
 // Iconos y colores por tipo
-const SA_TIPO_CONFIG = {
+var SA_TIPO_CONFIG = {
     MAQUINA_SOLDADURA: { icon: 'construction',  color: '#f59e0b', bg: '#fff7ed', label: 'M. Soldadura' },
     PLANTA_ELECTRICA:  { icon: 'bolt',           color: '#eab308', bg: '#fefce8', label: 'Planta Elec.'  },
     CONTENEDOR:        { icon: 'inventory_2',    color: '#6366f1', bg: '#eef2ff', label: 'Contenedor'   },
     COMPRESOR:         { icon: 'air',            color: '#0ea5e9', bg: '#f0f9ff', label: 'Compresor'    },
     OTRO:              { icon: 'handyman',        color: '#64748b', bg: '#f1f5f9', label: 'Otro'         },
 };
-const SA_ESTADO_CONFIG = {
+var SA_ESTADO_CONFIG = {
     OPERATIVO:   { color:'#16a34a', bg:'#f0fdf4', label:'Operativo'   },
     INOPERATIVO: { color:'#dc2626', bg:'#fef2f2', label:'Inoperativo' },
     EN_ALMACEN:  { color:'#64748b', bg:'#f1f5f9', label:'En Almacén'  },
