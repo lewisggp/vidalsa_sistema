@@ -1,21 +1,23 @@
 // Fleet Dashboard Modal Manager - Filtered by Frente
 // Uses Chart.js for visualizations + DataLabels Plugin
 
-let fleetCharts = {}; // Store chart instances globally
-let currentFrenteId = ''; // Track selected frente
+// SPA-safe globals
+if (!window.fleetCharts) window.fleetCharts = {};
+if (!window.currentFrenteId) window.currentFrenteId = '';
 
-// Color palettes
-const CHART_COLORS = {
-    status: {
-        'OPERATIVO': '#110a50ff',
-        'EN MANTENIMIENTO': '#69696dff',
-        'INOPERATIVO': '#a31616ff',
-        'DESINCORPORADO': '#07090aff'
-    },
-    age: ['#110a50ff', '#a31616ff'],
-    category: ['#a31616ff', '#110a50ff', '#69696dff'],
-    inoperative: ['#dc2626', '#f59e0b', '#0f172a']
-};
+if (!window.CHART_COLORS) {
+    window.CHART_COLORS = {
+        status: {
+            'OPERATIVO': '#110a50ff',
+            'EN MANTENIMIENTO': '#69696dff',
+            'INOPERATIVO': '#a31616ff',
+            'DESINCORPORADO': '#07090aff'
+        },
+        age: ['#110a50ff', '#a31616ff'],
+        category: ['#a31616ff', '#110a50ff', '#69696dff'],
+        inoperative: ['#dc2626', '#f59e0b', '#0f172a']
+    };
+}
 
 // Shared professional legend style
 const LEGEND_STYLE = {
@@ -162,7 +164,7 @@ window.openFleetDashboard = async function () {
         dashboardToggleClearBtn();
     }
 
-    currentFrenteId = firstFrenteId;
+    window.currentFrenteId = firstFrenteId;
     await loadFleetDashboardData(firstFrenteId);
 };
 
@@ -170,7 +172,7 @@ window.openFleetDashboard = async function () {
  * Export Fleet Statistics to Excel (CSV)
  */
 window.exportFleetStats = function () {
-    const frenteId = currentFrenteId || document.getElementById('dashboardSelectedFrenteId')?.value;
+    const frenteId = window.currentFrenteId || document.getElementById('dashboardSelectedFrenteId')?.value;
     const url = new URL('/admin/equipos/fleet-export', window.location.origin);
     if (frenteId && frenteId !== 'all') {
         url.searchParams.set('frente_id', frenteId);
@@ -181,10 +183,10 @@ window.exportFleetStats = function () {
 /**
  * Setup Dropdown Events (Close when clicking outside) — runs only once
  */
-let dropdownEventsInitialized = false;
+if (typeof window.dropdownEventsInitialized === 'undefined') window.dropdownEventsInitialized = false;
 
 function setupDropdownEvents() {
-    if (dropdownEventsInitialized) return;
+    if (window.dropdownEventsInitialized) return;
 
     const container = document.getElementById('dashboardFrenteDropdown');
     if (!container) return;
@@ -196,7 +198,7 @@ function setupDropdownEvents() {
         }
     });
 
-    dropdownEventsInitialized = true;
+    window.dropdownEventsInitialized = true;
 }
 
 /**
@@ -294,7 +296,7 @@ window.dashboardSelectFrente = async function (id, name, event) {
     const list = document.getElementById('dashboardFrenteList');
     if (list) list.style.display = 'none';
 
-    currentFrenteId = id;
+    window.currentFrenteId = id;
     await loadFleetDashboardData(id);
 };
 
@@ -447,13 +449,13 @@ function createCharts(data) {
     destroyAllCharts();
 
     // 1. Estado Operativo - Doughnut
-    fleetCharts.byStatus = new Chart(canvasStatus, {
+    window.fleetCharts.byStatus = new Chart(canvasStatus, {
         type: 'doughnut',
         data: {
             labels: data.byStatus.labels,
             datasets: [{
                 data: data.byStatus.values,
-                backgroundColor: data.byStatus.labels.map(label => CHART_COLORS.status[label] || '#64748b'),
+                backgroundColor: data.byStatus.labels.map(label => window.CHART_COLORS.status[label] || '#64748b'),
                 borderWidth: 2,
                 borderColor: '#fff'
             }]
@@ -474,12 +476,12 @@ function createCharts(data) {
     });
 
     // 2. Flota Nueva vs Vieja por Tipo - Stacked Horizontal Bar
-    fleetCharts.ageByType = createStackedBarChart('chartAgeByType', {
+    window.fleetCharts.ageByType = createStackedBarChart('chartAgeByType', {
         labels: data.ageByType.labels,
         datasets: data.ageByType.datasets.map((ds, idx) => ({
             label: ds.label,
             data: ds.data,
-            backgroundColor: CHART_COLORS.age[idx],
+            backgroundColor: window.CHART_COLORS.age[idx],
             borderWidth: 0,
             borderRadius: 0,
             borderSkipped: false
@@ -487,12 +489,12 @@ function createCharts(data) {
     });
 
     // 3. Flota Pesada vs Liviana por Tipo - Stacked Horizontal Bar
-    fleetCharts.categoryByType = createStackedBarChart('chartCategoryByType', {
+    window.fleetCharts.categoryByType = createStackedBarChart('chartCategoryByType', {
         labels: data.categoryByType.labels,
         datasets: data.categoryByType.datasets.map((ds, idx) => ({
             label: ds.label,
             data: ds.data,
-            backgroundColor: CHART_COLORS.category[idx],
+            backgroundColor: window.CHART_COLORS.category[idx],
             borderWidth: 0,
             borderRadius: 0,
             borderSkipped: false
@@ -501,12 +503,12 @@ function createCharts(data) {
 
     // 4. Inoperatividad por Tipo de Equipo - Stacked Horizontal Bar
     if (canvasInop && data.inoperativeByType && data.inoperativeByType.labels.length > 0) {
-        fleetCharts.inoperativeByType = createStackedBarChart('chartInoperativeByType', {
+        window.fleetCharts.inoperativeByType = createStackedBarChart('chartInoperativeByType', {
             labels: data.inoperativeByType.labels,
             datasets: data.inoperativeByType.datasets.map((ds, idx) => ({
                 label: ds.label,
                 data: ds.data,
-                backgroundColor: CHART_COLORS.inoperative[idx] || '#64748b',
+                backgroundColor: window.CHART_COLORS.inoperative[idx] || '#64748b',
                 borderWidth: 0,
                 borderRadius: 0,
                 borderSkipped: false
@@ -591,12 +593,12 @@ function createStackedBarChart(canvasId, config) {
  * Destroy all chart instances
  */
 function destroyAllCharts() {
-    for (const key in fleetCharts) {
-        if (fleetCharts[key] && typeof fleetCharts[key].destroy === 'function') {
-            fleetCharts[key].destroy();
+    for (const key in window.fleetCharts) {
+        if (window.fleetCharts[key] && typeof window.fleetCharts[key].destroy === 'function') {
+            window.fleetCharts[key].destroy();
         }
     }
-    fleetCharts = {};
+    window.fleetCharts = {};
 }
 
 /**

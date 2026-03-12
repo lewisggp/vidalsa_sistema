@@ -111,15 +111,15 @@ class MovilizacionController extends Controller
             });
         }
 
-        // Filtro por rango de fechas (FECHA_DESPACHO)
+        // Filtro por rango de fechas (usando created_at para cubrir recepciones directas y actualizaciones)
         if ($request->filled('fecha_desde')) {
-            $query->whereDate('FECHA_DESPACHO', '>=', $request->fecha_desde);
+            $query->whereDate('created_at', '>=', $request->fecha_desde);
         }
         if ($request->filled('fecha_hasta')) {
-            $query->whereDate('FECHA_DESPACHO', '<=', $request->fecha_hasta);
+            $query->whereDate('created_at', '<=', $request->fecha_hasta);
         }
 
-        $movilizaciones = $query->orderBy('FECHA_DESPACHO', 'desc')->paginate(12);
+        $movilizaciones = $query->orderBy('created_at', 'desc')->paginate(12);
 
         // Stats: Total In Transit — filtrado con los mismos criterios activos
         $statsQuery = Movilizacion::where('ESTADO_MVO', 'TRANSITO');

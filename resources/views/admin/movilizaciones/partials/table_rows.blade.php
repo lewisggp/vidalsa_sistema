@@ -48,6 +48,13 @@
                         RECEPCIÓN DIRECTA
                     </span>
                 </div>
+            @elseif($mov->TIPO_MOVIMIENTO == 'ACT.')
+                <div style="margin-top: 4px; display: flex; justify-content: center;">
+                    <span style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e0; padding: 1px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;">
+                        <i class="material-icons" style="font-size: 11px;">sync_alt</i>
+                        ACTUALIZACIÓN DIRECTA
+                    </span>
+                </div>
             @endif
         </td>
 

@@ -161,8 +161,8 @@ window.buscarEquiposRD = function (fromEnter = false) {
         return;
     }
 
-    // Require 4 chars unless triggered by Enter key
-    if (!fromEnter && search.length < 4) {
+    // Require 3 chars unless triggered by Enter key
+    if (!fromEnter && search.length < 3) {
         return;
     }
 

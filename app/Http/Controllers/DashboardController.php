@@ -17,7 +17,7 @@ class DashboardController extends Controller
         $frenteIds = $user ? $user->getFrentesIds() : [];
 
         // 1. Mobilizations Today — LOCAL users see only their frentes
-        $movilizacionesHoyQuery = Movilizacion::whereDate('FECHA_DESPACHO', Carbon::today());
+        $movilizacionesHoyQuery = Movilizacion::whereDate('created_at', Carbon::today());
         if (!$isGlobal && count($frenteIds) > 0) {
             $movilizacionesHoyQuery->where(function($q) use ($frenteIds) {
                 $q->whereIn('ID_FRENTE_ORIGEN', $frenteIds)
@@ -46,7 +46,7 @@ class DashboardController extends Controller
             ->where('ESTADO_MVO', 'TRANSITO')
             ->orderBy('created_at', 'desc')
             ->limit(50);
-        if (!$isGlobal && count($frenteIds) > 0) {
+        if (count($frenteIds) > 0) {
             $recentActivityQuery->whereIn('ID_FRENTE_DESTINO', $frenteIds);
         } elseif (!$isGlobal) {
             $recentActivityQuery->whereRaw('1 = 0');
@@ -101,7 +101,7 @@ class DashboardController extends Controller
         $isGlobal    = $user && $user->NIVEL_ACCESO == 1;
         $frenteIds   = $user ? $user->getFrentesIds() : [];
 
-        $expiredList = $this->generateAlertsList(!$isGlobal ? $frenteIds : null);
+        $expiredList = $this->generateAlertsList((count($frenteIds) > 0) ? $frenteIds : (!$isGlobal ? [] : null));
         $totalAlerts = $expiredList->count();
 
         return response()->json([
@@ -125,7 +125,7 @@ class DashboardController extends Controller
             ->orderBy('created_at', 'desc')
             ->limit(50);
 
-        if (!$isGlobal && count($frenteIds) > 0) {
+        if (count($frenteIds) > 0) {
             $query->whereIn('ID_FRENTE_DESTINO', $frenteIds);
         } elseif (!$isGlobal) {
             $query->whereRaw('1 = 0');
@@ -134,8 +134,8 @@ class DashboardController extends Controller
         $recentActivity = $query->get();
         $pendientes     = $recentActivity->count();
 
-        $hoyQuery = Movilizacion::whereDate('FECHA_DESPACHO', \Carbon\Carbon::today());
-        if (!$isGlobal && count($frenteIds) > 0) {
+        $hoyQuery = Movilizacion::whereDate('created_at', \Carbon\Carbon::today());
+        if (count($frenteIds) > 0) {
             $hoyQuery->where(function ($q) use ($frenteIds) {
                 $q->whereIn('ID_FRENTE_ORIGEN', $frenteIds)
                   ->orWhereIn('ID_FRENTE_DESTINO', $frenteIds);
@@ -176,11 +176,13 @@ class DashboardController extends Controller
             'frenteActual'
         ]);
 
-        // LOCAL users only see alerts for their assigned frentes
+        // Only see alerts for assigned frentes if frentes are explicitly provided
+        // (If Global Admin with no explicit frentes, $frenteIds is null and it skips this)
         if (is_array($frenteIds)) {
             if (count($frenteIds) > 0) {
                 $query->whereIn('ID_FRENTE_ACTUAL', $frenteIds);
             } else {
+                // Si es un arreglo vacío, significa que el usuario (Local) no tiene frentes.
                 $query->whereRaw('1 = 0');
             }
         }

@@ -67,11 +67,13 @@ function updateSelectionUI() {
             const unanchorBtn = document.getElementById('btnUnanchor');
             if (unanchorBtn) {
                 let canUnanchor = false;
-                if (selections.length === 2) {
+                if (selections.length === 1 && selections[0].anchorId) {
+                    canUnanchor = true;
+                } else if (selections.length === 2) {
                     const s1 = selections[0];
                     const s2 = selections[1];
                     if (
-                        String(s1.anchorId) === String(s2.id) &&
+                        String(s1.anchorId) === String(s2.id) || 
                         String(s2.anchorId) === String(s1.id)
                     ) {
                         canUnanchor = true;
@@ -254,25 +256,29 @@ window.unanchorEquipos = async function (e) {
     if (e) e.preventDefault();
 
     const selections = Object.values(window.selectedEquipos);
-    if (selections.length !== 2) {
+    let ids = [];
+
+    if (selections.length === 1 && selections[0].anchorId) {
+        ids = [selections[0].id, selections[0].anchorId];
+    } else if (selections.length === 2) {
+        ids = [selections[0].id, selections[1].id];
+    } else {
         showModal({
             type: "warning",
             title: "Selección Incorrecta",
             message:
-                "Para desanclar, debes seleccionar exactamente dos equipos.",
+                "Para desanclar, selecciona un equipo anclado o ambos equipos vinculados.",
             confirmText: "Entendido",
             hideCancel: true,
         });
         return;
     }
 
-    const ids = selections.map((s) => s.id);
-
     showModal({
         type: "warning",
         title: "Desanclar Equipos",
         message:
-            "¿Estás seguro de que deseas eliminar el vínculo de anclaje entre estos dos equipos?",
+            "¿Estás seguro de que deseas eliminar el vínculo de anclaje de este equipo?",
         confirmText: "Sí",
         cancelText: "Cancelar",
         onConfirm: async () => {

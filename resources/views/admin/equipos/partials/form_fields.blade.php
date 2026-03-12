@@ -134,13 +134,29 @@
 
         <!-- Número de Etiqueta -->
         <div>
-            <label for="numero_etiqueta" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">N Etiqueta</label>
-            <input type="text" id="numero_etiqueta" name="NUMERO_ETIQUETA" 
-                   class="form-input-custom @error('NUMERO_ETIQUETA') is-invalid @enderror" 
-                   value="{{ old('NUMERO_ETIQUETA', $equipo->NUMERO_ETIQUETA ?? '') }}" 
-                   placeholder="Ej: 001" 
-                   maxlength="10"
-                   autocomplete="off">
+            <label for="numero_etiqueta" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">
+                N Etiqueta
+                @if(!auth()->user()?->can('equipos.edit') && !auth()->user()?->can('super.admin'))
+                    <i class="material-icons" style="font-size: 13px; color: #94a3b8; vertical-align: middle;" title="Solo editores pueden modificar este campo">lock</i>
+                @endif
+            </label>
+            @if(auth()->user()?->can('equipos.edit') || auth()->user()?->can('super.admin'))
+                <input type="text" id="numero_etiqueta" name="NUMERO_ETIQUETA"
+                       class="form-input-custom @error('NUMERO_ETIQUETA') is-invalid @enderror"
+                       value="{{ old('NUMERO_ETIQUETA', $equipo->NUMERO_ETIQUETA ?? '') }}"
+                       placeholder="Ej: 001"
+                       maxlength="10"
+                       autocomplete="off">
+            @else
+                {{-- Campo solo lectura para usuarios sin permiso --}}
+                <input type="text" id="numero_etiqueta"
+                       class="form-input-custom"
+                       value="{{ old('NUMERO_ETIQUETA', $equipo->NUMERO_ETIQUETA ?? '') }}"
+                       readonly
+                       style="background: #f8fafc; color: #94a3b8; cursor: not-allowed;"
+                       title="No tienes permiso para editar este campo">
+                {{-- No se envía name= para que no sea procesado en el POST --}}
+            @endif
             @error('NUMERO_ETIQUETA') <span class="error-message-inline">{{ $message }}</span> @enderror
         </div>
     </div>
