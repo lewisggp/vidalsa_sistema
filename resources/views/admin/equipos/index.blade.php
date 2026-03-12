@@ -1187,6 +1187,15 @@
                         @endforeach
                     </select>
                 </div>
+                <div style="flex:1;min-width:160px;">
+                    <label style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;">VÍNCULO (Vehículo)</label>
+                    <select id="saFormHost" style="width:100%;height:36px;border:1px solid #cbd5e0;border-radius:7px;padding:0 10px;font-size:13px;">
+                        <option value="">— Ninguno (Suelto) —</option>
+                        @foreach(\App\Models\Equipo::with('tipo')->where('ESTADO_OPERATIVO', 'OPERATIVO')->orderBy('CODIGO_PATIO')->get() as $eq)
+                            <option value="{{ $eq->ID_EQUIPO }}">🛻 {{ $eq->CODIGO_PATIO }} ({{ $eq->tipo->nombre ?? 'N/A' }})</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div style="flex:1;min-width:120px;">
                     <label style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;">ESTADO *</label>
                     <select id="saFormEstado" style="width:100%;height:36px;border:1px solid #cbd5e0;border-radius:7px;padding:0 10px;font-size:13px;">
@@ -1239,7 +1248,6 @@
 const SA_INDEX_URL  = "{{ route('sub-activos.index') }}";
 const SA_STORE_URL  = "{{ route('sub-activos.store') }}";
 const SA_COUNT_URL  = "{{ route('sub-activos.count') }}";
-const SA_CSRF       = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
 // Iconos y colores por tipo
 const SA_TIPO_CONFIG = {
@@ -1290,6 +1298,7 @@ function ocultarFormSubActivo() {
     });
     document.getElementById('saFormTipo').value   = 'MAQUINA_SOLDADURA';
     document.getElementById('saFormFrente').value = '';
+    if(document.getElementById('saFormHost')) document.getElementById('saFormHost').value = '';
     document.getElementById('saFormEstado').value = 'OPERATIVO';
 }
 
@@ -1375,43 +1384,117 @@ async function cargarSubActivos() {
 }
 
 async function guardarSubActivo() {
+    // ── CSRF dinámico: siempre leer del DOM en el momento del click ──────
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+    // ── Validación local antes de enviar al servidor ──────────────────────
+    const anioVal = document.getElementById('saFormAnio').value.trim();
+    if (anioVal !== '') {
+        const anioNum = parseInt(anioVal, 10);
+        if (isNaN(anioNum) || anioNum < 1950 || anioNum > 2100) {
+            if(window.showErrorToast) showErrorToast('El año debe estar entre 1950 y 2100');
+            else alert('El año debe estar entre 1950 y 2100');
+            document.getElementById('saFormAnio').focus();
+            return;
+        }
+    }
+
+    const tipoVal = document.getElementById('saFormTipo').value;
+    if (!tipoVal) {
+        if(window.showErrorToast) showErrorToast('El tipo es obligatorio');
+        return;
+    }
+    const estadoVal = document.getElementById('saFormEstado').value;
+    if (!estadoVal) {
+        if(window.showErrorToast) showErrorToast('El estado es obligatorio');
+        return;
+    }
+
     const body = {
-        tipo:           document.getElementById('saFormTipo').value,
-        serial:         document.getElementById('saFormSerial').value.trim(),
-        marca:          document.getElementById('saFormMarca').value.trim(),
-        modelo:         document.getElementById('saFormModelo').value.trim(),
-        capacidad:      document.getElementById('saFormCapacidad').value.trim(),
-        anio:           document.getElementById('saFormAnio').value || null,
-        ID_FRENTE:      document.getElementById('saFormFrente').value || null,
-        ID_EQUIPO_HOST: null,    // solo se puede vincular desde el modal del equipo
-        estado:         document.getElementById('saFormEstado').value,
-        observaciones:  document.getElementById('saFormObs').value.trim(),
+        tipo:           tipoVal,
+        serial:         document.getElementById('saFormSerial').value.trim()   || null,
+        marca:          document.getElementById('saFormMarca').value.trim()    || null,
+        modelo:         document.getElementById('saFormModelo').value.trim()   || null,
+        capacidad:      document.getElementById('saFormCapacidad').value.trim()|| null,
+        anio:           anioVal !== '' ? parseInt(anioVal, 10) : null,
+        ID_FRENTE:      document.getElementById('saFormFrente').value          || null,
+        ID_EQUIPO_HOST: (document.getElementById('saFormHost') && document.getElementById('saFormHost').value) ? document.getElementById('saFormHost').value : null,
+        estado:         estadoVal,
+        observaciones:  document.getElementById('saFormObs').value.trim()      || null,
     };
 
+    // ── Feedback visual: deshabilitar botón mientras procesa ─────────────
+    const btnGuardar = document.querySelector('#saFormPanel button[onclick="guardarSubActivo()"]');
+    if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = 'Guardando...'; }
+
     try {
-        const res  = await fetch(SA_STORE_URL, {
-            method:'POST',
-            headers:{ 'Content-Type':'application/json', 'X-CSRF-TOKEN':SA_CSRF, 'X-Requested-With':'XMLHttpRequest' },
+        const res = await fetch(SA_STORE_URL, {
+            method:  'POST',
+            headers: {
+                'Content-Type':     'application/json',
+                'X-CSRF-TOKEN':     csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept':           'application/json',
+            },
             body: JSON.stringify(body),
         });
+
+        // ── Error de validación Laravel (422) ─────────────────────────────
+        if (res.status === 422) {
+            const errJson = await res.json();
+            let mensajeError = 'Error de validación';
+            if (errJson.errors) {
+                const primerCampo = Object.keys(errJson.errors)[0];
+                mensajeError = errJson.errors[primerCampo][0];
+            } else if (errJson.message) {
+                mensajeError = errJson.message;
+            }
+            if(window.showErrorToast) showErrorToast(mensajeError);
+            else alert('Error: ' + mensajeError);
+            return;
+        }
+
+        // ── CSRF inválido (419) ───────────────────────────────────────────
+        if (res.status === 419) {
+            if(window.showErrorToast) showErrorToast('Sesión expirada. Recarga la página.');
+            else alert('Sesión expirada. Recarga la página.');
+            return;
+        }
+
+        // ── Otros errores HTTP ────────────────────────────────────────────
+        if (!res.ok) {
+            if(window.showErrorToast) showErrorToast('Error del servidor (' + res.status + ')');
+            return;
+        }
+
         const json = await res.json();
-        if (!json.ok) { if(window.showErrorToast) showErrorToast('Error al guardar'); return; }
+        if (!json.ok) {
+            if(window.showErrorToast) showErrorToast('Error al guardar');
+            return;
+        }
+
+        // ── Éxito ────────────────────────────────────────────────────────
         ocultarFormSubActivo();
         cargarSubActivos();
-        if(window.showSuccessToast) showSuccessToast('Sub-activo registrado');
+        if(window.showSuccessToast) showSuccessToast('Sub-activo registrado correctamente');
+
     } catch(e) {
+        console.error('guardarSubActivo error:', e);
         if(window.showErrorToast) showErrorToast('Error de conexión');
+    } finally {
+        if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = 'Guardar'; }
     }
 }
 
 async function eliminarSubActivo(id) {
     if (!confirm('¿Eliminar este sub-activo?')) return;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     const res  = await fetch(`{{ url('/admin/sub-activos') }}/${id}`, {
         method:'DELETE',
-        headers:{ 'X-CSRF-TOKEN':SA_CSRF, 'X-Requested-With':'XMLHttpRequest' },
+        headers:{ 'X-CSRF-TOKEN':csrfToken, 'X-Requested-With':'XMLHttpRequest' },
     });
     const json = await res.json();
-    if (json.ok) { cargarSubActivos(); if(window.showSuccessToast) showSuccessToast('Eliminado'); }
+    if (json.ok) { cargarSubActivos(); if(window.showToast) window.showToast('Eliminado', 'success'); }
 }
 
 function actualizarBadge(total) {
