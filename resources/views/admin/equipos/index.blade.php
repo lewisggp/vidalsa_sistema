@@ -390,7 +390,6 @@
                 <button type="button" onclick="abrirModalSubActivos()" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; transition: all 0.2s; border-bottom: 1px solid #f1f5f9; background: transparent; border: none; width: 100%; text-align: left;">
                     <div style="background: #fff7ed; padding: 6px; border-radius: 6px; display: flex;"><i class="material-icons" style="font-size: 18px; color: #f59e0b;">construction</i></div>
                     <span style="font-size: 14px; font-weight: 500;">Sub-activos</span>
-                    <span id="badgeSubActivos" style="margin-left: auto; background: #f59e0b; color: white; font-size: 10px; font-weight: 800; padding: 1px 7px; border-radius: 20px; display: none;">0</span>
                 </button>
 
                 <!-- Nuevo -->
@@ -1106,7 +1105,7 @@
      MODAL SUB-ACTIVOS (Herramientas y Equipos Menores)
 ════════════════════════════════════════════════════════════════ --}}
 <div id="modalSubActivos" class="modal-overlay" style="z-index:1100;">
-    <div class="modal-content" style="max-width:1100px;width:96vw;max-height:92vh;padding:0;border-radius:16px;overflow:hidden;background:#f8fafc;display:flex;flex-direction:column;">
+    <div class="modal-content" style="max-width:850px;width:90vw;max-height:92vh;padding:0;border-radius:16px;overflow:hidden;background:#ffffff;display:flex;flex-direction:column;">
 
         {{-- Header --}}
         <div style="background:var(--maquinaria-dark-blue,#00004d);padding:18px 25px;color:white;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
@@ -1123,7 +1122,7 @@
         </div>
 
         {{-- Toolbar filtros --}}
-        <div style="padding:14px 20px;background:white;border-bottom:1px solid #e2e8f0;display:flex;gap:10px;flex-wrap:wrap;align-items:center;flex-shrink:0;">
+        <div id="saFiltrosToolbar" style="padding:14px 20px;background:white;border-bottom:1px solid #e2e8f0;display:flex;gap:10px;flex-wrap:wrap;align-items:center;flex-shrink:0;">
             <select id="saFiltroTipo" onchange="cargarSubActivos()" style="height:38px;border:1px solid #e2e8f0;border-radius:8px;padding:0 12px;font-size:13px;color:#334155;background:white;">
                 <option value="">Todos los tipos</option>
                 <option value="MAQUINA_SOLDADURA">Máquina Soldadura</option>
@@ -1145,12 +1144,11 @@
         </div>
 
         {{-- Formulario inline (oculto por defecto) --}}
-        <div id="saFormPanel" style="display:none;padding:16px 20px;background:#eff6ff;border-bottom:2px solid #0067b1;">
-            <p style="margin:0 0 12px;font-weight:700;color:#00004d;font-size:14px;">Nuevo Sub-activo</p>
-            <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
-                <div style="flex:1;min-width:140px;">
-                    <label style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;">TIPO *</label>
-                    <select id="saFormTipo" style="width:100%;height:36px;border:1px solid #cbd5e0;border-radius:7px;padding:0 10px;font-size:13px;">
+        <div id="saFormPanel" style="display:none;padding:20px 40px;background:#ffffff;border-bottom:none;border-top:1px solid #e2e8f0;box-shadow:inset 0 4px 6px -4px rgba(0,0,0,0.05);flex:1;overflow-y:auto;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:15px;align-items:start;">
+                <div style="min-width:0;">
+                    <label for="saFormTipo" style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">TIPO *</label>
+                    <select id="saFormTipo" style="width:100%;height:40px;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px;font-size:14px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
                         <option value="MAQUINA_SOLDADURA">Máquina Soldadura</option>
                         <option value="PLANTA_ELECTRICA">Planta Eléctrica</option>
                         <option value="CONTENEDOR">Contenedor</option>
@@ -1158,80 +1156,81 @@
                         <option value="OTRO">Otro</option>
                     </select>
                 </div>
-                <div style="flex:1;min-width:140px;">
-                    <label style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;">MARCA</label>
-                    <input id="saFormMarca" type="text" placeholder="Lincoln" style="width:100%;height:36px;border:1px solid #cbd5e0;border-radius:7px;padding:0 10px;font-size:13px;box-sizing:border-box;">
+                <div style="min-width:0;">
+                    <label for="saFormMarca" style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">MARCA</label>
+                    <input id="saFormMarca" type="text" placeholder="Ej: Lincoln" style="width:100%;height:40px;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px;font-size:14px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
                 </div>
-                <div style="flex:1;min-width:140px;">
-                    <label style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;">MODELO</label>
-                    <input id="saFormModelo" type="text" placeholder="Ranger 300D" style="width:100%;height:36px;border:1px solid #cbd5e0;border-radius:7px;padding:0 10px;font-size:13px;box-sizing:border-box;">
+                <div style="min-width:0;">
+                    <label for="saFormModelo" style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">MODELO</label>
+                    <input id="saFormModelo" type="text" placeholder="Ej: Ranger 300D" style="width:100%;height:40px;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px;font-size:14px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
                 </div>
-                <div style="flex:1;min-width:120px;">
-                    <label style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;">CAPACIDAD</label>
-                    <input id="saFormCapacidad" type="text" placeholder="Ej: 300 Amp" style="width:100%;height:36px;border:1px solid #cbd5e0;border-radius:7px;padding:0 10px;font-size:13px;box-sizing:border-box;">
+                <div style="min-width:0;">
+                    <label for="saFormCapacidad" style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">CAPACIDAD</label>
+                    <input id="saFormCapacidad" type="text" placeholder="Ej: 300 Amp" style="width:100%;height:40px;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px;font-size:14px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
                 </div>
-                <div style="flex:0 0 80px;">
-                    <label style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;">AÑO</label>
-                    <input id="saFormAnio" type="number" placeholder="2022" min="1950" max="2100" style="width:100%;height:36px;border:1px solid #cbd5e0;border-radius:7px;padding:0 10px;font-size:13px;box-sizing:border-box;">
+                <div style="min-width:0;">
+                    <label for="saFormAnio" style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">AÑO</label>
+                    <input id="saFormAnio" type="number" placeholder="Ej: 2022" min="1950" max="2100" style="width:100%;height:40px;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px;font-size:14px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
                 </div>
-                <div style="flex:1;min-width:140px;">
-                    <label style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;">SERIAL</label>
-                    <input id="saFormSerial" type="text" placeholder="MS-30042-A" style="width:100%;height:36px;border:1px solid #cbd5e0;border-radius:7px;padding:0 10px;font-size:13px;box-sizing:border-box;">
+                <div style="min-width:0;">
+                    <label for="saFormSerial" style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">SERIAL / ID *</label>
+                    <input id="saFormSerial" type="text" placeholder="Ej: MS-30042-A" style="width:100%;height:40px;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px;font-size:14px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;font-family:monospace;font-weight:600;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
                 </div>
-                <div style="flex:1;min-width:140px;">
-                    <label style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;">FRENTE (Suelto)</label>
-                    <select id="saFormFrente" style="width:100%;height:36px;border:1px solid #cbd5e0;border-radius:7px;padding:0 10px;font-size:13px;">
-                        <option value="">— Sin frente —</option>
-                        @foreach(\App\Models\FrenteTrabajo::orderBy('NOMBRE_FRENTE')->get() as $f)
-                            <option value="{{ $f->ID_FRENTE }}">{{ $f->NOMBRE_FRENTE }}</option>
-                        @endforeach
-                    </select>
+                <div style="min-width:0; grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 5px; padding-top: 15px; border-top: 1px dashed #e2e8f0;">
+                    <div style="min-width:0;">
+                        <label for="saFormFrente" style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">FRENTE (Si está suelto)</label>
+                        <select id="saFormFrente" style="width:100%;height:40px;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px;font-size:14px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
+                            <option value="">— Ninguno (No asignado) —</option>
+                            @foreach(\App\Models\FrenteTrabajo::orderBy('NOMBRE_FRENTE')->get() as $f)
+                                <option value="{{ $f->ID_FRENTE }}">{{ $f->NOMBRE_FRENTE }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div style="min-width:0;">
+                        <label for="saFormHost" style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">VINCULADO A (Vehículo)</label>
+                        <select id="saFormHost" style="width:100%;height:40px;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px;font-size:14px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
+                            <option value="">— Suelto (Sin anclar) —</option>
+                            @foreach(\App\Models\Equipo::with('tipo')->where('ESTADO_OPERATIVO', 'OPERATIVO')->orderBy('CODIGO_PATIO')->get() as $eq)
+                                <option value="{{ $eq->ID_EQUIPO }}">🛻 {{ $eq->CODIGO_PATIO }} ({{ $eq->tipo->nombre ?? 'N/A' }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div style="min-width:0;">
+                        <label for="saFormEstado" style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">ESTADO OPERATIVO *</label>
+                        <select id="saFormEstado" style="width:100%;height:40px;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px;font-size:14px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;font-weight:700;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
+                            <option value="OPERATIVO">Operativo</option>
+                            <option value="INOPERATIVO">Inoperativo</option>
+                            <option value="EN_ALMACEN">En Almacén</option>
+                        </select>
+                    </div>
                 </div>
-                <div style="flex:1;min-width:160px;">
-                    <label style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;">VÍNCULO (Vehículo)</label>
-                    <select id="saFormHost" style="width:100%;height:36px;border:1px solid #cbd5e0;border-radius:7px;padding:0 10px;font-size:13px;">
-                        <option value="">— Ninguno (Suelto) —</option>
-                        @foreach(\App\Models\Equipo::with('tipo')->where('ESTADO_OPERATIVO', 'OPERATIVO')->orderBy('CODIGO_PATIO')->get() as $eq)
-                            <option value="{{ $eq->ID_EQUIPO }}">🛻 {{ $eq->CODIGO_PATIO }} ({{ $eq->tipo->nombre ?? 'N/A' }})</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div style="flex:1;min-width:120px;">
-                    <label style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;">ESTADO *</label>
-                    <select id="saFormEstado" style="width:100%;height:36px;border:1px solid #cbd5e0;border-radius:7px;padding:0 10px;font-size:13px;">
-                        <option value="OPERATIVO">Operativo</option>
-                        <option value="INOPERATIVO">Inoperativo</option>
-                        <option value="EN_ALMACEN">En Almacén</option>
-                    </select>
-                </div>
-                <div style="flex:1 1 100%;min-width:200px;">
-                    <label style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;">OBSERVACIONES</label>
-                    <input id="saFormObs" type="text" placeholder="Notas..." style="width:100%;height:36px;border:1px solid #cbd5e0;border-radius:7px;padding:0 10px;font-size:13px;box-sizing:border-box;">
+                <div style="min-width:0; grid-column: 1 / -1;">
+                    <label for="saFormObs" style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">OBSERVACIONES</label>
+                    <input id="saFormObs" type="text" placeholder="Escribe alguna nota adicional aquí..." style="width:100%;height:40px;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px;font-size:14px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
                 </div>
             </div>
-            <div style="display:flex;gap:8px;margin-top:12px;">
-                <button onclick="guardarSubActivo()" style="height:36px;background:#00004d;color:white;border:none;border-radius:8px;padding:0 18px;font-size:13px;font-weight:700;cursor:default;" onmouseover="this.style.background='#0067b1'" onmouseout="this.style.background='#00004d'">Guardar</button>
-                <button onclick="ocultarFormSubActivo()" style="height:36px;background:#e2e8f0;color:#475569;border:none;border-radius:8px;padding:0 14px;font-size:13px;cursor:default;">Cancelar</button>
+            <div style="display:flex;gap:12px;margin-top:25px;justify-content:center;grid-column: 1 / -1;">
+                <button onclick="guardarSubActivo()" style="height:40px;background:#0067b1;color:white;border:none;border-radius:8px;padding:0 25px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;transition:0.2s;box-shadow:0 4px 6px -1px rgba(0,103,177,0.3);" onmouseover="this.style.background='#005494';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#0067b1';this.style.transform='none'"><i class="material-icons" style="font-size:18px;">save</i> Guardar Registro</button>
+                <button onclick="ocultarFormSubActivo()" style="height:40px;background:#f1f5f9;color:#475569;border:1px solid #cbd5e0;border-radius:8px;padding:0 20px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;transition:0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'"><i class="material-icons" style="font-size:18px;">close</i> Cancelar</button>
             </div>
         </div>
 
         {{-- Tabla --}}
-        <div style="overflow-y:auto;flex:1;">
+        <div id="saTablaContainer" style="overflow-y:auto;flex:1;">
             <table class="admin-table" style="width:100%;">
                 <thead>
-                    <tr>
-                        <th class="th-center" style="width:90px;"></th>
-                        <th class="th-left">Tipo</th>
-                        <th class="th-left">Marca / Modelo</th>
-                        <th class="th-left">Serial</th>
-                        <th class="th-center">Capacidad / Año</th>
-                        <th class="th-left">Vehículo / Camión</th>
-                        <th class="th-center">Estado</th>
-                        <th class="th-center"></th>
+                    <tr class="table-row-header">
+                        <th class="table-header-custom" style="text-align: center; width:70px;"></th>
+                        <th class="table-header-custom" style="text-align: center;">Tipo</th>
+                        <th class="table-header-custom" style="text-align: center;">Marca / Modelo</th>
+                        <th class="table-header-custom" style="text-align: center;">Serial</th>
+                        <th class="table-header-custom" style="text-align: center;">Capacidad / Año</th>
+                        <th class="table-header-custom" style="text-align: center;">Vehículo Asociado</th>
+                        <th class="table-header-custom" style="text-align: center;">Estado</th>
                     </tr>
                 </thead>
                 <tbody id="saTableBody">
-                    <tr><td colspan="9" style="text-align:center;padding:40px;color:#94a3b8;">Cargando...</td></tr>
+                    <tr><td colspan="7" style="text-align:center;padding:40px;color:#94a3b8;">Cargando...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -1290,9 +1289,22 @@ function cerrarModalSubActivos() {
 }
 function mostrarFormSubActivo() {
     document.getElementById('saFormPanel').style.display = 'block';
+    
+    // Ocultar la barra de filtros y la tabla cuando el formulario está abierto
+    const tb = document.getElementById('saFiltrosToolbar');
+    const tc = document.getElementById('saTablaContainer');
+    if(tb) tb.style.display = 'none';
+    if(tc) tc.style.display = 'none';
 }
 function ocultarFormSubActivo() {
     document.getElementById('saFormPanel').style.display = 'none';
+    
+    // Mostrar nuevamente la barra de filtros y la tabla al cancelar o guardar
+    const tb = document.getElementById('saFiltrosToolbar');
+    const tc = document.getElementById('saTablaContainer');
+    if(tb) tb.style.display = 'flex';
+    if(tc) tc.style.display = 'block';
+
     ['saFormSerial','saFormMarca','saFormModelo','saFormCapacidad','saFormAnio','saFormObs'].forEach(id => {
         const el = document.getElementById(id); if(el) el.value = '';
     });
@@ -1312,7 +1324,7 @@ async function cargarSubActivos() {
     if (search) params.append('search', search);
 
     const tbody = document.getElementById('saTableBody');
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:#94a3b8;">Cargando...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:#94a3b8;">Cargando...</td></tr>';
 
     try {
         const res  = await fetch(SA_INDEX_URL + '?' + params.toString(), { headers:{'X-Requested-With':'XMLHttpRequest'} });
@@ -1323,7 +1335,7 @@ async function cargarSubActivos() {
         actualizarBadge(json.total);
 
         if (json.data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#94a3b8;"><i class="material-icons" style="font-size:36px;display:block;margin-bottom:8px;">construction</i>No hay sub-activos registrados.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#94a3b8;"><i class="material-icons" style="font-size:36px;display:block;margin-bottom:8px;">construction</i>No hay sub-activos registrados.</td></tr>';
             return;
         }
 
@@ -1346,40 +1358,27 @@ async function cargarSubActivos() {
             
             const renderFotoCell = `<div>${frenteBadge}${fotoCell}</div>`;
 
-            const hostBadge = sa.host_codigo
-                ? `<span style="background:#00004d;color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;">${sa.host_codigo}</span><div style="font-size:10px;color:#94a3b8;margin-top:2px;">${sa.host_tipo||''}</div>`
-                : '<span style="color:#94a3b8;font-size:11px;font-style:italic;">Suelta</span>';
+            const hostBadge = sa.host_id
+                ? `<div style="font-size:12px;font-weight:700;color:#334155;">${sa.host_tipo || 'Vehículo'}</div>
+                   <div style="font-size:11px;color:#64748b;margin-top:2px;">${(sa.host_placa && sa.host_placa !== 'S/P') ? sa.host_placa : (sa.host_serial || sa.host_codigo || '—')}</div>`
+                : '<span style="color:#94a3b8;font-size:11px;font-style:italic;">Suelto</span>';
 
             return `<tr style="border-bottom:1px solid #f1f5f9;">
                 <td style="text-align:center;padding:8px 6px;">${renderFotoCell}</td>
-                <td style="padding:12px 14px;">
-                    <div style="display:flex;align-items:center;gap:7px;">
-                        <span style="font-size:12px;font-weight:700;color:#334155;">${tc.label}</span>
-                    </div>
-                </td>
-                <td style="padding:12px 14px;">
-                    <div style="font-size:13px;font-weight:700;color:#334155;">${sa.marca || '—'}</div>
-                    <div style="font-size:11px;color:#94a3b8;">${sa.modelo || ''}</div>
-                </td>
-                <td style="padding:12px 14px;font-family:monospace;font-size:13px;font-weight:700;color:#1e293b;">${sa.serial || '—'}</td>
-                <td style="text-align:center;padding:12px 8px;">
-                    <div style="font-size:13px;font-weight:700;color:#334155;">${sa.capacidad || '—'}</div>
-                    <div style="font-size:11px;color:#475569;">${sa.anio || '—'}</div>
-                </td>
-                <td style="padding:12px 14px;">${hostBadge}</td>
-                <td style="text-align:center;padding:12px 8px;">
+                <td style="text-align:center;padding:10px 8px;">${tc.label}</td>
+                <td style="text-align:center;padding:10px 8px;">${sa.marca || '—'} ${sa.modelo ? '<br><span style="color:#94a3b8;">' + sa.modelo + '</span>' : ''}</td>
+                <td style="text-align:center;padding:10px 8px;font-family:monospace;">${sa.serial || '—'}</td>
+                <td style="text-align:center;padding:10px 8px;">${sa.capacidad || '—'} ${sa.anio ? '<br><span style="color:#94a3b8;">' + sa.anio + '</span>' : ''}</td>
+                <td style="text-align:center;padding:10px 8px;">${hostBadge}</td>
+                <td style="text-align:center;padding:10px 8px;">
                     <span style="background:${ec.bg};color:${ec.color};font-size:11px;font-weight:700;padding:3px 9px;border-radius:12px;">${ec.label}</span>
-                </td>
-                <td style="text-align:center;padding:12px 8px;">
-                    <button onclick="eliminarSubActivo(${sa.id})" title="Eliminar" style="background:#fef2f2;border:none;border-radius:7px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:default;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'">
-                        <i class="material-icons" style="font-size:16px;color:#dc2626;">delete</i>
-                    </button>
                 </td>
             </tr>`;
         }).join('');
 
     } catch(e) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:#dc2626;">Error al cargar los datos.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:#dc2626;">Error al cargar los datos.</td></tr>';
+
     }
 }
 
@@ -1510,10 +1509,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(r => r.json()).then(j => actualizarBadge(j.total)).catch(()=>{});
 });
 
-// Cerrar modal con clic en overlay
-document.getElementById('modalSubActivos').addEventListener('click', function(e){
-    if (e.target === this) cerrarModalSubActivos();
-});
+// Modal solo se cierra con botón X (no al hacer clic fuera)
 </script>
 @endsection
 @section('extra_js')

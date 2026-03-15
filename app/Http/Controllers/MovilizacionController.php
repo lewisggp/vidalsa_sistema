@@ -11,7 +11,7 @@ class MovilizacionController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth')->except(['mobileIndex', 'mobileStore']);
         // Permiso para MOVER equipos (Crear movilizaciones o registrar recepción directa sin despacho previo)
         $this->middleware('can:equipos.assign')->only(['create', 'store', 'bulkStore', 'recepcionDirecta']);
     }
@@ -433,7 +433,7 @@ class MovilizacionController extends Controller
      */
     public function recepcionDirecta(Request $request)
     {
-        $usuario = auth()->user();
+        $usuario = $request->user();
         
         $request->validate([
             'ids' => 'required|array',
@@ -662,9 +662,75 @@ class MovilizacionController extends Controller
             return back()->withErrors(['error' => 'Error al generar el acta: ' . $e->getMessage()]);
         }
     }
-}
 
-// Clase personalizada para el PDF
+    // ─── MOBILE API ────────────────────────────────────────────────────────────
+    public function mobileIndex(Request $request)
+    {
+        $movs = Movilizacion::with(['equipo.tipo', 'equipo.documentacion', 'frenteOrigen', 'frenteDestino'])
+            ->orderBy('created_at', 'desc')
+            ->limit(100)
+            ->get();
+
+        return response()->json($movs->map(function ($m) {
+            return [
+                'ID_MOVILIZACION'  => $m->ID_MOVILIZACION,
+                'CODIGO_CONTROL'   => $m->CODIGO_CONTROL,
+                'ESTADO_MVO'       => $m->ESTADO_MVO,
+                'TIPO_MOVIMIENTO'  => $m->TIPO_MOVIMIENTO,
+                'FECHA_DESPACHO'   => $m->FECHA_DESPACHO,
+                'FECHA_RECEPCION'  => $m->FECHA_RECEPCION,
+                'equipo' => $m->equipo ? [
+                    'ID_EQUIPO'    => $m->equipo->ID_EQUIPO,
+                    'CODIGO_PATIO' => $m->equipo->CODIGO_PATIO,
+                    'MARCA'        => $m->equipo->MARCA,
+                    'MODELO'       => $m->equipo->MODELO,
+                    'TIPO'         => $m->equipo->tipo->nombre ?? 'N/A',
+                    'PLACA'        => $m->equipo->documentacion->PLACA ?? 'S/P',
+                ] : null,
+                'frente_origen'  => $m->frenteOrigen ? ['ID_FRENTE' => $m->frenteOrigen->ID_FRENTE, 'NOMBRE_FRENTE' => $m->frenteOrigen->NOMBRE_FRENTE] : null,
+                'frente_destino' => $m->frenteDestino ? ['ID_FRENTE' => $m->frenteDestino->ID_FRENTE, 'NOMBRE_FRENTE' => $m->frenteDestino->NOMBRE_FRENTE] : null,
+            ];
+        }));
+    }
+
+    public function mobileStore(Request $request)
+    {
+        $tipo = $request->input('tipo', 'despacho');
+        $usuario = $request->user();
+
+        if ($tipo === 'recepcion_directa') {
+            return $this->recepcionDirecta($request);
+        }
+
+        $request->validate([
+            'ID_EQUIPO'         => 'required|exists:equipos,ID_EQUIPO',
+            'ID_FRENTE_DESTINO' => 'required|exists:frentes_trabajo,ID_FRENTE',
+        ]);
+
+        $equipo  = \App\Models\Equipo::findOrFail($request->ID_EQUIPO);
+        $lastLog = Movilizacion::latest('ID_MOVILIZACION')->first();
+        $nextId  = $lastLog ? ($lastLog->ID_MOVILIZACION + 1) : 1;
+
+        Movilizacion::create([
+            'CODIGO_CONTROL'    => $nextId,
+            'ID_EQUIPO'         => $request->ID_EQUIPO,
+            'ID_FRENTE_ORIGEN'  => $equipo->ID_FRENTE_ACTUAL ?? 1,
+            'ID_FRENTE_DESTINO' => $request->ID_FRENTE_DESTINO,
+            'FECHA_DESPACHO'    => now(),
+            'ESTADO_MVO'        => 'TRANSITO',
+            'TIPO_MOVIMIENTO'   => 'DESPACHO',
+            'USUARIO_REGISTRO'  => $usuario->CORREO_ELECTRONICO ?? 'SISTEMA',
+        ]);
+
+        $equipo->update(['ID_FRENTE_ACTUAL' => $request->ID_FRENTE_DESTINO]);
+
+        return response()->json(['success' => true, 'message' => 'Despacho registrado correctamente.']);
+    }
+    // ──────────────────────────────────────────────────────────────────────────
+
+} // END MovilizacionController
+
+
 class ActaTrasladoPDF extends \TCPDF
 {
     public $frenteOrigen = '';

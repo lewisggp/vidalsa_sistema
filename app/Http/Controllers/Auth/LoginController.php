@@ -139,6 +139,46 @@ class LoginController extends Controller
         }
     }
 
+    // ─── MOBILE API ENDPOINTS ──────────────────────────────────────────────────
+    public function mobileLogin(Request $request)
+    {
+        $request->validate([
+            'correo' => 'required|string',
+            'password' => 'required|string',
+        ]);
+
+        $user = \App\Models\Usuario::where('CORREO_ELECTRONICO', $request->correo)->first();
+
+        if (!$user || !\Illuminate\Support\Facades\Hash::check($request->password, $user->PASSWORD_HASH)) {
+            return response()->json(['error' => 'Credenciales incorrectas.'], 401);
+        }
+
+
+        if ($user->ESTATUS === 'INACTIVO') {
+            return response()->json(['error' => 'Usuario inactivo. Contacte al administrador.'], 403);
+        }
+
+        // Create Sanctum token for mobile
+        $token = $user->createToken('mobile-app')->plainTextToken;
+
+        return response()->json([
+            'token' => $token,
+            'user' => [
+                'id' => $user->ID_USUARIO,
+                'nombre' => $user->NOMBRE_USUARIO,
+                'correo' => $user->CORREO_ELECTRONICO,
+                'nivel' => $user->NIVEL_ACCESO,
+            ]
+        ]);
+    }
+
+    public function mobileLogout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+        return response()->json(['message' => 'Sesión cerrada correctamente.']);
+    }
+    // ──────────────────────────────────────────────────────────────────────────
+
     public function logout(Request $request)
     {
         $user = Auth::user();

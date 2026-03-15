@@ -18,7 +18,7 @@ class EquipoController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth')->except(['mobileIndex', 'mobileShow']);
         $this->middleware('can:equipos.create')->only(['store']);
         $this->middleware('can:equipos.edit')->only(['edit', 'update', 'changeStatus']);
         // uploadDoc/deleteDoc/updateMetadata: permission handled inside methods (user.edit OR equipos.edit OR super.admin)
@@ -2033,4 +2033,72 @@ class EquipoController extends Controller
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
+
+    // ─── MOBILE API ───────────────────────────────────────────────────────────────
+    public function mobileIndex(Request $request)
+    {
+        $search = $request->input('search');
+
+        $query = Equipo::with(['tipo', 'frenteActual', 'documentacion']);
+
+        if ($search) {
+            $searchUpper = strtoupper(trim($search));
+            $query->where(function ($q) use ($searchUpper) {
+                $q->where('CODIGO_PATIO', 'like', "%{$searchUpper}%")
+                  ->orWhere('SERIAL_CHASIS', 'like', "%{$searchUpper}%")
+                  ->orWhere('MARCA', 'like', "%{$searchUpper}%")
+                  ->orWhere('MODELO', 'like', "%{$searchUpper}%")
+                  ->orWhere('NUMERO_ETIQUETA', 'like', "%{$searchUpper}%")
+                  ->orWhereHas('documentacion', function ($d) use ($searchUpper) {
+                      $d->where('PLACA', 'like', "%{$searchUpper}%");
+                  })
+                  ->orWhereHas('frenteActual', function ($f) use ($searchUpper) {
+                      $f->where('NOMBRE_FRENTE', 'like', "%{$searchUpper}%");
+                  });
+            });
+        }
+
+        $equipos = $query->orderBy('CODIGO_PATIO')->get();
+
+        return response()->json($equipos->map(function ($eq) {
+            return [
+                'ID_EQUIPO'       => $eq->ID_EQUIPO,
+                'CODIGO_PATIO'    => $eq->CODIGO_PATIO,
+                'TIPO'            => $eq->tipo->nombre ?? 'N/A',
+                'MARCA'           => $eq->MARCA,
+                'MODELO'          => $eq->MODELO,
+                'ANIO'            => $eq->ANIO,
+                'CATEGORIA_FLOTA' => $eq->CATEGORIA_FLOTA,
+                'SERIAL_CHASIS'   => $eq->SERIAL_CHASIS,
+                'SERIAL_MOTOR'    => $eq->SERIAL_DE_MOTOR,
+                'NUMERO_ETIQUETA' => $eq->NUMERO_ETIQUETA,
+                'ESTADO_OPERATIVO'=> $eq->ESTADO_OPERATIVO,
+                'PLACA'           => $eq->documentacion->PLACA ?? 'S/P',
+                'FRENTE_ACTUAL'   => $eq->frenteActual->NOMBRE_FRENTE ?? 'Sin Asignar',
+                'DETALLE_UBICACION' => $eq->DETALLE_UBICACION_ACTUAL,
+                'CONFIRMADO'      => $eq->CONFIRMADO_EN_SITIO,
+            ];
+        }));
+    }
+
+    public function mobileShow($id)
+    {
+        $eq = Equipo::with(['tipo', 'frenteActual', 'documentacion'])->findOrFail($id);
+        return response()->json([
+            'ID_EQUIPO'       => $eq->ID_EQUIPO,
+            'CODIGO_PATIO'    => $eq->CODIGO_PATIO,
+            'TIPO'            => $eq->tipo->nombre ?? 'N/A',
+            'MARCA'           => $eq->MARCA,
+            'MODELO'          => $eq->MODELO,
+            'ANIO'            => $eq->ANIO,
+            'SERIAL_CHASIS'   => $eq->SERIAL_CHASIS,
+            'SERIAL_MOTOR'    => $eq->SERIAL_DE_MOTOR,
+            'NUMERO_ETIQUETA' => $eq->NUMERO_ETIQUETA,
+            'ESTADO_OPERATIVO'=> $eq->ESTADO_OPERATIVO,
+            'PLACA'           => $eq->documentacion->PLACA ?? 'S/P',
+            'FRENTE_ACTUAL'   => $eq->frenteActual->NOMBRE_FRENTE ?? 'Sin Asignar',
+            'DETALLE_UBICACION' => $eq->DETALLE_UBICACION_ACTUAL,
+        ]);
+    }
+    // ──────────────────────────────────────────────────────────────────────────────
 }

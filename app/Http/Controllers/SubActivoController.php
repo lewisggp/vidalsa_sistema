@@ -63,6 +63,7 @@ class SubActivoController extends Controller
                 'host_codigo'     => $sa->equipoHost->CODIGO_PATIO  ?? null,
                 'host_tipo'       => $sa->equipoHost->tipo->nombre  ?? null,
                 'host_placa'      => $sa->equipoHost->documentacion->PLACA ?? null,
+                'host_serial'     => $sa->equipoHost->SERIAL_CHASIS ?? null,
                 'host_foto'       => $sa->equipoHost->FOTO_EQUIPO ?? ($sa->equipoHost->especificaciones->FOTO_REFERENCIAL ?? null),
             ];
         });
