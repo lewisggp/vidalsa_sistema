@@ -1106,6 +1106,22 @@
 ════════════════════════════════════════════════════════════════ --}}
 <div id="modalSubActivos" class="modal-overlay" style="z-index:1100;">
     <div class="modal-content" style="max-width:850px;width:90vw;max-height:92vh;padding:0;border-radius:16px;overflow:hidden;background:#ffffff;display:flex;flex-direction:column;">
+        <style>
+            .sa-select-styled {
+                appearance: none;
+                background: #fbfcfd url('data:image/svg+xml;utf8,<svg fill="%2364748b" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 8px center;
+                border: 1px solid #cbd5e0 !important;
+                border-radius: 8px !important;
+                color: #1e293b;
+                transition: all 0.2s;
+                outline: none;
+                padding-right: 32px !important;
+            }
+            .sa-select-styled:focus {
+                border-color: #0067b1 !important;
+                background-color: #fff;
+            }
+        </style>
 
         {{-- Header --}}
         <div style="background:var(--maquinaria-dark-blue,#00004d);padding:18px 25px;color:white;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
@@ -1123,7 +1139,7 @@
 
         {{-- Toolbar filtros --}}
         <div id="saFiltrosToolbar" style="padding:14px 20px;background:white;border-bottom:1px solid #e2e8f0;display:flex;gap:10px;flex-wrap:wrap;align-items:center;flex-shrink:0;">
-            <select id="saFiltroTipo" onchange="cargarSubActivos()" style="height:38px;border:1px solid #e2e8f0;border-radius:8px;padding:0 12px;font-size:13px;color:#334155;background:white;">
+            <select id="saFiltroTipo" class="sa-select-styled" onchange="cargarSubActivos()" style="height:38px;padding:0 12px;font-size:13px;width:160px;background-color:white;">
                 <option value="">Todos los tipos</option>
                 <option value="MAQUINA_SOLDADURA">Máquina Soldadura</option>
                 <option value="PLANTA_ELECTRICA">Planta Eléctrica</option>
@@ -1131,24 +1147,31 @@
                 <option value="COMPRESOR">Compresor</option>
                 <option value="OTRO">Otro</option>
             </select>
-            <select id="saFiltroFrente" onchange="cargarSubActivos()" style="height:38px;border:1px solid #e2e8f0;border-radius:8px;padding:0 12px;font-size:13px;color:#334155;background:white;">
+            <select id="saFiltroFrente" class="sa-select-styled" onchange="cargarSubActivos()" style="height:38px;padding:0 12px;font-size:13px;width:180px;background-color:white;">
                 <option value="">Todos los frentes</option>
                 @foreach(\App\Models\FrenteTrabajo::orderBy('NOMBRE_FRENTE')->get() as $f)
                     <option value="{{ $f->ID_FRENTE }}">{{ $f->NOMBRE_FRENTE }}</option>
                 @endforeach
             </select>
-            <input id="saFiltroSearch" type="text" placeholder="🔍 Buscar serial, marca..." oninput="cargarSubActivos()" style="height:38px;border:1px solid #e2e8f0;border-radius:8px;padding:0 12px;font-size:13px;color:#334155;flex:1;min-width:160px;">
+            <div style="position:relative;flex:1;min-width:160px;">
+                <i class="material-icons" style="position:absolute;left:10px;top:10px;font-size:18px;color:#94a3b8;">search</i>
+                <input id="saFiltroSearch" type="text" placeholder="Buscar serial, marca..." oninput="cargarSubActivos()" style="height:38px;width:100%;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px 0 35px;font-size:13px;color:#1e293b;outline:none;transition:all 0.2s;" onfocus="this.style.borderColor='#0067b1'" onblur="this.style.borderColor='#cbd5e0'">
+            </div>
+            <button onclick="descargarExcelSubActivos()" style="height:38px;background:#10b981;color:white;border:none;border-radius:8px;padding:0 12px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'" title="Exportar Excel">
+                <i class="material-icons" style="font-size:18px;">download</i>
+            </button>
             <button onclick="mostrarFormSubActivo()" style="height:38px;background:#00004d;color:white;border:none;border-radius:8px;padding:0 16px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:default;" onmouseover="this.style.background='#0067b1'" onmouseout="this.style.background='#00004d'">
                 <i class="material-icons" style="font-size:18px;">add</i> Registrar
             </button>
         </div>
 
         {{-- Formulario inline (oculto por defecto) --}}
-        <div id="saFormPanel" style="display:none;padding:20px 40px;background:#ffffff;border-bottom:none;border-top:1px solid #e2e8f0;box-shadow:inset 0 4px 6px -4px rgba(0,0,0,0.05);flex:1;overflow-y:auto;">
-            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:15px;align-items:start;">
-                <div style="min-width:0;">
-                    <label for="saFormTipo" style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">TIPO *</label>
-                    <select id="saFormTipo" style="width:100%;height:40px;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px;font-size:14px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
+        <div id="saFormPanel" style="display:none;padding:25px 40px;background:#ffffff;border-bottom:none;border-top:1px solid #e2e8f0;box-shadow:inset 0 4px 6px -4px rgba(0,0,0,0.05);flex:1;overflow-y:auto;">
+            <div style="display:flex;flex-wrap:wrap;row-gap:20px;column-gap:15px;align-items:flex-start;">
+                
+                <div style="flex:1 1 180px;min-width:180px;">
+                    <label for="saFormTipo" style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">TIPO *</label>
+                    <select id="saFormTipo" class="sa-select-styled" style="display:block;box-sizing:border-box;width:100%;height:42px;padding:0 12px;font-size:12.5px;">
                         <option value="MAQUINA_SOLDADURA">Máquina Soldadura</option>
                         <option value="PLANTA_ELECTRICA">Planta Eléctrica</option>
                         <option value="CONTENEDOR">Contenedor</option>
@@ -1156,62 +1179,74 @@
                         <option value="OTRO">Otro</option>
                     </select>
                 </div>
-                <div style="min-width:0;">
-                    <label for="saFormMarca" style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">MARCA</label>
-                    <input id="saFormMarca" type="text" placeholder="Ej: Lincoln" style="width:100%;height:40px;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px;font-size:14px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
+
+                <div style="flex:1 1 180px;min-width:180px;">
+                    <label for="saFormMarca" style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">MARCA</label>
+                    <input id="saFormMarca" type="text" placeholder="Ej: Lincoln" style="display:block;box-sizing:border-box;width:100%;height:42px;border:1px solid #cbd5e0 !important;border-radius:8px !important;padding:0 12px;font-size:12.5px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
                 </div>
-                <div style="min-width:0;">
-                    <label for="saFormModelo" style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">MODELO</label>
-                    <input id="saFormModelo" type="text" placeholder="Ej: Ranger 300D" style="width:100%;height:40px;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px;font-size:14px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
+
+                <div style="flex:1 1 180px;min-width:180px;">
+                    <label for="saFormModelo" style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">MODELO</label>
+                    <input id="saFormModelo" type="text" placeholder="Ej: Ranger 300D" style="display:block;box-sizing:border-box;width:100%;height:42px;border:1px solid #cbd5e0 !important;border-radius:8px !important;padding:0 12px;font-size:12.5px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
                 </div>
-                <div style="min-width:0;">
-                    <label for="saFormCapacidad" style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">CAPACIDAD</label>
-                    <input id="saFormCapacidad" type="text" placeholder="Ej: 300 Amp" style="width:100%;height:40px;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px;font-size:14px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
+
+                <div style="flex:1 1 180px;min-width:180px;">
+                    <label for="saFormCapacidad" style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">CAPACIDAD</label>
+                    <input id="saFormCapacidad" type="text" placeholder="Ej: 300 Amp" style="display:block;box-sizing:border-box;width:100%;height:42px;border:1px solid #cbd5e0 !important;border-radius:8px !important;padding:0 12px;font-size:12.5px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
                 </div>
-                <div style="min-width:0;">
-                    <label for="saFormAnio" style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">AÑO</label>
-                    <input id="saFormAnio" type="number" placeholder="Ej: 2022" min="1950" max="2100" style="width:100%;height:40px;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px;font-size:14px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
+
+                <div style="flex:1 1 180px;min-width:180px;">
+                    <label for="saFormAnio" style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">AÑO</label>
+                    <input id="saFormAnio" type="number" placeholder="Ej: 2022" min="1950" max="2100" style="display:block;box-sizing:border-box;width:100%;height:42px;border:1px solid #cbd5e0 !important;border-radius:8px !important;padding:0 12px;font-size:12.5px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
                 </div>
-                <div style="min-width:0;">
-                    <label for="saFormSerial" style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">SERIAL / ID *</label>
-                    <input id="saFormSerial" type="text" placeholder="Ej: MS-30042-A" style="width:100%;height:40px;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px;font-size:14px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;font-family:monospace;font-weight:600;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
+
+                <div style="flex:1 1 180px;min-width:180px;">
+                    <label for="saFormSerial" style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">SERIAL / ID *</label>
+                    <input id="saFormSerial" type="text" placeholder="Ej: MS-30042-A" style="display:block;box-sizing:border-box;width:100%;height:42px;border:1px solid #cbd5e0 !important;border-radius:8px !important;padding:0 12px;font-size:12.5px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;font-family:monospace;font-weight:600;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
                 </div>
-                <div style="min-width:0; grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 5px; padding-top: 15px; border-top: 1px dashed #e2e8f0;">
-                    <div style="min-width:0;">
-                        <label for="saFormFrente" style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">FRENTE (Si está suelto)</label>
-                        <select id="saFormFrente" style="width:100%;height:40px;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px;font-size:14px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
-                            <option value="">— Ninguno (No asignado) —</option>
-                            @foreach(\App\Models\FrenteTrabajo::orderBy('NOMBRE_FRENTE')->get() as $f)
-                                <option value="{{ $f->ID_FRENTE }}">{{ $f->NOMBRE_FRENTE }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div style="min-width:0;">
-                        <label for="saFormHost" style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">VINCULADO A (Vehículo)</label>
-                        <select id="saFormHost" style="width:100%;height:40px;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px;font-size:14px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
-                            <option value="">— Suelto (Sin anclar) —</option>
-                            @foreach(\App\Models\Equipo::with('tipo')->where('ESTADO_OPERATIVO', 'OPERATIVO')->orderBy('CODIGO_PATIO')->get() as $eq)
-                                <option value="{{ $eq->ID_EQUIPO }}">🛻 {{ $eq->CODIGO_PATIO }} ({{ $eq->tipo->nombre ?? 'N/A' }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div style="min-width:0;">
-                        <label for="saFormEstado" style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">ESTADO OPERATIVO *</label>
-                        <select id="saFormEstado" style="width:100%;height:40px;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px;font-size:14px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;font-weight:700;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
-                            <option value="OPERATIVO">Operativo</option>
-                            <option value="INOPERATIVO">Inoperativo</option>
-                            <option value="EN_ALMACEN">En Almacén</option>
-                        </select>
-                    </div>
+
+            </div>
+
+            <div style="display:flex;flex-wrap:wrap;row-gap:20px;column-gap:15px;margin-top:20px;padding-top:20px;border-top:1px dashed #e2e8f0;">
+                
+                <div style="flex:1 1 280px;min-width:280px;">
+                    <label for="saFormFrente" style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">FRENTE (Si está suelto)</label>
+                    <select id="saFormFrente" class="sa-select-styled" style="display:block;box-sizing:border-box;width:100%;height:42px;padding:0 12px;font-size:12.5px;">
+                        <option value="">— Ninguno (No asignado) —</option>
+                        @foreach(\App\Models\FrenteTrabajo::orderBy('NOMBRE_FRENTE')->get() as $f)
+                            <option value="{{ $f->ID_FRENTE }}">{{ $f->NOMBRE_FRENTE }}</option>
+                        @endforeach
+                    </select>
                 </div>
-                <div style="min-width:0; grid-column: 1 / -1;">
-                    <label for="saFormObs" style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">OBSERVACIONES</label>
-                    <input id="saFormObs" type="text" placeholder="Escribe alguna nota adicional aquí..." style="width:100%;height:40px;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px;font-size:14px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
+
+                <div style="flex:1 1 280px;min-width:280px;">
+                    <label for="saFormHost" style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">VINCULADO A (Vehículo)</label>
+                    <select id="saFormHost" class="sa-select-styled" style="display:block;box-sizing:border-box;width:100%;height:42px;padding:0 12px;font-size:12.5px;">
+                        <option value="">— Suelto (Sin anclar) —</option>
+                        @foreach(\App\Models\Equipo::with('tipo')->where('ESTADO_OPERATIVO', 'OPERATIVO')->orderBy('CODIGO_PATIO')->get() as $eq)
+                            <option value="{{ $eq->ID_EQUIPO }}">🛻 {{ $eq->CODIGO_PATIO }} ({{ $eq->tipo->nombre ?? 'N/A' }})</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div style="flex:1 1 200px;min-width:200px;">
+                    <label for="saFormEstado" style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">ESTADO OPERATIVO *</label>
+                    <select id="saFormEstado" class="sa-select-styled" style="display:block;box-sizing:border-box;width:100%;height:42px;padding:0 12px;font-size:12.5px;font-weight:700;">
+                        <option value="OPERATIVO">Operativo</option>
+                        <option value="INOPERATIVO">Inoperativo</option>
+                        <option value="EN_ALMACEN">En Almacén</option>
+                    </select>
+                </div>
+
+                <div style="flex:1 1 300px;min-width:300px;">
+                    <label for="saFormObs" style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">OBSERVACIONES</label>
+                    <input id="saFormObs" type="text" placeholder="Escribe alguna nota adicional aquí..." style="display:block;box-sizing:border-box;width:100%;height:42px;border:1px solid #cbd5e0 !important;border-radius:8px !important;padding:0 12px;font-size:12.5px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'">
                 </div>
             </div>
-            <div style="display:flex;gap:12px;margin-top:25px;justify-content:center;grid-column: 1 / -1;">
-                <button onclick="guardarSubActivo()" style="height:40px;background:#0067b1;color:white;border:none;border-radius:8px;padding:0 25px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;transition:0.2s;box-shadow:0 4px 6px -1px rgba(0,103,177,0.3);" onmouseover="this.style.background='#005494';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#0067b1';this.style.transform='none'"><i class="material-icons" style="font-size:18px;">save</i> Guardar Registro</button>
-                <button onclick="ocultarFormSubActivo()" style="height:40px;background:#f1f5f9;color:#475569;border:1px solid #cbd5e0;border-radius:8px;padding:0 20px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;transition:0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'"><i class="material-icons" style="font-size:18px;">close</i> Cancelar</button>
+
+            <div style="display:flex;gap:15px;margin-top:30px;justify-content:center;">
+                <button onclick="guardarSubActivo()" style="height:44px;background:#0067b1;color:white;border:none;border-radius:8px;padding:0 30px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;transition:0.2s;box-shadow:0 4px 6px -1px rgba(0,103,177,0.3);cursor:pointer;" onmouseover="this.style.background='#005494';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#0067b1';this.style.transform='none'"><i class="material-icons" style="font-size:20px;">save</i> Guardar</button>
+                <button onclick="ocultarFormSubActivo()" style="height:44px;background:#f1f5f9;color:#0067b1;border:1px solid #0067b1;border-radius:8px;padding:0 25px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;transition:0.2s;cursor:pointer;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">Cancelar</button>
             </div>
         </div>
 
@@ -1225,8 +1260,8 @@
                         <th class="table-header-custom" style="text-align: center;">Marca / Modelo</th>
                         <th class="table-header-custom" style="text-align: center;">Serial</th>
                         <th class="table-header-custom" style="text-align: center;">Capacidad / Año</th>
-                        <th class="table-header-custom" style="text-align: center;">Vehículo Asociado</th>
-                        <th class="table-header-custom" style="text-align: center;">Estado</th>
+                        <th class="table-header-custom" style="text-align: center; font-size:10px;">Estado</th>
+                        <th class="table-header-custom" style="text-align: center; font-size:10px;">Vehículo Asociado</th>
                     </tr>
                 </thead>
                 <tbody id="saTableBody">
@@ -1331,6 +1366,7 @@ async function cargarSubActivos() {
         const json = await res.json();
         if (!json.ok) throw new Error('Server error');
 
+        window.saLastData = json.data; // Para la descarga a Excel
         document.getElementById('saTotalCount').textContent = json.total;
         actualizarBadge(json.total);
 
@@ -1345,7 +1381,7 @@ async function cargarSubActivos() {
 
             const frenteBadge = sa.frente_nombre
                 ? `<div style="text-align:center;font-size:11px;font-weight:700;color:#00004d;margin-bottom:4px;word-break:break-word;line-height:1.1;">${sa.frente_nombre}</div>`
-                : '';
+                : `<div style="text-align:center;font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:4px;word-break:break-word;line-height:1.1;">Sin Asignar</div>`;
 
             // Foto: placeholder gris estándar si no hay foto real
             const fotoCell = sa.host_foto
@@ -1359,20 +1395,20 @@ async function cargarSubActivos() {
             const renderFotoCell = `<div>${frenteBadge}${fotoCell}</div>`;
 
             const hostBadge = sa.host_id
-                ? `<div style="font-size:12px;font-weight:700;color:#334155;">${sa.host_tipo || 'Vehículo'}</div>
-                   <div style="font-size:11px;color:#64748b;margin-top:2px;">${(sa.host_placa && sa.host_placa !== 'S/P') ? sa.host_placa : (sa.host_serial || sa.host_codigo || '—')}</div>`
-                : '<span style="color:#94a3b8;font-size:11px;font-style:italic;">Suelto</span>';
+                ? `<div style="font-size:10px;font-weight:700;color:#334155;">${sa.host_tipo || 'Vehículo'}</div>
+                   <div style="font-size:10px;color:#64748b;margin-top:2px;">${(sa.host_placa && sa.host_placa !== 'S/P') ? sa.host_placa : (sa.host_serial || sa.host_codigo || '—')}</div>`
+                : '<span style="color:#94a3b8;font-size:10px;font-style:italic;">Suelto</span>';
 
-            return `<tr style="border-bottom:1px solid #f1f5f9;">
+            return `<tr style="border-bottom:1px solid #f1f5f9; font-size: 11px;">
                 <td style="text-align:center;padding:8px 6px;">${renderFotoCell}</td>
                 <td style="text-align:center;padding:10px 8px;">${tc.label}</td>
-                <td style="text-align:center;padding:10px 8px;">${sa.marca || '—'} ${sa.modelo ? '<br><span style="color:#94a3b8;">' + sa.modelo + '</span>' : ''}</td>
+                <td style="text-align:center;padding:10px 8px;">${sa.marca || '—'} ${sa.modelo ? '<br><span style="color:#94a3b8; font-size: 10px;">' + sa.modelo + '</span>' : ''}</td>
                 <td style="text-align:center;padding:10px 8px;font-family:monospace;">${sa.serial || '—'}</td>
-                <td style="text-align:center;padding:10px 8px;">${sa.capacidad || '—'} ${sa.anio ? '<br><span style="color:#94a3b8;">' + sa.anio + '</span>' : ''}</td>
-                <td style="text-align:center;padding:10px 8px;">${hostBadge}</td>
+                <td style="text-align:center;padding:10px 8px;">${sa.capacidad || '—'} ${sa.anio ? '<br><span style="color:#94a3b8; font-size: 10px;">' + sa.anio + '</span>' : ''}</td>
                 <td style="text-align:center;padding:10px 8px;">
-                    <span style="background:${ec.bg};color:${ec.color};font-size:11px;font-weight:700;padding:3px 9px;border-radius:12px;">${ec.label}</span>
+                    <span style="background:${ec.bg};color:${ec.color};font-size:9.5px;font-weight:700;padding:3px 9px;border-radius:12px;">${ec.label}</span>
                 </td>
+                <td style="text-align:center;padding:10px 8px;font-size:10px;">${hostBadge}</td>
             </tr>`;
         }).join('');
 
@@ -1501,6 +1537,42 @@ function actualizarBadge(total) {
     if (!badge) return;
     if (total > 0) { badge.textContent = total; badge.style.display = 'inline-block'; }
     else { badge.style.display = 'none'; }
+}
+
+function descargarExcelSubActivos() {
+    const data = window.saLastData;
+    if (!data || data.length === 0) {
+        if(window.showErrorToast) window.showErrorToast('No hay datos para exportar');
+        else alert('No hay datos para exportar');
+        return;
+    }
+
+    let csvContent = 'TIPO,MARCA_MODELO,SERIAL,CAPACIDAD_ANIO,ESTADO,VEHICULO_O_FRENTE\n';
+    
+    data.forEach(sa => {
+        const tcLabel = sa.tipo || 'OTRO';
+        const marcaMod = `${sa.marca || ''} ${sa.modelo || ''}`.trim();
+        const capAnio = `${sa.capacidad || ''} ${sa.anio || ''}`.trim();
+        const hostInfo = sa.host_id ? `Anclado a ${sa.host_codigo || sa.host_placa || 'Vehi'}` : (sa.frente_nombre || 'Sin Asignar');
+        
+        const escapeCsv = (str) => '"' + (str || '').toString().replace(/"/g, '""') + '"';
+
+        csvContent += escapeCsv(tcLabel) + ',' +
+                      escapeCsv(marcaMod) + ',' +
+                      escapeCsv(sa.serial) + ',' +
+                      escapeCsv(capAnio) + ',' +
+                      escapeCsv(sa.estado) + ',' +
+                      escapeCsv(hostInfo) + '\n';
+    });
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `SubActivos_${new Date().toISOString().slice(0,10)}.csv`;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 // Cargar el badge al iniciar la página
