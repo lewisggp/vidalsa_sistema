@@ -2101,6 +2101,12 @@ class EquipoController extends Controller
             'PLACA'           => $eq->documentacion->PLACA ?? 'S/P',
             'FRENTE_ACTUAL'   => $eq->frenteActual->NOMBRE_FRENTE ?? 'Sin Asignar',
             'DETALLE_UBICACION' => $eq->DETALLE_UBICACION_ACTUAL,
+            'NRO_DOCUMENTO'   => $eq->documentacion->NRO_DE_DOCUMENTO ?? '',
+            'PROPIETARIO'     => $eq->documentacion->NOMBRE_DEL_TITULAR ?? '',
+            'DOC_PROPIEDAD'   => $eq->documentacion && $eq->documentacion->LINK_DOC_PROPIEDAD ? asset('storage/' . $eq->documentacion->LINK_DOC_PROPIEDAD) : null,
+            'DOC_POLIZA'      => $eq->documentacion && $eq->documentacion->LINK_POLIZA_SEGURO ? asset('storage/' . $eq->documentacion->LINK_POLIZA_SEGURO) : null,
+            'DOC_ROTC'        => $eq->documentacion && $eq->documentacion->LINK_ROTC ? asset('storage/' . $eq->documentacion->LINK_ROTC) : null,
+            'DOC_RACDA'       => $eq->documentacion && $eq->documentacion->LINK_RACDA ? asset('storage/' . $eq->documentacion->LINK_RACDA) : null,
         ]);
     }
     // ──────────────────────────────────────────────────────────────────────────────
