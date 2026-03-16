@@ -1157,12 +1157,31 @@
                 <i class="material-icons" style="position:absolute;left:10px;top:10px;font-size:18px;color:#94a3b8;">search</i>
                 <input id="saFiltroSearch" type="text" placeholder="Buscar serial, marca..." oninput="cargarSubActivos()" style="height:38px;width:100%;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px 0 35px;font-size:13px;color:#1e293b;outline:none;transition:all 0.2s;" onfocus="this.style.borderColor='#0067b1'" onblur="this.style.borderColor='#cbd5e0'">
             </div>
-            <button onclick="descargarExcelSubActivos()" style="height:38px;background:#10b981;color:white;border:none;border-radius:8px;padding:0 12px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'" title="Exportar Excel">
-                <i class="material-icons" style="font-size:18px;">download</i>
-            </button>
-            <button onclick="mostrarFormSubActivo()" style="height:38px;background:#00004d;color:white;border:none;border-radius:8px;padding:0 16px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:default;" onmouseover="this.style.background='#0067b1'" onmouseout="this.style.background='#00004d'">
-                <i class="material-icons" style="font-size:18px;">add</i> Registrar
-            </button>
+            <div style="position: relative; margin-left: auto;">
+                <button type="button" id="btnAccionesSubActivos" onclick="toggleSubActivosMenu(event)" class="btn-primary-maquinaria" style="padding: 0 15px; height: 38px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                    <i class="material-icons" style="font-size:18px;">settings</i>
+                    <span style="font-size:13px; font-weight:700;">Acciones</span>
+                    <i class="material-icons" style="font-size: 18px; margin-left: -2px;">expand_more</i>
+                </button>
+
+                <!-- Dropdown Menu -->
+                <div id="splitDropdownMenuSubActivos" style="display: none; position: absolute; top: 100%; right: 0; width: 200px; background: #e2e8f0; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; z-index: 50; margin-top: 5px; overflow: hidden; animation: slideDown 0.2s ease-out;">
+                    <!-- Descargar Excel -->
+                    <button type="button" onclick="descargarExcelSubActivos(); document.getElementById('splitDropdownMenuSubActivos').style.display='none';" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; transition: all 0.2s; border-bottom: 1px solid #f1f5f9; background: transparent; border: none; width: 100%; text-align: left;">
+                        <div style="background: #f0fdf4; padding: 6px; border-radius: 6px; display: flex;">
+                            <i class="material-icons" style="font-size: 18px; color: #10b981;">download</i>
+                        </div>
+                        <span style="font-size: 14px; font-weight: 500;">Exportar Excel</span>
+                    </button>
+                    <!-- Registrar -->
+                    <button type="button" onclick="mostrarFormSubActivo(); document.getElementById('splitDropdownMenuSubActivos').style.display='none';" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; transition: all 0.2s; background: transparent; border: none; width: 100%; text-align: left;">
+                        <div style="background: #eff6ff; padding: 6px; border-radius: 6px; display: flex;">
+                            <i class="material-icons" style="font-size: 18px; color: #00004d;">add_circle</i>
+                        </div>
+                        <span style="font-size: 14px; font-weight: 500;">Registrar</span>
+                    </button>
+                </div>
+            </div>
         </div>
 
         {{-- Formulario inline (oculto por defecto) --}}
@@ -1282,6 +1301,25 @@
 var SA_INDEX_URL  = "{{ route('sub-activos.index') }}";
 var SA_STORE_URL  = "{{ route('sub-activos.store') }}";
 var SA_COUNT_URL  = "{{ route('sub-activos.count') }}";
+
+// Toggle JS for Acciones button
+window.toggleSubActivosMenu = function(event) {
+    event.stopPropagation();
+    const menu = document.getElementById('splitDropdownMenuSubActivos');
+    if (menu) {
+        menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
+    }
+};
+
+document.addEventListener('click', function(event) {
+    const menu = document.getElementById('splitDropdownMenuSubActivos');
+    const b = document.getElementById('btnAccionesSubActivos');
+    if (menu && menu.style.display === 'block') {
+        if (b && !b.contains(event.target) && !menu.contains(event.target)) {
+            menu.style.display = 'none';
+        }
+    }
+});
 
 // Iconos y colores por tipo
 var SA_TIPO_CONFIG = {
