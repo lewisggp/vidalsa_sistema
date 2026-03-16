@@ -16,9 +16,9 @@ class DashboardController extends Controller
         $isGlobal  = $user && $user->NIVEL_ACCESO == 1;
         $frenteIds = $user ? $user->getFrentesIds() : [];
 
-        // 1. Mobilizations Today — LOCAL users see only their frentes
+        // 1. Mobilizations Today
         $movilizacionesHoyQuery = Movilizacion::whereDate('created_at', Carbon::today());
-        if (!$isGlobal && count($frenteIds) > 0) {
+        if (count($frenteIds) > 0) {
             $movilizacionesHoyQuery->where(function($q) use ($frenteIds) {
                 $q->whereIn('ID_FRENTE_ORIGEN', $frenteIds)
                   ->orWhereIn('ID_FRENTE_DESTINO', $frenteIds);
@@ -28,9 +28,9 @@ class DashboardController extends Controller
         }
         $movilizacionesHoy = $movilizacionesHoyQuery->count();
 
-        // 2. Pending Mobilizations (TRÁNSITO) — LOCAL users see only their frentes
+        // 2. Pending Mobilizations (TRÁNSITO)
         $pendientesQuery = Movilizacion::where('ESTADO_MVO', 'TRANSITO');
-        if (!$isGlobal && count($frenteIds) > 0) {
+        if (count($frenteIds) > 0) {
             $pendientesQuery->whereIn('ID_FRENTE_DESTINO', $frenteIds);
         } elseif (!$isGlobal) {
             $pendientesQuery->whereRaw('1 = 0');
@@ -121,9 +121,7 @@ class DashboardController extends Controller
         $frenteIds = $user ? $user->getFrentesIds() : [];
 
         $query = Movilizacion::with(['equipo.tipo', 'equipo.documentacion', 'frenteDestino'])
-            ->where('ESTADO_MVO', 'TRANSITO')
-            ->orderBy('created_at', 'desc')
-            ->limit(50);
+            ->where('ESTADO_MVO', 'TRANSITO');
 
         if (count($frenteIds) > 0) {
             $query->whereIn('ID_FRENTE_DESTINO', $frenteIds);
@@ -131,8 +129,8 @@ class DashboardController extends Controller
             $query->whereRaw('1 = 0');
         }
 
-        $recentActivity = $query->get();
-        $pendientes     = $recentActivity->count();
+        $pendientes = $query->count();
+        $recentActivity = $query->orderBy('created_at', 'desc')->limit(50)->get();
 
         $hoyQuery = Movilizacion::whereDate('created_at', \Carbon\Carbon::today());
         if (count($frenteIds) > 0) {

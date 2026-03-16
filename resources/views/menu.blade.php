@@ -43,10 +43,10 @@
                             <i class="material-icons">local_shipping</i>
                         </div>
                         <div class="card-content">
-                            <span class="card-label">Movilizaciones Hoy</span>
+                            <span class="card-label">Por Confirmar</span>
                             <div class="card-value-row">
-                                <span class="card-value">{{ $movilizacionesHoy }}</span>
-                                <span class="card-subtext-inline">| {{ $pendientes }} Por Confirmar</span>
+                                <span class="card-value">{{ $pendientes }}</span>
+                                <span class="card-subtext-inline">| {{ $movilizacionesHoy }} Moviliz. Hoy</span>
                             </div>
                         </div>
                     </div>
