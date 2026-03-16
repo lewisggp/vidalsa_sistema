@@ -310,8 +310,6 @@ function DrawerMenu({ visible, onClose, onNavigate, onLogout, user }) {
 
               {configOpen && (
                 <View style={{ marginLeft: 20, borderLeftWidth: 2, borderLeftColor: '#e2e8f0', paddingLeft: 8, marginBottom: 4 }}>
-                  {/* Usuarios — igual que web: "people" */}
-                  <MenuItem icon="people" label="Usuarios" onPress={onClose} subItem />
                   {/* Frentes — igual que web: "business" */}
                   <MenuItem icon="business" label="Frentes de Trabajo" onPress={onClose} subItem />
                   {/* Catálogo — igual que web: "menu-book" */}
@@ -321,11 +319,6 @@ function DrawerMenu({ visible, onClose, onNavigate, onLogout, user }) {
 
               {/* Consumibles — igual que web: "local-gas-station" */}
               <MenuItem icon="local-gas-station" label="Consumibles" onPress={onClose} />
-
-              {/* Secciones adicionales según la web */}
-              <MenuItem icon="dashboard" label="Sección 5" onPress={onClose} />
-              <MenuItem icon="analytics" label="Sección 6" onPress={onClose} />
-              <MenuItem icon="inventory" label="Sección 7" onPress={onClose} />
 
               <View style={{ height: 40 }} />
 
