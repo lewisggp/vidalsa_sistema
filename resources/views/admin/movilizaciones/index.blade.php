@@ -237,7 +237,7 @@
         </div>
         
         <!-- Pagination -->
-        <div id="movilizacionesPagination" style="margin-top: 25px;">
+        <div id="movilizacionesPagination" style="margin-top: 25px; overflow-x: auto; max-width: 100%;">
             {{ $movilizaciones->links() }}
         </div>
 

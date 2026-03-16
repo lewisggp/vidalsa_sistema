@@ -174,9 +174,6 @@ class MovilizacionController extends Controller
             ->orderByDesc('total')
             ->get();
 
-        $frentes = FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')->orderBy('NOMBRE_FRENTE')->get();
-        $allTipos = \App\Models\TipoEquipo::orderBy('nombre')->get();
-
         // Check if JSON specifically requested (for filters)
         if ($request->wantsJson()) {
             $tableHtml = view('admin.movilizaciones.partials.table_rows', compact('movilizaciones'))->render();
@@ -207,6 +204,9 @@ class MovilizacionController extends Controller
                 'totalTransito' => $totalTransito
             ]);
         }
+
+        $frentes = FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')->orderBy('NOMBRE_FRENTE')->get();
+        $allTipos = \App\Models\TipoEquipo::orderBy('nombre')->get();
 
         return view('admin.movilizaciones.index', compact('movilizaciones', 'totalTransito', 'transitoPorFrente', 'frentes', 'allTipos'));
     }
