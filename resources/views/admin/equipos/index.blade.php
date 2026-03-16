@@ -1238,14 +1238,19 @@
                     </select>
                 </div>
 
-                <div style="flex:1 1 280px;min-width:280px;">
-                    <label for="saFormHost" style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">VINCULADO A (Vehículo)</label>
-                    <select id="saFormHost" class="sa-select-styled" style="display:block;box-sizing:border-box;width:100%;height:42px;padding:0 12px;font-size:12.5px;">
-                        <option value="">— Suelto (Sin anclar) —</option>
-                        @foreach(\App\Models\Equipo::with('tipo')->where('ESTADO_OPERATIVO', 'OPERATIVO')->orderBy('CODIGO_PATIO')->get() as $eq)
-                            <option value="{{ $eq->ID_EQUIPO }}">🛻 {{ $eq->CODIGO_PATIO }} ({{ $eq->tipo->nombre ?? 'N/A' }})</option>
-                        @endforeach
-                    </select>
+                <div style="flex:1 1 280px;min-width:280px; position:relative;">
+                    <label for="saFormHostSearch" style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">VINCULADO A (Vehículo)</label>
+                    <input type="hidden" id="saFormHost" value="">
+                    <input id="saFormHostSearch" type="text" placeholder="Buscar placa, motor, serial..." style="display:block;box-sizing:border-box;width:100%;height:42px;border:1px solid #cbd5e0 !important;border-radius:8px !important;padding:0 12px;font-size:12.5px;color:#1e293b;background:#fbfcfd;transition:all 0.2s;outline:none;" onfocus="this.style.borderColor='#0067b1';this.style.background='#fff'" onblur="this.style.borderColor='#cbd5e0';this.style.background='#fbfcfd'" onkeyup="if(window.saSearchTimeout) clearTimeout(window.saSearchTimeout); window.saSearchTimeout = setTimeout(() => buscarHostSA(), 500);">
+                    
+                    <div id="saSelectedHostCard" style="display:none; margin-top:10px; border:1px solid #10b981; border-radius:8px; padding:10px; background:#f0fdf4; align-items:center; justify-content:space-between;">
+                        <div id="saSelectedHostInfo" style="font-size:12px; font-weight:700; color:#065f46; line-height: 1.3;"></div>
+                        <button type="button" onclick="removerHostSA()" style="background:transparent; border:none; color:#dc2626; padding:0; height:auto;" title="Quitar vinculación"><i class="material-icons" style="font-size:18px;">close</i></button>
+                    </div>
+
+                    <div id="saHostResultados" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1px solid #cbd5e0; border-radius:8px; box-shadow:0 10px 25px -5px rgba(0,0,0,0.1); z-index:500; max-height:220px; overflow-y:auto; margin-top:4px;">
+                        <!-- Resultados JS -->
+                    </div>
                 </div>
 
                 <div style="flex:1 1 200px;min-width:200px;">
@@ -1264,8 +1269,8 @@
             </div>
 
             <div style="display:flex;gap:15px;margin-top:30px;justify-content:center;">
-                <button onclick="guardarSubActivo()" style="height:44px;background:#0067b1;color:white;border:none;border-radius:8px;padding:0 30px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;transition:0.2s;box-shadow:0 4px 6px -1px rgba(0,103,177,0.3);cursor:pointer;" onmouseover="this.style.background='#005494';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#0067b1';this.style.transform='none'"><i class="material-icons" style="font-size:20px;">save</i> Guardar</button>
-                <button onclick="ocultarFormSubActivo()" style="height:44px;background:#f1f5f9;color:#0067b1;border:1px solid #0067b1;border-radius:8px;padding:0 25px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;transition:0.2s;cursor:pointer;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">Cancelar</button>
+                <button onclick="guardarSubActivo()" style="height:44px;background:#0067b1;color:white;border:none;border-radius:8px;padding:0 30px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;box-shadow:0 4px 6px -1px rgba(0,103,177,0.3);"><i class="material-icons" style="font-size:20px;">save</i> Guardar</button>
+                <button onclick="ocultarFormSubActivo()" style="height:44px;background:#ffffff;color:#0067b1;border:1px solid #0067b1;border-radius:8px;padding:0 25px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;outline:none;" tabindex="-1">Cancelar</button>
             </div>
         </div>
 
@@ -1369,6 +1374,80 @@ function mostrarFormSubActivo() {
     if(tb) tb.style.display = 'none';
     if(tc) tc.style.display = 'none';
 }
+function removerHostSA() {
+    document.getElementById('saFormHost').value = '';
+    document.getElementById('saSelectedHostCard').style.display = 'none';
+    document.getElementById('saFormHostSearch').style.display = 'block';
+    document.getElementById('saFormHostSearch').value = '';
+    document.getElementById('saFormHostSearch').focus();
+}
+
+function buscarHostSA() {
+    const search = document.getElementById('saFormHostSearch').value.trim();
+    const container = document.getElementById('saHostResultados');
+
+    if (search.length < 3) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+        return;
+    }
+
+    container.innerHTML = '<div style="padding:15px; text-align:center; color:#94a3b8; font-size:12px;">Buscando...</div>';
+    container.style.display = 'block';
+
+    fetch(`/admin/movilizaciones/buscar-equipos-recepcion?search=${encodeURIComponent(search)}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.length === 0) {
+            container.innerHTML = '<div style="padding:15px; text-align:center; color:#94a3b8; font-size:12px;">No se encontraron equipos</div>';
+            return;
+        }
+
+        container.innerHTML = '';
+        data.forEach(eq => {
+            const item = document.createElement('div');
+            item.style.cssText = 'padding:10px 15px; border-bottom:1px solid #f1f5f9; cursor:pointer; display:flex; gap:12px; align-items:center; background:white;';
+            item.onmouseover = () => item.style.background = '#f8fafc';
+            item.onmouseout = () => item.style.background = 'white';
+
+            const marcaMode = [eq.MARCA, eq.MODELO, eq.ANIO].filter(Boolean).join(' · ');
+            const details = [eq.SERIAL_CHASIS, (eq.PLACA && eq.PLACA !== 'S/P') ? 'P: ' + eq.PLACA : null].filter(Boolean).join(' | ');
+
+            item.innerHTML = `
+                <div style="width:40px;height:40px;background:#f1f5f9;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="material-icons" style="color:#94a3b8;">directions_car</i>
+                </div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:12px;font-weight:800;color:#00004d;text-transform:uppercase;">${eq.TIPO || 'EQUIPO'}</div>
+                    <div style="font-size:11px;color:#475569;font-weight:600;margin-top:2px;">${marcaMode}</div>
+                    <div style="font-size:10px;color:#94a3b8;margin-top:2px;">${details}</div>
+                </div>
+            `;
+
+            item.onmousedown = function(e) { e.preventDefault(); }; // to prevent saFormHostSearch blur
+            item.onclick = function() {
+                document.getElementById('saFormHost').value = eq.ID_EQUIPO;
+                document.getElementById('saFormHostSearch').value = '';
+                document.getElementById('saFormHostSearch').style.display = 'none';
+                document.getElementById('saSelectedHostInfo').innerHTML = `🛻 ${eq.TIPO || 'Equipo'}<br><span style="color:#64748b;font-size:10px;font-weight:400;margin-top:2px;display:inline-block;">${details}</span>`;
+                document.getElementById('saSelectedHostCard').style.display = 'flex';
+                container.style.display = 'none';
+            };
+
+            container.appendChild(item);
+        });
+    });
+}
+
+// Ocultar resultados de sugerencias si damos blur
+document.getElementById('saFormHostSearch').addEventListener('blur', function() {
+    setTimeout(() => {
+        document.getElementById('saHostResultados').style.display = 'none';
+    }, 200);
+});
+
 function ocultarFormSubActivo() {
     document.getElementById('saFormPanel').style.display = 'none';
     
@@ -1383,7 +1462,10 @@ function ocultarFormSubActivo() {
     });
     document.getElementById('saFormTipo').value   = 'MAQUINA_SOLDADURA';
     document.getElementById('saFormFrente').value = '';
-    if(document.getElementById('saFormHost')) document.getElementById('saFormHost').value = '';
+    
+    // Reset Host Selection
+    removerHostSA();
+
     document.getElementById('saFormEstado').value = 'OPERATIVO';
 }
 
@@ -1498,7 +1580,7 @@ async function guardarSubActivo() {
 
     // ── Feedback visual: deshabilitar botón mientras procesa ─────────────
     const btnGuardar = document.querySelector('#saFormPanel button[onclick="guardarSubActivo()"]');
-    if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = 'Guardando...'; }
+    if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.innerHTML = '<i class="material-icons" style="font-size:20px;">save</i> Guardando...'; }
 
     try {
         const res = await fetch(SA_STORE_URL, {
@@ -1555,7 +1637,7 @@ async function guardarSubActivo() {
         console.error('guardarSubActivo error:', e);
         if(window.showErrorToast) showErrorToast('Error de conexión');
     } finally {
-        if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = 'Guardar'; }
+        if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.innerHTML = '<i class="material-icons" style="font-size:20px;">save</i> Guardar'; }
     }
 }
 
