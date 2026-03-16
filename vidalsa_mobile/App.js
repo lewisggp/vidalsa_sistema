@@ -1649,15 +1649,7 @@ function PantallaMovilizaciones({ user, onOpenMenu }) {
                         </View>
                       </View>
 
-                      {/* RECEPCION DIRECTA */}
-                      {h.TIPO_MOVIMIENTO === 'RECEPCION_DIRECTA' && (
-                          <View style={{ alignItems: 'center', marginBottom: 12, marginTop: -6 }}>
-                              <View style={{ backgroundColor: '#e0e7ff', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                  <MaterialIcons name="input" size={12} color="#3730a3" />
-                                  <Text style={{ color: '#3730a3', fontSize: 10, fontWeight: '700' }}>RECEPCIÓN DIRECTA</Text>
-                              </View>
-                          </View>
-                      )}
+
                       
                       {/* Fechas Row */}
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 10 }}>
