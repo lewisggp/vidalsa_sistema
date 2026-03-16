@@ -715,12 +715,11 @@ function PantallaEquipos({ user, onOpenMenu }) {
       if (advCategoria) data = data.filter(e => String(e.categoria || '').toUpperCase() === advCategoria.toUpperCase());
       if (advEstadoOp) data = data.filter(e => String(e.estado || '').toUpperCase() === advEstadoOp.toUpperCase());
 
-      // Simulamos la lógica de documentos (si el checkbox está on, debe tener algún valor; 
-      // si en tu app móvil no guardas el doc como boolean puedes omitirlo o ajustarlo. Si lo guardas:
+      // Aplicar filtros de documentos si corresponden a la data offline
       if (chkPropiedad) data = data.filter(e => e.propietario && e.propietario !== 'N/A' && e.propietario !== '');
       if (chkPoliza) data = data.filter(e => e.tiene_poliza === 1 || e.tiene_poliza === '1' || e.tiene_poliza === true);
-      // Nota: Si rotc/racda no están en la data offline, este filtro podría devolver vacío. 
-      // Dependerá de tu esquema SQLite.
+      if (chkRotc) data = data.filter(e => e.tiene_rotc === 1 || e.tiene_rotc === '1' || e.tiene_rotc === true);
+      if (chkRacda) data = data.filter(e => e.tiene_racda === 1 || e.tiene_racda === '1' || e.tiene_racda === true);
 
       setStats({
         total: data.length,
