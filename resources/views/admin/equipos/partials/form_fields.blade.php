@@ -212,6 +212,13 @@
         @error('ID_FRENTE_ACTUAL') <span class="error-message-inline">{{ $message }}</span> @enderror
     </div>
 
+    <!-- Detalle Ubicación -->
+    <div>
+        <label for="detalle_ubicacion_actual" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">Sección / Ubicación Específica</label>
+        <input type="text" id="detalle_ubicacion_actual" name="DETALLE_UBICACION_ACTUAL" class="form-input-custom @error('DETALLE_UBICACION_ACTUAL') is-invalid @enderror" value="{{ old('DETALLE_UBICACION_ACTUAL', $equipo->DETALLE_UBICACION_ACTUAL ?? '') }}" placeholder="Ej: Fase 2, Estacionamiento..." autocomplete="off">
+        @error('DETALLE_UBICACION_ACTUAL') <span class="error-message-inline">{{ $message }}</span> @enderror
+    </div>
+
     <!-- Estatus -->
     <div>
         <span id="lbl_estado_title" style="display: block; font-weight: 700; margin-bottom: 8px; color: var(--maquinaria-dark-blue);">Estatus</span>

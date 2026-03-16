@@ -561,6 +561,7 @@ class EquipoController extends Controller
             'CODIGO_PATIO' => (trim($request->CODIGO_PATIO ?? '') === '') ? null : strtoupper($request->CODIGO_PATIO),
             'SERIAL_CHASIS' => strtoupper($request->SERIAL_CHASIS),
             'SERIAL_DE_MOTOR' => (trim($request->SERIAL_DE_MOTOR ?? '') === '') ? null : strtoupper(trim($request->SERIAL_DE_MOTOR)),
+            'DETALLE_UBICACION_ACTUAL' => (trim($request->DETALLE_UBICACION_ACTUAL ?? '') === '') ? null : strtoupper(trim($request->DETALLE_UBICACION_ACTUAL)),
         ]);
 
         if ($request->has('documentacion.PLACA')) {
@@ -841,6 +842,7 @@ class EquipoController extends Controller
             'CODIGO_PATIO' => strtoupper($request->CODIGO_PATIO),
             'SERIAL_CHASIS' => strtoupper($request->SERIAL_CHASIS),
             'SERIAL_DE_MOTOR' => (trim($request->SERIAL_DE_MOTOR ?? '') === '') ? null : strtoupper(trim($request->SERIAL_DE_MOTOR)),
+            'DETALLE_UBICACION_ACTUAL' => (trim($request->DETALLE_UBICACION_ACTUAL ?? '') === '') ? null : strtoupper(trim($request->DETALLE_UBICACION_ACTUAL)),
         ]);
 
         if ($request->has('documentacion.PLACA')) {
