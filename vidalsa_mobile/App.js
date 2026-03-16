@@ -31,17 +31,17 @@ async function getApiBase() {
 
 // ─── COLORES ──────────────────────────────────────────────────────────────────
 const C = {
-  darkBg:   '#0f172a',
-  navyBg:   '#1e293b',
-  blue:     '#2563eb',
-  green:    '#10b981',
-  orange:   '#f59e0b',
-  red:      '#ef4444',
+  darkBg: '#0f172a',
+  navyBg: '#1e293b',
+  blue: '#2563eb',
+  green: '#10b981',
+  orange: '#f59e0b',
+  red: '#ef4444',
   textPrim: '#1e293b',
-  textSec:  '#64748b',
-  border:   '#e2e8f0',
-  bgLight:  '#f8fafc',
-  white:    '#ffffff',
+  textSec: '#64748b',
+  border: '#e2e8f0',
+  bgLight: '#f8fafc',
+  white: '#ffffff',
 };
 
 // ─── BASE DE DATOS SQLITE ─────────────────────────────────────────────────────
@@ -481,7 +481,7 @@ function PantallaLogin({ onLogin }) {
 
               {/* BOTÓN PRINCIPAL: Continuar sin conexión */}
               <TouchableOpacity
-                style={{ backgroundColor: '#00004d', borderRadius: 12, paddingVertical: 16, width: '100%', alignItems: 'center', marginBottom: 12, elevation: 4, shadowColor: '#000', shadowOffset: {width:0,height:3}, shadowOpacity: 0.2, shadowRadius: 6 }}
+                style={{ backgroundColor: '#00004d', borderRadius: 12, paddingVertical: 16, width: '100%', alignItems: 'center', marginBottom: 12, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2, shadowRadius: 6 }}
                 onPress={entrarSinConexion}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -562,9 +562,9 @@ function PantallaLogin({ onLogin }) {
             {descargando
               ? <ActivityIndicator color={C.white} />
               : <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <MaterialIcons name="cloud-download" size={16} color="#fff" />
-                  <Text style={styles.btnDownloadText}>Descargar / Actualizar datos</Text>
-                </View>
+                <MaterialIcons name="cloud-download" size={16} color="#fff" />
+                <Text style={styles.btnDownloadText}>Descargar / Actualizar datos</Text>
+              </View>
             }
           </TouchableOpacity>
 
@@ -594,8 +594,8 @@ function PantallaLogin({ onLogin }) {
 // ─── BADGE DE ESTADO ─────────────────────────────────────────────────────────
 function BadgeEstado({ estado }) {
   const map = {
-    'OPERATIVO':        { bg: '#dcfce7', color: '#166534' },
-    'INOPERATIVO':      { bg: '#fee2e2', color: '#991b1b' },
+    'OPERATIVO': { bg: '#dcfce7', color: '#166534' },
+    'INOPERATIVO': { bg: '#fee2e2', color: '#991b1b' },
     'EN MANTENIMIENTO': { bg: '#fef9c3', color: '#854d0e' },
   };
   const s = map[estado] || { bg: '#e2e8f0', color: '#475569' };
@@ -612,10 +612,10 @@ function PantallaDashboard({ onOpenMenu, equiposCount }) {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
       <TopHeader onOpenMenu={onOpenMenu} />
-      
+
       <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
         <View style={{ paddingHorizontal: 20, paddingTop: 15, paddingBottom: 15 }}>
-            <Text style={[styles.dashboardTitle, {fontSize: 22, marginTop: 0, marginBottom: 5, textAlign: 'left'}]}>Sistema de Gestión de{'\n'}Equipos Operacionales</Text>
+          <Text style={[styles.dashboardTitle, { fontSize: 22, marginTop: 0, marginBottom: 5, textAlign: 'left' }]}>Sistema de Gestión de{'\n'}Equipos Operacionales</Text>
         </View>
         <View style={styles.dashboardWidgetGroup}>
           <View style={styles.widgetPremium}>
@@ -664,15 +664,15 @@ function PantallaDashboard({ onOpenMenu, equiposCount }) {
 
 // ─── PANTALLA DE EQUIPOS ──────────────────────────────────────────────────────
 function PantallaEquipos({ user, onOpenMenu }) {
-  const [equipos, setEquipos]         = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [busqueda, setBusqueda]       = useState('');
+  const [equipos, setEquipos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [busqueda, setBusqueda] = useState('');
   const [filtroFrente, setFiltroFrente] = useState('');
-  const [filtroTipo, setFiltroTipo]   = useState('');
+  const [filtroTipo, setFiltroTipo] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
-  const [equipoSel, setEquipoSel]     = useState(null);
+  const [equipoSel, setEquipoSel] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [stats, setStats]             = useState({ total: 0, inoperativos: 0, mantenimiento: 0 });
+  const [stats, setStats] = useState({ total: 0, inoperativos: 0, mantenimiento: 0 });
 
   // ─── FILTROS AVANZADOS ──────────────────────────────
   const [advancedFiltersVisible, setAdvancedFiltersVisible] = useState(false);
@@ -681,6 +681,9 @@ function PantallaEquipos({ user, onOpenMenu }) {
   const [advAnio, setAdvAnio] = useState('');
   const [advCategoria, setAdvCategoria] = useState('');
   const [advEstadoOp, setAdvEstadoOp] = useState('');
+
+  // ── ACCIONES MENU ──
+  const [menuAccionesVisible, setMenuAccionesVisible] = useState(false);
   
   // Documentos checkboxes
   const [chkPropiedad, setChkPropiedad] = useState(false);
@@ -706,8 +709,8 @@ function PantallaEquipos({ user, onOpenMenu }) {
     try {
       let data = await leerEquiposLocal(busqueda);
       if (filtroFrente) data = data.filter(e => String(e.frente || '').toLowerCase().includes(filtroFrente.toLowerCase()));
-      if (filtroTipo)   data = data.filter(e => String(e.tipo || '').toLowerCase().includes(filtroTipo.toLowerCase()));
-      
+      if (filtroTipo) data = data.filter(e => String(e.tipo || '').toLowerCase().includes(filtroTipo.toLowerCase()));
+
       // Aplicar Filtros Avanzados a la data local si están definidos
       if (advModelo) data = data.filter(e => String(e.modelo || '').toLowerCase().includes(advModelo.toLowerCase()));
       if (advMarca) data = data.filter(e => String(e.marca || '').toLowerCase().includes(advMarca.toLowerCase()));
@@ -715,11 +718,12 @@ function PantallaEquipos({ user, onOpenMenu }) {
       if (advCategoria) data = data.filter(e => String(e.categoria || '').toUpperCase() === advCategoria.toUpperCase());
       if (advEstadoOp) data = data.filter(e => String(e.estado || '').toUpperCase() === advEstadoOp.toUpperCase());
 
-      // Aplicar filtros de documentos si corresponden a la data offline
+      // Simulamos la lógica de documentos (si el checkbox está on, debe tener algún valor; 
+      // si en tu app móvil no guardas el doc como boolean puedes omitirlo o ajustarlo. Si lo guardas:
       if (chkPropiedad) data = data.filter(e => e.propietario && e.propietario !== 'N/A' && e.propietario !== '');
       if (chkPoliza) data = data.filter(e => e.tiene_poliza === 1 || e.tiene_poliza === '1' || e.tiene_poliza === true);
-      if (chkRotc) data = data.filter(e => e.tiene_rotc === 1 || e.tiene_rotc === '1' || e.tiene_rotc === true);
-      if (chkRacda) data = data.filter(e => e.tiene_racda === 1 || e.tiene_racda === '1' || e.tiene_racda === true);
+      // Nota: Si rotc/racda no están en la data offline, este filtro podría devolver vacío. 
+      // Dependerá de tu esquema SQLite.
 
       setStats({
         total: data.length,
@@ -740,10 +744,10 @@ function PantallaEquipos({ user, onOpenMenu }) {
 
   // Status map — matches web icons exactly
   const estadoMap = {
-    OPERATIVO:          { color: '#16a34a', icon: 'check-circle',  label: 'Operativo' },
-    INOPERATIVO:        { color: '#dc2626', icon: 'cancel',        label: 'Inoperativo' },
-    'EN MANTENIMIENTO': { color: '#d97706', icon: 'engineering',   label: 'Mantenimiento' },
-    DESINCORPORADO:     { color: '#475569', icon: 'archive',       label: 'Desincorporado' },
+    OPERATIVO: { color: '#16a34a', icon: 'check-circle', label: 'Operativo' },
+    INOPERATIVO: { color: '#dc2626', icon: 'cancel', label: 'Inoperativo' },
+    'EN MANTENIMIENTO': { color: '#d97706', icon: 'engineering', label: 'Mantenimiento' },
+    DESINCORPORADO: { color: '#475569', icon: 'archive', label: 'Desincorporado' },
   };
   const getEstado = (e) => estadoMap[e] || { color: '#475569', icon: 'help', label: e || 'N/A' };
 
@@ -770,7 +774,7 @@ function PantallaEquipos({ user, onOpenMenu }) {
             <Text style={{ fontSize: 14, fontWeight: '800', color: '#0f172a', marginBottom: 1 }}>{item.marca || '—'}</Text>
             <Text style={{ fontSize: 13, color: '#718096', marginBottom: 6 }}>{item.modelo || '—'}</Text>
             {item.serial_chasis ? <Text style={styles.serialLine}><Text style={styles.serialKey}>S: </Text>{item.serial_chasis}</Text> : null}
-            {item.serial_motor  ? <Text style={styles.serialLine}><Text style={styles.serialKey}>M: </Text>{item.serial_motor}</Text>  : null}
+            {item.serial_motor ? <Text style={styles.serialLine}><Text style={styles.serialKey}>M: </Text>{item.serial_motor}</Text> : null}
             {item.placa && item.placa !== 'S/P'
               ? <Text style={[styles.serialLine, { color: '#0067b1' }]}><Text style={[styles.serialKey, { color: '#0067b1' }]}>P: </Text>{item.placa}</Text>
               : <Text style={{ fontSize: 12, color: '#a0aec0', fontStyle: 'italic', marginVertical: 2 }}>Sin Placa</Text>
@@ -863,7 +867,7 @@ function PantallaEquipos({ user, onOpenMenu }) {
           </View>
           {/* Botón filtro avanzado */}
           <View style={{ position: 'relative', zIndex: 100 }}>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setAdvancedFiltersVisible(!advancedFiltersVisible)}
               style={{ width: 45, height: 45, borderWidth: 1, borderColor: advancedFiltersVisible ? '#0067b1' : '#cbd5e0', borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: advancedFiltersVisible ? '#e1effa' : '#fbfcfd' }}
             >
@@ -947,7 +951,7 @@ function PantallaEquipos({ user, onOpenMenu }) {
                     </TouchableOpacity>
                   </View>
                 </View>
-                
+
                 <TouchableOpacity onPress={() => { setAdvancedFiltersVisible(false); cargar(); }} style={{ backgroundColor: '#0067b1', borderRadius: 8, alignItems: 'center', paddingVertical: 10, marginTop: 15 }}>
                   <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Aplicar Filtros</Text>
                 </TouchableOpacity>
@@ -956,12 +960,51 @@ function PantallaEquipos({ user, onOpenMenu }) {
           </View>
         </View>
 
-        {/* Botón Acciones — azul con engranaje + chevron, igual al web */}
-        <TouchableOpacity style={{ backgroundColor: '#0067b1', borderRadius: 12, height: 45, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          <MaterialIcons name="settings" size={20} color="#fff" />
-          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Acciones</Text>
-          <MaterialIcons name="expand-more" size={20} color="#fff" />
-        </TouchableOpacity>
+        {/* Botón Acciones móvil */}
+        <View style={{ position: 'relative', zIndex: 90 }}>
+          <TouchableOpacity 
+            onPress={() => setMenuAccionesVisible(!menuAccionesVisible)}
+            style={{ backgroundColor: '#0067b1', borderRadius: 12, height: 45, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+          >
+            <MaterialIcons name="settings" size={20} color="#fff" />
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Acciones</Text>
+            <MaterialIcons name="expand-more" size={20} color="#fff" />
+          </TouchableOpacity>
+
+          {menuAccionesVisible && (
+            <View style={{ position: 'absolute', top: 52, right: 0, width: 220, backgroundColor: '#fff', borderRadius: 12, padding: 8, zIndex: 200, elevation: 15, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 10, shadowOffset: { height: 5, width: 0 }, borderWidth: 1, borderColor: '#e2e8f0' }}>
+              <TouchableOpacity onPress={() => { setMenuAccionesVisible(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, marginBottom: 4 }}>
+                <View style={{ backgroundColor: '#eff6ff', padding: 6, borderRadius: 6, marginRight: 10 }}>
+                  <MaterialIcons name="poll" size={18} color="#3b82f6" />
+                </View>
+                <Text style={{ fontSize: 13, fontWeight: '500', color: '#475569' }}>Dashboard de Flota</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => { setMenuAccionesVisible(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, marginBottom: 4 }}>
+                <View style={{ backgroundColor: '#f0fdfa', padding: 6, borderRadius: 6, marginRight: 10 }}>
+                  <MaterialIcons name="link" size={18} color="#0d9488" />
+                </View>
+                <Text style={{ fontSize: 13, fontWeight: '500', color: '#475569' }}>Configurar Anclajes</Text>
+              </TouchableOpacity>
+              
+              <View style={{ height: 1, backgroundColor: '#f1f5f9', marginVertical: 4 }} />
+
+              <TouchableOpacity onPress={() => { setMenuAccionesVisible(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, marginBottom: 4 }}>
+                <View style={{ backgroundColor: '#fffbeb', padding: 6, borderRadius: 6, marginRight: 10 }}>
+                  <MaterialIcons name="construction" size={18} color="#d97706" />
+                </View>
+                <Text style={{ fontSize: 13, fontWeight: '500', color: '#475569' }}>Sub-activos</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => { setMenuAccionesVisible(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8 }}>
+                <View style={{ backgroundColor: '#eff6ff', padding: 6, borderRadius: 6, marginRight: 10 }}>
+                  <MaterialIcons name="add-circle" size={18} color="#0ea5e9" />
+                </View>
+                <Text style={{ fontSize: 13, fontWeight: '500', color: '#475569' }}>Nuevo Equipo</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
 
         {/* CONSOLIDADO DE EQUIPOS — barra azul oscura igual que la web */}
         <View style={{ backgroundColor: '#1e293b', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
@@ -1058,24 +1101,24 @@ function PantallaEquipos({ user, onOpenMenu }) {
                     </View>
                     <View style={styles.detalleRow}>
                       <Text style={styles.detalleLabel}>Registro RACDA</Text>
-                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                         <Text style={styles.detalleValor}>N/A</Text>
                         <MaterialIcons name="cloud-upload" size={20} color="#3b82f6" />
                       </View>
                     </View>
                   </AccordionSection>
-                  
+
                   <AccordionSection title="ℹ️ Información General" initialOpen={false}>
-                    <DetalleRow label="Tipo"          valor={equipoSel.tipo} />
-                    <DetalleRow label="Marca"         valor={equipoSel.marca} />
-                    <DetalleRow label="Modelo"        valor={equipoSel.modelo} />
-                    <DetalleRow label="Año"           valor={equipoSel.anio} />
-                    <DetalleRow label="Categoría"     valor={equipoSel.categoria} />
-                    <DetalleRow label="Frente"        valor={equipoSel.frente || 'Sin Asignar'} />
+                    <DetalleRow label="Tipo" valor={equipoSel.tipo} />
+                    <DetalleRow label="Marca" valor={equipoSel.marca} />
+                    <DetalleRow label="Modelo" valor={equipoSel.modelo} />
+                    <DetalleRow label="Año" valor={equipoSel.anio} />
+                    <DetalleRow label="Categoría" valor={equipoSel.categoria} />
+                    <DetalleRow label="Frente" valor={equipoSel.frente || 'Sin Asignar'} />
                     <DetalleRow label="Detalle Ubic." valor={equipoSel.detalle_ubi} />
-                    <DetalleRow label="Código / ID"   valor={equipoSel.codigo_patio} />
-                    <DetalleRow label="Nº Etiqueta"   valor={equipoSel.nro_etiqueta} />
-                    <DetalleRow label="Serial Motor"  valor={equipoSel.serial_motor} />
+                    <DetalleRow label="Código / ID" valor={equipoSel.codigo_patio} />
+                    <DetalleRow label="Nº Etiqueta" valor={equipoSel.nro_etiqueta} />
+                    <DetalleRow label="Serial Motor" valor={equipoSel.serial_motor} />
                   </AccordionSection>
                 </ScrollView>
               </>
@@ -1266,7 +1309,7 @@ function PantallaMovilizaciones({ user, onOpenMenu }) {
       <View style={{ paddingHorizontal: 20, paddingBottom: 10, flexDirection: 'row', justifyContent: 'flex-end' }}>
         {pendientes.length > 0 && (
           <TouchableOpacity
-            style={[styles.btnSync, sincronizando && { opacity: 0.6 }, { backgroundColor: '#f59e0b', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 10, shadowColor: '#000', shadowOffset: {width:0,height:2}, shadowOpacity: 0.1, shadowRadius: 4 }]}
+            style={[styles.btnSync, sincronizando && { opacity: 0.6 }, { backgroundColor: '#f59e0b', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 }]}
             onPress={sincronizar}
             disabled={sincronizando}
           >
@@ -1405,7 +1448,7 @@ export default function App() {
       {
         text: 'Salir', style: 'destructive',
         onPress: async () => {
-          try { await api('POST', '/logout'); } catch (_) {}
+          try { await api('POST', '/logout'); } catch (_) { }
           await AsyncStorage.removeItem('token');
           await AsyncStorage.removeItem('user');
           setUser(null);
@@ -1428,18 +1471,18 @@ export default function App() {
 
   return (
     <View style={{ flex: 1 }}>
-      <DrawerMenu 
-        visible={menuVisible} 
-        onClose={() => setMenuVisible(false)} 
-        onNavigate={setActiveTab} 
+      <DrawerMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        onNavigate={setActiveTab}
         onLogout={handleLogout}
         user={user}
       />
-      
+
       <View style={{ flex: 1 }}>
         {activeTab === 'dashboard' && <PantallaDashboard onOpenMenu={() => setMenuVisible(true)} equiposCount={equiposCount} />}
-        {activeTab === 'equipos'   && <PantallaEquipos user={user} onOpenMenu={() => setMenuVisible(true)} />}
-        {activeTab === 'movs'      && <PantallaMovilizaciones user={user} onOpenMenu={() => setMenuVisible(true)} />}
+        {activeTab === 'equipos' && <PantallaEquipos user={user} onOpenMenu={() => setMenuVisible(true)} />}
+        {activeTab === 'movs' && <PantallaMovilizaciones user={user} onOpenMenu={() => setMenuVisible(true)} />}
       </View>
     </View>
   );
@@ -1447,14 +1490,14 @@ export default function App() {
 
 // ─── ESTILOS ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container:   { flex: 1, backgroundColor: C.bgLight },
-  centered:    { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  header:      { backgroundColor: C.darkBg, paddingHorizontal: 20, paddingVertical: 16, flexDirection: 'row', alignItems: 'center' },
+  container: { flex: 1, backgroundColor: C.bgLight },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+  header: { backgroundColor: C.darkBg, paddingHorizontal: 20, paddingVertical: 16, flexDirection: 'row', alignItems: 'center' },
   headerTitle: { color: C.white, fontSize: 20, fontWeight: 'bold' },
-  headerSub:   { color: '#94a3b8', fontSize: 12, marginTop: 2 },
+  headerSub: { color: '#94a3b8', fontSize: 12, marginTop: 2 },
 
-  searchBar:    { paddingHorizontal: 16, paddingVertical: 10 },
-  searchInput:  { backgroundColor: C.white, borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 12, paddingHorizontal: 15, paddingVertical: 12, fontSize: 14, color: C.textPrim },
+  searchBar: { paddingHorizontal: 16, paddingVertical: 10 },
+  searchInput: { backgroundColor: C.white, borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 12, paddingHorizontal: 15, paddingVertical: 12, fontSize: 14, color: C.textPrim },
 
   // Filter pills and dropdowns
   filterPill: {
@@ -1499,7 +1542,7 @@ const styles = StyleSheet.create({
 
   // Serial text lines in equipment card (match web: "S: XXXX", "M: YYYY", "P: ZZZZ")
   serialLine: { fontSize: 13, color: '#4a5568', marginBottom: 1 },
-  serialKey:  { fontWeight: '700', color: '#4a5568' },
+  serialKey: { fontWeight: '700', color: '#4a5568' },
 
   // Premium UI Styles
   blueCurve: {
@@ -1594,7 +1637,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f1f5f9',
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: {width:0, height:2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 3,
   },
@@ -1618,7 +1661,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: {width:0, height:4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
     elevation: 4,
@@ -1632,52 +1675,52 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  badge:     { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20 },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20 },
   badgeText: { fontSize: 10, fontWeight: 'bold' },
 
-  equipoCard:    { backgroundColor: C.white, borderRadius: 12, padding: 14, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOffset: {width:0,height:1}, shadowOpacity: 0.07, shadowRadius: 4 },
-  equipoCodigo:  { fontSize: 15, fontWeight: 'bold', color: C.textPrim },
-  equipoTipo:    { fontSize: 12, color: C.textSec, marginTop: 2 },
-  equipoFrente:  { fontSize: 12, color: C.blue, marginTop: 4 },
+  equipoCard: { backgroundColor: C.white, borderRadius: 12, padding: 14, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.07, shadowRadius: 4 },
+  equipoCodigo: { fontSize: 15, fontWeight: 'bold', color: C.textPrim },
+  equipoTipo: { fontSize: 12, color: C.textSec, marginTop: 2 },
+  equipoFrente: { fontSize: 12, color: C.blue, marginTop: 4 },
 
-  modalOverlay:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   modalContainer: { backgroundColor: C.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '90%' },
-  modalTitle:     { fontSize: 20, fontWeight: 'bold', color: C.textPrim },
-  modalSection:   { fontSize: 12, fontWeight: '700', color: C.blue, marginTop: 14, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
-  detalleRow:     { flexDirection: 'row', paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: C.bgLight },
-  detalleLabel:   { width: 110, fontSize: 13, color: C.textSec, fontWeight: '600' },
-  detalleValor:   { flex: 1, fontSize: 13, color: C.textPrim },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', color: C.textPrim },
+  modalSection: { fontSize: 12, fontWeight: '700', color: C.blue, marginTop: 14, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+  detalleRow: { flexDirection: 'row', paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: C.bgLight },
+  detalleLabel: { width: 110, fontSize: 13, color: C.textSec, fontWeight: '600' },
+  detalleValor: { flex: 1, fontSize: 13, color: C.textPrim },
 
-  sectionTitle:   { fontSize: 13, fontWeight: '700', color: C.textPrim, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
-  tipoBtn:        { flex: 1, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: C.border, alignItems: 'center' },
-  tipoBtnActive:  { backgroundColor: C.blue, borderColor: C.blue },
-  tipoBtnText:    { fontSize: 12, color: C.textSec, fontWeight: '600' },
+  sectionTitle: { fontSize: 13, fontWeight: '700', color: C.textPrim, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+  tipoBtn: { flex: 1, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: C.border, alignItems: 'center' },
+  tipoBtnActive: { backgroundColor: C.blue, borderColor: C.blue },
+  tipoBtnText: { fontSize: 12, color: C.textSec, fontWeight: '600' },
   tipoBtnActiveText: { color: C.white },
 
-  equipoBusqItem:    { backgroundColor: C.bgLight, borderRadius: 8, padding: 10, marginBottom: 4, borderWidth: 1, borderColor: C.border },
+  equipoBusqItem: { backgroundColor: C.bgLight, borderRadius: 8, padding: 10, marginBottom: 4, borderWidth: 1, borderColor: C.border },
   equipoBusqItemSel: { backgroundColor: C.blue, borderColor: C.blue },
-  equipoBusqText:    { fontSize: 13, fontWeight: '600', color: C.textPrim },
+  equipoBusqText: { fontSize: 13, fontWeight: '600', color: C.textPrim },
 
-  seleccionadosBox:   { backgroundColor: '#f0fdf4', borderRadius: 8, padding: 10, marginBottom: 12 },
+  seleccionadosBox: { backgroundColor: '#f0fdf4', borderRadius: 8, padding: 10, marginBottom: 12 },
   seleccionadosTitle: { fontSize: 13, fontWeight: '700', color: C.green, marginBottom: 4 },
-  seleccionadoItem:   { fontSize: 12, color: C.textPrim, marginTop: 2 },
+  seleccionadoItem: { fontSize: 12, color: C.textPrim, marginTop: 2 },
 
-  frenteTag:       { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: C.border, backgroundColor: C.bgLight, marginRight: 8 },
+  frenteTag: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: C.border, backgroundColor: C.bgLight, marginRight: 8 },
   frenteTagActive: { backgroundColor: C.blue, borderColor: C.blue },
-  frenteTagText:   { fontSize: 12, fontWeight: '600', color: C.textSec },
+  frenteTagText: { fontSize: 12, fontWeight: '600', color: C.textSec },
 
   pendienteItem: { backgroundColor: '#fffbeb', borderRadius: 8, padding: 10, marginBottom: 6, borderLeftWidth: 3, borderLeftColor: C.orange },
   pendienteText: { fontSize: 12, color: C.textPrim },
 
-  tabBar:   { flexDirection: 'row', backgroundColor: C.white, borderTopWidth: 1, borderTopColor: C.border, paddingBottom: Platform.OS === 'ios' ? 20 : 8, paddingTop: 8 },
-  tab:      { flex: 1, alignItems: 'center' },
-  tabIcon:  { fontSize: 22 },
+  tabBar: { flexDirection: 'row', backgroundColor: C.white, borderTopWidth: 1, borderTopColor: C.border, paddingBottom: Platform.OS === 'ios' ? 20 : 8, paddingTop: 8 },
+  tab: { flex: 1, alignItems: 'center' },
+  tabIcon: { fontSize: 22 },
   tabLabel: { fontSize: 11, color: C.textSec, marginTop: 2, fontWeight: '600' },
-  tabActive:{ color: C.blue },
+  tabActive: { color: C.blue },
 
   // PantallaLogin utilities
   loadingText: { fontSize: 14, color: C.textSec, marginTop: 12 },
-  emptyText:   { fontSize: 14, color: C.textSec, textAlign: 'center' },
+  emptyText: { fontSize: 14, color: C.textSec, textAlign: 'center' },
   btnDownload: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
   btnDownloadText: { color: C.white, fontWeight: '700', fontSize: 14 },
 

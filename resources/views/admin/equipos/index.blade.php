@@ -1143,17 +1143,17 @@
             <div class="custom-dropdown" id="saFiltroTipoDropdown" data-filter-type="tipo" data-default-label="Todos los tipos" style="font-size: 13px; width:180px;">
                 <input type="hidden" id="saFiltroTipo" name="tipo" data-filter-value value="">
                 
-                <div class="dropdown-trigger" style="padding: 0; display: flex; align-items: center; background: white; border: 1px solid #cbd5e0; border-radius: 8px; height: 38px;">
-                    <div style="padding: 0 0 0 8px; display: flex; align-items: center; color: #94a3b8;">
-                        <i class="material-icons" style="font-size: 16px;">category</i>
+                <div class="dropdown-trigger" style="padding: 0; display: flex; align-items: center; background: #fbfcfd; overflow: hidden; border: 1px solid #cbd5e0; border-radius: 8px; height: 38px;">
+                    <div style="padding: 0 10px; display: flex; align-items: center; color: #64748b;">
+                        <i class="material-icons" style="font-size: 18px;">search</i>
                     </div>
                     <input type="text" name="filter_search_dropdown" data-filter-search 
                         placeholder="Todos los tipos" 
                         aria-label="Filtrar Tipo"
-                        style="width: 100%; border: none; background: transparent; padding: 6px 5px; font-size: 13px; outline: none;"
+                        style="width: 100%; border: none; background: transparent; padding: 6px 5px; font-size: 13px; outline: none; color: #1e293b;"
                         oninput="window.filterDropdownOptions(this)"
                         autocomplete="off">
-                    <i class="material-icons" data-clear-btn style="padding: 0 5px; color: #94a3b8; font-size: 16px; display: none;" 
+                    <i class="material-icons" data-clear-btn style="padding: 0 8px; color: #64748b; font-size: 18px; display: none;" 
                        onclick="event.stopPropagation(); clearDropdownFilter('saFiltroTipoDropdown'); cargarSubActivos();">close</i>
                 </div>
 
@@ -1173,17 +1173,17 @@
             <div class="custom-dropdown" id="saFiltroFrenteDropdown" data-filter-type="frente" data-default-label="Todos los frentes" style="font-size: 13px; width:220px;">
                 <input type="hidden" id="saFiltroFrente" name="frente" data-filter-value value="">
                 
-                <div class="dropdown-trigger" style="padding: 0; display: flex; align-items: center; background: white; border: 1px solid #cbd5e0; border-radius: 8px; height: 38px;">
-                    <div style="padding: 0 0 0 8px; display: flex; align-items: center; color: #94a3b8;">
-                        <i class="material-icons" style="font-size: 16px;">place</i>
+                <div class="dropdown-trigger" style="padding: 0; display: flex; align-items: center; background: #fbfcfd; overflow: hidden; border: 1px solid #cbd5e0; border-radius: 8px; height: 38px;">
+                    <div style="padding: 0 10px; display: flex; align-items: center; color: #64748b;">
+                        <i class="material-icons" style="font-size: 18px;">search</i>
                     </div>
                     <input type="text" name="filter_search_dropdown" data-filter-search 
                         placeholder="Todos los frentes" 
                         aria-label="Filtrar Frente"
-                        style="width: 100%; border: none; background: transparent; padding: 6px 5px; font-size: 13px; outline: none;"
+                        style="width: 100%; border: none; background: transparent; padding: 6px 5px; font-size: 13px; outline: none; color: #1e293b;"
                         oninput="window.filterDropdownOptions(this)"
                         autocomplete="off">
-                    <i class="material-icons" data-clear-btn style="padding: 0 5px; color: #94a3b8; font-size: 16px; display: none;" 
+                    <i class="material-icons" data-clear-btn style="padding: 0 8px; color: #64748b; font-size: 18px; display: none;" 
                        onclick="event.stopPropagation(); clearDropdownFilter('saFiltroFrenteDropdown'); cargarSubActivos();">close</i>
                 </div>
 
