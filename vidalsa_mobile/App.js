@@ -973,14 +973,14 @@ function PantallaEquipos({ user, onOpenMenu }) {
 
           {menuAccionesVisible && (
             <View style={{ position: 'absolute', top: 52, right: 0, width: 220, backgroundColor: '#fff', borderRadius: 12, padding: 8, zIndex: 200, elevation: 15, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 10, shadowOffset: { height: 5, width: 0 }, borderWidth: 1, borderColor: '#e2e8f0' }}>
-              <TouchableOpacity onPress={() => { setMenuAccionesVisible(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, marginBottom: 4 }}>
+              <TouchableOpacity onPress={() => { setMenuAccionesVisible(false); Alert.alert('En Construcción', 'El Dashboard de Flota móvil se desarrollará próximamente.'); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, marginBottom: 4 }}>
                 <View style={{ backgroundColor: '#eff6ff', padding: 6, borderRadius: 6, marginRight: 10 }}>
                   <MaterialIcons name="poll" size={18} color="#3b82f6" />
                 </View>
                 <Text style={{ fontSize: 13, fontWeight: '500', color: '#475569' }}>Dashboard de Flota</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => { setMenuAccionesVisible(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, marginBottom: 4 }}>
+              <TouchableOpacity onPress={() => { setMenuAccionesVisible(false); Alert.alert('En Construcción', 'La configuración de Anclajes móvil se desarrollará próximamente.'); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, marginBottom: 4 }}>
                 <View style={{ backgroundColor: '#f0fdfa', padding: 6, borderRadius: 6, marginRight: 10 }}>
                   <MaterialIcons name="link" size={18} color="#0d9488" />
                 </View>
@@ -989,14 +989,14 @@ function PantallaEquipos({ user, onOpenMenu }) {
               
               <View style={{ height: 1, backgroundColor: '#f1f5f9', marginVertical: 4 }} />
 
-              <TouchableOpacity onPress={() => { setMenuAccionesVisible(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, marginBottom: 4 }}>
+              <TouchableOpacity onPress={() => { setMenuAccionesVisible(false); Alert.alert('En Construcción', 'El registro de Sub-activos móvil se desarrollará próximamente.'); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, marginBottom: 4 }}>
                 <View style={{ backgroundColor: '#fffbeb', padding: 6, borderRadius: 6, marginRight: 10 }}>
                   <MaterialIcons name="construction" size={18} color="#d97706" />
                 </View>
                 <Text style={{ fontSize: 13, fontWeight: '500', color: '#475569' }}>Sub-activos</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => { setMenuAccionesVisible(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8 }}>
+              <TouchableOpacity onPress={() => { setMenuAccionesVisible(false); Alert.alert('En Construcción', 'La creación de un Nuevo Equipo móvil se desarrollará próximamente.'); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8 }}>
                 <View style={{ backgroundColor: '#eff6ff', padding: 6, borderRadius: 6, marginRight: 10 }}>
                   <MaterialIcons name="add-circle" size={18} color="#0ea5e9" />
                 </View>
