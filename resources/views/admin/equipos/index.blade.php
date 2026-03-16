@@ -1153,9 +1153,9 @@
                     <option value="{{ $f->ID_FRENTE }}">{{ $f->NOMBRE_FRENTE }}</option>
                 @endforeach
             </select>
-            <div style="position:relative;flex:1;min-width:160px;">
+            <div style="position:relative; flex: 1; min-width:140px; max-width: 260px;">
                 <i class="material-icons" style="position:absolute;left:10px;top:10px;font-size:18px;color:#94a3b8;">search</i>
-                <input id="saFiltroSearch" type="text" placeholder="Buscar serial, marca..." oninput="cargarSubActivos()" style="height:38px;width:100%;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px 0 35px;font-size:13px;color:#1e293b;outline:none;transition:all 0.2s;" onfocus="this.style.borderColor='#0067b1'" onblur="this.style.borderColor='#cbd5e0'">
+                <input id="saFiltroSearch" type="text" placeholder="Buscar serial..." oninput="cargarSubActivos()" style="height:38px;width:100%;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px 0 32px;font-size:13px;color:#1e293b;outline:none;transition:all 0.2s;" onfocus="this.style.borderColor='#0067b1'" onblur="this.style.borderColor='#cbd5e0'">
             </div>
             <div style="position: relative; margin-left: auto;">
                 <button type="button" id="btnAccionesSubActivos" onclick="toggleSubActivosMenu(event)" class="btn-primary-maquinaria" style="padding: 0 15px; height: 38px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
@@ -1280,10 +1280,10 @@
                 <thead>
                     <tr class="table-row-header">
                         <th class="table-header-custom" style="text-align: center; width:70px;"></th>
-                        <th class="table-header-custom" style="text-align: center;">Tipo</th>
-                        <th class="table-header-custom" style="text-align: center;">Marca / Modelo</th>
-                        <th class="table-header-custom" style="text-align: center;">Serial</th>
-                        <th class="table-header-custom" style="text-align: center;">Capacidad / Año</th>
+                        <th class="table-header-custom" style="text-align: center; font-size:10px;">Tipo</th>
+                        <th class="table-header-custom" style="text-align: center; font-size:10px;">Marca / Modelo</th>
+                        <th class="table-header-custom" style="text-align: center; font-size:10px;">Serial</th>
+                        <th class="table-header-custom" style="text-align: center; font-size:10px;">Capacidad / Año</th>
                         <th class="table-header-custom" style="text-align: center; font-size:10px;">Estado</th>
                         <th class="table-header-custom" style="text-align: center; font-size:10px;">Vehículo Asociado</th>
                     </tr>
