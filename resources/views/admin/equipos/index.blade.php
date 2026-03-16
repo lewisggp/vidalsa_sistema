@@ -1139,20 +1139,63 @@
 
         {{-- Toolbar filtros --}}
         <div id="saFiltrosToolbar" style="padding:14px 20px;background:white;border-bottom:1px solid #e2e8f0;display:flex;gap:10px;flex-wrap:wrap;align-items:center;flex-shrink:0;">
-            <select id="saFiltroTipo" class="sa-select-styled" onchange="cargarSubActivos()" style="height:38px;padding:0 12px;font-size:13px;width:160px;background-color:white;">
-                <option value="">Todos los tipos</option>
-                <option value="MAQUINA_SOLDADURA">Máquina Soldadura</option>
-                <option value="PLANTA_ELECTRICA">Planta Eléctrica</option>
-                <option value="CONTENEDOR">Contenedor</option>
-                <option value="COMPRESOR">Compresor</option>
-                <option value="OTRO">Otro</option>
-            </select>
-            <select id="saFiltroFrente" class="sa-select-styled" onchange="cargarSubActivos()" style="height:38px;padding:0 12px;font-size:13px;width:180px;background-color:white;">
-                <option value="">Todos los frentes</option>
-                @foreach(\App\Models\FrenteTrabajo::orderBy('NOMBRE_FRENTE')->get() as $f)
-                    <option value="{{ $f->ID_FRENTE }}">{{ $f->NOMBRE_FRENTE }}</option>
-                @endforeach
-            </select>
+            <!-- Filtro Tipo Searchable -->
+            <div class="custom-dropdown" id="saFiltroTipoDropdown" data-filter-type="tipo" data-default-label="Todos los tipos" style="font-size: 13px; width:180px;">
+                <input type="hidden" id="saFiltroTipo" name="tipo" data-filter-value value="">
+                
+                <div class="dropdown-trigger" style="padding: 0; display: flex; align-items: center; background: white; border: 1px solid #cbd5e0; border-radius: 8px; height: 38px;">
+                    <div style="padding: 0 0 0 8px; display: flex; align-items: center; color: #94a3b8;">
+                        <i class="material-icons" style="font-size: 16px;">category</i>
+                    </div>
+                    <input type="text" name="filter_search_dropdown" data-filter-search 
+                        placeholder="Todos los tipos" 
+                        aria-label="Filtrar Tipo"
+                        style="width: 100%; border: none; background: transparent; padding: 6px 5px; font-size: 13px; outline: none;"
+                        oninput="window.filterDropdownOptions(this)"
+                        autocomplete="off">
+                    <i class="material-icons" data-clear-btn style="padding: 0 5px; color: #94a3b8; font-size: 16px; display: none;" 
+                       onclick="event.stopPropagation(); clearDropdownFilter('saFiltroTipoDropdown'); cargarSubActivos();">close</i>
+                </div>
+
+                <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible; z-index: 1000;">
+                    <div class="dropdown-item-list" style="max-height: 150px; overflow-y: auto;">
+                        <div class="dropdown-item selected" data-value="" onclick="selectOption('saFiltroTipoDropdown', '', 'Todos los tipos'); cargarSubActivos();">Todos los tipos</div>
+                        <div class="dropdown-item" data-value="MAQUINA_SOLDADURA" onclick="selectOption('saFiltroTipoDropdown', 'MAQUINA_SOLDADURA', 'Máquinas Soldadura'); cargarSubActivos();">Máquina Soldadura</div>
+                        <div class="dropdown-item" data-value="PLANTA_ELECTRICA" onclick="selectOption('saFiltroTipoDropdown', 'PLANTA_ELECTRICA', 'Plantas Eléctricas'); cargarSubActivos();">Planta Eléctrica</div>
+                        <div class="dropdown-item" data-value="CONTENEDOR" onclick="selectOption('saFiltroTipoDropdown', 'CONTENEDOR', 'Contenedores'); cargarSubActivos();">Contenedor</div>
+                        <div class="dropdown-item" data-value="COMPRESOR" onclick="selectOption('saFiltroTipoDropdown', 'COMPRESOR', 'Compresores'); cargarSubActivos();">Compresor</div>
+                        <div class="dropdown-item" data-value="OTRO" onclick="selectOption('saFiltroTipoDropdown', 'OTRO', 'Otros'); cargarSubActivos();">Otro</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtro Frente Searchable -->
+            <div class="custom-dropdown" id="saFiltroFrenteDropdown" data-filter-type="frente" data-default-label="Todos los frentes" style="font-size: 13px; width:220px;">
+                <input type="hidden" id="saFiltroFrente" name="frente" data-filter-value value="">
+                
+                <div class="dropdown-trigger" style="padding: 0; display: flex; align-items: center; background: white; border: 1px solid #cbd5e0; border-radius: 8px; height: 38px;">
+                    <div style="padding: 0 0 0 8px; display: flex; align-items: center; color: #94a3b8;">
+                        <i class="material-icons" style="font-size: 16px;">place</i>
+                    </div>
+                    <input type="text" name="filter_search_dropdown" data-filter-search 
+                        placeholder="Todos los frentes" 
+                        aria-label="Filtrar Frente"
+                        style="width: 100%; border: none; background: transparent; padding: 6px 5px; font-size: 13px; outline: none;"
+                        oninput="window.filterDropdownOptions(this)"
+                        autocomplete="off">
+                    <i class="material-icons" data-clear-btn style="padding: 0 5px; color: #94a3b8; font-size: 16px; display: none;" 
+                       onclick="event.stopPropagation(); clearDropdownFilter('saFiltroFrenteDropdown'); cargarSubActivos();">close</i>
+                </div>
+
+                <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible; z-index: 1000;">
+                    <div class="dropdown-item-list" style="max-height: 150px; overflow-y: auto;">
+                        <div class="dropdown-item selected" data-value="" onclick="selectOption('saFiltroFrenteDropdown', '', 'Todos los frentes'); cargarSubActivos();">Todos los frentes</div>
+                        @foreach(\App\Models\FrenteTrabajo::orderBy('NOMBRE_FRENTE')->get() as $f)
+                            <div class="dropdown-item" data-value="{{ $f->ID_FRENTE }}" onclick="selectOption('saFiltroFrenteDropdown', '{{ $f->ID_FRENTE }}', '{{ $f->NOMBRE_FRENTE }}'); cargarSubActivos();">{{ $f->NOMBRE_FRENTE }}</div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
             <div style="position:relative; flex: 1; min-width:140px; max-width: 260px;">
                 <i class="material-icons" style="position:absolute;left:10px;top:10px;font-size:18px;color:#94a3b8;">search</i>
                 <input id="saFiltroSearch" type="text" placeholder="Buscar serial..." oninput="cargarSubActivos()" style="height:38px;width:100%;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px 0 32px;font-size:13px;color:#1e293b;outline:none;transition:all 0.2s;" onfocus="this.style.borderColor='#0067b1'" onblur="this.style.borderColor='#cbd5e0'">
@@ -1296,7 +1339,7 @@
 
         {{-- Footer contador --}}
         <div style="padding:10px 20px;background:white;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b;flex-shrink:0;">
-            Total: <strong id="saTotalCount">—</strong> sub-activos
+            Total: <strong id="saTotalCount">—</strong> <span id="saTotalSuffix" style="font-weight: 600; text-transform: uppercase;">sub-activos</span>
         </div>
     </div>
 </div>
@@ -1488,6 +1531,18 @@ async function cargarSubActivos() {
 
         window.saLastData = json.data; // Para la descarga a Excel
         document.getElementById('saTotalCount').textContent = json.total;
+        
+        let tipoVal = document.getElementById('saFiltroTipo').value;
+        let suffix = "sub-activos";
+        if(tipoVal) {
+            const drp = document.getElementById('saFiltroTipoDropdown');
+            const searchInput = drp ? drp.querySelector('[data-filter-search]') : null;
+            if(searchInput && searchInput.value && searchInput.value !== 'Todos los tipos') {
+                suffix = searchInput.value;
+            }
+        }
+        document.getElementById('saTotalSuffix').textContent = suffix;
+        
         actualizarBadge(json.total);
 
         if (json.data.length === 0) {
