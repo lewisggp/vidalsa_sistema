@@ -1579,14 +1579,7 @@ function PantallaMovilizaciones({ user, onOpenMenu }) {
                 {searchHistorial ? <TouchableOpacity onPress={() => setSearchHistorial('')}><MaterialIcons name="close" size={18} color="#94a3b8" /></TouchableOpacity> : null}
              </View>
 
-             <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
-                <View style={{ flex: 1, borderWidth: 1, borderColor: '#cbd5e0', borderRadius: 8, height: 42, paddingHorizontal: 12, justifyContent: 'center', backgroundColor: '#fbfcfd' }}>
-                  <Text style={{ fontSize: 13, color: '#64748b' }}>Filtro Tipo ▼</Text>
-                </View>
-                <View style={{ flex: 1, borderWidth: 1, borderColor: '#cbd5e0', borderRadius: 8, height: 42, paddingHorizontal: 12, justifyContent: 'center', backgroundColor: '#fbfcfd' }}>
-                  <Text style={{ fontSize: 13, color: '#64748b' }}>Filtro Frente ▼</Text>
-                </View>
-             </View>
+
 
              {/* Indicador de carga */}
              {cargandoHist && historial.length === 0 ? (

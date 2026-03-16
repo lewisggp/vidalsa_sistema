@@ -6,6 +6,7 @@ use App\Models\Movilizacion;
 use App\Models\FrenteTrabajo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MovilizacionController extends Controller
 {
@@ -680,12 +681,13 @@ class MovilizacionController extends Controller
                 'FECHA_DESPACHO'   => $m->FECHA_DESPACHO,
                 'FECHA_RECEPCION'  => $m->FECHA_RECEPCION,
                 'equipo' => $m->equipo ? [
-                    'ID_EQUIPO'    => $m->equipo->ID_EQUIPO,
-                    'CODIGO_PATIO' => $m->equipo->CODIGO_PATIO,
-                    'MARCA'        => $m->equipo->MARCA,
-                    'MODELO'       => $m->equipo->MODELO,
-                    'TIPO'         => $m->equipo->tipo->nombre ?? 'N/A',
-                    'PLACA'        => $m->equipo->documentacion->PLACA ?? 'S/P',
+                    'ID_EQUIPO'     => $m->equipo->ID_EQUIPO,
+                    'CODIGO_PATIO'  => $m->equipo->CODIGO_PATIO,
+                    'SERIAL_CHASIS' => $m->equipo->SERIAL_CHASIS,
+                    'MARCA'         => $m->equipo->MARCA,
+                    'MODELO'        => $m->equipo->MODELO,
+                    'TIPO'          => $m->equipo->tipo->nombre ?? 'N/A',
+                    'PLACA'         => $m->equipo->documentacion->PLACA ?? 'S/P',
                 ] : null,
                 'frente_origen'  => $m->frenteOrigen ? ['ID_FRENTE' => $m->frenteOrigen->ID_FRENTE, 'NOMBRE_FRENTE' => $m->frenteOrigen->NOMBRE_FRENTE] : null,
                 'frente_destino' => $m->frenteDestino ? ['ID_FRENTE' => $m->frenteDestino->ID_FRENTE, 'NOMBRE_FRENTE' => $m->frenteDestino->NOMBRE_FRENTE] : null,
