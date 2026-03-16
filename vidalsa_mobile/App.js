@@ -682,8 +682,12 @@ function PantallaEquipos({ user, onOpenMenu }) {
   const [advCategoria, setAdvCategoria] = useState('');
   const [advEstadoOp, setAdvEstadoOp] = useState('');
 
-  // ── ACCIONES MENU ──
+  // ── ACCIONES MENU Y MODALES ──
   const [menuAccionesVisible, setMenuAccionesVisible] = useState(false);
+  const [modalDashboardVisible, setModalDashboardVisible] = useState(false);
+  const [modalAnclajesVisible, setModalAnclajesVisible] = useState(false);
+  const [modalSubActivosVisible, setModalSubActivosVisible] = useState(false);
+  const [modalNuevoEquipoVisible, setModalNuevoEquipoVisible] = useState(false);
   
   // Documentos checkboxes
   const [chkPropiedad, setChkPropiedad] = useState(false);
@@ -973,14 +977,14 @@ function PantallaEquipos({ user, onOpenMenu }) {
 
           {menuAccionesVisible && (
             <View style={{ position: 'absolute', top: 52, right: 0, width: 220, backgroundColor: '#fff', borderRadius: 12, padding: 8, zIndex: 200, elevation: 15, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 10, shadowOffset: { height: 5, width: 0 }, borderWidth: 1, borderColor: '#e2e8f0' }}>
-              <TouchableOpacity onPress={() => { setMenuAccionesVisible(false); Alert.alert('En Construcción', 'El Dashboard de Flota móvil se desarrollará próximamente.'); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, marginBottom: 4 }}>
+              <TouchableOpacity onPress={() => { setMenuAccionesVisible(false); setModalDashboardVisible(true); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, marginBottom: 4 }}>
                 <View style={{ backgroundColor: '#eff6ff', padding: 6, borderRadius: 6, marginRight: 10 }}>
                   <MaterialIcons name="poll" size={18} color="#3b82f6" />
                 </View>
                 <Text style={{ fontSize: 13, fontWeight: '500', color: '#475569' }}>Dashboard de Flota</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => { setMenuAccionesVisible(false); Alert.alert('En Construcción', 'La configuración de Anclajes móvil se desarrollará próximamente.'); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, marginBottom: 4 }}>
+              <TouchableOpacity onPress={() => { setMenuAccionesVisible(false); setModalAnclajesVisible(true); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, marginBottom: 4 }}>
                 <View style={{ backgroundColor: '#f0fdfa', padding: 6, borderRadius: 6, marginRight: 10 }}>
                   <MaterialIcons name="link" size={18} color="#0d9488" />
                 </View>
@@ -989,14 +993,14 @@ function PantallaEquipos({ user, onOpenMenu }) {
               
               <View style={{ height: 1, backgroundColor: '#f1f5f9', marginVertical: 4 }} />
 
-              <TouchableOpacity onPress={() => { setMenuAccionesVisible(false); Alert.alert('En Construcción', 'El registro de Sub-activos móvil se desarrollará próximamente.'); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, marginBottom: 4 }}>
+              <TouchableOpacity onPress={() => { setMenuAccionesVisible(false); setModalSubActivosVisible(true); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, marginBottom: 4 }}>
                 <View style={{ backgroundColor: '#fffbeb', padding: 6, borderRadius: 6, marginRight: 10 }}>
                   <MaterialIcons name="construction" size={18} color="#d97706" />
                 </View>
                 <Text style={{ fontSize: 13, fontWeight: '500', color: '#475569' }}>Sub-activos</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => { setMenuAccionesVisible(false); Alert.alert('En Construcción', 'La creación de un Nuevo Equipo móvil se desarrollará próximamente.'); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8 }}>
+              <TouchableOpacity onPress={() => { setMenuAccionesVisible(false); setModalNuevoEquipoVisible(true); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8 }}>
                 <View style={{ backgroundColor: '#eff6ff', padding: 6, borderRadius: 6, marginRight: 10 }}>
                   <MaterialIcons name="add-circle" size={18} color="#0ea5e9" />
                 </View>
@@ -1126,6 +1130,204 @@ function PantallaEquipos({ user, onOpenMenu }) {
             <TouchableOpacity style={[styles.btnPrimary, { margin: 16, marginTop: 4 }]} onPress={() => setModalVisible(false)}>
               <Text style={styles.btnPrimaryText}>Cerrar</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── MODAL DASHBOARD DE FLOTA ── */}
+      <Modal visible={modalDashboardVisible} animationType="slide" transparent={true} onRequestClose={() => setModalDashboardVisible(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 15 }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', maxHeight: '90%', flex: 1 }}>
+            <View style={{ backgroundColor: '#00004d', padding: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+                <View style={{ backgroundColor: 'rgba(59,130,246,0.2)', padding: 8, borderRadius: 10 }}>
+                   <MaterialIcons name="poll" size={24} color="#3b82f6" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '700' }}>Dashboard de Flota</Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 11 }}>Métricas y estado general operativo</Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setModalDashboardVisible(false)} style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: 6, borderRadius: 20 }}>
+                <MaterialIcons name="close" size={20} color="white" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={{ flex: 1, backgroundColor: '#f8fafc' }} contentContainerStyle={{ padding: 15 }}>
+               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' }}>
+                  <View style={{ backgroundColor: '#fff', borderRadius: 10, padding: 15, borderWidth: 1, borderColor: '#e2e8f0', width: '48%', alignItems: 'center', shadowColor: '#000', shadowOffset: {width: 0, height: 2}, shadowOpacity: 0.05, shadowRadius: 3 }}>
+                      <Text style={{ fontSize: 28, fontWeight: '900', color: '#00004d' }}>{stats.total}</Text>
+                      <Text style={{ fontSize: 11, color: '#64748b', textAlign: 'center', marginTop: 4, fontWeight: '600' }}>TOTAL EQUIPOS</Text>
+                  </View>
+                  <View style={{ backgroundColor: '#fff', borderRadius: 10, padding: 15, borderWidth: 1, borderColor: '#e2e8f0', width: '48%', alignItems: 'center', shadowColor: '#000', shadowOffset: {width: 0, height: 2}, shadowOpacity: 0.05, shadowRadius: 3 }}>
+                      <Text style={{ fontSize: 28, fontWeight: '900', color: '#10b981' }}>{stats.total - stats.inoperativos - stats.mantenimiento}</Text>
+                      <Text style={{ fontSize: 11, color: '#64748b', textAlign: 'center', marginTop: 4, fontWeight: '600' }}>OPERATIVOS</Text>
+                  </View>
+               </View>
+               <View style={{ backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0', marginTop: 15, height: 220, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: {width: 0, height: 2}, shadowOpacity: 0.05, shadowRadius: 3 }}>
+                  <MaterialIcons name="pie-chart" size={60} color="#e2e8f0" />
+                  <Text style={{ color: '#94a3b8', fontSize: 13, marginTop: 15, fontWeight: '600' }}>Gráficos y Métricas Avanzadas</Text>
+                  <Text style={{ color: '#94a3b8', fontSize: 11, marginTop: 4 }}>Disponible próximamente.</Text>
+               </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── MODAL CONFIGURAR ANCLAJES ── */}
+      <Modal visible={modalAnclajesVisible} animationType="slide" transparent={true} onRequestClose={() => setModalAnclajesVisible(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 15 }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', maxHeight: '90%', flex: 1 }}>
+            <View style={{ backgroundColor: '#00004d', padding: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+                <View style={{ backgroundColor: 'rgba(13,148,136,0.2)', padding: 8, borderRadius: 10 }}>
+                   <MaterialIcons name="link" size={24} color="#14b8a6" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '700' }}>Gestión de Anclajes</Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 11 }}>Vincular equipos a vehículos</Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setModalAnclajesVisible(false)} style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: 6, borderRadius: 20 }}>
+                <MaterialIcons name="close" size={20} color="white" />
+              </TouchableOpacity>
+            </View>
+            <View style={{ padding: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e2e8f0' }}>
+               <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#cbd5e0', borderRadius: 8, height: 42, paddingHorizontal: 12, backgroundColor: '#fbfcfd' }}>
+                  <MaterialIcons name="search" size={20} color="#94a3b8" />
+                  <TextInput placeholder="Buscar vehículos o cabezales anclables..." style={{ flex: 1, marginLeft: 8, fontSize: 13, color: '#1e293b' }} />
+               </View>
+            </View>
+            <ScrollView style={{ flex: 1, backgroundColor: '#f8fafc' }} contentContainerStyle={{ padding: 15 }}>
+               <View style={{ backgroundColor: '#fff', borderRadius: 10, padding: 15, borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 12, shadowColor: '#000', shadowOffset: {width: 0, height: 1}, shadowOpacity: 0.05, shadowRadius: 2 }}>
+                  <View style={{ width: 44, height: 44, backgroundColor: '#f1f5f9', borderRadius: 8, alignItems: 'center', justifyContent: 'center' }}>
+                     <MaterialIcons name="local-shipping" size={22} color="#64748b" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                     <Text style={{ fontSize: 13, fontWeight: '800', color: '#0f172a' }}>CHUTO</Text>
+                     <Text style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>MACK VISIÓN - 2008</Text>
+                     <Text style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>A90AN2A</Text>
+                  </View>
+                  <TouchableOpacity style={{ backgroundColor: '#0d9488', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6 }}>
+                     <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Anclar</Text>
+                  </TouchableOpacity>
+               </View>
+               <View style={{ backgroundColor: '#fff', borderRadius: 10, padding: 15, borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 12, shadowColor: '#000', shadowOffset: {width: 0, height: 1}, shadowOpacity: 0.05, shadowRadius: 2 }}>
+                  <View style={{ width: 44, height: 44, backgroundColor: '#f1f5f9', borderRadius: 8, alignItems: 'center', justifyContent: 'center' }}>
+                     <MaterialIcons name="local-shipping" size={22} color="#64748b" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                     <Text style={{ fontSize: 13, fontWeight: '800', color: '#0f172a' }}>CAMION CARGO 1721</Text>
+                     <Text style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>FORD - 2012</Text>
+                     <Text style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>A06AR9P</Text>
+                  </View>
+                  <TouchableOpacity style={{ backgroundColor: '#0d9488', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6 }}>
+                     <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Anclar</Text>
+                  </TouchableOpacity>
+               </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── MODAL SUB-ACTIVOS ── */}
+      <Modal visible={modalSubActivosVisible} animationType="slide" transparent={true} onRequestClose={() => setModalSubActivosVisible(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 15 }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', maxHeight: '90%', flex: 1 }}>
+            <View style={{ backgroundColor: '#00004d', padding: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+                <MaterialIcons name="construction" size={26} color="#f59e0b" />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '700' }}>Sub-activos</Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 11 }}>Herramientas y Equipos Menores</Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setModalSubActivosVisible(false)} style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: 6, borderRadius: 20 }}>
+                <MaterialIcons name="close" size={20} color="white" />
+              </TouchableOpacity>
+            </View>
+            <View style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: '#e2e8f0', backgroundColor: '#fff', gap: 10 }}>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <View style={{ flex: 1, borderWidth: 1, borderColor: '#cbd5e0', borderRadius: 8, height: 42, paddingHorizontal: 12, justifyContent: 'center', backgroundColor: '#fbfcfd' }}>
+                  <Text style={{ fontSize: 13, color: '#64748b' }}>Todos los tipos ▼</Text>
+                </View>
+                <View style={{ flex: 1, borderWidth: 1, borderColor: '#cbd5e0', borderRadius: 8, height: 42, paddingHorizontal: 12, justifyContent: 'center', backgroundColor: '#fbfcfd' }}>
+                  <Text style={{ fontSize: 13, color: '#64748b' }}>Todos los frentes ▼</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#cbd5e0', borderRadius: 8, height: 42, paddingHorizontal: 12, backgroundColor: '#fff' }}>
+                <MaterialIcons name="search" size={20} color="#94a3b8" />
+                <TextInput placeholder="Buscar serial..." style={{ flex: 1, marginLeft: 8, fontSize: 13, color: '#1e293b' }} />
+              </View>
+            </View>
+            <ScrollView style={{ flex: 1, backgroundColor: '#f8fafc' }} contentContainerStyle={{ padding: 15 }}>
+              <View style={{ backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0', padding: 15, marginBottom: 12, shadowColor: '#000', shadowOffset: {width: 0, height: 1}, shadowOpacity: 0.05, shadowRadius: 2 }}>
+                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <Text style={{ fontSize: 14, fontWeight: '800', color: '#00004d', textTransform: 'uppercase' }}>MAQUINA SOLDADURA</Text>
+                    <Text style={{ fontSize: 10, color: '#16a34a', backgroundColor: '#f0fdf4', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, fontWeight: '700' }}>Operativo</Text>
+                 </View>
+                 <Text style={{ fontSize: 12, color: '#475569', marginBottom: 2 }}>Lincoln · Ranger 300D · 2022</Text>
+                 <Text style={{ fontSize: 11, color: '#94a3b8' }}>Serial: <Text style={{fontWeight: '700', color: '#64748b'}}>MS-425115</Text></Text>
+                 <View style={{ marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#f1f5f9', flexDirection: 'row', alignItems: 'center' }}>
+                     <MaterialIcons name="place" size={14} color="#94a3b8" />
+                     <Text style={{ fontSize: 11, color: '#64748b', marginLeft: 4, fontWeight: '600' }}>ASIGNACION PDVSA DAL</Text>
+                 </View>
+              </View>
+              
+              <View style={{ backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0', padding: 15, marginBottom: 12, shadowColor: '#000', shadowOffset: {width: 0, height: 1}, shadowOpacity: 0.05, shadowRadius: 2 }}>
+                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <Text style={{ fontSize: 14, fontWeight: '800', color: '#00004d', textTransform: 'uppercase' }}>CONTENEDOR</Text>
+                    <Text style={{ fontSize: 10, color: '#dc2626', backgroundColor: '#fef2f2', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, fontWeight: '700' }}>Inoperativo</Text>
+                 </View>
+                 <Text style={{ fontSize: 12, color: '#475569', marginBottom: 2 }}>Generico · 20 Pies · 2020</Text>
+                 <Text style={{ fontSize: 11, color: '#94a3b8' }}>Serial: <Text style={{fontWeight: '700', color: '#64748b'}}>CXZCZSC</Text></Text>
+                 <View style={{ marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#f1f5f9', flexDirection: 'row', alignItems: 'center' }}>
+                     <MaterialIcons name="link" size={14} color="#94a3b8" />
+                     <Text style={{ fontSize: 11, color: '#64748b', marginLeft: 4, fontWeight: '600' }}>Anclado a: LOWBOY (LZZGX)</Text>
+                 </View>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── MODAL NUEVO EQUIPO ── */}
+      <Modal visible={modalNuevoEquipoVisible} animationType="slide" transparent={true} onRequestClose={() => setModalNuevoEquipoVisible(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 15 }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', maxHeight: '90%', flex: 1 }}>
+            <View style={{ backgroundColor: '#00004d', padding: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+                <View style={{ backgroundColor: 'rgba(14,165,233,0.2)', padding: 8, borderRadius: 10 }}>
+                   <MaterialIcons name="add-circle" size={24} color="#0ea5e9" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '700' }}>Nuevo Equipo</Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 11 }}>Registrar maquinaria o vehículo</Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setModalNuevoEquipoVisible(false)} style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: 6, borderRadius: 20 }}>
+                <MaterialIcons name="close" size={20} color="white" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={{ flex: 1, backgroundColor: '#fff' }} contentContainerStyle={{ padding: 20 }}>
+               <Text style={{ fontSize: 11, fontWeight: '800', color: '#64748b', marginBottom: 6, textTransform: 'uppercase' }}>TIPO DE EQUIPO *</Text>
+               <View style={{ borderWidth: 1, borderColor: '#cbd5e0', borderRadius: 8, height: 45, paddingHorizontal: 12, justifyContent: 'center', marginBottom: 18, backgroundColor: '#fbfcfd' }}>
+                  <Text style={{ fontSize: 13, color: '#94a3b8' }}>Seleccionar tipo de equipo...</Text>
+               </View>
+
+               <Text style={{ fontSize: 11, fontWeight: '800', color: '#64748b', marginBottom: 6, textTransform: 'uppercase' }}>MARCA</Text>
+               <TextInput style={{ borderWidth: 1, borderColor: '#cbd5e0', borderRadius: 8, height: 45, paddingHorizontal: 12, fontSize: 13, marginBottom: 18, backgroundColor: '#fbfcfd', color: '#1e293b' }} placeholder="Ej: Caterpillar" placeholderTextColor="#94a3b8" />
+
+               <Text style={{ fontSize: 11, fontWeight: '800', color: '#64748b', marginBottom: 6, textTransform: 'uppercase' }}>MODELO</Text>
+               <TextInput style={{ borderWidth: 1, borderColor: '#cbd5e0', borderRadius: 8, height: 45, paddingHorizontal: 12, fontSize: 13, marginBottom: 18, backgroundColor: '#fbfcfd', color: '#1e293b' }} placeholder="Ej: D8T" placeholderTextColor="#94a3b8" />
+
+               <Text style={{ fontSize: 11, fontWeight: '800', color: '#64748b', marginBottom: 6, textTransform: 'uppercase' }}>SERIAL O CHASIS *</Text>
+               <TextInput style={{ borderWidth: 1, borderColor: '#cbd5e0', borderRadius: 8, height: 45, paddingHorizontal: 12, fontSize: 13, marginBottom: 25, backgroundColor: '#fbfcfd', color: '#1e293b' }} placeholder="Escriba el serial único..." placeholderTextColor="#94a3b8" />
+               
+               <TouchableOpacity style={{ backgroundColor: '#0067b1', height: 48, borderRadius: 10, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, shadowColor: '#0067b1', shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.3, shadowRadius: 4 }}>
+                  <MaterialIcons name="save" size={20} color="#fff" />
+                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>Guardar Registro</Text>
+               </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       </Modal>
