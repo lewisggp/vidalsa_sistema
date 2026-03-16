@@ -147,6 +147,7 @@ class EquipoController extends Controller
                 'frenteActual',
                 'ancladoA',
             ])
+            ->withCount('subActivos')
             ->orderBy('tipo_equipos.nombre', 'asc')
             ->orderBy('equipos.CODIGO_PATIO', 'asc');
 
@@ -175,31 +176,6 @@ class EquipoController extends Controller
             // Return empty paginator to open the interface without showing any records initially
             $equipos = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10);
         }
-
-        $frentes = FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')->orderBy('NOMBRE_FRENTE', 'asc')->get();
-        $allTipos = TipoEquipo::orderBy('nombre', 'asc')->get();
-
-        // Advanced Filter Lists (Optimized with cache: Only needed for initial page load, not AJAX)
-        // Cache these lists for 1 hour to avoid repeated DB queries
-        $availableModelos = \Illuminate\Support\Facades\Cache::remember('equipos_modelos_dropdown', 3600, function () {
-            return Equipo::distinct()
-                ->whereNotNull('MODELO')
-                ->where('MODELO', '!=', '')
-                ->orderBy('MODELO', 'asc')
-                ->pluck('MODELO');
-        });
-
-        $availableMarcas = \Illuminate\Support\Facades\Cache::remember('equipos_marcas_dropdown', 3600, function () {
-            return Equipo::distinct()
-                ->whereNotNull('MARCA')
-                ->where('MARCA', '!=', '')
-                ->orderBy('MARCA', 'asc')
-                ->pluck('MARCA');
-        });
-
-        $availableAnios = \Illuminate\Support\Facades\Cache::remember('equipos_anios_dropdown', 3600, function () {
-            return Equipo::distinct()->whereNotNull('ANIO')->orderBy('ANIO', 'desc')->pluck('ANIO');
-        });
 
         $stats = ['total' => 0, 'activos' => 0, 'inactivos' => 0, 'mantenimiento' => 0];
         $tiposStats = collect([]);
@@ -259,6 +235,31 @@ class EquipoController extends Controller
                 'distribution' => view('admin.equipos.partials.distribution_stats', compact('frentesStats', 'tiposStats', 'hasFilter'))->render(), // Pass hasFilter explicitly
             ]);
         }
+
+        $frentes = FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')->orderBy('NOMBRE_FRENTE', 'asc')->get();
+        $allTipos = TipoEquipo::orderBy('nombre', 'asc')->get();
+
+        // Advanced Filter Lists (Optimized with cache: Only needed for initial page load, not AJAX)
+        // Cache these lists for 1 hour to avoid repeated DB queries
+        $availableModelos = \Illuminate\Support\Facades\Cache::remember('equipos_modelos_dropdown', 3600, function () {
+            return Equipo::distinct()
+                ->whereNotNull('MODELO')
+                ->where('MODELO', '!=', '')
+                ->orderBy('MODELO', 'asc')
+                ->pluck('MODELO');
+        });
+
+        $availableMarcas = \Illuminate\Support\Facades\Cache::remember('equipos_marcas_dropdown', 3600, function () {
+            return Equipo::distinct()
+                ->whereNotNull('MARCA')
+                ->where('MARCA', '!=', '')
+                ->orderBy('MARCA', 'asc')
+                ->pluck('MARCA');
+        });
+
+        $availableAnios = \Illuminate\Support\Facades\Cache::remember('equipos_anios_dropdown', 3600, function () {
+            return Equipo::distinct()->whereNotNull('ANIO')->orderBy('ANIO', 'desc')->pluck('ANIO');
+        });
 
         return view('admin.equipos.index', compact('equipos', 'stats', 'frentes', 'allTipos', 'tiposStats', 'frentesStats', 'availableModelos', 'availableMarcas', 'availableAnios'));
     }

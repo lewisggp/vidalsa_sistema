@@ -800,11 +800,11 @@ window.showDetailsImproved = function (target, event) {
     const d = target.dataset;
     const modal = document.getElementById("detailsModal");
 
-    // Reset Accordions (Close all sections)
+    // Reset Accordions (Close all sections except what we want open explicitly)
     if (modal) {
         modal
-            .querySelectorAll("details")
-            .forEach((det) => det.removeAttribute("open"));
+            .querySelectorAll("details:not(#sa_accordion)")
+            .forEach((det) => det.setAttribute("open", "open"));
     }
 
     // Helper to identify empty values
@@ -967,10 +967,15 @@ window.showDetailsImproved = function (target, event) {
     const saAccordion = document.getElementById('sa_accordion');
     const saList      = document.getElementById('sa_list');
     const saBadge     = document.getElementById('sa_count_badge');
+    const subCount = parseInt(d.subCount || "0", 10);
+
     if (saAccordion && saList && eqId) {
-        saAccordion.style.display = 'none';
-        saList.innerHTML = '<p style="color:#94a3b8;font-size:12px;text-align:center;padding:8px;">Cargando...</p>';
-        const SA_TIPO_CFG = {
+        if (subCount > 0) {
+            saAccordion.style.display = 'block';
+            saList.innerHTML = '<p style="color:#94a3b8;font-size:12px;text-align:center;padding:8px;">Cargando...</p>';
+            if (saBadge) saBadge.textContent = subCount;
+
+            const SA_TIPO_CFG = {
             MAQUINA_SOLDADURA: { icon: 'construction', color: '#f59e0b', bg: '#fff7ed', label: 'Máq. Soldadura' },
             PLANTA_ELECTRICA:  { icon: 'bolt',          color: '#eab308', bg: '#fefce8', label: 'Planta Eléc.'   },
             CONTENEDOR:        { icon: 'inventory_2',   color: '#6366f1', bg: '#eef2ff', label: 'Contenedor'     },
@@ -981,11 +986,12 @@ window.showDetailsImproved = function (target, event) {
             .then(r => r.json())
             .then(json => {
                 if (!json.ok || json.data.length === 0) {
-                    saAccordion.style.display = 'none';
+                    saList.innerHTML = '<p style="color:#94a3b8;font-size:12px;text-align:center;padding:8px;">No hay sub-activos directamente vinculados.</p>';
                     return;
                 }
                 saAccordion.style.display = 'block';
                 if (saBadge) saBadge.textContent = json.data.length;
+                
                 saList.innerHTML = json.data.map(sa => {
                     const tc = SA_TIPO_CFG[sa.tipo] || SA_TIPO_CFG.OTRO;
                     const estadoColor = sa.estado === 'OPERATIVO' ? '#16a34a' : (sa.estado === 'INOPERATIVO' ? '#dc2626' : '#64748b');
@@ -1009,7 +1015,12 @@ window.showDetailsImproved = function (target, event) {
                     </div>`;
                 }).join('');
             })
-            .catch(() => { saAccordion.style.display = 'none'; });
+            .catch(() => { 
+                saList.innerHTML = '<p style="color:#dc2626;font-size:12px;text-align:center;padding:8px;">Error al cargar.</p>'; 
+            });
+        } else {
+            saAccordion.style.display = 'none';
+        }
     }
 };
 
