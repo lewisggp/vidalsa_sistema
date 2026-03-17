@@ -1139,6 +1139,8 @@
 
         {{-- Toolbar filtros --}}
         <div id="saFiltrosToolbar" style="padding:14px 20px;background:white;border-bottom:1px solid #e2e8f0;display:flex;gap:10px;flex-wrap:wrap;align-items:center;flex-shrink:0;">
+            <!-- Filtro Tipo + Frente + Search en un grupo que no compite con Acciones -->
+            <div style="display:flex;gap:10px;flex:1;flex-wrap:wrap;align-items:center;">
             <!-- Filtro Tipo Searchable -->
             <div class="custom-dropdown" id="saFiltroTipoDropdown" data-filter-type="tipo" data-default-label="Todos los tipos" style="font-size: 13px; width:180px;">
                 <input type="hidden" id="saFiltroTipo" name="tipo" data-filter-value value="">
@@ -1196,10 +1198,11 @@
                     </div>
                 </div>
             </div>
-            <div style="position:relative; flex: 1; min-width:140px; max-width: 260px;">
+            <div style="position:relative; min-width:140px; max-width:200px; flex:0 1 200px;">
                 <i class="material-icons" style="position:absolute;left:10px;top:10px;font-size:18px;color:#94a3b8;">search</i>
-                <input id="saFiltroSearch" type="text" placeholder="Buscar serial..." oninput="cargarSubActivos()" style="height:38px;width:100%;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px 0 32px;font-size:13px;color:#1e293b;outline:none;transition:all 0.2s;" onfocus="this.style.borderColor='#0067b1'" onblur="this.style.borderColor='#cbd5e0'">
+                <input id="saFiltroSearch" type="text" placeholder="Buscar serial..." oninput="cargarSubActivos()" style="height:38px;width:100%;border:1px solid #cbd5e0;border-radius:8px;padding:0 12px 0 32px;font-size:13px;color:#1e293b;outline:none;transition:all 0.2s;box-sizing:border-box;" onfocus="this.style.borderColor='#0067b1'" onblur="this.style.borderColor='#cbd5e0'">
             </div>
+            </div><!-- fin grupo filtros -->
             <div style="position: relative; margin-left: auto;">
                 <button type="button" id="btnAccionesSubActivos" onclick="toggleSubActivosMenu(event)" class="btn-primary-maquinaria" style="padding: 0 15px; height: 38px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
                     <i class="material-icons" style="font-size:18px;">settings</i>

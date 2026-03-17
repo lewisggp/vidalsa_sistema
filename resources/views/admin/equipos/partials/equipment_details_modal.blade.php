@@ -13,10 +13,39 @@
                     GPS
                 </a>
             </div>
-            <button type="button" onclick="closeDetailsModal(event)" style="background: rgba(255,255,255,0.1); border: none; color: white; cursor: default; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">
+            <button type="button" onclick="closeDetailsModal(event)" style="background: rgba(255,255,255,0.1); border: none; color: white; cursor: default; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">
                 <i class="material-icons">close</i>
             </button>
         </div>
+        <!-- Sub-header: Ubicación Específica en Frente (siempre visible, Quick Edit) -->
+        <div style="background: rgba(255,255,255,0.07); border-top: 1px solid rgba(255,255,255,0.12); padding: 10px 25px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <i class="material-icons" style="font-size:16px; opacity:0.7;">place</i>
+            <span style="font-size:12px; opacity:0.7; font-weight:600; letter-spacing:0.5px;">UBICACIÓN ESPECÍFICA:</span>
+            <div id="ubicacion_display_wrapper" style="display: flex; align-items: center; gap: 6px;">
+                <span id="d_detalle_ubicacion" style="color: #ffffff; font-size:13px; font-weight:700; opacity:0.95;">—</span>
+                <button type="button" id="btn_edit_ubicacion" title="Editar ubicación"
+                    style="background: rgba(255,255,255,0.1); border: none; padding: 3px 6px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; color: rgba(255,255,255,0.7); transition: all 0.2s;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.2)';this.style.color='white'" onmouseout="this.style.background='rgba(255,255,255,0.1)';this.style.color='rgba(255,255,255,0.7)'"
+                    onclick="startEditUbicacion()">
+                    <i class="material-icons" style="font-size:14px;">edit</i>
+                </button>
+            </div>
+            <div id="ubicacion_edit_wrapper" style="display:none; align-items: center; gap: 6px; flex:1;">
+                <input type="text" id="input_ubicacion" maxlength="150"
+                    style="flex: 1; min-width: 180px; padding: 4px 10px; border: 1px solid rgba(255,255,255,0.4); border-radius: 8px; font-size: 13px; color: #1e293b; outline: none; background: white;"
+                    placeholder="Ej: Fase 2, Estacionamiento..."
+                    onkeydown="if(event.key==='Enter') saveUbicacion(); if(event.key==='Escape') cancelEditUbicacion();">
+                <button type="button" onclick="saveUbicacion()"
+                    style="background: rgba(255,255,255,0.9); color: #00004d; border:none; border-radius:8px; padding: 4px 12px; font-size: 12px; font-weight:700; cursor:pointer; white-space:nowrap;">
+                    Guardar
+                </button>
+                <button type="button" onclick="cancelEditUbicacion()"
+                    style="background: rgba(255,255,255,0.15); color: white; border:none; border-radius:8px; padding: 4px 10px; font-size: 12px; cursor:pointer;">
+                    ✕
+                </button>
+            </div>
+        </div>
+    </div>
 
         <!-- Modal Body -->
         <div style="padding: 25px; max-height: 80vh; overflow-y: auto;">
@@ -123,34 +152,6 @@
                             <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px;">
                                 <span style="color: #64748b;">Consumo Promedio:</span>
                                 <span id="d_consumo" style="color: #333333;"></span>
-                            </div>
-
-                            <!-- Sección / Ubicación Específica (Quick Edit) -->
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px;">
-                                <span style="color: #64748b; flex-shrink: 0;">Sección en Frente:</span>
-                                <div id="ubicacion_display_wrapper" style="display: flex; align-items: center; gap: 8px;">
-                                    <span id="d_detalle_ubicacion" style="color: #333333; font-weight: 600;">—</span>
-                                    <button type="button" id="btn_edit_ubicacion" title="Editar ubicación"
-                                        style="background: none; border: none; padding: 2px 4px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; color: #94a3b8; transition: color 0.2s;"
-                                        onmouseover="this.style.color='#0067b1'" onmouseout="this.style.color='#94a3b8'"
-                                        onclick="startEditUbicacion()">
-                                        <i class="material-icons" style="font-size:16px;">edit</i>
-                                    </button>
-                                </div>
-                                <div id="ubicacion_edit_wrapper" style="display:none; align-items: center; gap: 6px; flex: 1; margin-left: 10px;">
-                                    <input type="text" id="input_ubicacion" maxlength="150"
-                                        style="flex: 1; padding: 5px 10px; border: 1px solid #0067b1; border-radius: 8px; font-size: 13px; color: #1e293b; outline: none;"
-                                        placeholder="Ej: Fase 2, Estacionamiento..."
-                                        onkeydown="if(event.key==='Enter') saveUbicacion(); if(event.key==='Escape') cancelEditUbicacion();">
-                                    <button type="button" onclick="saveUbicacion()"
-                                        style="background:#0067b1; color:white; border:none; border-radius:8px; padding: 5px 12px; font-size: 12px; font-weight:700; cursor:pointer; white-space:nowrap;">
-                                        Guardar
-                                    </button>
-                                    <button type="button" onclick="cancelEditUbicacion()"
-                                        style="background:#f1f5f9; color:#64748b; border:none; border-radius:8px; padding: 5px 10px; font-size: 12px; cursor:pointer;">
-                                        ✕
-                                    </button>
-                                </div>
                             </div>
 
                         </div>
