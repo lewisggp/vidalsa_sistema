@@ -889,7 +889,7 @@
         window.saveMetadata = async function(e) {
             e.preventDefault();
             if (!window.CAN_UPDATE_INFO) {
-                showModal({ type: 'error', title: 'Acceso Denegado', message: 'No tienes permisos para actualizar esta información.', confirmText: 'Entendido', hideCancel: true });
+                if (window.showToast) window.showToast('No tienes permisos para actualizar', 'error');
                 return;
             }
             const ctx = window.currentPdfContext;
@@ -907,7 +907,7 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    showModal({ type: 'success', title: 'Guardado', message: 'Datos actualizados correctamente.', confirmText: 'OK', hideCancel: true });
+                    if (window.showToast) window.showToast('Datos actualizados correctamente', 'success');
                     if (window.activeEquipoButton) {
                         const d = window.activeEquipoButton.dataset;
                         if (ctx.docType === 'propiedad') {
@@ -925,7 +925,7 @@
                 } else { throw new Error(data.message); }
             } catch (error) {
                 console.error(error);
-                showModal({ type: 'error', title: 'Error', message: 'No se pudieron guardar los cambios.', confirmText: 'Cerrar', hideCancel: true });
+                if (window.showToast) window.showToast('Error: No se pudieron guardar los cambios', 'error');
             } finally {
                 btn.innerHTML = originalHTML;
                 btn.disabled = false;
