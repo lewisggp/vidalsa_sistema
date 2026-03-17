@@ -267,10 +267,26 @@
                     <iframe id="pdfPreviewFrame" src="" style="width: 100%; height: 100%; border: none; opacity: 0; transition: opacity 0.3s; position: relative; z-index: 20;" allowfullscreen></iframe>
                 </div>
 
+                <!-- Metadata Side Panel -->
+                <div id="pdfMetadataPanel" style="width: 0; background: #2d3748; border-left: 1px solid #4a5568; transition: width 0.3s ease; overflow: hidden; display: flex; flex-direction: column;" class="pdf-metadata-panel-responsive">
+                    <div style="padding: 12px; width: 300px; color: white; box-sizing: border-box;">
+                        <h4 style="margin: 0 0 15px 0; font-size: 15px; border-bottom: 1px solid #4a5568; padding-bottom: 8px;">Editar Datos del Documento</h4>
+                        
+                        <div id="metaPanelLoader" style="display: none; justify-content: center; padding: 20px;">
+                            <div class="spinner-circle" style="width: 24px; height: 24px; border-width: 2px;"></div>
+                        </div>
 
+                        <form id="pdfMetadataForm" onsubmit="saveMetadata(event)" style="display: flex; flex-direction: column; gap: 12px;">
+                            <div id="metaFieldsContainer"></div>
 
-
-            </div>
+                            @if(auth()->user() && (auth()->user()->can('equipos.edit') || auth()->user()->can('user.edit') || auth()->user()->can('super.admin')))
+                            <button type="submit" id="btnSaveMeta" style="margin-top: 8px; background: #3182ce; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; width: 100%; box-sizing: border-box;">
+                                <i class="material-icons" style="font-size: 16px;">save</i> Guardar Cambios
+                            </button>
+                            @endif
+                        </form>
+                    </div>
+                </div>
         </div>
     </div>
 
@@ -780,8 +796,21 @@
                 };
             }
             
-            // Store current context for potential future use
+            // Store current context for metadata panel
             window.currentPdfContext = { equipoId, docType, label };
+
+            // Auto-open metadata panel on desktop only
+            const panel = document.getElementById('pdfMetadataPanel');
+            if (panel) {
+                panel.style.width = '0';
+                setTimeout(() => {
+                    const isMobile = window.innerWidth <= 768;
+                    if (!isMobile) {
+                        panel.style.width = '300px';
+                        loadMetadata();
+                    }
+                }, 400);
+            }
         };
 
         // Permission Flag (Global & Exposed to External Scripts)
@@ -789,10 +818,123 @@
         window.CAN_CREATE_EQUIPOS = {{ auth()->user() && auth()->user()->can('equipos.create') ? 'true' : 'false' }};
         window.CAN_ASSIGN_EQUIPOS = {{ auth()->user() && auth()->user()->can('equipos.assign') ? 'true' : 'false' }};
         window.CAN_CHANGE_STATUS = {{ auth()->user() && auth()->user()->can('equipos.edit') ? 'true' : 'false' }};
+        // --- Metadata Side Panel Logic ---
+        window.toggleMetadataPanel = function() {
+            const panel = document.getElementById('pdfMetadataPanel');
+            if (!panel) return;
+            const isOpen = panel.style.width === '300px';
+            if (isOpen) {
+                panel.style.width = '0';
+            } else {
+                panel.style.width = '300px';
+                loadMetadata();
+            }
+        };
 
+        window.loadMetadata = async function() {
+            const ctx = window.currentPdfContext;
+            if (!ctx) return;
+            const container = document.getElementById('metaFieldsContainer');
+            const loader = document.getElementById('metaPanelLoader');
+            const form = document.getElementById('pdfMetadataForm');
+            if (loader) loader.style.display = 'flex';
+            if (form) form.style.opacity = '0.5';
+            try {
+                const res = await fetch(`/admin/equipos/${ctx.equipoId}/metadata?type=${ctx.docType}`);
+                const data = await res.json();
+                if (data.success) {
+                    const info = data.data;
+                    let html = '';
+                    const commonInputStyle = "background: #4a5568; border: 1px solid #718096; color: white; padding: 6px 8px; border-radius: 4px; width: 100%; box-sizing: border-box; font-size: 13px; height: 32px;";
+                    const labelStyle = "display: block; font-size: 12px; color: #cbd5e0; margin-bottom: 4px; font-weight: 600;";
+                    const containerStyle = "margin-bottom: 12px;";
+                    const disabledAttr = !window.CAN_UPDATE_INFO ? `disabled style="${commonInputStyle} opacity: 0.7; cursor: not-allowed;"` : `style="${commonInputStyle}"`;
+                    if (ctx.docType === 'propiedad') {
+                        html += `
+                            <div style="${containerStyle}"><label style="${labelStyle}">Nro. Documento</label><input type="text" name="nro_documento" value="${info.nro_documento || ''}" ${disabledAttr} autocomplete="off"></div>
+                            <div style="${containerStyle}"><label style="${labelStyle}">Titular</label><input type="text" name="titular" value="${info.titular || ''}" ${disabledAttr} autocomplete="off"></div>
+                            <div style="${containerStyle}"><label style="${labelStyle}">Placa</label><input type="text" name="placa" value="${info.placa || ''}" ${disabledAttr} autocomplete="off"></div>
+                            <div style="${containerStyle}"><label style="${labelStyle}">Marca</label><input type="text" name="marca" value="${info.marca || ''}" ${disabledAttr} autocomplete="off"></div>
+                            <div style="${containerStyle}"><label style="${labelStyle}">Modelo</label><input type="text" name="modelo" value="${info.modelo || ''}" ${disabledAttr} autocomplete="off"></div>
+                            <div style="${containerStyle}"><label style="${labelStyle}">Serial Chasis</label><input type="text" name="serial_chasis" value="${info.serial_chasis || ''}" ${disabledAttr} autocomplete="off"></div>
+                            <div style="${containerStyle}"><label style="${labelStyle}">Serial Motor</label><input type="text" name="serial_motor" value="${info.serial_motor || ''}" ${disabledAttr} autocomplete="off"></div>
+                        `;
+                    } else if (ctx.docType === 'poliza') {
+                        let datalistOptions = '';
+                        let currentInsurerName = '';
+                        if (info.insurers) {
+                            info.insurers.forEach(ins => {
+                                datalistOptions += `<option value="${ins.NOMBRE_ASEGURADORA}">`;
+                                if (ins.ID_SEGURO == info.id_seguro) currentInsurerName = ins.NOMBRE_ASEGURADORA;
+                            });
+                        }
+                        html += `
+                            <div style="${containerStyle}"><label style="${labelStyle}">Fecha Vencimiento</label><input type="date" name="fecha_vencimiento" value="${info.fecha_vencimiento || ''}" ${disabledAttr} autocomplete="off"></div>
+                            <div style="${containerStyle}">
+                                <label style="${labelStyle}">Aseguradora <small style="color:#94a3b8;font-weight:400;">(Seleccionar o escribir nueva)</small></label>
+                                <input type="text" name="nombre_aseguradora" list="insurersList_${ctx.equipoId}" value="${currentInsurerName || ''}" placeholder="Escriba o seleccione..." ${disabledAttr} autocomplete="off">
+                                <datalist id="insurersList_${ctx.equipoId}">${datalistOptions}</datalist>
+                            </div>
+                        `;
+                    } else if (ctx.docType === 'rotc' || ctx.docType === 'racda') {
+                        html += `<div style="${containerStyle}"><label style="${labelStyle}">Fecha Vencimiento</label><input type="date" name="fecha_vencimiento" value="${info.fecha_vencimiento || ''}" ${disabledAttr} autocomplete="off"></div>`;
+                    }
+                    container.innerHTML = html;
+                }
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = '<span style="color:#fc8181;">Error al cargar datos.</span>';
+            } finally {
+                if (loader) loader.style.display = 'none';
+                if (form) form.style.opacity = '1';
+            }
+        };
 
-
-
+        window.saveMetadata = async function(e) {
+            e.preventDefault();
+            if (!window.CAN_UPDATE_INFO) {
+                showModal({ type: 'error', title: 'Acceso Denegado', message: 'No tienes permisos para actualizar esta información.', confirmText: 'Entendido', hideCancel: true });
+                return;
+            }
+            const ctx = window.currentPdfContext;
+            const btn = document.getElementById('btnSaveMeta');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="material-icons" style="font-size:16px;">hourglass_empty</i> Guardando...';
+            btn.disabled = true;
+            try {
+                const formData = new FormData(e.target);
+                formData.append('doc_type', ctx.docType);
+                const res = await fetch(`/admin/equipos/${ctx.equipoId}/update-metadata`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'), 'Accept': 'application/json' },
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showModal({ type: 'success', title: 'Guardado', message: 'Datos actualizados correctamente.', confirmText: 'OK', hideCancel: true });
+                    if (window.activeEquipoButton) {
+                        const d = window.activeEquipoButton.dataset;
+                        if (ctx.docType === 'propiedad') {
+                            d.nroDoc = formData.get('nro_documento'); d.titular = formData.get('titular');
+                            d.placa = formData.get('placa'); d.marca = formData.get('marca');
+                            d.modelo = formData.get('modelo'); d.chasis = formData.get('serial_chasis');
+                            d.motorSerial = formData.get('serial_motor');
+                        } else if (ctx.docType === 'poliza') {
+                            d.vencSeguro = formData.get('fecha_vencimiento'); d.seguro = formData.get('nombre_aseguradora');
+                        } else if (ctx.docType === 'rotc') { d.fechaRotc = formData.get('fecha_vencimiento'); }
+                          else if (ctx.docType === 'racda') { d.fechaRacda = formData.get('fecha_vencimiento'); }
+                        showDetailsImproved(window.activeEquipoButton);
+                    }
+                    if (typeof window.refreshDashboardAlerts === 'function') window.refreshDashboardAlerts();
+                } else { throw new Error(data.message); }
+            } catch (error) {
+                console.error(error);
+                showModal({ type: 'error', title: 'Error', message: 'No se pudieron guardar los cambios.', confirmText: 'Cerrar', hideCancel: true });
+            } finally {
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }
+        };
 
         window.closePdfPreview = function() {
             const modal = document.getElementById('pdfPreviewModal');
