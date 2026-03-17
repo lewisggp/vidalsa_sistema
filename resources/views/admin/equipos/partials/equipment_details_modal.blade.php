@@ -9,30 +9,30 @@
         <div style="background: var(--maquinaria-dark-blue); color: white;">
 
             {{-- Fila principal: título + GPS + cerrar --}}
-            <div style="padding: 20px 25px; display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 15px;">
+            <div style="padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 12px;">
                     <div>
-                        <h2 id="modal_equipo_title" style="margin: 0; font-size: 20px; font-weight: 700;"></h2>
-                        <p id="modal_equipo_subtitle" style="margin: 5px 0 0 0; opacity: 0.8; font-size: 13px;"></p>
+                        <h2 id="modal_equipo_title" style="margin: 0; font-size: 17px; font-weight: 700;"></h2>
+                        <p id="modal_equipo_subtitle" style="margin: 2px 0 0 0; opacity: 0.8; font-size: 12px;"></p>
                     </div>
                     <a id="modal_gps_btn" href="#" target="_blank"
-                        style="display: none; background: #10b981; color: white; padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; text-decoration: none; align-items: center; gap: 6px; transition: 0.2s;"
+                        style="display: none; background: #10b981; color: white; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; text-decoration: none; align-items: center; gap: 4px; transition: 0.2s;"
                         onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
-                        <i class="material-icons" style="font-size: 18px;">gps_fixed</i> GPS
+                        <i class="material-icons" style="font-size: 16px;">gps_fixed</i> GPS
                     </a>
                 </div>
                 <button type="button" onclick="closeDetailsModal(event)"
-                    style="background: rgba(255,255,255,0.1); border: none; color: white; cursor: default; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0;"
+                    style="background: rgba(255,255,255,0.1); border: none; color: white; cursor: default; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0;"
                     onmouseover="this.style.background='rgba(255,255,255,0.2)'"
                     onmouseout="this.style.background='rgba(255,255,255,0.1)'">
-                    <i class="material-icons">close</i>
+                    <i class="material-icons" style="font-size: 18px;">close</i>
                 </button>
             </div>
 
             {{-- Fila secundaria: Ubicación Específica (Quick Edit) --}}
-            <div style="background: rgba(0,0,0,0.15); border-top: 1px solid rgba(255,255,255,0.1); padding: 10px 25px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <i class="material-icons" style="font-size: 15px; opacity: 0.65;">place</i>
-                <span style="font-size: 11px; opacity: 0.65; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;">Ubicación Específica:</span>
+            <div style="background: rgba(0,0,0,0.15); border-top: 1px solid rgba(255,255,255,0.1); padding: 6px 20px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <i class="material-icons" style="font-size: 14px; opacity: 0.65;">place</i>
+                <span style="font-size: 10px; opacity: 0.65; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;">Ubicación:</span>
 
                 {{-- Modo lectura --}}
                 <div id="ubicacion_display_wrapper" style="display: flex; align-items: center; gap: 6px;">
@@ -49,7 +49,7 @@
                 {{-- Modo edición --}}
                 <div id="ubicacion_edit_wrapper" style="display: none; align-items: center; gap: 6px; flex: 1;">
                     <input type="text" id="input_ubicacion" maxlength="150"
-                        style="flex: 1; min-width: 180px; padding: 4px 10px; border: 1px solid rgba(255,255,255,0.35); border-radius: 8px; font-size: 13px; color: #1e293b; outline: none; background: white;"
+                        style="flex: 1; min-width: 140px; padding: 2px 8px; border: 1px solid rgba(255,255,255,0.35); border-radius: 6px; font-size: 12px; color: #1e293b; outline: none; background: white;"
                         placeholder="Ej: Fase 2, Estacionamiento..."
                         onkeydown="if(event.key==='Enter') saveUbicacion(); if(event.key==='Escape') saveUbicacion();">
                     <button type="button" onclick="saveUbicacion()"
