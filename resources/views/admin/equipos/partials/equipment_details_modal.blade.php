@@ -125,18 +125,46 @@
                                 <span id="d_consumo" style="color: #333333;"></span>
                             </div>
 
+                            <!-- Sección / Ubicación Específica (Quick Edit) -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #f1f5f9; padding-bottom: 8px;">
+                                <span style="color: #64748b; flex-shrink: 0;">Sección en Frente:</span>
+                                <div id="ubicacion_display_wrapper" style="display: flex; align-items: center; gap: 8px;">
+                                    <span id="d_detalle_ubicacion" style="color: #333333; font-weight: 600;">—</span>
+                                    <button type="button" id="btn_edit_ubicacion" title="Editar ubicación"
+                                        style="background: none; border: none; padding: 2px 4px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; color: #94a3b8; transition: color 0.2s;"
+                                        onmouseover="this.style.color='#0067b1'" onmouseout="this.style.color='#94a3b8'"
+                                        onclick="startEditUbicacion()">
+                                        <i class="material-icons" style="font-size:16px;">edit</i>
+                                    </button>
+                                </div>
+                                <div id="ubicacion_edit_wrapper" style="display:none; align-items: center; gap: 6px; flex: 1; margin-left: 10px;">
+                                    <input type="text" id="input_ubicacion" maxlength="150"
+                                        style="flex: 1; padding: 5px 10px; border: 1px solid #0067b1; border-radius: 8px; font-size: 13px; color: #1e293b; outline: none;"
+                                        placeholder="Ej: Fase 2, Estacionamiento..."
+                                        onkeydown="if(event.key==='Enter') saveUbicacion(); if(event.key==='Escape') cancelEditUbicacion();">
+                                    <button type="button" onclick="saveUbicacion()"
+                                        style="background:#0067b1; color:white; border:none; border-radius:8px; padding: 5px 12px; font-size: 12px; font-weight:700; cursor:pointer; white-space:nowrap;">
+                                        Guardar
+                                    </button>
+                                    <button type="button" onclick="cancelEditUbicacion()"
+                                        style="background:#f1f5f9; color:#64748b; border:none; border-radius:8px; padding: 5px 10px; font-size: 12px; cursor:pointer;">
+                                        ✕
+                                    </button>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </details>
 
                 <!-- Section 3: Sub-activos vinculados (solo si el equipo tiene) -->
-                <details id="sa_accordion" name="equipment_accordion" style="background: white; border-radius: 12px; border: 1px solid #fed7aa; overflow: hidden; display: none;">
-                    <summary style="padding: 15px 20px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 10px; background: #fff7ed; list-style: none;">
-                        <i class="material-icons" style="font-size: 20px; color: #f59e0b;">construction</i>
+                <details id="sa_accordion" name="equipment_accordion" style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; display: none;">
+                    <summary style="padding: 15px 20px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 10px; background: #f8fafc; list-style: none;">
+                        <i class="material-icons" style="font-size: 20px; color: #64748b;">construction</i>
                         <span style="color: #1e293b;">Sub-activos vinculados</span>
-                        <span id="sa_count_badge" style="margin-left:6px; background:#f59e0b; color:white; font-size:11px; font-weight:800; padding:1px 8px; border-radius:20px;">0</span>
+                        <span id="sa_count_badge" style="margin-left:6px; background:#475569; color:white; font-size:11px; font-weight:800; padding:1px 8px; border-radius:20px;">0</span>
                     </summary>
-                    <div style="padding: 16px 20px; border-top: 1px solid #fed7aa;">
+                    <div style="padding: 16px 20px; border-top: 1px solid #e2e8f0;">
                         <div id="sa_list" style="display: flex; flex-direction: column; gap: 8px;">
                             <!-- se llena con JS -->
                         </div>

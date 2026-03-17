@@ -188,6 +188,7 @@
                     data-anchor-placa="{{ $equipo->ancladoA->documentacion->PLACA ?? '' }}"
                     data-anchor-serial="{{ $equipo->ancladoA->SERIAL_CHASIS ?? '' }}"
                     data-sub-count="{{ collect($equipo->subActivos)->count() ?? 0 }}"
+                    data-detalle-ubicacion="{{ $equipo->DETALLE_UBICACION_ACTUAL ?? '' }}"
                     onclick="showDetailsImproved(this, event)"
                     class="btn-details-mini" title="Ver Detalles">
                     <i class="material-icons">visibility</i>

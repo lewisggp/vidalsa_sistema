@@ -2037,6 +2037,31 @@ class EquipoController extends Controller
         }
     }
 
+    // ─── QUICK EDIT: UBICACIÓN ───────────────────────────────────────────────────
+    public function updateUbicacion(Request $request, $id)
+    {
+        $equipo = Equipo::findOrFail($id);
+
+        // Solo usuarios con permiso de actualizar pueden usar esto
+        $this->authorize('update', $equipo);
+
+        $request->validate([
+            'DETALLE_UBICACION_ACTUAL' => 'nullable|string|max:150',
+        ]);
+
+        $valor = $request->filled('DETALLE_UBICACION_ACTUAL')
+            ? strtoupper(trim($request->DETALLE_UBICACION_ACTUAL))
+            : null;
+
+        $equipo->DETALLE_UBICACION_ACTUAL = $valor;
+        $equipo->save();
+
+        return response()->json([
+            'success'               => true,
+            'DETALLE_UBICACION_ACTUAL' => $valor,
+        ]);
+    }
+
     // ─── MOBILE API ───────────────────────────────────────────────────────────────
     public function mobileIndex(Request $request)
     {
