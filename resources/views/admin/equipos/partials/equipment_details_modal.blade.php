@@ -51,13 +51,12 @@
                     <input type="text" id="input_ubicacion" maxlength="150"
                         style="flex: 1; min-width: 180px; padding: 4px 10px; border: 1px solid rgba(255,255,255,0.35); border-radius: 8px; font-size: 13px; color: #1e293b; outline: none; background: white;"
                         placeholder="Ej: Fase 2, Estacionamiento..."
-                        onkeydown="if(event.key==='Enter') saveUbicacion(); if(event.key==='Escape') cancelEditUbicacion();">
+                        onkeydown="if(event.key==='Enter') saveUbicacion(); if(event.key==='Escape') saveUbicacion();">
                     <button type="button" onclick="saveUbicacion()"
-                        style="background: rgba(255,255,255,0.9); color: #00004d; border: none; border-radius: 8px; padding: 4px 12px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;">
-                        Guardar
-                    </button>
-                    <button type="button" onclick="cancelEditUbicacion()"
-                        style="background: rgba(255,255,255,0.15); color: white; border: none; border-radius: 8px; padding: 4px 10px; font-size: 12px; cursor: pointer;">
+                        style="background: rgba(255,255,255,0.15); color: white; border: none; border-radius: 8px; padding: 4px 10px; font-size: 12px; cursor: pointer; transition: background 0.2s;"
+                        onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+                        onmouseout="this.style.background='rgba(255,255,255,0.15)'"
+                        title="Guardar y cerrar">
                         ✕
                     </button>
                 </div>
