@@ -4,24 +4,24 @@
         <i class="material-icons" style="font-size: 18px; color: #10b981;">map</i>
         Ubicación por Frente
     </h4>
-    <ul style="list-style: none; padding: 0; margin: 0; max-height: 500px; overflow-y: auto; overflow-x: visible; display: flex; flex-direction: column; gap: 8px;" class="custom-scrollbar">
+    <ul style="list-style: none; padding: 0; margin: 0; max-height: 75vh; overflow-y: auto; overflow-x: visible; display: flex; flex-direction: column; gap: 4px;" class="custom-scrollbar">
         @if($hasFilter ?? request('search_query') || request('id_frente') || request('id_tipo'))
             @php $totalFrentes = $frentesStats->sum('total'); @endphp
             @foreach($frentesStats as $stat)
                 @php $percentage = $totalFrentes > 0 ? ($stat->total / $totalFrentes) * 100 : 0; @endphp
                 <li onclick="selectOption('frenteFilterSelect', '{{ $stat->ID_FRENTE_ACTUAL }}', '{{ $stat->NOMBRE_FRENTE }}'); loadEquipos();"
-                    style="padding-bottom: 8px; border-bottom: 1px dashed #f1f5f9; transition: opacity 0.2s; cursor: default;"
+                    style="padding-bottom: 4px; border-bottom: 1px dashed #f1f5f9; transition: opacity 0.2s; cursor: pointer;"
                     onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; gap: 6px;">
-                        <span style="color: #334155; font-size: 12px; font-weight: 600; word-break: break-word; line-height: 1.3; flex: 1;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px; gap: 4px;">
+                        <span style="color: #334155; font-size: 11px; font-weight: 600; word-break: break-word; line-height: 1.2; flex: 1;">
                             {{ $stat->NOMBRE_FRENTE ?? 'Sin Asignar' }}
                         </span>
                         <span style="font-weight: 700; color: #1e293b; font-size: 11px; background: #f1f5f9; padding: 1px 6px; border-radius: 4px; flex-shrink: 0; white-space: nowrap;">
                             {{ $stat->total }}
                         </span>
                     </div>
-                    <div style="width: 100%; height: 5px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
-                        <div style="width: {{ $percentage }}%; height: 100%; background: linear-gradient(90deg, #10b981 0%, #059669 100%); border-radius: 3px;"></div>
+                    <div style="width: 100%; height: 4px; background: #e2e8f0; border-radius: 2px; overflow: hidden;">
+                        <div style="width: {{ $percentage }}%; height: 100%; background: linear-gradient(90deg, #10b981 0%, #059669 100%); border-radius: 2px;"></div>
                     </div>
                 </li>
             @endforeach
@@ -34,24 +34,24 @@
         <i class="material-icons" style="font-size: 18px; color: #3b82f6;">pie_chart</i>
         Distribución
     </h4>
-    <ul style="list-style: none; padding: 0; margin: 0; max-height: 500px; overflow-y: auto; overflow-x: visible; display: flex; flex-direction: column; gap: 8px;" class="custom-scrollbar">
+    <ul style="list-style: none; padding: 0; margin: 0; max-height: 75vh; overflow-y: auto; overflow-x: visible; display: flex; flex-direction: column; gap: 4px;" class="custom-scrollbar">
         @if($hasFilter ?? request('search_query') || request('id_frente') || request('id_tipo'))
             @php $totalStats = $tiposStats->sum('total'); @endphp
             @foreach($tiposStats as $stat)
                 @php $percentage = $totalStats > 0 ? ($stat->total / $totalStats) * 100 : 0; @endphp
                 <li onclick="selectOption('tipoFilterSelect', '{{ $stat->id_tipo_equipo }}', '{{ $stat->nombre }}'); loadEquipos();"
-                    style="padding-bottom: 8px; border-bottom: 1px dashed #f1f5f9; transition: opacity 0.2s; cursor: default;"
+                    style="padding-bottom: 4px; border-bottom: 1px dashed #f1f5f9; transition: opacity 0.2s; cursor: pointer;"
                     onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; gap: 6px;">
-                        <span style="color: #334155; font-size: 12px; font-weight: 600; word-break: break-word; line-height: 1.3; flex: 1;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px; gap: 4px;">
+                        <span style="color: #334155; font-size: 11px; font-weight: 600; word-break: break-word; line-height: 1.2; flex: 1;">
                             {{ $stat->nombre ?? 'Desconocido' }}
                         </span>
                         <span style="font-weight: 700; color: #1e293b; font-size: 11px; background: #f1f5f9; padding: 1px 6px; border-radius: 4px; flex-shrink: 0; white-space: nowrap;">
                             {{ $stat->total }}
                         </span>
                     </div>
-                    <div style="width: 100%; height: 5px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
-                        <div style="width: {{ $percentage }}%; height: 100%; background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); border-radius: 3px;"></div>
+                    <div style="width: 100%; height: 4px; background: #e2e8f0; border-radius: 2px; overflow: hidden;">
+                        <div style="width: {{ $percentage }}%; height: 100%; background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); border-radius: 2px;"></div>
                     </div>
                 </li>
             @endforeach
