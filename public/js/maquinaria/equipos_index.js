@@ -726,10 +726,11 @@ window.openBulkModal = function (event) {
     body.style.cssText = "padding:22px 24px;display:flex;flex-direction:column;gap:18px;overflow-y:auto;flex:1;";
 
     const chipsHtml = selectedList.map(item => {
-        // Prioridad: PLACA > SERIAL_CHASIS > CODIGO_PATIO
-        const placa = item.placa && item.placa !== 'N/A' && item.placa !== '' ? item.placa : null;
-        const chasis = item.chasis && item.chasis !== '' ? item.chasis : null;
-        const label = placa || chasis || (typeof item === 'object' ? item.code : item);
+        const isValid = v => v && String(v).trim() !== '' && v !== 'N/A';
+        const placa  = isValid(item.placa)  ? item.placa  : null;
+        const chasis = isValid(item.chasis) ? item.chasis : null;
+        const code   = isValid(item.code)   ? item.code   : null;
+        const label  = placa || chasis || code || `ID:${item.id || '?'}`;
         return `<span style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap;">${label}</span>`;
     }).join("");
 
