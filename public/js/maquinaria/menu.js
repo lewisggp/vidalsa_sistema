@@ -180,8 +180,8 @@ window.filterPendingMovs = function () {
 window.iniciarGestion = function (equipoId, docType) {
     // CHECK PERMISSION FIRST
     if (typeof window.CAN_UPDATE_INFO !== 'undefined' && window.CAN_UPDATE_INFO === false) {
-        if (typeof showModal === 'function') {
-            showModal({
+        if (typeof window.showModal === 'function') {
+            window.showModal({
                 type: 'error',
                 title: 'Acceso Denegado',
                 message: 'No tienes permisos para realizar esta acción (Actualizar Información).',
@@ -195,8 +195,8 @@ window.iniciarGestion = function (equipoId, docType) {
     }
 
     // Check if modal system exists
-    if (typeof showModal === 'function') {
-        showModal({
+    if (typeof window.showModal === 'function') {
+        window.showModal({
             type: 'info',
             title: 'Iniciar Gestión',
             message: '¿Confirma que su frente comenzará a gestionar este documento? <br><small>Se registrará su frente como responsable de la renovación.</small>',
@@ -247,8 +247,8 @@ async function ejecutarIniciarGestion(equipoId, docType) {
         console.error('Error:', error);
         if (typeof window.showToast === 'function') {
             window.showToast(`Error: ${error.message}`, 'error');
-        } else if (typeof showModal === 'function') {
-            showModal({ type: 'error', title: 'Error', message: error.message });
+        } else if (typeof window.showModal === 'function') {
+            window.showModal({ type: 'error', title: 'Error', message: error.message });
         } else {
             alert(error.message);
         }
