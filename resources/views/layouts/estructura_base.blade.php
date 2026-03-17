@@ -780,14 +780,9 @@
                 };
             }
             
-            // Allow metadata editing - store current context
+            // Store current context for potential future use
             window.currentPdfContext = { equipoId, docType, label };
-            
-            // AUTO-OPEN metadata panel on first load for better UX
-            const panel = document.getElementById('pdfMetadataPanel');
-            if(panel) {
-                // Ensure starting from 0 to prevent ghosting from previous 
-        // --- Metadata Side Panel Logic (Removed) ---
+        };
 
         // Permission Flag (Global & Exposed to External Scripts)
         window.CAN_UPDATE_INFO = {{ auth()->user() && (auth()->user()->can('equipos.edit') || auth()->user()->can('user.edit') || auth()->user()->can('super.admin')) ? 'true' : 'false' }};
