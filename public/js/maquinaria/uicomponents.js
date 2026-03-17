@@ -827,9 +827,7 @@ window.showDetailsImproved = function (target, event) {
         return dateStr;
     };
 
-    // Header
-    // Header
-    // Header - Simplified (Original Style)
+    // ── Título y subtítulo del modal
     // FORCE UPDATE title with Type
     const typeText = target.getAttribute("data-tipo") || d.tipo || "Equipo";
     const titleVal =
@@ -855,21 +853,6 @@ window.showDetailsImproved = function (target, event) {
         }
     }
 
-    // Foto
-    const photoImg = document.getElementById("d_foto_equipo");
-    const photoIcon = document.getElementById("d_foto_placeholder");
-    if (photoImg && photoIcon) {
-        if (isValid(d.foto)) {
-            const driveId = d.foto.replace(/^.*\/storage\/google\//, "").split("?")[0];
-            photoImg.src = `/storage/google/${driveId}`;
-            photoImg.style.display = "block";
-            photoIcon.style.display = "none";
-        } else {
-            photoImg.style.display = "none";
-            photoImg.src = "";
-            photoIcon.style.display = "block";
-        }
-    }
 
     // General Info (d_marca, d_modelo, d_motor_serial ocultos — ya aparecen en la tabla principal)
     set("d_anio", d.anio);

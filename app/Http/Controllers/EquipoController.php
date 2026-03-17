@@ -2040,10 +2040,12 @@ class EquipoController extends Controller
     // ─── QUICK EDIT: UBICACIÓN ───────────────────────────────────────────────────
     public function updateUbicacion(Request $request, $id)
     {
-        $equipo = Equipo::findOrFail($id);
+        // Requiere el mismo permiso que editar equipos
+        if (! auth()->user()?->can('equipos.edit')) {
+            return response()->json(['success' => false, 'error' => 'Sin permisos'], 403);
+        }
 
-        // Solo usuarios con permiso de actualizar pueden usar esto
-        $this->authorize('update', $equipo);
+        $equipo = Equipo::findOrFail($id);
 
         $request->validate([
             'DETALLE_UBICACION_ACTUAL' => 'nullable|string|max:150',
@@ -2057,7 +2059,7 @@ class EquipoController extends Controller
         $equipo->save();
 
         return response()->json([
-            'success'               => true,
+            'success'                 => true,
             'DETALLE_UBICACION_ACTUAL' => $valor,
         ]);
     }
