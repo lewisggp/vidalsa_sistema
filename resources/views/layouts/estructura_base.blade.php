@@ -235,9 +235,6 @@
                         <input type="file" id="pdfUpdateInput" accept="application/pdf" style="display: none;">
                     </label>
 
-                    <button onclick="toggleMetadataPanel()" style="background: #d97706; border: none; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: white; border-radius: 50%; cursor: pointer;" title="Editar Metadatos">
-                        <i class="material-icons" style="font-size: 18px;">edit_note</i>
-                    </button>
                     @endif
 
                     <button onclick="closePdfPreview()" style="background: none; border: none; color: #cbd5e0; padding: 4px; display: flex; align-items: center; cursor: pointer;">
@@ -270,27 +267,7 @@
                     <iframe id="pdfPreviewFrame" src="" style="width: 100%; height: 100%; border: none; opacity: 0; transition: opacity 0.3s; position: relative; z-index: 20;" allowfullscreen></iframe>
                 </div>
 
-                <!-- Metadata Side Panel (Restored) -->
-                <div id="pdfMetadataPanel" style="width: 0; background: #2d3748; transition: width 0.3s ease; overflow: hidden; display: flex; flex-direction: column;" class="pdf-metadata-panel-responsive">
-                    <div style="padding: 12px; width: 300px; color: white; box-sizing: border-box;">
-                        <h4 style="margin: 0 0 15px 0; font-size: 15px; border-bottom: 1px solid #4a5568; padding-bottom: 8px;">Editar Datos del Documento</h4>
-                        
-                        <div id="metaPanelLoader" style="display: none; justify-content: center; padding: 20px;">
-                            <div class="spinner-circle" style="width: 24px; height: 24px; border-width: 2px;"></div>
-                        </div>
 
-                        <form id="pdfMetadataForm" onsubmit="saveMetadata(event)" style="display: flex; flex-direction: column; gap: 12px;">
-                            <!-- Dynamic Content -->
-                            <div id="metaFieldsContainer"></div>
-
-                            @if(auth()->user() && (auth()->user()->can('equipos.edit') || auth()->user()->can('user.edit') || auth()->user()->can('super.admin')))
-                            <button type="submit" id="btnSaveMeta" style="margin-top: 8px; background: #3182ce; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; width: 100%; box-sizing: border-box;">
-                                <i class="material-icons" style="font-size: 16px;">save</i> Guardar Cambios
-                            </button>
-                            @endif
-                        </form>
-                    </div>
-                </div>
 
 
             </div>
@@ -810,32 +787,7 @@
             const panel = document.getElementById('pdfMetadataPanel');
             if(panel) {
                 // Ensure starting from 0 to prevent ghosting from previous 
-                panel.style.width = '0';
-                
-                // Open panel automatically ONLY if not on mobile layout
-                setTimeout(() => {
-                    const isMobile = window.innerWidth <= 768;
-                    if (!isMobile) {
-                        panel.style.width = '300px';
-                        loadMetadata();
-                    }
-                }, 400); // Small delay to let modal animate in
-            }
-        };
-
-        // --- Metadata Side Panel Logic (Restored) ---
-        window.toggleMetadataPanel = function() {
-            const panel = document.getElementById('pdfMetadataPanel');
-            if (!panel) return;
-            
-            const isOpen = panel.style.width === '300px';
-            if (isOpen) {
-                panel.style.width = '0';
-            } else {
-                panel.style.width = '300px';
-                loadMetadata();
-            }
-        };
+        // --- Metadata Side Panel Logic (Removed) ---
 
         // Permission Flag (Global & Exposed to External Scripts)
         window.CAN_UPDATE_INFO = {{ auth()->user() && (auth()->user()->can('equipos.edit') || auth()->user()->can('user.edit') || auth()->user()->can('super.admin')) ? 'true' : 'false' }};
@@ -844,284 +796,7 @@
         window.CAN_CHANGE_STATUS = {{ auth()->user() && auth()->user()->can('equipos.edit') ? 'true' : 'false' }};
 
 
-        window.loadMetadata = async function() {
-            const ctx = window.currentPdfContext;
-            if (!ctx) return;
 
-            const container = document.getElementById('metaFieldsContainer');
-            const loader = document.getElementById('metaPanelLoader');
-            const form = document.getElementById('pdfMetadataForm');
-            
-            if (loader) loader.style.display = 'flex';
-            if (form) form.style.opacity = '0.5';
-            
-            try {
-                const res = await fetch(`/admin/equipos/${ctx.equipoId}/metadata?type=${ctx.docType}`);
-                const data = await res.json();
-                
-                if (data.success) {
-                    const info = data.data;
-                    let html = '';
-
-                    // Compact styles for 300px panel
-                    const commonInputStyle = "background: #4a5568; border: 1px solid #718096; color: white; padding: 6px 8px; border-radius: 4px; width: 100%; box-sizing: border-box; font-size: 13px; height: 32px;";
-                    const labelStyle = "display: block; font-size: 12px; color: #cbd5e0; margin-bottom: 4px; font-weight: 600;";
-                    const containerStyle = "margin-bottom: 12px;";
-                    
-                    // Helper to disable inputs if no permission (Uses window.CAN_UPDATE_INFO)
-                    // If disabled: Use SAME style but add transparency and disabled attribute
-                    const disabledAttr = !window.CAN_UPDATE_INFO ? `disabled style="${commonInputStyle} opacity: 0.7; cursor: not-allowed;"` : `style="${commonInputStyle}"`;
-
-                    if (ctx.docType === 'propiedad') {
-                        html += `
-                            <div style="${containerStyle}">
-                                <label for="meta_nro_documento" style="${labelStyle}">Nro. Documento</label>
-                                <input type="text" id="meta_nro_documento" name="nro_documento" value="${info.nro_documento || ''}" ${disabledAttr} autocomplete="off">
-                            </div>
-                            <div style="${containerStyle}">
-                                <label for="meta_titular" style="${labelStyle}">Titular</label>
-                                <input type="text" id="meta_titular" name="titular" value="${info.titular || ''}" ${disabledAttr} autocomplete="off">
-                            </div>
-                            <div style="${containerStyle}">
-                                <label for="meta_placa" style="${labelStyle}">Placa</label>
-                                <input type="text" id="meta_placa" name="placa" value="${info.placa || ''}" ${disabledAttr} autocomplete="off">
-                            </div>
-                            <div style="${containerStyle}">
-                                <label for="meta_marca" style="${labelStyle}">Marca</label>
-                                <input type="text" id="meta_marca" name="marca" value="${info.marca || ''}" ${disabledAttr} autocomplete="off">
-                            </div>
-                             <div style="${containerStyle}">
-                                <label for="meta_modelo" style="${labelStyle}">Modelo</label>
-                                <input type="text" id="meta_modelo" name="modelo" value="${info.modelo || ''}" ${disabledAttr} autocomplete="off">
-                            </div>
-                            <div style="${containerStyle}">
-                                <label for="meta_serial_chasis" style="${labelStyle}">Serial Chasis</label>
-                                <input type="text" id="meta_serial_chasis" name="serial_chasis" value="${info.serial_chasis || ''}" ${disabledAttr} autocomplete="off">
-                            </div>
-                            <div style="${containerStyle}">
-                                <label for="meta_serial_motor" style="${labelStyle}">Serial Motor</label>
-                                <input type="text" id="meta_serial_motor" name="serial_motor" value="${info.serial_motor || ''}" ${disabledAttr} autocomplete="off">
-                            </div>
-                        `;
-                    } else if (ctx.docType === 'poliza') {
-                        // Build datalist options for autocomplete
-                        let datalistOptions = '';
-                        let currentInsurerName = '';
-                        
-                        if (info.insurers) {
-                            info.insurers.forEach(ins => {
-                                datalistOptions += `<option value="${ins.NOMBRE_ASEGURADORA}">`;
-                                if (ins.ID_SEGURO == info.id_seguro) {
-                                    currentInsurerName = ins.NOMBRE_ASEGURADORA;
-                                }
-                            });
-                        }
-
-                        html += `
-                            <div style="${containerStyle}">
-                                <label for="meta_fecha_vencimiento" style="${labelStyle}">Fecha Vencimiento</label>
-                                <input type="date" id="meta_fecha_vencimiento" name="fecha_vencimiento" value="${info.fecha_vencimiento || ''}" ${disabledAttr} autocomplete="off">
-                            </div>
-                            <div style="${containerStyle}">
-                                <label for="meta_nombre_aseguradora" style="${labelStyle}">Aseguradora <small style="color: #94a3b8; font-weight: 400;">(Seleccionar o escribir nueva)</small></label>
-                                <input type="text" 
-                                       id="meta_nombre_aseguradora"
-                                       name="nombre_aseguradora" 
-                                       list="insurersList_${ctx.equipoId}" 
-                                       value="${currentInsurerName || ''}" 
-                                       placeholder="Escriba o seleccione una aseguradora..."
-                                       ${disabledAttr}
-                                       autocomplete="off">
-                                <datalist id="insurersList_${ctx.equipoId}">
-                                    ${datalistOptions}
-                                </datalist>
-                            </div>
-                        `;
-                    } else if (ctx.docType === 'rotc' || ctx.docType === 'racda') {
-                        html += `
-                            <div style="${containerStyle}">
-                                <label for="meta_fecha_vencimiento_r" style="${labelStyle}">Fecha Vencimiento</label>
-                                <input type="date" id="meta_fecha_vencimiento_r" name="fecha_vencimiento" value="${info.fecha_vencimiento || ''}" ${disabledAttr} autocomplete="off">
-                            </div>
-                        `;
-                    }
-
-                    container.innerHTML = html;
-                }
-            } catch (e) {
-                console.error(e);
-                container.innerHTML = '<span style="color: #fc8181;">Error al cargar datos.</span>';
-            } finally {
-                if (loader) loader.style.display = 'none';
-                if (form) form.style.opacity = '1';
-            }
-        };
-
-        window.saveMetadata = async function(e) {
-            e.preventDefault();
-            
-            // PERMISSION CHECK
-            if (!window.CAN_UPDATE_INFO) {
-                showModal({ 
-                    type: 'error', 
-                    title: 'Acceso Denegado', 
-                    message: 'No tienes permisos para actualizar esta información.', 
-                    confirmText: 'Entendido', 
-                    hideCancel: true 
-                });
-                return;
-            }
-
-            const ctx = window.currentPdfContext;
-            const btn = document.getElementById('btnSaveMeta');
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<i class="material-icons" style="font-size: 16px;">hourglass_empty</i> Guardando...';
-            btn.disabled = true;
-
-            try {
-                const formData = new FormData(e.target);
-                formData.append('doc_type', ctx.docType);
-
-                // Validation for 'propiedad' (Required fields except Serial Motor)
-                if (ctx.docType === 'propiedad') {
-                    const requiredFields = [
-                        { name: 'nro_documento', label: 'Nro. de Documento' },
-                        { name: 'titular', label: 'Titular' },
-                        { name: 'placa', label: 'Placa' },
-                        { name: 'marca', label: 'Marca' },
-                        { name: 'modelo', label: 'Modelo' },
-                        { name: 'serial_chasis', label: 'Serial de Chasis' }
-                    ];
-
-                    for (let field of requiredFields) {
-                        const val = formData.get(field.name);
-                        if (!val || val.trim() === '') {
-                            showModal({ 
-                                type: 'error', 
-                                title: 'Campo Requerido', 
-                                message: `El campo "<b>${field.label}</b>" es obligatorio.`, 
-                                confirmText: 'Entendido', 
-                                hideCancel: true 
-                            });
-                            btn.innerHTML = originalHTML;
-                            btn.disabled = false;
-                            return; // Stop submission
-                        }
-                    }
-                } else if (ctx.docType === 'poliza') {
-                    // Validation for 'poliza' (Expiration and Insurer)
-                    const requiredFields = [
-                        { name: 'fecha_vencimiento', label: 'Fecha Vencimiento' },
-                        { name: 'nombre_aseguradora', label: 'Aseguradora' }
-                    ];
-
-                    for (let field of requiredFields) {
-                        const val = formData.get(field.name);
-                        if (!val || val.trim() === '') {
-                            showModal({ 
-                                type: 'error', 
-                                title: 'Campo Requerido', 
-                                message: `El campo "<b>${field.label}</b>" es obligatorio.`, 
-                                confirmText: 'Entendido', 
-                                hideCancel: true 
-                            });
-                            btn.innerHTML = originalHTML;
-                            btn.disabled = false;
-                            return; // Stop submission
-                        }
-                    }
-                } else if (ctx.docType === 'rotc' || ctx.docType === 'racda') {
-                    // Validation for ROTC / RACDA (Only Expiration Date)
-                    const val = formData.get('fecha_vencimiento');
-                    if (!val || val.trim() === '') {
-                        showModal({ 
-                            type: 'error', 
-                            title: 'Campo Requerido', 
-                            message: `El campo "<b>Fecha Vencimiento</b>" es obligatorio.`, 
-                            confirmText: 'Entendido', 
-                            hideCancel: true 
-                        });
-                        btn.innerHTML = originalHTML;
-                        btn.disabled = false;
-                        return; // Stop submission
-                    }
-                }
-
-                const res = await fetch(`/admin/equipos/${ctx.equipoId}/update-metadata`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                        'Accept': 'application/json'
-                    },
-                    body: formData
-                });
-
-                const data = await res.json();
-                if (data.success) {
-                    showModal({ type: 'success', title: 'Guardado', message: 'Datos actualizados correctamente.', confirmText: 'OK', hideCancel: true });
-                    
-                    // Update the dataset and UI of the underlying row to reflect changes immediately
-                    if (window.activeEquipoButton) {
-                        const d = window.activeEquipoButton.dataset;
-                        const row = window.activeEquipoButton.closest('tr');
-                        
-                        if (ctx.docType === 'propiedad') {
-                             // Update dataset (camelCase for JS)
-                             d.nroDoc = formData.get('nro_documento');
-                             d.titular = formData.get('titular');
-                             d.placa = formData.get('placa');
-                             d.marca = formData.get('marca');
-                             d.modelo = formData.get('modelo');
-                             d.chasis = formData.get('serial_chasis');
-                             d.motorSerial = formData.get('serial_motor');
-
-                             // Update visible UI in the table row
-                             if (row && row.cells.length >= 4) {
-                                 // Marca/Modelo (Column 3, index 2)
-                                 const mmCell = row.cells[2];
-                                 if (mmCell) {
-                                     mmCell.innerHTML = `<div style="font-weight: 700; font-size: 14px; color: #000;">${d.marca}</div>
-                                                         <div style="font-size: 14px; color: #718096;">${d.modelo}</div>`;
-                                 }
-                                 // Serials/Placa/ID (Column 4, index 3)
-                                 const sCell = row.cells[3];
-                                 if (sCell) {
-                                     let placaHtml = d.placa && d.placa !== 'N/A' ? `<div style="color: var(--maquinaria-blue); margin-top: 1px;"><strong>P:</strong> ${d.placa}</div>` : `<div style="color: #a0aec0; margin-top: 1px; font-style: italic;">Sin Placa</div>`;
-                                     sCell.innerHTML = `<div style="color: #4a5568;"><strong>S:</strong> ${d.chasis}</div>
-                                                        ${placaHtml}
-                                                        <div style="color: #2d3748; margin-top: 1px; font-weight: 600;"><strong>ID:</strong> ${d.codigo || 'N/A'}</div>`;
-                                 }
-                             }
-                        } else if (ctx.docType === 'poliza') {
-                             d.vencSeguro = formData.get('fecha_vencimiento');
-                             d.seguro = formData.get('nombre_aseguradora');
-                        } else if (ctx.docType === 'rotc') {
-                             d.fechaRotc = formData.get('fecha_vencimiento');
-                        } else if (ctx.docType === 'racda') {
-                             d.fechaRacda = formData.get('fecha_vencimiento');
-                        }
-
-                        // Refresh details modal to show updated values in its fields
-                        showDetailsImproved(window.activeEquipoButton);
-                    }
-                    
-                    // Refresh Dashboard Alerts if function exists
-                    if (typeof window.refreshDashboardAlerts === 'function') {
-                        window.refreshDashboardAlerts();
-                    }
-                } else {
-                    throw new Error(data.message);
-                }
-            } catch (error) {
-                console.error(error);
-                showModal({ type: 'error', title: 'Error', message: 'No se pudieron guardar los cambios.', confirmText: 'Cerrar', hideCancel: true });
-            } finally {
-                btn.innerHTML = originalHTML;
-                btn.disabled = false;
-            }
-        };
-
-        // --- Metadata Side Panel Logic ---
 
 
         window.closePdfPreview = function() {
@@ -1262,14 +937,6 @@
                             }
 
 
-
-                            // Auto-open metadata panel after successful upload (Restored)
-                            setTimeout(() => {
-                                const panel = document.getElementById('pdfMetadataPanel');
-                                if (panel && panel.style.width !== '300px') {
-                                    toggleMetadataPanel();
-                                }
-                            }, 800); // Small delay to ensure iframe is loaded
                             showModal({ type: 'success', title: 'Actualizado', message: 'Documento actualizado exitosamente.', confirmText: 'OK', hideCancel: true });
                             
                             // Refresh Dashboard Alerts if function exists

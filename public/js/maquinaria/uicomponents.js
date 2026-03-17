@@ -1019,6 +1019,15 @@ window.showDetailsImproved = function (target, event) {
 
 window.closeDetailsModal = function (event) {
     if (event) event.preventDefault();
+    
+    // Auto-save quick edit if it's currently open
+    const editWrapper = document.getElementById("ubicacion_edit_wrapper");
+    if (editWrapper && editWrapper.style.display !== "none") {
+        if (typeof window.saveUbicacion === "function") {
+            window.saveUbicacion();
+        }
+    }
+
     const modal = document.getElementById("detailsModal");
     if (modal) {
         modal.classList.remove("active");
