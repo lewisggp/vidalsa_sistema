@@ -825,19 +825,8 @@
         window.CAN_CREATE_EQUIPOS = {{ auth()->user() && auth()->user()->can('equipos.create') ? 'true' : 'false' }};
         window.CAN_ASSIGN_EQUIPOS = {{ auth()->user() && auth()->user()->can('equipos.assign') ? 'true' : 'false' }};
         window.CAN_CHANGE_STATUS = {{ auth()->user() && auth()->user()->can('equipos.edit') ? 'true' : 'false' }};
-        // --- Metadata Side Panel Logic ---
-        window.toggleMetadataPanel = function() {
-            const panel = document.getElementById('pdfMetadataPanel');
-            if (!panel) return;
-            const isOpen = panel.style.width === '300px';
-            if (isOpen) {
-                panel.style.width = '0';
-            } else {
-                panel.style.width = '300px';
-                loadMetadata();
-            }
-        };
 
+        // --- Metadata Side Panel Logic ---
         window.loadMetadata = async function() {
             const ctx = window.currentPdfContext;
             if (!ctx) return;
