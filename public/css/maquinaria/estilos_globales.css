@@ -2090,18 +2090,26 @@ input:-webkit-autofill:active {
 /* --- GLOBAL MODAL FIX (Force Resizing on Mobile for Equipos Page) --- */
 @media (max-width: 768px) {
     #detailsModal .modal-content {
-        width: 95% !important;
-        max-width: 95% !important;
-        margin: 10px auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 5px auto !important;
         height: auto !important;
         max-height: 90vh !important;
-        border-radius: 16px !important;
+        border-radius: 12px !important;
+        display: flex;
+        flex-direction: column;
     }
 
     #detailsModal .modal-overlay {
-        padding: 10px !important;
+        padding: 5px !important;
         align-items: center !important;
         /* Center vertically */
+    }
+
+    /* Fix long serials breaking the header on mobile */
+    #modal_equipo_title, #modal_equipo_subtitle {
+        word-break: break-word;
+        white-space: normal;
     }
 }
 

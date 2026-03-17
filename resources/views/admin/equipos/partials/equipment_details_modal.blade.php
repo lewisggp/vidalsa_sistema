@@ -9,17 +9,19 @@
         <div style="background: var(--maquinaria-dark-blue); color: white;">
 
             {{-- Fila principal: título + GPS + cerrar --}}
-            <div style="padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="padding: 12px 20px; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
                     <div>
                         <h2 id="modal_equipo_title" style="margin: 0; font-size: 17px; font-weight: 700;"></h2>
                         <p id="modal_equipo_subtitle" style="margin: 2px 0 0 0; opacity: 0.8; font-size: 12px;"></p>
                     </div>
-                    <a id="modal_gps_btn" href="#" target="_blank"
-                        style="display: none; background: #10b981; color: white; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; text-decoration: none; align-items: center; gap: 4px; transition: 0.2s;"
-                        onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
-                        <i class="material-icons" style="font-size: 16px;">gps_fixed</i> GPS
-                    </a>
+                    <div style="display: flex;">
+                        <a id="modal_gps_btn" href="#" target="_blank"
+                            style="display: none; background: #10b981; color: white; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; text-decoration: none; align-items: center; gap: 4px; transition: 0.2s; width: max-content;"
+                            onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
+                            <i class="material-icons" style="font-size: 16px;">gps_fixed</i> GPS
+                        </a>
+                    </div>
                 </div>
                 <button type="button" onclick="closeDetailsModal(event)"
                     style="background: rgba(255,255,255,0.1); border: none; color: white; cursor: default; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0;"
