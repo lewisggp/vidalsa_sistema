@@ -77,9 +77,9 @@
                     <div style="padding: 10px 16px; border-top: 1px solid #e2e8f0;">
                         <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px;">
 
-                            <div class="detail-row-basic" style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
-                                <span style="color:#64748b;font-size:12px;white-space:nowrap;">Titular</span>
-                                <span id="d_titular" style="color:#333;font-size:13px;text-align:right;word-break:break-word;max-width:70%;"></span>
+                            <div class="detail-row-basic" style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:3px 0;">
+                                <span style="color:#64748b;font-size:12px;white-space:nowrap;margin-top:1px;">Titular</span>
+                                <span id="d_titular" style="color:#333;font-size:13px;text-align:right;word-wrap:break-word;overflow-wrap:break-word;line-height:1.3;flex:1;max-width:75%;"></span>
                             </div>
 
                             <div class="detail-row-basic" style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
