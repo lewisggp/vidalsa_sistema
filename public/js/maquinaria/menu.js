@@ -237,6 +237,7 @@ async function ejecutarIniciarGestion(equipoId, docType) {
             await refreshDashboardAlerts();
             // Hide preloader after refresh
             if (preloader) preloader.style.display = 'none';
+            if (typeof window.showToast === 'function') window.showToast('Gestión iniciada con éxito', 'success');
         } else {
             if (preloader) preloader.style.display = 'none';
             throw new Error(data.message || 'Error al iniciar gestión');
@@ -244,13 +245,15 @@ async function ejecutarIniciarGestion(equipoId, docType) {
     } catch (error) {
         if (preloader) preloader.style.display = 'none';
         console.error('Error:', error);
-        if (typeof showModal === 'function') {
+        if (typeof window.showToast === 'function') {
+            window.showToast(`Error: ${error.message}`, 'error');
+        } else if (typeof showModal === 'function') {
             showModal({ type: 'error', title: 'Error', message: error.message });
         } else {
             alert(error.message);
         }
     }
-};
+}
 
 // ─────────────────────────────────────────────────────────
 // RECIBIR MOVILIZACIÓN — AJAX (sin recarga de página)
