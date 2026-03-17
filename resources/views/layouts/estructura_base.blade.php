@@ -513,7 +513,7 @@
          * Generic Modal System
          * @param {Object} options { type, title, message, onConfirm, onCancel, confirmText, cancelText, hideCancel }
          */
-        function showModal(options) {
+        window.showModal = function(options) {
             const config = {
                 type: 'info', // success, error, warning, info
                 title: 'Aviso',
@@ -588,15 +588,15 @@
             };
         }
 
-        function closeModal() {
+        window.closeModal = function() {
             const modalEl = document.getElementById('standardModal');
             if (modalEl) modalEl.classList.remove('active');
             modalCallback = null;
         }
 
         // Legacy compatibility helper
-        function showConfirmModal(title, message, callback, btnText = 'Eliminar') {
-            showModal({
+        window.showConfirmModal = function(title, message, callback, btnText = 'Eliminar') {
+            window.showModal({
                 type: 'error',
                 title: title,
                 message: message,
