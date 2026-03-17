@@ -234,10 +234,6 @@
                         <i class="material-icons" style="font-size: 18px;">add</i>
                         <input type="file" id="pdfUpdateInput" accept="application/pdf" style="display: none;">
                     </label>
-
-                    <button onclick="toggleMetadataPanel()" style="background: #d97706; border: none; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: white; border-radius: 50%; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Editar Metadatos del Documento">
-                        <i class="material-icons" style="font-size: 18px;">edit_note</i>
-                    </button>
                     @endif
 
                     <button onclick="closePdfPreview()" style="background: none; border: none; color: #cbd5e0; padding: 4px; display: flex; align-items: center; cursor: pointer;">
@@ -802,16 +798,13 @@
             // Store current context for metadata panel
             window.currentPdfContext = { equipoId, docType, label };
 
-            // Auto-open metadata panel on desktop only
+            // Auto-open metadata panel always
             const panel = document.getElementById('pdfMetadataPanel');
             if (panel) {
                 panel.style.width = '0';
                 setTimeout(() => {
-                    const isMobile = window.innerWidth <= 768;
-                    if (!isMobile) {
-                        panel.style.width = '300px';
-                        loadMetadata();
-                    }
+                    panel.style.width = '300px';
+                    loadMetadata();
                 }, 400);
             }
         };
