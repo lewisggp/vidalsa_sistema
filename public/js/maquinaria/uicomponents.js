@@ -1044,14 +1044,8 @@ window.uploadDocument = function (input, type, equipoId, containerId, label) {
         window.CAN_UPDATE_INFO === false
     ) {
         input.value = ""; // Clear input
-        if (window.showModal) {
-            showModal({
-                type: "error",
-                title: "Acceso Denegado",
-                message: "No tienes permisos para cargar documentos.",
-                confirmText: "Entendido",
-                hideCancel: true,
-            });
+        if (window.showToast) {
+            window.showToast("No tienes permisos para cargar documentos.", "error");
         } else {
             alert("Acceso Denegado: No tienes permisos.");
         }
@@ -1134,14 +1128,9 @@ window.uploadDocument = function (input, type, equipoId, containerId, label) {
                     }
                 } else {
                     if (window.hidePreloader) window.hidePreloader();
-                    if (window.showModal)
-                        showModal({
-                            type: "error",
-                            title: "Error",
-                            message: data.message || "Error al cargar.",
-                            confirmText: "Cerrar",
-                            hideCancel: true,
-                        });
+                    if (window.showToast) {
+                        window.showToast(data.message || "Error al cargar.", "error");
+                    }
                 }
             } catch (e) {
                 console.error(e);
@@ -1149,27 +1138,17 @@ window.uploadDocument = function (input, type, equipoId, containerId, label) {
             }
         } else {
             if (window.hidePreloader) window.hidePreloader();
-            if (window.showModal)
-                showModal({
-                    type: "error",
-                    title: "Error",
-                    message: "Error de red.",
-                    confirmText: "Cerrar",
-                    hideCancel: true,
-                });
+            if (window.showToast) {
+                window.showToast("Error de red.", "error");
+            }
         }
     };
 
     xhr.onerror = function () {
         if (window.hidePreloader) window.hidePreloader();
-        if (window.showModal)
-            showModal({
-                type: "error",
-                title: "Error",
-                message: "Error de conexión.",
-                confirmText: "Cerrar",
-                hideCancel: true,
-            });
+        if (window.showToast) {
+            window.showToast("Error de conexión.", "error");
+        }
     };
 
     xhr.send(formData);

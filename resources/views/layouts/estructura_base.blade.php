@@ -1123,13 +1123,7 @@
                 onConfirm: async () => {
                      // PERMISSION CHECK
                      if (!window.CAN_UPDATE_INFO) {
-                        showModal({ 
-                            type: 'error', 
-                            title: 'Acceso Denegado', 
-                            message: 'No tienes permisos para eliminar documentos.', 
-                            confirmText: 'Entendido', 
-                            hideCancel: true 
-                        });
+                        if (window.showToast) window.showToast("No tienes permisos para eliminar documentos.", "error");
                         return;
                     }
 
@@ -1177,13 +1171,13 @@
                                 }
                              }
                              
-                             showModal({ type: 'success', title: 'Eliminado', message: 'Documento eliminado correctamente.', confirmText: 'OK', hideCancel: true });
+                             if (window.showToast) window.showToast("Documento eliminado correctamente.", "success");
                         } else {
                              throw new Error(data.message);
                         }
                      } catch (error) {
                           console.error(error);
-                          showModal({ type: 'error', title: 'Error', message: 'No se pudo eliminar el documento.', confirmText: 'Cerrar', hideCancel: true });
+                          if (window.showToast) window.showToast("No se pudo eliminar el documento.", "error");
                      }
                 }
             });
