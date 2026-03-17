@@ -112,8 +112,8 @@
                         </div>
                     @enderror
                     @if(session('info'))
-                        <div class="login-alert" style="background-color: #e3f2fd; border-color: #1976d2; color: #1976d2;">
-                            <i class="material-icons">info</i>
+                        <div class="login-alert">
+                            <i class="material-icons">error_outline</i>
                             <span>{{ session('info') }}</span>
                         </div>
                     @endif
