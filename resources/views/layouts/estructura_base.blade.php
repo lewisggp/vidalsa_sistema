@@ -781,7 +781,15 @@
                 };
                 
                 if (url && url.length > 5) {
-                    iframe.src = url + '#toolbar=0&navpanes=0&scrollbar=0&zoom=100';
+                    const isMobileDevice = window.innerWidth <= 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                    
+                    if (isMobileDevice) {
+                        // Fix exacto para móviles: forzar visor de Google Docs para evitar el botón gris de "Abrir"
+                        const absoluteUrl = new URL(url, window.location.origin).href;
+                        iframe.src = 'https://docs.google.com/viewer?url=' + encodeURIComponent(absoluteUrl) + '&embedded=true';
+                    } else {
+                        iframe.src = url + '#toolbar=0&navpanes=0&scrollbar=0&zoom=100';
+                    }
                 } else {
                     iframe.src = 'about:blank';
                     if(loader) loader.style.display = 'none';
@@ -798,13 +806,16 @@
             // Store current context for metadata panel
             window.currentPdfContext = { equipoId, docType, label };
 
-            // Auto-open metadata panel always
+            // Auto-open metadata panel on desktop only (no ocultar el PDF en móviles)
             const panel = document.getElementById('pdfMetadataPanel');
             if (panel) {
                 panel.style.width = '0';
                 setTimeout(() => {
-                    panel.style.width = '300px';
-                    loadMetadata();
+                    const isMobile = window.innerWidth <= 768;
+                    if (!isMobile) {
+                        panel.style.width = '300px';
+                        loadMetadata();
+                    }
                 }, 400);
             }
         };
