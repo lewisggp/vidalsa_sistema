@@ -74,48 +74,53 @@
                         <i class="material-icons" style="font-size: 20px; color: #64748b;">description</i>
                         <span>Documentación Legal y Soportes</span>
                     </summary>
-                    <div style="padding: 20px; border-top: 1px solid #e2e8f0;">
-                        <div style="display: flex; flex-direction: column; gap: 15px; font-size: 14px;">
+                    <div style="padding: 10px 16px; border-top: 1px solid #e2e8f0;">
+                        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px;">
 
-                            <div class="detail-row-basic" style="display: flex; flex-direction: column; align-items: flex-start; gap: 0;">
-                                <span style="color: #64748b;">Titular del Registro</span>
-                                <span id="d_titular" style="color: #333333; font-size: 14px; width: 100%; word-wrap: break-word;"></span>
+                            <div class="detail-row-basic" style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
+                                <span style="color:#64748b;font-size:12px;white-space:nowrap;">Titular</span>
+                                <span id="d_titular" style="color:#333;font-size:13px;text-align:right;word-break:break-word;max-width:70%;"></span>
                             </div>
 
-                            <div class="detail-row-basic">
-                                <span style="color: #64748b;">Placa Identificadora</span>
-                                <span id="d_placa" style="color: #333333; font-size: 14px;"></span>
+                            <div class="detail-row-basic" style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
+                                <span style="color:#64748b;font-size:12px;">Placa Identificadora</span>
+                                <span id="d_placa" style="color:#333;font-size:13px;"></span>
                             </div>
 
-                            <div class="detail-row-doc">
-                                <span style="color: #64748b;">Nro. Documento</span>
-                                <span id="d_nro_doc" style="color: #333333;"></span>
-                                <div id="d_btn_propiedad"></div>
-                            </div>
-
-                            <div class="detail-row-doc">
-                                <span style="color: #64748b;">Póliza de Seguro</span>
-                                <div>
-                                    <span id="d_venc_seguro" style="color: #333333; font-size: 13px;"></span>
+                            <div class="detail-row-doc" style="display:flex;align-items:center;justify-content:space-between;gap:4px;padding:5px 0;border-bottom:1px dashed #f1f5f9;">
+                                <span style="color:#64748b;font-size:12px;">Nro. Documento</span>
+                                <div style="display:flex;align-items:center;gap:6px;">
+                                    <span id="d_nro_doc" style="color:#333;font-size:13px;"></span>
+                                    <div id="d_btn_propiedad"></div>
                                 </div>
-                                <div id="d_btn_poliza"></div>
                             </div>
 
-                            <div class="detail-row-doc">
-                                <span style="color: #64748b;">Registro ROTC</span>
-                                <span id="d_fecha_rotc" style="color: #333333;"></span>
-                                <div id="d_btn_rotc"></div>
+                            <div class="detail-row-doc" style="display:flex;align-items:center;justify-content:space-between;gap:4px;padding:5px 0;border-bottom:1px dashed #f1f5f9;">
+                                <span style="color:#64748b;font-size:12px;">Póliza de Seguro</span>
+                                <div style="display:flex;align-items:center;gap:6px;">
+                                    <span id="d_venc_seguro" style="color:#333;font-size:13px;"></span>
+                                    <div id="d_btn_poliza"></div>
+                                </div>
                             </div>
 
-                            <div class="detail-row-doc">
-                                <span style="color: #64748b;">Registro RACDA</span>
-                                <span id="d_fecha_racda" style="color: #333333;"></span>
-                                <div id="d_btn_racda"></div>
+                            <div class="detail-row-doc" style="display:flex;align-items:center;justify-content:space-between;gap:4px;padding:5px 0;border-bottom:1px dashed #f1f5f9;">
+                                <span style="color:#64748b;font-size:12px;">Registro ROTC</span>
+                                <div style="display:flex;align-items:center;gap:6px;">
+                                    <span id="d_fecha_rotc" style="color:#333;font-size:13px;"></span>
+                                    <div id="d_btn_rotc"></div>
+                                </div>
                             </div>
 
-                            <div class="detail-row-doc">
-                                <span style="color: #64748b; font-weight: 500;">Documento Adicional</span>
-                                <span></span>
+                            <div class="detail-row-doc" style="display:flex;align-items:center;justify-content:space-between;gap:4px;padding:5px 0;border-bottom:1px dashed #f1f5f9;">
+                                <span style="color:#64748b;font-size:12px;">Registro RACDA</span>
+                                <div style="display:flex;align-items:center;gap:6px;">
+                                    <span id="d_fecha_racda" style="color:#333;font-size:13px;"></span>
+                                    <div id="d_btn_racda"></div>
+                                </div>
+                            </div>
+
+                            <div class="detail-row-doc" style="display:flex;align-items:center;justify-content:space-between;gap:4px;padding:5px 0;">
+                                <span style="color:#64748b;font-size:12px;font-weight:500;">Documento Adicional</span>
                                 <div id="d_btn_adicional"></div>
                             </div>
 

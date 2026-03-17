@@ -235,6 +235,9 @@
                         <input type="file" id="pdfUpdateInput" accept="application/pdf" style="display: none;">
                     </label>
 
+                    <button onclick="toggleMetadataPanel()" style="background: #d97706; border: none; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: white; border-radius: 50%; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Editar Metadatos del Documento">
+                        <i class="material-icons" style="font-size: 18px;">edit_note</i>
+                    </button>
                     @endif
 
                     <button onclick="closePdfPreview()" style="background: none; border: none; color: #cbd5e0; padding: 4px; display: flex; align-items: center; cursor: pointer;">
