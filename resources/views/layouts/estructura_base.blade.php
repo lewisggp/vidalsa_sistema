@@ -230,13 +230,17 @@
                     </button>
                     
                     @if(auth()->user() && (auth()->user()->can('equipos.edit') || auth()->user()->can('user.edit') || auth()->user()->can('super.admin')))
-                    <label id="pdfUpdateLabel" for="pdfUpdateInput" style="background: #059669; border: none; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: white; border-radius: 50%; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Actualizar Documento">
+                    <label id="pdfUpdateLabel" for="pdfUpdateInput" style="background: #059669; border: none; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: white; border-radius: 50%; transition: transform 0.2s; cursor: pointer;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Actualizar Documento">
                         <i class="material-icons" style="font-size: 18px;">add</i>
                         <input type="file" id="pdfUpdateInput" accept="application/pdf" style="display: none;">
                     </label>
+
+                    <button onclick="toggleMetadataPanel()" style="background: #d97706; border: none; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: white; border-radius: 50%; cursor: pointer;" title="Editar Metadatos">
+                        <i class="material-icons" style="font-size: 18px;">edit_note</i>
+                    </button>
                     @endif
 
-                    <button onclick="closePdfPreview()" style="background: none; border: none; color: #cbd5e0; padding: 4px; display: flex; align-items: center;">
+                    <button onclick="closePdfPreview()" style="background: none; border: none; color: #cbd5e0; padding: 4px; display: flex; align-items: center; cursor: pointer;">
                         <i class="material-icons" style="font-size: 20px;">close</i>
                     </button>
                 </div>
@@ -267,7 +271,7 @@
                 </div>
 
                 <!-- Metadata Side Panel (Restored) -->
-                <div id="pdfMetadataPanel" style="width: 0; background: #2d3748; border-left: 1px solid #4a5568; transition: width 0.3s ease; overflow: hidden; display: flex; flex-direction: column;">
+                <div id="pdfMetadataPanel" style="width: 0; background: #2d3748; transition: width 0.3s ease; overflow: hidden; display: flex; flex-direction: column;" class="pdf-metadata-panel-responsive">
                     <div style="padding: 12px; width: 300px; color: white; box-sizing: border-box;">
                         <h4 style="margin: 0 0 15px 0; font-size: 15px; border-bottom: 1px solid #4a5568; padding-bottom: 8px;">Editar Datos del Documento</h4>
                         
@@ -805,10 +809,16 @@
             // AUTO-OPEN metadata panel on first load for better UX
             const panel = document.getElementById('pdfMetadataPanel');
             if(panel) {
-                // Open panel automatically for review
+                // Ensure starting from 0 to prevent ghosting from previous 
+                panel.style.width = '0';
+                
+                // Open panel automatically ONLY if not on mobile layout
                 setTimeout(() => {
-                    panel.style.width = '300px';
-                    loadMetadata();
+                    const isMobile = window.innerWidth <= 768;
+                    if (!isMobile) {
+                        panel.style.width = '300px';
+                        loadMetadata();
+                    }
                 }, 400); // Small delay to let modal animate in
             }
         };

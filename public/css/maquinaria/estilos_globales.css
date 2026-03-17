@@ -2736,3 +2736,14 @@ input:-webkit-autofill:active {
     }
 }
 
+/* --- Movilidad Modal PDF: Overlay Panel en lugar de Grid en teléfonos --- */
+@media (max-width: 768px) {
+    .pdf-metadata-panel-responsive {
+        position: absolute !important;
+        right: 0;
+        top: 0;
+        height: 100vh;
+        z-index: 100;
+        box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+    }
+}
