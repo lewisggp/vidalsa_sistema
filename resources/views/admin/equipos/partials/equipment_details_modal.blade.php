@@ -25,7 +25,7 @@
             <div style="display: flex; flex-direction: column; gap: 15px;">
                 
                 <details name="equipment_accordion" style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
-                    <summary style="padding: 15px 20px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 10px; background: #f8fafc; list-style: none; cursor: pointer;">
+                    <summary style="padding: 15px 20px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 10px; background: #f8fafc; list-style: none;">
                         <i class="material-icons" style="font-size: 20px; color: #64748b;">description</i> 
                         <span style="color: #1e293b;">Documentación Legal y Soportes</span>
                     </summary>
@@ -87,7 +87,7 @@
 
                 <!-- Section 2: General Information -->
                 <details name="equipment_accordion" style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
-                    <summary style="padding: 15px 20px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 10px; background: #f8fafc; list-style: none; cursor: pointer;">
+                    <summary style="padding: 15px 20px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 10px; background: #f8fafc; list-style: none;">
                         <i class="material-icons" style="font-size: 20px; color: #64748b;">info</i> 
                         <span style="color: #1e293b;">Información General</span>
                     </summary>
@@ -131,7 +131,7 @@
 
                 <!-- Section 3: Sub-activos vinculados (solo si el equipo tiene) -->
                 <details id="sa_accordion" name="equipment_accordion" style="background: white; border-radius: 12px; border: 1px solid #fed7aa; overflow: hidden; display: none;">
-                    <summary style="padding: 15px 20px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 10px; background: #fff7ed; list-style: none; cursor: pointer;">
+                    <summary style="padding: 15px 20px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 10px; background: #fff7ed; list-style: none;">
                         <i class="material-icons" style="font-size: 20px; color: #f59e0b;">construction</i>
                         <span style="color: #1e293b;">Sub-activos vinculados</span>
                         <span id="sa_count_badge" style="margin-left:6px; background:#f59e0b; color:white; font-size:11px; font-weight:800; padding:1px 8px; border-radius:20px;">0</span>

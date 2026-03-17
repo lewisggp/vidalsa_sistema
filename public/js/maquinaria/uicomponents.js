@@ -800,11 +800,11 @@ window.showDetailsImproved = function (target, event) {
     const d = target.dataset;
     const modal = document.getElementById("detailsModal");
 
-    // Reset Accordions (Close all sections except what we want open explicitly)
+    // Reset Accordions (Close all sections so they are closed by default)
     if (modal) {
         modal
-            .querySelectorAll("details:not(#sa_accordion)")
-            .forEach((det) => det.setAttribute("open", "open"));
+            .querySelectorAll("details")
+            .forEach((det) => det.removeAttribute("open"));
     }
 
     // Helper to identify empty values
