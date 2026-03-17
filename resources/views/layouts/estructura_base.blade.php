@@ -946,13 +946,7 @@
             // PERMISSION CHECK
             if (!window.CAN_UPDATE_INFO) {
                 input.value = ''; // Clear input
-                showModal({ 
-                    type: 'error', 
-                    title: 'Acceso Denegado', 
-                    message: 'No tienes permisos para actualizar documentos.', 
-                    confirmText: 'Entendido', 
-                    hideCancel: true 
-                });
+                if (window.showToast) window.showToast('No tienes permisos para actualizar documentos', 'error');
                 return;
             }
 
@@ -1070,7 +1064,7 @@
                             }
 
 
-                            showModal({ type: 'success', title: 'Actualizado', message: 'Documento actualizado exitosamente.', confirmText: 'OK', hideCancel: true });
+                            if (window.showToast) window.showToast('Documento actualizado exitosamente', 'success');
                             
                             // Refresh Dashboard Alerts if function exists
                             if (typeof window.refreshDashboardAlerts === 'function') {
@@ -1082,18 +1076,18 @@
                     } catch (error) {
                          console.error(error);
                          if(progressOverlay) progressOverlay.style.display = 'none';
-                         showModal({ type: 'error', title: 'Error', message: 'Respuesta inválida del servidor.', confirmText: 'Cerrar', hideCancel: true });
+                         if (window.showToast) window.showToast('Error: Respuesta inválida del servidor', 'error');
                     }
                 } else {
                     if(progressOverlay) progressOverlay.style.display = 'none';
-                    showModal({ type: 'error', title: 'Error', message: 'Error al cargar documento.', confirmText: 'Cerrar', hideCancel: true });
+                    if (window.showToast) window.showToast('Error al cargar documento', 'error');
                 }
             };
             
             xhr.onerror = function() {
                 const progressOverlay = document.getElementById('pdfUploadProgressOverlay');
                 if(progressOverlay) progressOverlay.style.display = 'none';
-                showModal({ type: 'error', title: 'Error', message: 'Error de red.', confirmText: 'Cerrar', hideCancel: true });
+                if (window.showToast) window.showToast('Error de red', 'error');
             };
 
             xhr.send(formData);
