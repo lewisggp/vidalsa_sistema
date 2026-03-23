@@ -33,11 +33,13 @@ class EquipoController extends Controller
         $isLocalUser = $user && $user->NIVEL_ACCESO == 2;
         $frentesPermitidos = $user ? $user->getFrentesIds() : [];
 
-        // LOCAL users are scoped to their frentes (security restriction remains)
-        if ($isLocalUser && count($frentesPermitidos) > 0) {
-            $equipos->whereIn('ID_FRENTE_ACTUAL', $frentesPermitidos);
-        } elseif ($isLocalUser) {
-            $equipos->whereRaw('1 = 0'); // Empty result if no frentes
+        // LOCAL users are scoped to their frentes, EXCEPT when doing a global text search (by serial/placa)
+        if (empty($search)) {
+            if ($isLocalUser && count($frentesPermitidos) > 0) {
+                $equipos->whereIn('ID_FRENTE_ACTUAL', $frentesPermitidos);
+            } elseif ($isLocalUser) {
+                $equipos->whereRaw('1 = 0'); // Empty result if no frentes
+            }
         }
         // GLOBAL users: no default filter applied — show all equipos on load
 
@@ -236,7 +238,14 @@ class EquipoController extends Controller
             ]);
         }
 
-        $frentes = FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')->orderBy('NOMBRE_FRENTE', 'asc')->get();
+        $frentesQuery = FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')->orderBy('NOMBRE_FRENTE', 'asc');
+        if ($isLocalUser && count($frentesPermitidos) > 0) {
+            $frentesQuery->whereIn('ID_FRENTE', $frentesPermitidos);
+        } elseif ($isLocalUser) {
+            $frentesQuery->whereRaw('1 = 0');
+        }
+        $frentes = $frentesQuery->get();
+        
         $allTipos = TipoEquipo::orderBy('nombre', 'asc')->get();
 
         // Advanced Filter Lists (Optimized with cache: Only needed for initial page load, not AJAX)
@@ -299,11 +308,14 @@ class EquipoController extends Controller
 
         $equipos = Equipo::query();
 
-        // Apply Local User Scope
-        if ($isLocalUser && count($frentesPermitidos) > 0) {
-            $equipos->whereIn('ID_FRENTE_ACTUAL', $frentesPermitidos);
-        } elseif ($isLocalUser) {
-            $equipos->whereRaw('1 = 0');
+        // Apply Local User Scope EXCEPT when doing a global text search
+        $search = $request->input('search_query');
+        if (empty($search)) {
+            if ($isLocalUser && count($frentesPermitidos) > 0) {
+                $equipos->whereIn('ID_FRENTE_ACTUAL', $frentesPermitidos);
+            } elseif ($isLocalUser) {
+                $equipos->whereRaw('1 = 0');
+            }
         }
 
         // Apply same filters
@@ -374,83 +386,97 @@ class EquipoController extends Controller
         return response()->streamDownload(function () use ($equipos) {
             $handle = fopen('php://output', 'w');
 
-            // Start HTML for Excel
-            fwrite($handle, '<html xmlns:x="urn:schemas-microsoft-com:office:excel">');
-            fwrite($handle, '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"></head>');
-            fwrite($handle, '<body>');
-            fwrite($handle, '<table style="border-collapse: collapse;">');
-
-            // Exact columns requested by user in order (DB Keys)
-            $headers = ['FRENTE', 'TIPO', 'MARCA_MODELO', 'ANIO', 'CODIGO_PATIO', 'SERIAL_CHASIS', 'SERIAL_DE_MOTOR', 'ESTADO_OPERATIVO', 'PLACA', 'NRO_DE_DOCUMENTO', 'NOMBRE_DEL_TITULAR', 'ESTADO_POLIZA', 'FECHA_VENC_POLIZA'];
-
-            // Display Labels (Mapped 1:1)
-            $labels = ['FRENTE', 'TIPO', 'MARCA / MODELO', 'AÑO', 'CÓDIGO', 'SERIAL CHASIS', 'SERIAL MOTOR', 'ESTATUS', 'PLACA', 'NRO DOCUMENTO', 'TITULAR', 'ESTADO PÓLIZA', 'VENCIMIENTO PÓLIZA'];
+            fwrite($handle, '<?xml version="1.0"?>' . "\n");
+            fwrite($handle, '<?mso-application progid="Excel.Sheet"?>' . "\n");
+            fwrite($handle, '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"' . "\n");
+            fwrite($handle, ' xmlns:o="urn:schemas-microsoft-com:office:office"' . "\n");
+            fwrite($handle, ' xmlns:x="urn:schemas-microsoft-com:office:excel"' . "\n");
+            fwrite($handle, ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"' . "\n");
+            fwrite($handle, ' xmlns:html="http://www.w3.org/TR/REC-html40">' . "\n");
+            
+            $styles = <<<XML
+ <Styles>
+  <Style ss:ID="Header">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:Bold="1" ss:Color="#FFFFFF" ss:Size="10"/>
+   <Interior ss:Color="#003366" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="Title">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:Bold="1" ss:Color="#FFFFFF" ss:Size="22"/>
+   <Interior ss:Color="#003366" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="Data">
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+  </Style>
+ </Styles>
+XML;
+            fwrite($handle, $styles . "\n");
+            fwrite($handle, ' <Worksheet ss:Name="Equipos">' . "\n");
+            fwrite($handle, '  <Table>' . "\n");
 
             // --- MAIN TITLE ROW ---
             $currentDate = date('d/m/Y');
-            fwrite($handle, '<thead>');
-            fwrite($handle, '<tr>');
-            // Colspan = total number of columns (13)
-            fwrite($handle, '<th colspan="13" style="text-align: center; font-weight: bold; font-size: 22px; height: 60px; vertical-align: middle; border: thin solid #000000; background-color: #003366; color: #ffffff;">REPORTE DE ASIGNACIÓN DE EQUIPOS Y MAQUINARIA PARA LA FECHA ' . $currentDate . '</th>');
-            fwrite($handle, '</tr>');
+            $title = 'REPORTE DE ASIGNACIÓN DE EQUIPOS Y MAQUINARIA PARA LA FECHA ' . $currentDate;
+            fwrite($handle, '   <Row ss:Height="60">' . "\n");
+            fwrite($handle, '    <Cell ss:MergeAcross="12" ss:StyleID="Title"><Data ss:Type="String">' . htmlspecialchars($title) . '</Data></Cell>' . "\n");
+            fwrite($handle, '   </Row>' . "\n");
 
-            // Render Header Row with Styles
-            fwrite($handle, '<tr style="height: 30px;">');
+            // Labels
+            $labels = ['FRENTE', 'TIPO', 'MARCA / MODELO', 'AÑO', 'CÓDIGO', 'SERIAL CHASIS', 'SERIAL MOTOR', 'ESTATUS', 'PLACA', 'NRO DOCUMENTO', 'TITULAR', 'ESTADO PÓLIZA', 'VENCIMIENTO PÓLIZA'];
+            fwrite($handle, '   <Row ss:Height="30">' . "\n");
             foreach ($labels as $hdr) {
-                // Style: Blue bg, White text, Bold, Black Border (thin)
-                fwrite($handle, '<th style="background-color: #003366; color: #ffffff; font-weight: bold; border: thin solid #000000; padding: 5px;">' . $hdr . '</th>');
+                fwrite($handle, '    <Cell ss:StyleID="Header"><Data ss:Type="String">' . htmlspecialchars($hdr) . '</Data></Cell>' . "\n");
             }
-            fwrite($handle, '</tr></thead>');
+            fwrite($handle, '   </Row>' . "\n");
 
-            fwrite($handle, '<tbody>');
-
-            $equipos->chunk(200, function ($chunk) use ($handle, $headers) {
+            $equipos->chunk(200, function ($chunk) use ($handle) {
                 foreach ($chunk as $equipo) {
-                    fwrite($handle, '<tr>');
-                    foreach ($headers as $col) {
-                        $val = '';
-                        // Map headers to data
-                        switch ($col) {
-                            case 'FRENTE':
-                                $val = $equipo->frenteActual ? $equipo->frenteActual->NOMBRE_FRENTE : '';
-                                break;
-                            case 'TIPO':
-                                $val = $equipo->tipo ? $equipo->tipo->nombre : '';
-                                break;
-                            case 'PLACA':
-                                $val = $equipo->documentacion ? $equipo->documentacion->PLACA : '';
-                                break;
-                            case 'NRO_DE_DOCUMENTO':
-                                $val = $equipo->documentacion ? $equipo->documentacion->NRO_DE_DOCUMENTO : '';
-                                break;
-                            case 'NOMBRE_DEL_TITULAR':
-                                $val = $equipo->documentacion ? $equipo->documentacion->NOMBRE_DEL_TITULAR : '';
-                                break;
-                            case 'ESTADO_POLIZA':
-                                $val = $equipo->documentacion ? $equipo->documentacion->ESTADO_POLIZA : '';
-                                break;
-                            case 'FECHA_VENC_POLIZA':
-                                $val = $equipo->documentacion ? $equipo->documentacion->FECHA_VENC_POLIZA : '';
-                                break;
-                            case 'MARCA_MODELO':
-                                $marca  = $equipo->MARCA  ?? '';
-                                $modelo = $equipo->MODELO ?? '';
-                                $val = trim($marca . ' ' . $modelo);
-                                break;
-                            default:
-                                $val = $equipo->$col ?? '';
-                                break;
-                        }
+                    fwrite($handle, '   <Row>' . "\n");
+                    $row = [
+                        $equipo->frenteActual ? $equipo->frenteActual->NOMBRE_FRENTE : '',
+                        $equipo->tipo ? $equipo->tipo->nombre : '',
+                        trim(($equipo->MARCA ?? '') . ' ' . ($equipo->MODELO ?? '')),
+                        $equipo->ANIO ?? '',
+                        $equipo->CODIGO_PATIO ?? '',
+                        $equipo->SERIAL_CHASIS ?? '',
+                        $equipo->SERIAL_DE_MOTOR ?? '',
+                        $equipo->ESTADO_OPERATIVO ?? '',
+                        $equipo->documentacion ? $equipo->documentacion->PLACA : '',
+                        $equipo->documentacion ? $equipo->documentacion->NRO_DE_DOCUMENTO : '',
+                        $equipo->documentacion ? $equipo->documentacion->NOMBRE_DEL_TITULAR : '',
+                        $equipo->documentacion ? $equipo->documentacion->ESTADO_POLIZA : '',
+                        $equipo->documentacion ? $equipo->documentacion->FECHA_VENC_POLIZA : ''
+                    ];
 
-                        // Style: Black Border (thin)
-                        fwrite($handle, '<td style="border: thin solid #000000;">' . $val . '</td>');
+                    foreach ($row as $val) {
+                        fwrite($handle, '    <Cell ss:StyleID="Data"><Data ss:Type="String">' . htmlspecialchars((string)$val) . '</Data></Cell>' . "\n");
                     }
-                    fwrite($handle, '</tr>');
+                    fwrite($handle, '   </Row>' . "\n");
                 }
             });
 
-            fwrite($handle, '</tbody>');
-            fwrite($handle, '</table></body></html>');
+            fwrite($handle, '  </Table>' . "\n");
+            fwrite($handle, ' </Worksheet>' . "\n");
+            fwrite($handle, '</Workbook>' . "\n");
+
             fclose($handle);
 
         }, $fileName, [
