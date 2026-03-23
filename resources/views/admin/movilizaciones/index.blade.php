@@ -69,7 +69,7 @@
                         autocomplete="off">
                     <i class="material-icons" data-clear-btn
                        style="padding:0 5px; color:var(--maquinaria-gray-text); font-size:18px; display:{{ $currentFrenteId && $currentFrenteId != 'all' ? 'block' : 'none' }};"
-                       onclick="event.stopPropagation(); clearDropdownFilter('frenteFilterSelect'); loadMovilizaciones();">close</i>
+                       onclick="event.stopPropagation(); clearDropdownFilter('frenteFilterSelect');">close</i>
                 </div>
 
                 <div class="dropdown-content" style="padding:5px; max-height:none; overflow:visible;">
@@ -110,7 +110,7 @@
                             style="width: 100%; border: none; background: transparent; padding: 10px 5px; font-size: 14px; outline: none;"
                             oninput="window.filterDropdownOptions(this)"
                             autocomplete="off">
-                        <i class="material-icons" data-clear-btn style="padding: 0 5px; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_tipo') ? 'block' : 'none' }};" onclick="event.stopPropagation(); clearDropdownFilter('tipoFilterSelect'); loadMovilizaciones();">close</i>
+                        <i class="material-icons" data-clear-btn style="padding: 0 5px; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_tipo') ? 'block' : 'none' }};" onclick="event.stopPropagation(); clearDropdownFilter('tipoFilterSelect');">close</i>
                     </div>
 
                     <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible;">
@@ -289,115 +289,7 @@
     <img id="enlargedImg" style="max-width: 90%; max-height: 90%; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); transition: transform 0.3s ease;">
 </div>
 
-<script>
-// OVERRIDE URGENTE PARA BURLAR EL CACHÉ DEL NAVEGADOR
-// Este script sobreescribe la función y se inyecta directamente con el SPA
-window.loadMovilizaciones = function (url = null) {
-    const tableBody = document.getElementById('movilizacionesTableBody');
-    if (!tableBody) return;
 
-    let baseUrl = '/admin/movilizaciones';
-    
-    // Anclamos la búsqueda al contenedor de movilizaciones, evitando inputs viejos fantasma del DOM
-    const container = tableBody.closest('.movilizaciones-main-card') || document;
-    
-    const searchInput     = container.querySelector('#searchInput');
-    const frenteInput     = container.querySelector('input[name="id_frente"]');
-    const tipoInput       = container.querySelector('input[name="id_tipo"]');
-    const fechaDesde      = container.querySelector('#filterFechaDesde');
-    const fechaHasta      = container.querySelector('#filterFechaHasta');
-    const direccionFrente = container.querySelector('#filterDireccionFrente');
-
-    const params = new URLSearchParams();
-    if (searchInput?.value)          params.append('search',           searchInput.value);
-    if (frenteInput?.value && frenteInput.value !== 'all')
-                                     params.append('id_frente',        frenteInput.value);
-    if (tipoInput?.value && tipoInput.value !== 'all')
-                                     params.append('id_tipo',          tipoInput.value);
-    if (fechaDesde?.value)           params.append('fecha_desde',      fechaDesde.value);
-    if (fechaHasta?.value)           params.append('fecha_hasta',      fechaHasta.value);
-    if (direccionFrente?.value)      params.append('direccion_frente', direccionFrente.value);
-
-    if (url && url.includes('page=')) {
-        try {
-            const urlObj = new URL(url, window.location.origin);
-            const page = urlObj.searchParams.get('page');
-            if (page) params.set('page', page);
-        } catch (e) { console.error('[loadMovilizaciones] URL parse:', e); }
-    }
-
-    const queryStr = params.toString();
-    const finalUrl = baseUrl + (queryStr ? '?' + queryStr : '');
-
-    console.log("🚀 [loadMovilizaciones INLINE] Ejecutado! Frente:", frenteInput?.value);
-
-    tableBody.style.opacity = '0.5';
-    if (window.showPreloader) window.showPreloader();
-
-    fetch(finalUrl, {
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept':           'application/json',
-            'Cache-Control':    'no-cache, no-store, must-revalidate',
-            'Pragma':           'no-cache'
-        },
-        cache: 'no-store'
-    })
-    .then(response => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return response.json();
-    })
-    .then(data => {
-        tableBody.innerHTML = data.html;
-        tableBody.style.opacity = '1';
-
-        const paginationContainer = document.getElementById('movilizacionesPagination');
-        if (paginationContainer) paginationContainer.innerHTML = data.pagination;
-
-        const statsContainer = document.getElementById('statusStatsContainer');
-        if (statsContainer && data.statsHtml) statsContainer.innerHTML = data.statsHtml;
-
-        const totalTransitoEl = document.getElementById('totalTransitoCount');
-        if (totalTransitoEl && data.totalTransito !== undefined)
-            totalTransitoEl.innerText = data.totalTransito;
-
-        const mobileTransitoEl = document.getElementById('mobileTransitoCount');
-        if (mobileTransitoEl && data.totalTransito !== undefined)
-            mobileTransitoEl.innerText = data.totalTransito;
-
-        // Limpieza de URL
-        if (window.history.pushState && queryStr) {
-            window.history.replaceState(null, '', window.location.pathname);
-        }
-    })
-    .catch(error => {
-        console.error('Error fetching table data:', error);
-        tableBody.style.opacity = '1';
-    })
-    .finally(() => {
-        if (window.hidePreloader) window.hidePreloader();
-    });
-};
-
-// También resguardamos la función del botón "x" de búsqueda
-window.selectMovilizacionFilter = function (type, value) {
-    if (type === 'search') {
-        const input = document.getElementById('searchInput');
-        if (input) input.value = value;
-        const btn = document.getElementById('btn_clear_search');
-        if (btn) btn.style.display = value ? 'block' : 'none';
-        window.loadMovilizaciones();
-    }
-};
-
-window.addEventListener('dropdown-selection', function (e) {
-    if (!document.getElementById('movilizacionesTableBody')) return;
-    const filterName = e.detail && e.detail.inputName;
-    if (filterName === 'id_frente' || filterName === 'id_tipo') {
-        window.loadMovilizaciones();
-    }
-});
-</script>
 
 @endsection
 

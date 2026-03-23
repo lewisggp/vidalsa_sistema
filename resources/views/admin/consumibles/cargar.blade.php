@@ -121,10 +121,10 @@
         </div>
 
         {{-- FRENTE --}}
-        <div style="flex: 2; min-width: 250px;">
+        <div style="flex: 1; min-width: 200px;">
             <label class="con-label">Frente de Trabajo *</label>
             <div style="position:relative;">
-                <input type="text" id="frenteSearch" placeholder="Click para ver todos los frentes..."
+                <input type="text" id="frenteSearch" placeholder="Todos los frentes..."
                     class="con-input" autocomplete="off"
                     style="height: 42px;"
                     oninput="filtrarFrentes(this.value)"
@@ -139,21 +139,32 @@
         </div>
         
         {{-- ACCIONES --}}
-        <div style="position:relative; flex: 0 0 auto;">
+        <div style="position:relative; flex: 0 0 auto; margin-top: auto;">
             <button type="button" id="btnAcciones" class="btn-primary-maquinaria" style="padding: 0 15px; height: 42px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);" onclick="document.getElementById('splitDropdownMenu').style.display = document.getElementById('splitDropdownMenu').style.display === 'none' ? 'block' : 'none'; event.stopPropagation();">
                 <i class="material-icons">settings</i>
                 <span>Acciones</span>
                 <i class="material-icons" style="font-size: 18px; margin-left: 2px;">expand_more</i>
             </button>
-            <div id="splitDropdownMenu" style="display:none; position:absolute; top:100%; right:0; background:#fff; min-width:260px; border-radius:12px; box-shadow:0 12px 28px rgba(0,0,0,0.15); border:1px solid #e2e8f0; z-index:1000; margin-top:8px; overflow:hidden;">
-                <!-- Lista de acciones -->
-                <a href="javascript:void(0)" onclick="limpiarTabla(); document.getElementById('splitDropdownMenu').style.display='none'" style="display:flex; align-items:center; gap:12px; padding:12px 16px; color:#1e293b; text-decoration:none; font-size:13px; border-bottom:1px solid #f1f5f9; transition:background .2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='white'">
-                    <i class="material-icons" style="font-size:18px; color:#ef4444;">delete_sweep</i>
-                    Limpiar toda la tabla
+            <div id="splitDropdownMenu" style="display:none; position:absolute; top:100%; right:0; min-width:260px; background:#e2e8f0; border-radius:8px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); border:1px solid #e2e8f0; z-index:1050; margin-top:10px; overflow:hidden;">
+                
+                {{-- Navegación Estándar --}}
+                <a href="{{ route('consumibles.index') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                    <i class="material-icons" style="font-size:20px;">list</i>
+                    <span style="font-size:14px; font-weight:500;">Lista de Consumibles</span>
                 </a>
-                <a href="javascript:void(0)" onclick="agregarFila(); document.getElementById('splitDropdownMenu').style.display='none'" style="display:flex; align-items:center; gap:12px; padding:12px 16px; color:#1e293b; text-decoration:none; font-size:13px; transition:background .2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='white'">
-                    <i class="material-icons" style="font-size:18px; color:#059669;">add</i>
-                    Agregar fila
+                <a href="{{ route('consumibles.graficos') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                    <i class="material-icons" style="font-size:20px;">bar_chart</i>
+                    <span style="font-size:14px; font-weight:500;">Gráficos y Reportes</span>
+                </a>
+                <a href="{{ route('consumibles.cargar') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #cbd5e1; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                    <i class="material-icons" style="font-size:20px;">upload_file</i>
+                    <span style="font-size:14px; font-weight:500;">Cargar Lote (Masivo)</span>
+                </a>
+
+                {{-- Acciones Locales --}}
+                <a href="javascript:void(0)" onclick="limpiarTabla(); document.getElementById('splitDropdownMenu').style.display='none'" style="display:flex; align-items:center; gap:10px; padding:12px 15px; color:#ef4444; text-decoration:none; background:transparent; transition:all 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
+                    <i class="material-icons" style="font-size:20px;">delete_sweep</i>
+                    <span style="font-size:14px; font-weight:500;">Limpiar Toda la Tabla</span>
                 </a>
             </div>
         </div>
@@ -178,17 +189,7 @@
 {{-- ═══ TABLA / ZONA DE PEGADO ═══ --}}
 <div class="admin-card" style="box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); padding: 25px; margin-bottom: 20px;">
     {{-- Cabecera con contador y botones --}}
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
-
-        <div style="display:flex; gap:8px;">
-            <button type="button" class="btn-secondary" style="padding:8px 14px; font-size:13px;" onclick="limpiarTabla()">
-                <i class="material-icons" style="font-size:16px;">delete_sweep</i> Limpiar
-            </button>
-            <button type="button" class="btn-secondary" style="padding:8px 14px; font-size:13px;" onclick="agregarFila()">
-                <i class="material-icons" style="font-size:16px;">add</i> Agregar fila
-            </button>
-        </div>
-    </div>
+    {{-- (Botones removidos para evitar redundancia) --}}
 
 
 
@@ -226,10 +227,12 @@
 {{-- ACCIONES --}}
 <div style="display:flex; justify-content:flex-end; gap:12px; padding-bottom:40px;">
     <a href="{{ route('consumibles.index') }}" class="btn-secondary">Cancelar</a>
+    @can('super.admin')
     <button type="submit" class="btn-primary-maquinaria btn-green" style="padding: 10px 22px; font-size:14px;">
         <i class="material-icons" style="font-size:18px;">save</i>
         Guardar Lote
     </button>
+    @endcan
 </div>
 
 </form>
@@ -329,9 +332,14 @@ function seleccionarFrente(id, nombre) {
 
 document.addEventListener('click', e => {
     const dd = document.getElementById('frenteDropdown');
-    if (!dd) return;
-    if (!e.target.closest('#frenteSearch') && !e.target.closest('#frenteDropdown'))
+    if (dd && !e.target.closest('#frenteSearch') && !e.target.closest('#frenteDropdown')) {
         dd.style.display = 'none';
+    }
+    
+    const accMenu = document.getElementById('splitDropdownMenu');
+    if (accMenu && accMenu.style.display === 'block' && !e.target.closest('#btnAcciones') && !e.target.closest('#splitDropdownMenu')) {
+        accMenu.style.display = 'none';
+    }
 });
 
 // ── Gestión de filas ──────────────────────────────────────────────
@@ -377,7 +385,23 @@ function eliminarFila(n) {
 }
 
 function limpiarTabla() {
-    if (!confirm('¿Limpiar todas las filas?')) return;
+    if (window.showModal) {
+        window.showModal({
+            type: 'warning',
+            title: '¿Limpiar todas las filas?',
+            message: 'Esta acción borrará todas las filas actuales y no se podrá deshacer.',
+            confirmText: 'Sí, limpiar',
+            cancelText: 'Cancelar',
+            onConfirm: () => _ejecutarLimpiarTabla()
+        });
+    } else {
+        if (confirm('¿Limpiar todas las filas?')) {
+            _ejecutarLimpiarTabla();
+        }
+    }
+}
+
+function _ejecutarLimpiarTabla() {
     document.getElementById('cuerpoTabla').innerHTML = '';
     filaCount = 0;
     actualizarContador();

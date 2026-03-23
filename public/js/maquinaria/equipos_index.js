@@ -565,11 +565,17 @@ window.filterList = function (inputArg, listArg) {
 
 window.changeStatus = function (id, newStatus, url, element) {
     // PERMISSION CHECK
-    if (
-        typeof window.CAN_CHANGE_STATUS !== "undefined" &&
-        window.CAN_CHANGE_STATUS === false
-    ) {
-        return; // Should be caught by toggleStatusDropdown, but double check
+    if (window.CAN_CHANGE_STATUS === false || window.CAN_CHANGE_STATUS === 'false') {
+        if (typeof window.showModal === 'function') {
+            window.showModal({
+                type: "error",
+                title: "Acceso Denegado",
+                message: "No tienes permisos para cambiar el estado de los equipos.",
+                confirmText: "Entendido",
+                hideCancel: true
+            });
+        }
+        return;
     }
 
     if (!element) return;
@@ -649,12 +655,9 @@ window.openBulkModal = function (event) {
     }
 
     // PERMISSION CHECK (Specific to Assignment/Mobilization)
-    if (
-        typeof window.CAN_ASSIGN_EQUIPOS !== "undefined" &&
-        window.CAN_ASSIGN_EQUIPOS === false
-    ) {
-        if (window.showModal) {
-            showModal({
+    if (window.CAN_ASSIGN_EQUIPOS === false || window.CAN_ASSIGN_EQUIPOS === 'false') {
+        if (typeof window.showModal === 'function') {
+            window.showModal({
                 type: "error",
                 title: "Acceso Denegado",
                 message: "No tienes permisos para movilizar (asignar) equipos.",

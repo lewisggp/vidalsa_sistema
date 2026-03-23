@@ -264,6 +264,16 @@
                     </div>
                     
                     <iframe id="pdfPreviewFrame" src="" style="width: 100%; height: 100%; border: none; opacity: 0; transition: opacity 0.3s; position: relative; z-index: 20;" allowfullscreen></iframe>
+                    
+                    <!-- Vista móvil para descarga directa -->
+                    <div id="pdfMobileFallback" style="display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 25; width: 100%; height: 100%; background: #4a5568; padding: 20px; box-sizing: border-box; text-align: center; position: absolute; top:0; left:0;">
+                        <i class="material-icons" style="font-size: 64px; color: #a0aec0; margin-bottom: 15px;">description</i>
+                        <h4 style="color: white; margin: 0 0 10px 0; font-size: 18px; font-weight: 600;">Vista Previa No Disponible</h4>
+                        <p style="color: #cbd5e0; margin: 0 0 25px 0; font-size: 14px; max-width: 280px; line-height: 1.4;">Los teléfonos móviles no soportan la visualización incrustada del documento.</p>
+                        <button onclick="downloadPdfDirect(document.getElementById('pdfDownloadBtn').dataset.url, document.getElementById('pdfDownloadBtn').dataset.label)" style="background: #3182ce; color: white; border: none; padding: 12px 24px; font-size: 15px; font-weight: 600; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); cursor: pointer;">
+                            <i class="material-icons">download</i> Descargar Documento
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Metadata Side Panel -->
@@ -443,9 +453,9 @@
     {{-- from navegacion.js when switching between pages without reload --}}
     <script src="{{ asset('js/maquinaria/menu.js') }}?v=5.0"></script>
     <script src="{{ asset('js/maquinaria/catalogo_create.js') }}?v=12.0"></script>
-    <script src="{{ asset('js/maquinaria/equipos_index.js') }}?v=20.3"></script>
+    <script src="{{ asset('js/maquinaria/equipos_index.js') }}?v=20.4"></script>
     <script src="{{ asset('js/maquinaria/catalogo_index.js') }}?v=3.6"></script>
-    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=6.10"></script>
+    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=7.0"></script>
     <script src="{{ asset('js/maquinaria/usuarios_index.js') }}?v=10.0"></script>
     <script src="{{ asset('js/maquinaria/fleet_dashboard.js') }}?v=106.0"></script>
 
@@ -717,6 +727,9 @@
                 iframe.style.opacity = '0';
                 iframe.src = '';
             }
+            
+            const fallbackNode = document.getElementById('pdfMobileFallback');
+            if (fallbackNode) fallbackNode.style.display = 'none';
 
             // Set Content
             if(title) title.innerText = label || 'Documento';
@@ -782,15 +795,27 @@
                 
                 if (url && url.length > 5) {
                     const isMobileDevice = window.innerWidth <= 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                    const fallback = document.getElementById('pdfMobileFallback');
                     
                     if (isMobileDevice) {
-                        // Fix exacto para móviles: forzar visor de Google Docs para evitar el botón gris de "Abrir"
-                        const absoluteUrl = new URL(url, window.location.origin).href;
-                        iframe.src = 'https://docs.google.com/viewer?url=' + encodeURIComponent(absoluteUrl) + '&embedded=true';
+                        // Mostrar pantalla nativa de descarga en vez de GDocs
+                        iframe.style.display = 'none';
+                        if (fallback) fallback.style.display = 'flex';
+                        
+                        // Quitar el spinner porque no cargaremos iframe
+                        clearTimeout(loaderTimeout);
+                        if(loader) loader.style.display = 'none';
+                        if (typeof window.hidePreloader === 'function') window.hidePreloader();
                     } else {
+                        if (fallback) fallback.style.display = 'none';
+                        iframe.style.display = 'block';
                         iframe.src = url + '#toolbar=0&navpanes=0&scrollbar=0&zoom=100';
                     }
                 } else {
+                    const fallback = document.getElementById('pdfMobileFallback');
+                    if (fallback) fallback.style.display = 'none';
+                    
+                    iframe.style.display = 'block';
                     iframe.src = 'about:blank';
                     if(loader) loader.style.display = 'none';
                 }

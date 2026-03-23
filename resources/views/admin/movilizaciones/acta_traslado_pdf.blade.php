@@ -38,15 +38,26 @@
             <td height="10">&nbsp;</td>
         </tr>
     </table>
+    @php
+        $tipoOrigen = strtoupper($frenteOrigen->TIPO_FRENTE ?? 'OPERACION');
+        $nombreOrigen = strtoupper($frenteOrigen->NOMBRE_FRENTE ?? '');
+        $isResguardoOrigen = ($tipoOrigen === 'RESGUARDO') || str_contains($nombreOrigen, 'PATIO') || str_contains($nombreOrigen, 'SEDE') || str_contains($nombreOrigen, 'TALLER') || str_contains($nombreOrigen, 'ALMACEN');
+        $labelOrigen = $isResguardoOrigen ? 'el centro de resguardo' : 'el frente';
+
+        $tipoDestino = strtoupper($frenteDestino->TIPO_FRENTE ?? 'OPERACION');
+        $nombreDestino = strtoupper($frenteDestino->NOMBRE_FRENTE ?? '');
+        $isResguardoDestino = ($tipoDestino === 'RESGUARDO') || str_contains($nombreDestino, 'PATIO') || str_contains($nombreDestino, 'SEDE') || str_contains($nombreDestino, 'TALLER') || str_contains($nombreDestino, 'ALMACEN');
+        $labelDestino = $isResguardoDestino ? 'el centro de resguardo' : 'el frente';
+    @endphp
 
     <!-- ===================== CUERPO DEL TEXTO ===================== -->
     <table width="100%" border="0" cellpadding="0" cellspacing="0">
         <tr>
             <td align="justify" style="font-size: 10pt; line-height: 1.5;">
-                Por medio del presente documento, el frente
+                Por medio del presente documento, {{ $labelOrigen }}
                 <b>{{ strtoupper($frenteOrigen->NOMBRE_FRENTE ?? 'OFICINA PRINCIPAL') }}</b> de la
                 <b>CONSTRUCTORA VIDALSA 27, C.A.</b>, deja constancia formal del despacho y traslado de los equipos
-                detallados a continuación hacia el frente
+                detallados a continuación hacia {{ $labelDestino }}
                 <b>{{ strtoupper($frenteDestino->NOMBRE_FRENTE ?? 'DESTINO DESCONOCIDO') }}</b>, ubicado en
                 <b>{{ strtoupper($frenteDestino->UBICACION ?? 'UBICACIÓN NO ESPECIFICADA') }}</b>.
             </td>
@@ -103,11 +114,16 @@
             $carKey = "RESP_{$i}_CAR";
             $equKey = "RESP_{$i}_EQU";
 
-            $nom = $frenteOrigen->$nomKey ?? null;
-            $car = $frenteOrigen->$carKey ?? 'RESPONSABLE';
-            $equ = $frenteOrigen->$equKey ?? null;
+            $nom = trim($frenteOrigen->$nomKey ?? '');
+            $car = trim($frenteOrigen->$carKey ?? 'RESPONSABLE');
+            $equ = trim($frenteOrigen->$equKey ?? '');
 
-            if ($nom) {
+            $isPlaceholder = empty($nom) || 
+                             strtolower($nom) === 'nombre y apellido' ||
+                             strtolower($nom) === 'por definir' ||
+                             strtolower($nom) === 'n/a';
+
+            if (!$isPlaceholder) {
                 if ($equ) {
                     if (in_array($equ, $categoriesInActa)) {
                         $responsablesToShow[] = ['nom' => $nom, 'car' => $car];
@@ -179,9 +195,8 @@
 
         <!-- ── Fila: RECIBIDO POR (DESTINO) centrado ── -->
         <tr>
-            <td width="20%">&nbsp;</td>
-            <td width="60%" align="center">
-                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+            <td colspan="3" align="center">
+                <table width="40%" align="center" border="0" cellpadding="0" cellspacing="0">
                     <tr>
                         <td align="center" style="font-size: 9pt;"><b>RECIBIDO POR (DESTINO):</b></td>
                     </tr>
@@ -190,7 +205,7 @@
                     </tr>
                     <tr>
                         <td align="center">
-                            <table width="80%" align="center" border="0" cellpadding="0" cellspacing="0">
+                            <table width="100%" align="center" border="0" cellpadding="0" cellspacing="0">
                                 <tr>
                                     <td style="border-top: 0.5pt solid #000; height: 1px;"></td>
                                 </tr>
@@ -208,7 +223,6 @@
                     </tr>
                 </table>
             </td>
-            <td width="20%">&nbsp;</td>
         </tr>
 
     </table>

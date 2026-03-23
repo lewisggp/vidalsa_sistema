@@ -220,17 +220,25 @@
                     <span>Acciones</span>
                     <i class="material-icons" style="font-size: 18px; margin-left: 2px;">expand_more</i>
                 </button>
-                <div id="splitDropdownMenu" style="display: none; position: absolute; top: 100%; right: 0; width: 260px; background: #e2e8f0; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; z-index: 1050; margin-top: 10px; overflow: hidden;">
-                    <a href="{{ route('consumibles.graficos') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();">
-                        <div style="background: #eff6ff; padding: 6px; border-radius: 6px; display: flex;"><i class="material-icons" style="font-size:18px; color:#3b82f6;">bar_chart</i></div>
+                <div id="splitDropdownMenu" style="display: none; position: absolute; top: 100%; right: 0; min-width: 260px; background: #e2e8f0; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; z-index: 1050; margin-top: 10px; overflow: hidden;">
+                    
+                    {{-- Navegación Estándar --}}
+                    <a href="{{ route('consumibles.index') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                        <i class="material-icons" style="font-size:20px;">list</i>
+                        <span style="font-size:14px; font-weight:500;">Lista de Consumibles</span>
+                    </a>
+                    <a href="{{ route('consumibles.graficos') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                        <i class="material-icons" style="font-size:20px;">bar_chart</i>
                         <span style="font-size:14px; font-weight:500;">Gráficos y Reportes</span>
                     </a>
-                    <a href="{{ route('consumibles.cargar') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();">
-                        <div style="background: #f1f5f9; padding: 6px; border-radius: 6px; display: flex;"><i class="material-icons" style="font-size:18px; color:#64748b;">upload</i></div>
-                        <span style="font-size:14px; font-weight:500;">Cargar Lote de Consumibles</span>
+                    <a href="{{ route('consumibles.cargar') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #cbd5e1; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                        <i class="material-icons" style="font-size:20px;">upload_file</i>
+                        <span style="font-size:14px; font-weight:500;">Cargar Lote (Masivo)</span>
                     </a>
-                    <button type="button" id="btnMatch" onclick="document.getElementById('splitDropdownMenu').style.display='none'; ejecutarMatch()" class="dropdown-item-custom" style="width:100%; display:flex; align-items:center; gap:10px; padding:12px 15px; color:#475569; border:none; background:transparent; text-align:left; cursor:pointer; transition:all 0.2s;" {{ ($pendientes == 0 && $sinMatch == 0) ? 'disabled' : '' }}>
-                        <div style="background:#fee2e2; padding:6px; border-radius:6px; display:flex;"><i class="material-icons" style="font-size:18px; color:#dc2626;">bolt</i></div>
+
+                    {{-- Acciones Locales --}}
+                    <button type="button" id="btnMatch" onclick="document.getElementById('splitDropdownMenu').style.display='none'; ejecutarMatch()" class="dropdown-item-custom" style="width:100%; display:flex; align-items:center; gap:10px; padding:12px 15px; color:#ef4444; border:none; background:transparent; text-align:left; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'" {{ ($pendientes == 0 && $sinMatch == 0) ? 'disabled' : '' }}>
+                        <i class="material-icons" style="font-size:20px;">bolt</i>
                         <span style="font-size:14px; font-weight:500;">Ejecutar Match ({{ $pendientes }} Pend. / {{ $sinMatch }} S/M)</span>
                     </button>
                 </div>
@@ -250,8 +258,23 @@
     
     <script>
     window.eliminarConsumible = function(id, url) {
-        if (!confirm('¿Eliminar este registro?')) return;
+        if (window.showModal) {
+            window.showModal({
+                type: 'warning',
+                title: '¿Eliminar este registro?',
+                message: 'Esta acción eliminará el consumible y no se podrá deshacer.',
+                confirmText: 'Sí, eliminar',
+                cancelText: 'Cancelar',
+                onConfirm: () => _ejecutarEliminacionConsumible(id, url)
+            });
+        } else {
+            if (confirm('¿Eliminar este registro?')) {
+                _ejecutarEliminacionConsumible(id, url);
+            }
+        }
+    };
 
+    function _ejecutarEliminacionConsumible(id, url) {
         var btn = document.querySelector(`button[onclick*="eliminarConsumible(${id},"]`);
         if (btn) { btn.disabled = true; btn.style.opacity = '0.4'; }
 
@@ -272,15 +295,17 @@
                     setTimeout(() => row.remove(), 250);
                 }
             } else {
-                alert('No se pudo eliminar el registro.');
+                if (window.showModal) window.showModal({ type: 'error', title: 'Error', message: 'No se pudo eliminar el registro.', hideCancel: true });
+                else alert('No se pudo eliminar el registro.');
                 if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
             }
         })
         .catch(() => {
-            alert('Error de red al intentar eliminar.');
+            if (window.showModal) window.showModal({ type: 'error', title: 'Error', message: 'Error de red al intentar eliminar.', hideCancel: true });
+            else alert('Error de red al intentar eliminar.');
             if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
         });
-    };
+    }
 
     window.toggleAccionesMenu = function(event) {
         event.preventDefault();
@@ -530,12 +555,14 @@
                     @endif
                 </td>
                 <td>
+                    @can('super.admin')
                     <button type="button"
                         onclick="eliminarConsumible({{ $c->ID_CONSUMIBLE }}, '{{ route('consumibles.destroy', $c->ID_CONSUMIBLE) }}')"
                         style="background:none; border:none; color:#ef4444; cursor:pointer; padding:4px;"
                         title="Eliminar">
                         <i class="material-icons" style="font-size:17px;">delete</i>
                     </button>
+                    @endcan
                 </td>
             </tr>
         @empty

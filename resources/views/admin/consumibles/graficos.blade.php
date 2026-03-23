@@ -178,17 +178,25 @@
             <span>Acciones</span>
             <i class="material-icons" style="font-size: 18px; margin-left: 2px;">expand_more</i>
         </button>
-        <div id="splitDropdownMenu" style="display: none; position: absolute; top: 100%; right: 0; width: 230px; background: #e2e8f0; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; z-index: 1050; margin-top: 10px; overflow: hidden;">
-            <a href="{{ route('consumibles.cargar') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                <div style="background: #fdf4ff; padding: 6px; border-radius: 6px; display: flex;"><i class="material-icons" style="font-size:18px; color:#d946ef;">upload_file</i></div>
-                <span style="font-size:14px; font-weight:500;">Carga Masiva (Lote)</span>
-            </a>
+        <div id="splitDropdownMenu" style="display: none; position: absolute; top: 100%; right: 0; min-width: 260px; background: #e2e8f0; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; z-index: 1050; margin-top: 10px; overflow: hidden;">
+            
+            {{-- Navegación Estándar --}}
             <a href="{{ route('consumibles.index') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                <div style="background: #eff6ff; padding: 6px; border-radius: 6px; display: flex;"><i class="material-icons" style="font-size:18px; color:#3b82f6;">list</i></div>
-                <span style="font-size:14px; font-weight:500;">Ver Registros</span>
+                <i class="material-icons" style="font-size:20px;">list</i>
+                <span style="font-size:14px; font-weight:500;">Lista de Consumibles</span>
             </a>
-            <button type="button" onclick="document.getElementById('splitDropdownMenu').style.display='none'; descargarCsv()" class="dropdown-item-custom" style="width:100%; display:flex; align-items:center; gap:10px; padding:12px 15px; color:#475569; border:none; background:transparent; text-align:left; cursor:pointer; transition:all 0.2s; border-bottom: 1px solid #f1f5f9;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                <div style="background: #ecfdf5; padding: 6px; border-radius: 6px; display: flex;"><i class="material-icons" style="font-size:18px; color:#10b981;">download</i></div>
+            <a href="{{ route('consumibles.graficos') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <i class="material-icons" style="font-size:20px;">bar_chart</i>
+                <span style="font-size:14px; font-weight:500;">Gráficos y Reportes</span>
+            </a>
+            <a href="{{ route('consumibles.cargar') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #cbd5e1; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <i class="material-icons" style="font-size:20px;">upload_file</i>
+                <span style="font-size:14px; font-weight:500;">Cargar Lote (Masivo)</span>
+            </a>
+
+            {{-- Acciones Locales --}}
+            <button type="button" onclick="document.getElementById('splitDropdownMenu').style.display='none'; descargarCsv()" class="dropdown-item-custom" style="width:100%; display:flex; align-items:center; gap:10px; padding:12px 15px; color:#10b981; border:none; background:transparent; text-align:left; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#ecfdf5'" onmouseout="this.style.background='transparent'">
+                <i class="material-icons" style="font-size:20px;">download</i>
                 <span style="font-size:14px; font-weight:500;">Exportar a CSV</span>
             </button>
         </div>
@@ -455,13 +463,14 @@ window.chartTipoEq = window.chartTipoEq || null;
 window.chartEqFrente = window.chartEqFrente || null;
 window.chartCauchoModelo = window.chartCauchoModelo || null;
 
-const chartCheckInterval = setInterval(() => {
+if (window.chartCheckInterval) clearInterval(window.chartCheckInterval);
+window.chartCheckInterval = setInterval(() => {
     if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
         Chart.register(ChartDataLabels);
-        clearInterval(chartCheckInterval);
+        clearInterval(window.chartCheckInterval);
     }
 }, 100);
-setTimeout(() => clearInterval(chartCheckInterval), 5000);
+setTimeout(() => clearInterval(window.chartCheckInterval), 5000);
 
 var COLORES = window.COLORES;
 var TIPO_LABEL = window.TIPO_LABEL;
@@ -491,7 +500,12 @@ function show(id)   { document.getElementById(id).style.display = ''; }
 function hide(id)   { document.getElementById(id).style.display = 'none'; }
 function canvas(id) { document.getElementById(id).style.display = 'block'; }
 
-function cargarDatos() {
+window.cargarDatos = function() {
+    if (window._cargarDatosTimer) clearTimeout(window._cargarDatosTimer);
+    window._cargarDatosTimer = setTimeout(_cargarDatosLocal, 250);
+};
+
+function _cargarDatosLocal() {
     if (window.showPreloader) window.showPreloader();
     const params = getParams();
 
@@ -645,7 +659,7 @@ window.renderEquiposAsignados = function(eqAsig, ordenFrente) {
 };
 
 // Exponer cargarDatos globalmente para el ModuleManager SPA
-window.cargarDatos = cargarDatos;
+// window.cargarDatos = window.cargarDatos; (Ya asignado arriba)
 
 // ── Tarjetas resumen ───────────────────────────────────────────────
 function renderResumen(datos) {
@@ -770,9 +784,12 @@ function renderTipoEquipo(datos) {
             if (retriesT++ < 50) setTimeout(drawT, 100);
             return;
         }
-        if (window.chartTipoEq) window.chartTipoEq.destroy();
+        const canvElT = document.getElementById('chartTipoEq');
+        const existingT = Chart.getChart(canvElT);
+        if (existingT) existingT.destroy();
+        
         try {
-            window.chartTipoEq = new Chart(document.getElementById('chartTipoEq'), {
+            window.chartTipoEq = new Chart(canvElT, {
                 type: 'bar',
                 data: {
                     labels:   ordenado.map(([t]) => t),
@@ -867,7 +884,9 @@ function renderCauchosPorModelo(datos) {
             if (retriesC++ < 50) setTimeout(drawC, 100);
             return;
         }
-        if (window.chartCauchoModelo) window.chartCauchoModelo.destroy();
+        const existingC = Chart.getChart(canvEl);
+        if (existingC) existingC.destroy();
+        
         window.chartCauchoModelo = new Chart(canvEl, {
             type: 'bar',
             data: { labels: tipos, datasets },
@@ -1004,7 +1023,9 @@ function renderEquiposPorFrente(datos, frenteId) {
             if (retriesE++ < 50) setTimeout(drawE, 100);
             return;
         }
-        if (window.chartEqFrente) window.chartEqFrente.destroy();
+        const existingE = Chart.getChart(canvEl);
+        if (existingE) existingE.destroy();
+        
         try {
             window.chartEqFrente = new Chart(canvEl, {
                 type: 'bar',

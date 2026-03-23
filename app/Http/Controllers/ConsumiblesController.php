@@ -112,6 +112,8 @@ class ConsumiblesController extends Controller
     // ══════════════════════════════════════════════════════════════
     public function guardarLote(Request $request)
     {
+        abort_if(!auth()->user()->can('super.admin'), 403, 'No tienes permiso para cargar consumibles.');
+
         // ── 1. Filtrar filas vacías ANTES de validar ──────────────
         // Las filas sin fecha ni cantidad (ej: rows iniciales vacíos) se descartan
         // para que la validación no falle por ellas.
@@ -261,6 +263,8 @@ class ConsumiblesController extends Controller
     // ══════════════════════════════════════════════════════════════
     public function destroy(Request $request, int $id)
     {
+        abort_if(!auth()->user()->can('super.admin'), 403, 'No tienes permiso para eliminar consumibles.');
+
         Consumible::findOrFail($id)->delete();
 
         // Invalidar caché de gráficos
