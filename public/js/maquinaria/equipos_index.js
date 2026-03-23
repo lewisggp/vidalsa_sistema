@@ -656,14 +656,8 @@ window.openBulkModal = function (event) {
 
     // PERMISSION CHECK (Specific to Assignment/Mobilization)
     if (window.CAN_ASSIGN_EQUIPOS === false || window.CAN_ASSIGN_EQUIPOS === 'false') {
-        if (typeof window.showModal === 'function') {
-            window.showModal({
-                type: "error",
-                title: "Acceso Denegado",
-                message: "No tienes permisos para movilizar (asignar) equipos.",
-                confirmText: "Entendido",
-                hideCancel: true,
-            });
+        if (typeof window.showToast === 'function') {
+            window.showToast('Acceso Denegado: No tienes permisos para movilizar equipos.', 'error');
         } else {
             alert("Acceso Denegado: No tienes permisos.");
         }

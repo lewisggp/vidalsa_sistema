@@ -1126,7 +1126,7 @@
     // Alias: CAN_CREATE_INFO → CAN_CREATE_EQUIPOS (definido globalmente en estructura_base)
     // Se mantiene por compatibilidad con equipos_index.js
     window.CAN_CREATE_INFO = window.CAN_CREATE_EQUIPOS;
-    window.CAN_ASSIGN_EQUIPOS = {{ auth()->user() && (auth()->user()->can('equipos.movilizar') || auth()->user()->can('equipos.edit') || auth()->user()->can('super.admin')) ? 'true' : 'false' }};
+    window.CAN_ASSIGN_EQUIPOS = {{ auth()->user() && (auth()->user()->can('equipos.assign') || auth()->user()->can('super.admin')) ? 'true' : 'false' }};
     window.CAN_CHANGE_STATUS = {{ auth()->user() && (auth()->user()->can('equipos.edit') || auth()->user()->can('super.admin')) ? 'true' : 'false' }};
     window.CREATE_URL = "{{ route('equipos.create') }}";
 </script>
