@@ -455,7 +455,7 @@
     <script src="{{ asset('js/maquinaria/catalogo_create.js') }}?v=12.0"></script>
     <script src="{{ asset('js/maquinaria/equipos_index.js') }}?v=21.0"></script>
     <script src="{{ asset('js/maquinaria/catalogo_index.js') }}?v=3.6"></script>
-    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=7.0"></script>
+    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=7.1"></script>
     <script src="{{ asset('js/maquinaria/usuarios_index.js') }}?v=10.0"></script>
     <script src="{{ asset('js/maquinaria/fleet_dashboard.js') }}?v=106.0"></script>
 

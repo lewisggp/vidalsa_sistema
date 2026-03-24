@@ -87,6 +87,11 @@ Route::middleware(['auth'])->group(function () {
             Route::post('sub-activos',        [App\Http\Controllers\SubActivoController::class, 'store'])  ->name('sub-activos.store');
             Route::patch('sub-activos/{id}',  [App\Http\Controllers\SubActivoController::class, 'update']) ->name('sub-activos.update');
             Route::delete('sub-activos/{id}', [App\Http\Controllers\SubActivoController::class, 'destroy'])->name('sub-activos.destroy');
+
+            // ── Herramientas Manuales ────────────────────────────────────────
+            Route::get('herramientas/consolidado-manual', function () {
+                return view('admin.herramientas.consolidado_manual');
+            })->name('herramientas.consolidadoManual');
         });
 
     });

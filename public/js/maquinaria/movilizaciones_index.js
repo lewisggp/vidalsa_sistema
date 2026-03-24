@@ -498,14 +498,21 @@ function initMovilizaciones() {
     if (panel) window.advancedFilterOpen = panel.style.display === 'block';
     initMovilizacionesListeners();
 }
-// ── Inicialización en carga directa (F5 / URL directa) ──────────────────────
-document.addEventListener('DOMContentLoaded', function () {
+// ── Carga directa (F5 / URL directa) ──────────────────────────
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () {
+        if (document.getElementById('movilizacionesTableBody')) {
+            initMovilizaciones();
+        }
+    });
+} else {
+    // DOM ya cargado (script cargado después del DOMContentLoaded)
     if (document.getElementById('movilizacionesTableBody')) {
         initMovilizaciones();
     }
-});
+}
 
-// ── Inicialización vía SPA (navegar desde otra sección) ─────────────────────
+// ── Navegación SPA (clic desde otro módulo) ────────────────────
 window.addEventListener('spa:contentLoaded', function () {
     if (document.getElementById('movilizacionesTableBody')) {
         initMovilizaciones();
@@ -513,9 +520,7 @@ window.addEventListener('spa:contentLoaded', function () {
 });
 
 // ── Listener global del evento dropdown-selection (disparado por selectOption) ──
-// Esto garantiza que los filtros de dropdown regulares funcionen.
 window.addEventListener('dropdown-selection', function (e) {
-    // Solo actuar si estamos en la página de movilizaciones
     if (!document.getElementById('movilizacionesTableBody')) return;
 
     const filterName = e.detail && e.detail.inputName;
