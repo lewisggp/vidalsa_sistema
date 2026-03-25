@@ -459,7 +459,14 @@
                     altInput:      true,       // input visual separado
                     altFormat:     "d/m/Y",    // lo que ve el usuario: DD/MM/YYYY
                     locale:        "es",       // idioma Español
-                    disableMobile: true        // fuerza flatpickr también en móviles
+                    disableMobile: true,       // fuerza flatpickr también en móviles
+                    onChange: function(selectedDates, dateStr, instance) {
+                        // Flatpickr actualiza el valor del input original por código JS,
+                        // lo que NO dispara el evento 'change' nativo del HTML.
+                        // Lo disparamos manualmente para que onchange="..." funcione.
+                        var nativeChange = new Event('change', { bubbles: true });
+                        instance.input.dispatchEvent(nativeChange);
+                    }
                 });
             });
         };
