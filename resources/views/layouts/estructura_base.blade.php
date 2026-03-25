@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Sistema de Gestión')</title>
+    <title>@yield('title', 'Sistema de GestiÃ³n')</title>
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <!-- CSS -->
     <link rel="stylesheet" href="{{ asset('css/maquinaria/estilos_globales.css') }}?v=19.0">
@@ -64,7 +64,7 @@
     @yield('extra_css')
 </head>
 <body class="modern-app">
-    <!-- Global Preloader (Bars animation) - Solo para navegación interna -->
+    <!-- Global Preloader (Bars animation) - Solo para navegaciÃ³n interna -->
     <div id="preloader" class="preloader" style="display: none;">
         <div class="preloader-content">
 
@@ -88,10 +88,10 @@
             </a>
             
             <a href="{{ route('equipos.index') }}" class="nav-link {{ request()->is('admin/equipos*') ? 'active' : '' }}" style="display: flex; align-items: center;">
-                <i class="material-icons" style="font-size: 18px; margin-right: 5px;">agriculture</i>Vehículo
+                <i class="material-icons" style="font-size: 18px; margin-right: 5px;">agriculture</i>VehÃ­culo
             </a>
             <a href="{{ route('movilizaciones.index') }}" class="nav-link {{ request()->is('admin/movilizaciones*') ? 'active' : '' }}" style="display: flex; align-items: center;">
-                <i class="material-icons" style="font-size: 18px; margin-right: 5px;">local_shipping</i>Recepción
+                <i class="material-icons" style="font-size: 18px; margin-right: 5px;">local_shipping</i>RecepciÃ³n
             </a>
 
             <!-- Configuraciones Dropdown -->
@@ -110,7 +110,7 @@
                         <i class="material-icons">business</i> Frentes de trabajo
                     </a>
                     <a href="{{ route('catalogo.index') }}" class="nav-dropdown-link {{ request()->is('admin/catalogo*') ? 'active' : '' }}">
-                        <i class="material-icons">menu_book</i> Catálogo de Modelos
+                        <i class="material-icons">menu_book</i> CatÃ¡logo de Modelos
                     </a>
 
                 </div>
@@ -119,7 +119,7 @@
             <a href="{{ route('consumibles.index') }}" class="nav-link {{ request()->is('admin/consumibles*') ? 'active' : '' }}" style="display:flex; align-items:center;">
                 <i class="material-icons" style="font-size:18px; margin-right:5px;">local_gas_station</i>Consumibles
             </a>
-            <a href="#" class="nav-link">Sección 6</a>
+            <a href="#" class="nav-link">SecciÃ³n 6</a>
         </nav>
 
         <div class="header-actions desktop-only">
@@ -146,10 +146,10 @@
         </a>
         
         <a href="{{ route('equipos.index') }}" class="mobile-nav-link {{ request()->is('admin/equipos*') ? 'active' : '' }}">
-            <i class="material-icons">agriculture</i> Vehículo
+            <i class="material-icons">agriculture</i> VehÃ­culo
         </a>
         <a href="{{ route('movilizaciones.index') }}" class="mobile-nav-link {{ request()->is('admin/movilizaciones*') ? 'active' : '' }}">
-            <i class="material-icons">local_shipping</i> Recepción
+            <i class="material-icons">local_shipping</i> RecepciÃ³n
         </a>
 
         <!-- Mobile Group -->
@@ -171,25 +171,25 @@
                     <i class="material-icons">business</i> Frentes de trabajo
                 </a>
                 <a href="{{ route('catalogo.index') }}" class="mobile-nav-link {{ request()->is('admin/catalogo*') ? 'active' : '' }}">
-                    <i class="material-icons">menu_book</i> Catálogo de Modelos
+                    <i class="material-icons">menu_book</i> CatÃ¡logo de Modelos
                 </a>
             </div>
         </div>
 
         <a href="#" class="mobile-nav-link">
-            <i class="material-icons">dashboard</i> Sección 5
+            <i class="material-icons">dashboard</i> SecciÃ³n 5
         </a>
         <a href="#" class="mobile-nav-link">
-            <i class="material-icons">analytics</i> Sección 6
+            <i class="material-icons">analytics</i> SecciÃ³n 6
         </a>
         <a href="#" class="mobile-nav-link">
-            <i class="material-icons">inventory</i> Sección 7
+            <i class="material-icons">inventory</i> SecciÃ³n 7
         </a>
         <div class="mobile-nav-separator"></div>
         <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
             @csrf
             <button type="submit" class="mobile-nav-link mobile-logout" data-no-spa>
-                <i class="material-icons">logout</i> Cerrar Sesión
+                <i class="material-icons">logout</i> Cerrar SesiÃ³n
             </button>
         </form>
     </div>
@@ -201,7 +201,7 @@
                 window.addEventListener('load', () => {
                     showModal({
                         type: 'success',
-                        title: '¡Operación Exitosa!',
+                        title: 'Â¡OperaciÃ³n Exitosa!',
                         message: @json(session('success')),
                         confirmText: 'Aceptar',
                         hideCancel: true
@@ -265,11 +265,11 @@
                     
                     <iframe id="pdfPreviewFrame" src="" style="width: 100%; height: 100%; border: none; opacity: 0; transition: opacity 0.3s; position: relative; z-index: 20;" allowfullscreen></iframe>
                     
-                    <!-- Vista móvil para descarga directa -->
+                    <!-- Vista mÃ³vil para descarga directa -->
                     <div id="pdfMobileFallback" style="display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 25; width: 100%; height: 100%; background: #4a5568; padding: 20px; box-sizing: border-box; text-align: center; position: absolute; top:0; left:0;">
                         <i class="material-icons" style="font-size: 64px; color: #a0aec0; margin-bottom: 15px;">description</i>
                         <h4 style="color: white; margin: 0 0 10px 0; font-size: 18px; font-weight: 600;">Vista Previa No Disponible</h4>
-                        <p style="color: #cbd5e0; margin: 0 0 25px 0; font-size: 14px; max-width: 280px; line-height: 1.4;">Los teléfonos móviles no soportan la visualización incrustada del documento.</p>
+                        <p style="color: #cbd5e0; margin: 0 0 25px 0; font-size: 14px; max-width: 280px; line-height: 1.4;">Los telÃ©fonos mÃ³viles no soportan la visualizaciÃ³n incrustada del documento.</p>
                         <button onclick="downloadPdfDirect(document.getElementById('pdfDownloadBtn').dataset.url, document.getElementById('pdfDownloadBtn').dataset.label)" style="background: #3182ce; color: white; border: none; padding: 12px 24px; font-size: 15px; font-weight: 600; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); cursor: pointer;">
                             <i class="material-icons">download</i> Descargar Documento
                         </button>
@@ -303,8 +303,8 @@
     <div id="standardModal" class="modal-overlay" style="z-index: 1000001 !important;">
         <div class="modal-card">
             <i id="modalIcon" class="material-icons modal-icon" style="color: var(--maquinaria-blue);">help_outline</i>
-            <h3 id="modalTitle" class="modal-title">¿Confirmar Acción?</h3>
-            <p id="modalMessage" class="modal-message">¿Estás seguro de que deseas realizar esta acción?</p>
+            <h3 id="modalTitle" class="modal-title">Â¿Confirmar AcciÃ³n?</h3>
+            <p id="modalMessage" class="modal-message">Â¿EstÃ¡s seguro de que deseas realizar esta acciÃ³n?</p>
             <div class="modal-footer">
                 <button id="modalCancelBtn" onclick="closeModal()" class="modal-btn modal-btn-cancel">Cancelar</button>
                 <button id="modalConfirmBtn" class="modal-btn modal-btn-confirm">Confirmar</button>
@@ -363,8 +363,8 @@
             // GLOBAL EVENT DELEGATION FOR EQUIPOS MODULE (SPA COMPATIBLE)
             // This ensures that "Acciones" and "Filter" buttons work even after AJAX content replacement
             window.equiposGlobalClickHandler = function(event) {
-                // GUARD: Este handler solo actúa en la página de Equipos
-                // (donde existe #splitDropdownMenu). En otras páginas (movilizaciones, etc.)
+                // GUARD: Este handler solo actÃºa en la pÃ¡gina de Equipos
+                // (donde existe #splitDropdownMenu). En otras pÃ¡ginas (movilizaciones, etc.)
                 // salimos inmediatamente para no interferir con sus propios handlers.
                 const isEquiposPage = !!document.getElementById('splitDropdownMenu');
                 if (!isEquiposPage) return;
@@ -401,7 +401,7 @@
                     return;
                 }
 
-                // Close when clicking outside (solo en página de equipos)
+                // Close when clicking outside (solo en pÃ¡gina de equipos)
                 if (!event.target.closest('#advancedFilterPanel') && 
                     !event.target.closest('#splitDropdownMenu') &&
                     !event.target.closest('#btnAcciones') && 
@@ -620,7 +620,7 @@
         // Moved to js/maquinaria/uicomponents.js to ensure availability before other scripts
 
 
-        // --- Equipos / Vehículos Specific Logic (Globalized for SPA) ---
+        // --- Equipos / VehÃ­culos Specific Logic (Globalized for SPA) ---
         // Tab Logic (Updated for 3 Tabs)
         window.switchModalTab = function(tabName) {
             // Hide all content
@@ -711,12 +711,12 @@
             const updateInput = document.getElementById('pdfUpdateInput');
             const loader = document.getElementById('pdfViewerLoader');
 
-            // Mostrar spinner global — se oculta cuando el PDF cargue en el iframe
+            // Mostrar spinner global â€” se oculta cuando el PDF cargue en el iframe
             if (typeof window.showPreloader === 'function') window.showPreloader();
             
             // Abrir modal de PDF
             if(modal) modal.classList.add('active');
-            // NO ocultamos el preloader aquí — esperamos al onload del iframe
+            // NO ocultamos el preloader aquÃ­ â€” esperamos al onload del iframe
             
             // Show Loader
             if(loader) {
@@ -748,7 +748,7 @@
             const loaderStartTime = Date.now();
             const minimumLoaderDuration = 800; // Minimum time (ms) to show loader
             
-            // Fallback: ocultar spinner y loader tras 5s máximo
+            // Fallback: ocultar spinner y loader tras 5s mÃ¡ximo
             const loaderTimeout = setTimeout(() => {
                 if (typeof window.hidePreloader === 'function') window.hidePreloader();
                 if(loader) loader.style.display = 'none';
@@ -832,7 +832,7 @@
             // Store current context for metadata panel
             window.currentPdfContext = { equipoId, docType, label };
 
-            // Auto-open metadata panel on desktop only (no ocultar el PDF en móviles)
+            // Auto-open metadata panel on desktop only (no ocultar el PDF en mÃ³viles)
             const panel = document.getElementById('pdfMetadataPanel');
             if (panel) {
                 panel.style.width = '0';
@@ -1102,7 +1102,7 @@
                     } catch (error) {
                          console.error(error);
                          if(progressOverlay) progressOverlay.style.display = 'none';
-                         if (window.showToast) window.showToast('Error: Respuesta inválida del servidor', 'error');
+                         if (window.showToast) window.showToast('Error: Respuesta invÃ¡lida del servidor', 'error');
                     }
                 } else {
                     if(progressOverlay) progressOverlay.style.display = 'none';
@@ -1143,8 +1143,8 @@
         window.confirmDeleteDocument = function(equipoId, docType, label) {
              showModal({
                 type: 'error',
-                title: '¿Eliminar Documento?',
-                message: `¿Estás seguro de que deseas eliminar "${label}"? Esta acción no se puede deshacer.`,
+                title: 'Â¿Eliminar Documento?',
+                message: `Â¿EstÃ¡s seguro de que deseas eliminar "${label}"? Esta acciÃ³n no se puede deshacer.`,
                 confirmText: 'Eliminar',
                 onConfirm: async () => {
                      // PERMISSION CHECK
@@ -1212,8 +1212,8 @@
         window.confirmDeleteEquipo = function(id) {
             showModal({
                 type: 'error',
-                title: '¿Eliminar equipo?',
-                message: '¿Estás seguro de eliminar este equipo? Esta acción no se puede deshacer.',
+                title: 'Â¿Eliminar equipo?',
+                message: 'Â¿EstÃ¡s seguro de eliminar este equipo? Esta acciÃ³n no se puede deshacer.',
                 confirmText: 'Eliminar',
                 onConfirm: () => {
                     var form = document.getElementById('delete-form-global');
@@ -1326,13 +1326,13 @@
                 return;
 
             } else if (filterName === 'anio') {
-                // Catalog - Año filter
+                // Catalog - AÃ±o filter
                 const input = document.getElementById('input_anio_filter');
                 if (input) input.value = '';
                 const searchInput = document.getElementById('searchAnioInput');
                 if (searchInput) {
                     searchInput.value = '';
-                    searchInput.placeholder = 'Buscar Año...';
+                    searchInput.placeholder = 'Buscar AÃ±o...';
                 }
                 const trigger = searchInput?.closest('.dropdown-trigger');
                 if (trigger) {
@@ -1391,7 +1391,7 @@
                 
                 if (isUsuarios) {
                     icon = 'person_search';
-                    message = 'Filtro limpiado. Todos los usuarios serán mostrados.';
+                    message = 'Filtro limpiado. Todos los usuarios serÃ¡n mostrados.';
                 } else if (isMov) {
                     icon = 'local_shipping';
                     message = 'No se han aplicado filtros. Seleccione uno para ver movilizaciones.';
@@ -1445,7 +1445,7 @@
         const initCalendars = () => {
             if (typeof flatpickr !== 'undefined') {
                 // Aplica flatpickr a todos los inputs de tipo date,
-                // EXCEPTO a los que tengan la clase 'native-date' (formularios rápidos)
+                // EXCEPTO a los que tengan la clase 'native-date' (formularios rÃ¡pidos)
                 flatpickr('input[type="date"]:not(.native-date)', {
                     dateFormat: "Y-m-d",
                     locale: "es",
@@ -1454,7 +1454,7 @@
             }
         };
 
-        // Inicializar tanto al cargar la página como después de navegación SPA
+        // Inicializar tanto al cargar la pÃ¡gina como despuÃ©s de navegaciÃ³n SPA
         document.addEventListener('DOMContentLoaded', initCalendars);
         window.addEventListener('spa:contentLoaded', initCalendars);
     </script>
