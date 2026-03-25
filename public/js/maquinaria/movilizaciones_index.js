@@ -24,9 +24,17 @@ window.selectMovilizacionFilter = function (type, value) {
     window.loadMovilizaciones();
 };
 
-window.loadMovilizaciones = function (url = null) {
+window.loadMovilizaciones = function (url = null, _retry) {
     const tableBody = document.getElementById('movilizacionesTableBody');
-    if (!tableBody) return;
+    // Si el DOM aún no tiene el tbody (SPA timing), reintenta hasta 10 veces
+    if (!tableBody) {
+        if ((_retry || 0) < 10) {
+            setTimeout(() => window.loadMovilizaciones(url, (_retry || 0) + 1), 150);
+        } else {
+            console.warn('[loadMovilizaciones] tableBody no encontrado después de reintentos.');
+        }
+        return;
+    }
 
     // URL base siempre fija a /admin/movilizaciones para evitar problemas con
     // window.location.pathname cuando se navega via SPA desde otras secciones.
@@ -520,15 +528,16 @@ window.addEventListener('spa:contentLoaded', function () {
 });
 
 // ── Listener global del evento dropdown-selection (disparado por selectOption) ──
-// Registrado UNA SOLA VEZ: se usa un flag global para evitar que la navegación
-// SPA lo registre múltiples veces, lo que causaría disparos duplicados o silenciosos.
+// Usa el evento para módulos como movilizaciones cuyos items del dropdown tienen
+// onclick que ya llaman loadMovilizaciones directamente — este listener es
+// un fallback por si el onclick falla (ej. versiones cacheadas del blade).
 if (!window._mvDropdownListenerRegistered) {
     window._mvDropdownListenerRegistered = true;
     window.addEventListener('dropdown-selection', function (e) {
-        if (!document.getElementById('movilizacionesTableBody')) return;
         const filterName = e.detail && e.detail.inputName;
         if (filterName === 'id_frente' || filterName === 'id_tipo') {
-            window.loadMovilizaciones();
+            // Delay suficiente para que selectOption actualice el input hidden
+            setTimeout(() => window.loadMovilizaciones(), 200);
         }
     });
 }
