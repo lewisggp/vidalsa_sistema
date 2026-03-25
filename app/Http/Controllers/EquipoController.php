@@ -1683,8 +1683,7 @@ XML;
                 ->select(
                     'tipo_equipos.nombre as tipo_nombre',
                     DB::raw("SUM(CASE WHEN equipos.ESTADO_OPERATIVO = 'INOPERATIVO'      THEN 1 ELSE 0 END) as inoperativo_count"),
-                    DB::raw("SUM(CASE WHEN equipos.ESTADO_OPERATIVO = 'EN MANTENIMIENTO' THEN 1 ELSE 0 END) as mantenimiento_count"),
-                    DB::raw("SUM(CASE WHEN equipos.ESTADO_OPERATIVO = 'DESINCORPORADO'   THEN 1 ELSE 0 END) as desincorporado_count")
+                    DB::raw("SUM(CASE WHEN equipos.ESTADO_OPERATIVO = 'EN MANTENIMIENTO' THEN 1 ELSE 0 END) as mantenimiento_count")
                 )
                 ->leftJoin('tipo_equipos', 'equipos.id_tipo_equipo', '=', 'tipo_equipos.id')
                 ->whereNotNull('equipos.id_tipo_equipo')
@@ -1692,8 +1691,7 @@ XML;
                 ->groupBy('tipo_equipos.nombre')
                 ->havingRaw("(
                     SUM(CASE WHEN equipos.ESTADO_OPERATIVO = 'INOPERATIVO'      THEN 1 ELSE 0 END) +
-                    SUM(CASE WHEN equipos.ESTADO_OPERATIVO = 'EN MANTENIMIENTO' THEN 1 ELSE 0 END) +
-                    SUM(CASE WHEN equipos.ESTADO_OPERATIVO = 'DESINCORPORADO'   THEN 1 ELSE 0 END)
+                    SUM(CASE WHEN equipos.ESTADO_OPERATIVO = 'EN MANTENIMIENTO' THEN 1 ELSE 0 END)
                 ) > 0")
                 ->orderBy('tipo_equipos.nombre')
                 ->get();
@@ -1701,12 +1699,10 @@ XML;
             $tiposForInoperative = $inoperativeByTypeRaw->pluck('tipo_nombre')->toArray();
             $inoperativoData     = $inoperativeByTypeRaw->pluck('inoperativo_count')->toArray();
             $mantenimientoData   = $inoperativeByTypeRaw->pluck('mantenimiento_count')->toArray();
-            $desincorporadoData  = $inoperativeByTypeRaw->pluck('desincorporado_count')->toArray();
 
             $inoperativeByTypeDatasets = [
                 ['label' => 'Inoperativo',      'data' => $inoperativoData],
-                ['label' => 'En Mantenimiento', 'data' => $mantenimientoData],
-                ['label' => 'Desincorporado',   'data' => $desincorporadoData],
+                ['label' => 'En Mantenimiento', 'data' => $mantenimientoData]
             ];
 
             // --- 5. EQUIPOS ASIGNADOS POR FRENTE ---
