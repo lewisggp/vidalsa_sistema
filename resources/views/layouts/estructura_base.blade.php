@@ -11,6 +11,10 @@
     <link rel="stylesheet" href="{{ asset('css/maquinaria/catalogo.css') }}?v=2.3">
     <!-- Local Fonts Optimization -->
     <link rel="stylesheet" href="{{ asset('css/fonts.css') }}?v=1.0">
+    <!-- Flatpickr for Date inputs -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
@@ -441,6 +445,37 @@
     </script>
     
     {{-- Core Scripts (Always Loaded) --}}
+    <script>
+        // Inicializar Flatpickr automáticamente para todos los campos de fecha (SPA Compatible)
+        window.initDatePickers = function() {
+            var dateInputs = document.querySelectorAll('input[type="date"]:not(.flatpickr-input)');
+            if (dateInputs.length > 0) {
+                flatpickr(dateInputs, {
+                    dateFormat: "Y-m-d",     // Formato real que envía al servidor
+                    altInput: true,          // Crea un input falso visual
+                    altFormat: "d/m/Y",      // VENEZUELA FORMAT (DD/MM/YYYY)
+                    locale: "es",            // Idioma Español
+                    disableMobile: "true"    // Fuerza flatpickr incluso en móviles para conservar formato
+                });
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            window.initDatePickers();
+
+            // Observador para SPA: cada vez que el DOM cambie, aplicamos Flatpickr a los nuevos campos de fecha.
+            var observer = new MutationObserver(function(mutations) {
+                var added = false;
+                mutations.forEach(function(mut) {
+                    if (mut.addedNodes.length > 0) added = true;
+                });
+                if (added) {
+                    setTimeout(window.initDatePickers, 50);
+                }
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
+    </script>
     <script src="{{ asset('js/maquinaria/module_manager.js') }}?v=2.0"></script>
     <script src="{{ asset('js/maquinaria/uicomponents.js') }}?v=16.4"></script>
     <script src="{{ asset('js/maquinaria/navegacion.js') }}?v=10.2"></script>

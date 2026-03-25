@@ -467,13 +467,8 @@ window.pasteLoteCargarHandler = window.pasteLoteCargarHandler || function(e) {
         // Formato DD/MM/YYYY o MM/DD/YYYY con barras
         else if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(fecha)) {
             const p = fecha.split('/');
-            if (parseInt(p[0]) > 12) {
-                // DD/MM/YYYY
-                fecha = `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
-            } else {
-                // MM/DD/YYYY
-                fecha = `${p[2]}-${p[0].padStart(2,'0')}-${p[1].padStart(2,'0')}`;
-            }
+            // Siempre asumiremos DD/MM/YYYY (Formato de Venezuela)
+            fecha = `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
         }
         // YYYY-MM-DD ya está en formato correcto → no tocar
 
