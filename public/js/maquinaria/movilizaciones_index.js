@@ -25,98 +25,100 @@ window.selectMovilizacionFilter = function (type, value) {
 };
 
 window.loadMovilizaciones = function (url = null, _retry) {
-    const tableBody = document.getElementById('movilizacionesTableBody');
-    // Si el DOM aún no tiene el tbody (SPA timing), reintenta hasta 10 veces
-    if (!tableBody) {
-        if ((_retry || 0) < 10) {
-            setTimeout(() => window.loadMovilizaciones(url, (_retry || 0) + 1), 150);
-        } else {
-            console.warn('[loadMovilizaciones] tableBody no encontrado después de reintentos.');
+    try {
+        console.log("🚀 [LOAD] Iniciando loadMovilizaciones...");
+        
+        const tableBody = document.getElementById('movilizacionesTableBody');
+        if (!tableBody) {
+            if ((_retry || 0) < 10) {
+                console.log("⏳ [LOAD] Reintentando encontrar tbody (" + ((_retry || 0) + 1) + "/10)...");
+                setTimeout(() => window.loadMovilizaciones(url, (_retry || 0) + 1), 150);
+            } else {
+                console.warn('⚠️ [LOAD] tableBody no encontrado en DOM.');
+            }
+            return;
         }
-        return;
-    }
 
-    // URL base siempre fija a /admin/movilizaciones para evitar problemas con
-    // window.location.pathname cuando se navega via SPA desde otras secciones.
-    let baseUrl = '/admin/movilizaciones';
+        let baseUrl = '/admin/movilizaciones';
+        const container = tableBody.closest('.movilizaciones-main-card') || document;
+        const searchInput     = container.querySelector('#searchInput');
+        const frenteInput     = container.querySelector('input[name="id_frente"]');
+        const tipoInput       = container.querySelector('input[name="id_tipo"]');
+        const fechaDesde      = container.querySelector('#filterFechaDesde');
+        const fechaHasta      = container.querySelector('#filterFechaHasta');
+        const direccionFrente = container.querySelector('#filterDireccionFrente');
 
-    const container = tableBody.closest('.movilizaciones-main-card') || document;
-    const searchInput     = container.querySelector('#searchInput');
-    const frenteInput     = container.querySelector('input[name="id_frente"]');
-    const tipoInput       = container.querySelector('input[name="id_tipo"]');
-    const fechaDesde      = container.querySelector('#filterFechaDesde');
-    const fechaHasta      = container.querySelector('#filterFechaHasta');
-    const direccionFrente = container.querySelector('#filterDireccionFrente');
+        const params = new URLSearchParams();
+        if (searchInput && searchInput.value) params.append('search', searchInput.value);
+        if (frenteInput && frenteInput.value && frenteInput.value !== 'all') params.append('id_frente', frenteInput.value);
+        if (tipoInput && tipoInput.value && tipoInput.value !== 'all') params.append('id_tipo', tipoInput.value);
+        if (fechaDesde && fechaDesde.value) params.append('fecha_desde', fechaDesde.value);
+        if (fechaHasta && fechaHasta.value) params.append('fecha_hasta', fechaHasta.value);
+        if (direccionFrente && direccionFrente.value) params.append('direccion_frente', direccionFrente.value);
 
-    const params = new URLSearchParams();
-    if (searchInput?.value)          params.append('search',           searchInput.value);
-    if (frenteInput?.value && frenteInput.value !== 'all')
-                                     params.append('id_frente',        frenteInput.value);
-    if (tipoInput?.value && tipoInput.value !== 'all')
-                                     params.append('id_tipo',          tipoInput.value);
-    if (fechaDesde?.value)           params.append('fecha_desde',      fechaDesde.value);
-    if (fechaHasta?.value)           params.append('fecha_hasta',      fechaHasta.value);
-    if (direccionFrente?.value)      params.append('direccion_frente', direccionFrente.value);
+        if (url && typeof url === 'string' && url.includes('page=')) {
+            try {
+                const urlObj = new URL(url, window.location.origin);
+                const page = urlObj.searchParams.get('page');
+                if (page) params.set('page', page);
+            } catch (e) { console.error('[LOAD] URL parse error:', e); }
+        }
 
-    // Solo para paginación: extraer page de la url pasada como argumento
-    if (url && url.includes('page=')) {
-        try {
-            const urlObj = new URL(url, window.location.origin);
-            const page = urlObj.searchParams.get('page');
-            if (page) params.set('page', page);
-        } catch (e) { console.error('[loadMovilizaciones] URL parse error:', e); }
-    }
+        const queryStr = params.toString();
+        const finalUrl = baseUrl + (queryStr ? '?' + queryStr : '');
 
-    const queryStr = params.toString();
-    const finalUrl = baseUrl + (queryStr ? '?' + queryStr : '');
+        console.log("🚀 [LOAD] FETCH a -> " + finalUrl);
 
-    console.log("🚀 [loadMovilizaciones] Inputs detectados:");
-    console.log("   - Frente:", frenteInput?.value);
-    console.log("   - Tipo:", tipoInput?.value);
-    console.log("   - URL generada:", finalUrl);
+        tableBody.style.opacity = '0.5';
+        if (window.showPreloader) window.showPreloader();
 
-    tableBody.style.opacity = '0.5';
-    if (window.showPreloader) window.showPreloader();
-
-    fetch(finalUrl, {
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept':           'application/json',
-            'Cache-Control':    'no-cache, no-store, must-revalidate',
-            'Pragma':           'no-cache'
-        },
-        cache: 'no-store'
-    })
-        .then(response => {
-            if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            return response.json();
+        fetch(finalUrl, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept':           'application/json',
+                'Cache-Control':    'no-cache, no-store, must-revalidate',
+                'Pragma':           'no-cache'
+            },
+            cache: 'no-store'
         })
-        .then(data => {
-            tableBody.innerHTML = data.html;
-            tableBody.style.opacity = '1';
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                console.log("✅ [LOAD] Datos recibidos con éxito");
+                tableBody.innerHTML = data.html;
+                tableBody.style.opacity = '1';
 
-            const paginationContainer = document.getElementById('movilizacionesPagination');
-            if (paginationContainer) paginationContainer.innerHTML = data.pagination;
+                const paginationContainer = document.getElementById('movilizacionesPagination');
+                if (paginationContainer) paginationContainer.innerHTML = data.pagination;
 
-            const statsContainer = document.getElementById('statusStatsContainer');
-            if (statsContainer && data.statsHtml) statsContainer.innerHTML = data.statsHtml;
+                const statsContainer = document.getElementById('statusStatsContainer');
+                if (statsContainer && data.statsHtml) statsContainer.innerHTML = data.statsHtml;
 
-            const totalTransitoEl = document.getElementById('totalTransitoCount');
-            if (totalTransitoEl && data.totalTransito !== undefined)
-                totalTransitoEl.innerText = data.totalTransito;
+                const totalTransitoEl = document.getElementById('totalTransitoCount');
+                if (totalTransitoEl && data.totalTransito !== undefined)
+                    totalTransitoEl.innerText = data.totalTransito;
 
-            const mobileTransitoEl = document.getElementById('mobileTransitoCount');
-            if (mobileTransitoEl && data.totalTransito !== undefined)
-                mobileTransitoEl.innerText = data.totalTransito;
+                const mobileTransitoEl = document.getElementById('mobileTransitoCount');
+                if (mobileTransitoEl && data.totalTransito !== undefined)
+                    mobileTransitoEl.innerText = data.totalTransito;
 
-            window.history.pushState(null, '', finalUrl);
-            if (window.hidePreloader) window.hidePreloader();
-        })
-        .catch(error => {
-            console.error('[loadMovilizaciones] Error:', error);
-            tableBody.style.opacity = '1';
-            if (window.hidePreloader) window.hidePreloader();
-        });
+                if (window.history && window.history.pushState) {
+                    window.history.pushState(null, '', finalUrl);
+                }
+                
+                if (window.hidePreloader) window.hidePreloader();
+            })
+            .catch(error => {
+                console.error('❌ [LOAD] Fetch Error:', error);
+                tableBody.style.opacity = '1';
+                if (window.hidePreloader) window.hidePreloader();
+            });
+
+    } catch (globalExt) {
+        console.error("❌ [LOAD] EMERGENCE ERROR en loadMovilizaciones:", globalExt);
+    }
 };
 
 

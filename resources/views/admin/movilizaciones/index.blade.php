@@ -288,3 +288,21 @@
 
 @endsection
 
+@section('extra_js')
+<script>
+    // --- SPA STRICT CACHE BUSTER ---
+    // If the user navigates via SPA from another module, they might be stuck with an old
+    // cached version of `movilizaciones_index.js` in the <head>. This forces the new version
+    // to load if the definition of loadMovilizaciones doesn't match the new one.
+    if (typeof window.loadMovilizaciones === 'function') {
+        const fnStr = window.loadMovilizaciones.toString();
+        if (!fnStr.includes('EMERGENCE ERROR')) {
+            console.log("🔄 [SPA] Versión vieja de movilizaciones detectada en memoria. Inyectando v8.2...");
+            const script = document.createElement('script');
+            script.src = "{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=8.2";
+            document.head.appendChild(script);
+        }
+    }
+</script>
+@endsection
+
