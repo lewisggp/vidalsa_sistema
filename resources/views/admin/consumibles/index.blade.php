@@ -25,7 +25,7 @@
     .mr-match { color:#059669; font-weight: 600; }
     .mr-none  { color:#ef4444; font-weight: 600; font-style:italic; }
 
-    /* Encabezados tabla consumibles — mismo tono que tabla Equipos */
+    /* Encabezados tabla consumibles â€” mismo tono que tabla Equipos */
     .admin-table thead th {
         background: #cbd5e0 !important;
         color: var(--maquinaria-dark-blue, #00004d) !important;
@@ -46,9 +46,9 @@
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
     <div>
         <h1 class="page-title" style="margin-bottom:4px;">
-            <span class="page-title-line2" style="color:#000;">Gestión de Consumibles</span>
+            <span class="page-title-line2" style="color:#000;">GestiÃ³n de Consumibles</span>
         </h1>
-        <p style="margin:0; color:#64748b; font-size:13px;">Gasoil · Aceite · Cauchos por frente y equipo</p>
+        <p style="margin:0; color:#64748b; font-size:13px;">Gasoil Â· Aceite Â· Cauchos por frente y equipo</p>
     </div>
 </div>
 
@@ -171,8 +171,8 @@
                     <div style="margin-bottom: 15px;">
                         <span style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px;">Rango de Fechas</span>
                         <div style="display: flex; gap: 8px;">
-                            <input type="date" name="fecha_desde" value="{{ request('fecha_desde') }}" onchange="window.submitConsumiblesFilters()" title="Desde" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e0; background: #fbfcfd; outline: none; padding: 0 12px; font-size:12px; color: #1e293b; cursor: pointer;">
-                            <input type="date" name="fecha_hasta" value="{{ request('fecha_hasta') }}" onchange="window.submitConsumiblesFilters()" title="Hasta" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e0; background: #fbfcfd; outline: none; padding: 0 12px; font-size:12px; color: #1e293b; cursor: pointer;">
+                            <input type="date" name="fecha_desde" class="native-date" value="{{ request('fecha_desde') }}" onchange="window.submitConsumiblesFilters()" title="Desde" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e0; background: #fbfcfd; outline: none; padding: 0 12px; font-size:12px; color: #1e293b; cursor: pointer;">
+                            <input type="date" name="fecha_hasta" class="native-date" value="{{ request('fecha_hasta') }}" onchange="window.submitConsumiblesFilters()" title="Hasta" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e0; background: #fbfcfd; outline: none; padding: 0 12px; font-size:12px; color: #1e293b; cursor: pointer;">
                         </div>
                     </div>
 
@@ -213,7 +213,7 @@
                 </div>
             </div>
 
-            <!-- Botón Acciones -->
+            <!-- BotÃ³n Acciones -->
             <div style="position: relative; flex-shrink: 0;">
                 <button type="button" id="btnAcciones" onclick="toggleAccionesMenu(event)" class="btn-primary-maquinaria" style="padding: 0 15px; height: 42px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
                     <i class="material-icons">settings</i>
@@ -222,14 +222,14 @@
                 </button>
                 <div id="splitDropdownMenu" style="display: none; position: absolute; top: 100%; right: 0; min-width: 260px; background: #e2e8f0; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; z-index: 1050; margin-top: 10px; overflow: hidden;">
                     
-                    {{-- Navegación Estándar --}}
+                    {{-- NavegaciÃ³n EstÃ¡ndar --}}
                     <a href="{{ route('consumibles.index') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                         <i class="material-icons" style="font-size:20px;">list</i>
                         <span style="font-size:14px; font-weight:500;">Lista de Consumibles</span>
                     </a>
                     <a href="{{ route('consumibles.graficos') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                         <i class="material-icons" style="font-size:20px;">bar_chart</i>
-                        <span style="font-size:14px; font-weight:500;">Gráficos y Reportes</span>
+                        <span style="font-size:14px; font-weight:500;">GrÃ¡ficos y Reportes</span>
                     </a>
                     <a href="{{ route('consumibles.cargar') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #cbd5e1; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                         <i class="material-icons" style="font-size:20px;">upload_file</i>
@@ -252,7 +252,7 @@
         <div class="match-bar-wrap"><div class="match-bar" id="matchBar"></div></div>
     </div>
     <div class="match-results" id="matchResults">
-        <p style="margin:0 0 8px 0; font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Detalle del proceso — ✅ coincidió · ✗ no encontrado</p>
+        <p style="margin:0 0 8px 0; font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Detalle del proceso â€” âœ… coincidiÃ³ Â· âœ— no encontrado</p>
         <div id="matchResultsBody"></div>
     </div>
     
@@ -314,7 +314,7 @@
         <p style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.5px; margin:0 0 10px 0; display:flex; align-items:center; gap:6px;">
             <i class="material-icons" style="font-size:15px; color:#0067b1;">bar_chart</i>
             Surtido por frente
-            <span style="font-weight:400; color:#94a3b8; text-transform:none; letter-spacing:0;">— con los filtros aplicados</span>
+            <span style="font-weight:400; color:#94a3b8; text-transform:none; letter-spacing:0;">â€” con los filtros aplicados</span>
         </p>
         <div style="display:flex; flex-direction:column; gap:6px;">
             @foreach($resumenFrente as $rf)
@@ -334,7 +334,7 @@
                 </div>
                 <span style="font-size:12px; font-weight:800; color:#003a70; white-space:nowrap; text-align:right;">
                     {{ number_format($rf->total, 0, ',', '.') }} {{ $rf->unidad }}
-                    <span style="display:block; font-size:10px; font-weight:600; color:#64748b;">⛽ {{ $rf->despachos }} despacho{{ $rf->despachos != 1 ? 's' : '' }}</span>
+                    <span style="display:block; font-size:10px; font-weight:600; color:#64748b;">â›½ {{ $rf->despachos }} despacho{{ $rf->despachos != 1 ? 's' : '' }}</span>
                 </span>
             </div>
             @endforeach
@@ -404,7 +404,7 @@
                 <td style="font-size:12px;" id="frente-cell-{{ $c->ID_CONSUMIBLE }}">
                     <div style="display:flex; align-items:center; gap:4px;">
                         <span id="frente-txt-{{ $c->ID_CONSUMIBLE }}" style="flex:1;">
-                            {{ $c->frente?->NOMBRE_FRENTE ?? '—' }}
+                            {{ $c->frente?->NOMBRE_FRENTE ?? 'â€”' }}
                         </span>
                         <button onclick="editarFrente({{ $c->ID_CONSUMIBLE }}, {{ $c->ID_FRENTE ?? 'null' }})"
                                 style="background:none;border:none;cursor:pointer;padding:2px;color:#94a3b8;"
@@ -418,17 +418,17 @@
                         $discrepancia     = $c->equipo && $frenteEquipo && $frenteConsumible != $frenteEquipo;
                     @endphp
                     @if($discrepancia)
-                        <span title="El equipo está registrado en otro frente: {{ $c->equipo->frenteActual?->NOMBRE_FRENTE ?? 'N/A' }}"
+                        <span title="El equipo estÃ¡ registrado en otro frente: {{ $c->equipo->frenteActual?->NOMBRE_FRENTE ?? 'N/A' }}"
                               style="display:inline-flex; align-items:center; gap:3px; background:#fef3c7; color:#92400e;
                                      border-radius:6px; padding:1px 6px; font-size:10px; font-weight:700;
                                      cursor:help; margin-left:4px; white-space:nowrap;">
-                            ⚠ {{ $c->equipo->frenteActual?->NOMBRE_FRENTE ?? '?' }}
+                            âš  {{ $c->equipo->frenteActual?->NOMBRE_FRENTE ?? '?' }}
                         </span>
                     @endif
                 </td>
                 <td style="font-family:monospace; font-size:12px; color:#1e293b;" id="id-cell-{{ $c->ID_CONSUMIBLE }}">
                     <div style="display:flex; align-items:center; gap:5px;">
-                        <span id="id-txt-{{ $c->ID_CONSUMIBLE }}" style="flex:1;">{{ $c->IDENTIFICADOR ?? '—' }}</span>
+                        <span id="id-txt-{{ $c->ID_CONSUMIBLE }}" style="flex:1;">{{ $c->IDENTIFICADOR ?? 'â€”' }}</span>
                         <button onclick="editarId({{ $c->ID_CONSUMIBLE }}, '{{ addslashes($c->IDENTIFICADOR ?? '') }}')"
                                 style="background:none;border:none;cursor:pointer;padding:2px;color:#94a3b8;"
                                 title="Editar identificador">
@@ -439,7 +439,7 @@
                 <td style="font-size:12px; line-height:1.5;">
                     @if($c->equipo)
                         @php
-                            // ¿El identificador buscado es exactamente la placa o el serial?
+                            // Â¿El identificador buscado es exactamente la placa o el serial?
                             $idBuscado  = strtoupper(trim($c->IDENTIFICADOR ?? ''));
                             $placa      = strtoupper(trim($c->equipo->CODIGO_PATIO ?? ''));
                             $serial     = strtoupper(trim($c->equipo->SERIAL_CHASIS ?? ''));
@@ -468,7 +468,7 @@
 
                         {{-- Identificador buscado --}}
                         <span style="display:block; font-family:monospace; font-size:11px; color:#64748b; margin-top:2px;">
-                            {{ $c->IDENTIFICADOR ?? '—' }}
+                            {{ $c->IDENTIFICADOR ?? 'â€”' }}
                         </span>
 
                         {{-- Coincidencia completa (si el buscado era parcial) --}}
@@ -476,7 +476,7 @@
                             <span style="display:block; font-family:monospace; font-size:10px;
                                          color:#059669; margin-top:1px; font-weight:700;"
                                   title="Serial/placa completo encontrado en la BD">
-                                → {{ $coincidencia }}
+                                â†’ {{ $coincidencia }}
                             </span>
                         @endif
 
@@ -490,24 +490,24 @@
                     @endif
                 </td>
                 <td style="font-size:12px;">
-                    {{ $c->RESP_NOMBRE ?? '—' }}
+                    {{ $c->RESP_NOMBRE ?? 'â€”' }}
                     @if($c->RESP_CI)
-                        <span style="color:#94a3b8;"> · {{ $c->RESP_CI }}</span>
+                        <span style="color:#94a3b8;"> Â· {{ $c->RESP_CI }}</span>
                     @endif
                 </td>
                 <td>
                     @if($c->ESTADO_EQUIPO === 'CONFIRMADO')
-                        <span class="badge-ok">✓ Confirmado</span>
+                        <span class="badge-ok">âœ“ Confirmado</span>
                     @elseif($c->ESTADO_EQUIPO === 'PENDIENTE')
-                        <span class="badge-pen">⏳ Pendiente</span>
+                        <span class="badge-pen">â³ Pendiente</span>
                     @else
-                        <span class="badge-err">✗ Sin match</span>
+                        <span class="badge-err">âœ— Sin match</span>
                     @endif
                 </td>
                 <td>
                     @can('super.admin')
                     <button type="button"
-                        onclick="eliminarConsumible({{ $c->ID_CONSUMIBLE }}, '{{ route('consumibles.destroy', $c->ID_CONSUMIBLE) }}')"
+                        data-consumible-id="{{ $c->ID_CONSUMIBLE }}" onclick="eliminarConsumible({{ $c->ID_CONSUMIBLE }}, '{{ route('consumibles.destroy', $c->ID_CONSUMIBLE) }}', this)"
                         style="background:none; border:none; color:#ef4444; cursor:pointer; padding:4px;"
                         title="Eliminar">
                         <i class="material-icons" style="font-size:17px;">delete</i>
@@ -519,8 +519,8 @@
             <tr>
                 <td colspan="10" style="text-align:center; padding:40px; color:#94a3b8;">
                     <i class="material-icons" style="font-size:40px; display:block; margin-bottom:8px;">inbox</i>
-                    No hay registros de consumibles todavía.
-                    <a href="{{ route('consumibles.cargar') }}" style="color:#0067b1; font-weight:600;">Cargar el primer lote →</a>
+                    No hay registros de consumibles todavÃ­a.
+                    <a href="{{ route('consumibles.cargar') }}" style="color:#0067b1; font-weight:600;">Cargar el primer lote â†’</a>
                 </td>
             </tr>
         @endforelse

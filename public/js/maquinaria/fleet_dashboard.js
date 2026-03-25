@@ -124,14 +124,14 @@ window.openFleetDashboard = async function () {
 
     setupDropdownEvents();
 
-    // ── Leer frente con prioridades claras ──
-    // Prioridad 1: Filtro activo en la página (?id_frente=16) — aplica para TODOS
-    // Prioridad 2: Campo oculto inyectado por el servidor (Blade) — cubre usuarios locales
+    // ÔöÇÔöÇ Leer frente con prioridades claras ÔöÇÔöÇ
+    // Prioridad 1: Filtro activo en la p├ígina (?id_frente=16) ÔÇö aplica para TODOS
+    // Prioridad 2: Campo oculto inyectado por el servidor (Blade) ÔÇö cubre usuarios locales
     const hiddenId   = document.getElementById('dashboardSelectedFrenteId');
     const hiddenName = document.getElementById('dashboardSelectedFrenteNombre');
     const isGlobalUser = !!document.getElementById('dashboardFrenteSearch');
 
-    // Leer el filtro activo en la URL de la página
+    // Leer el filtro activo en la URL de la p├ígina
     const pageFilterInput = document.querySelector('input[name="id_frente"][data-filter-value]');
     const activeFrenteId  = (pageFilterInput && pageFilterInput.value && pageFilterInput.value !== 'all')
         ? pageFilterInput.value : '';
@@ -140,7 +140,7 @@ window.openFleetDashboard = async function () {
     let firstFrenteName = '';
 
     if (activeFrenteId) {
-        // Prioridad 1: Filtro activo en la página — igual para LOCAL y GLOBAL
+        // Prioridad 1: Filtro activo en la p├ígina ÔÇö igual para LOCAL y GLOBAL
         firstFrenteId = activeFrenteId;
 
         // Intentar resolver el nombre desde el dropdown visible
@@ -149,11 +149,11 @@ window.openFleetDashboard = async function () {
         );
         firstFrenteName = selectedOption ? selectedOption.textContent.trim() : (hiddenName?.value || '');
 
-        // Actualizar los campos ocultos para que exportFleetStats también use el correcto
+        // Actualizar los campos ocultos para que exportFleetStats tambi├®n use el correcto
         if (hiddenId)   hiddenId.value   = firstFrenteId;
         if (hiddenName) hiddenName.value = firstFrenteName;
     } else {
-        // Prioridad 2: Valor pre-inyectado por el servidor (el Blade ya calculó el mejor frente)
+        // Prioridad 2: Valor pre-inyectado por el servidor (el Blade ya calcul├│ el mejor frente)
         firstFrenteId   = hiddenId?.value   || '';
         firstFrenteName = hiddenName?.value || '';
     }
@@ -181,7 +181,7 @@ window.exportFleetStats = function () {
 };
 
 /**
- * Setup Dropdown Events (Close when clicking outside) — runs only once
+ * Setup Dropdown Events (Close when clicking outside) ÔÇö runs only once
  */
 if (typeof window.dropdownEventsInitialized === 'undefined') window.dropdownEventsInitialized = false;
 
@@ -212,7 +212,7 @@ window.dashboardToggleClearBtn = function () {
 };
 
 /**
- * Clear the frente search input — NO data reload (just clears the field)
+ * Clear the frente search input ÔÇö NO data reload (just clears the field)
  */
 window.dashboardClearFrenteSearch = function () {
     const input = document.getElementById('dashboardFrenteSearch');
@@ -399,7 +399,7 @@ async function loadFleetDashboardData(frenteId) {
         const data = await response.json();
 
         if (!data || data.success === false) {
-            throw new Error(data.message || 'El servidor devolvió un error');
+            throw new Error(data.message || 'El servidor devolvi├│ un error');
         }
 
         updateStatCards(data.stats);
@@ -421,7 +421,7 @@ async function loadFleetDashboardData(frenteId) {
             showModal({
                 type: 'error',
                 title: 'Error',
-                message: 'No se pudieron cargar las estadísticas de la flota. Detalle: ' + error.message,
+                message: 'No se pudieron cargar las estad├¡sticas de la flota. Detalle: ' + error.message,
                 confirmText: 'Cerrar',
                 hideCancel: true
             });
@@ -434,7 +434,7 @@ async function loadFleetDashboardData(frenteId) {
  */
 function createCharts(data) {
     if (typeof Chart === 'undefined') {
-        throw new Error('Chart.js no está disponible. Verifique su conexión a internet.');
+        throw new Error('Chart.js no est├í disponible. Verifique su conexi├│n a internet.');
     }
 
     const canvasStatus = document.getElementById('chartStatusByFront');
@@ -443,10 +443,22 @@ function createCharts(data) {
     const canvasInop = document.getElementById('chartInoperativeByType');
 
     if (!canvasStatus || !canvasAge || !canvasCat) {
-        throw new Error('No se encontraron los contenedores de gráficos en el DOM.');
+        throw new Error('No se encontraron los contenedores de gr├íficos en el DOM.');
     }
 
     destroyAllCharts();
+
+    // Expand panels to full-width when there are 6+ types (so labels are never cut)
+    const chartsGrid = document.getElementById('fleetChartsGrid');
+    const agePanelEl  = document.getElementById('fdm-panel-age');
+    const catPanelEl  = document.getElementById('fdm-panel-category');
+    const inopPanelEl = document.getElementById('fdm-panel-inoperative');
+    const ageCount  = (data.ageByType  && data.ageByType.labels)  ? data.ageByType.labels.length  : 0;
+    const catCount  = (data.categoryByType && data.categoryByType.labels) ? data.categoryByType.labels.length : 0;
+    const inopCount = (data.inoperativeByType && data.inoperativeByType.labels) ? data.inoperativeByType.labels.length : 0;
+    if (agePanelEl)  agePanelEl.style.gridColumn  = ageCount  >= 6 ? '1 / -1' : '';
+    if (catPanelEl)  catPanelEl.style.gridColumn  = catCount  >= 6 ? '1 / -1' : '';
+    if (inopPanelEl) inopPanelEl.style.gridColumn = inopCount >= 6 ? '1 / -1' : '';
 
     // 1. Estado Operativo - Doughnut
     window.fleetCharts.byStatus = new Chart(canvasStatus, {
@@ -519,7 +531,7 @@ function createCharts(data) {
         const parent = canvasInop.parentElement;
         const msg = document.createElement('p');
         msg.style.cssText = 'color:#94a3b8;font-size:13px;text-align:center;padding:30px 0;';
-        msg.textContent = 'Sin equipos inoperativos en esta selección.';
+        msg.textContent = 'Sin equipos inoperativos en esta selecci├│n.';
         canvasInop.style.display = 'none';
         if (!parent.querySelector('.fleet-empty-msg')) {
             msg.classList.add('fleet-empty-msg');
@@ -540,6 +552,12 @@ function createStackedBarChart(canvasId, config) {
     const emptyMsg = parent.querySelector('.fleet-empty-msg');
     if (emptyMsg) emptyMsg.remove();
     ctx.style.display = '';
+
+    // Dynamic height: 40px per label, minimum 220px
+    const labelCount = config.labels ? config.labels.length : 1;
+    const dynamicHeight = Math.max(220, labelCount * 40);
+    ctx.style.height = dynamicHeight + 'px';
+    ctx.style.maxHeight = 'none';
 
     return new Chart(ctx, {
         type: 'bar',
@@ -607,10 +625,10 @@ function destroyAllCharts() {
 window.descargarPanelHtmlFDM = function(panelId, nombre) {
     const el = document.getElementById(panelId);
     if (!el || el.style.display === 'none') {
-        alert('El panel no está visible.'); return;
+        alert('El panel no est├í visible.'); return;
     }
     if (typeof html2canvas === 'undefined') {
-        alert('La librería de captura aún está cargando. Inténtalo en unos segundos.'); return;
+        alert('La librer├¡a de captura a├║n est├í cargando. Int├®ntalo en unos segundos.'); return;
     }
     const fecha = new Date().toISOString().slice(0, 10);
     html2canvas(el, {

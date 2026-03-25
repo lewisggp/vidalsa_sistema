@@ -839,7 +839,7 @@
                                 <i class="material-icons" style="font-size:17px;">photo_camera</i>
                             </button>
                         </h4>
-                        <canvas id="chartAgeByType" style="max-height: 350px;"></canvas>
+                        <canvas id="chartAgeByType"></canvas>
                     </div>
 
                     <!-- Flota Pesada vs Liviana por Tipo -->
@@ -853,7 +853,7 @@
                                 <i class="material-icons" style="font-size:17px;">photo_camera</i>
                             </button>
                         </h4>
-                        <canvas id="chartCategoryByType" style="max-height: 350px;"></canvas>
+                        <canvas id="chartCategoryByType"></canvas>
                     </div>
 
                     <!-- Inoperatividad por Tipo de Equipo -->
@@ -867,7 +867,7 @@
                                 <i class="material-icons" style="font-size:17px;">photo_camera</i>
                             </button>
                         </h4>
-                        <canvas id="chartInoperativeByType" style="max-height: 350px;"></canvas>
+                        <canvas id="chartInoperativeByType"></canvas>
                     </div>
                 </div>
 

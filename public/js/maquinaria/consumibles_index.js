@@ -8,7 +8,8 @@
 // Debe estar aquí para que el onclick inline del botón lo encuentre
 // incluso antes de que el módulo haya terminado de inicializarse.
 // ═══════════════════════════════════════════════════════════════════
-window.eliminarConsumible = function(id, url) {
+window.eliminarConsumible = function(id, url, btnElement) {
+    var btn = btnElement || null;
     if (window.showModal) {
         window.showModal({
             type: 'warning',
@@ -16,21 +17,20 @@ window.eliminarConsumible = function(id, url) {
             message: 'Esta acción eliminará el consumible y no se podrá deshacer.',
             confirmText: 'Sí, eliminar',
             cancelText: 'Cancelar',
-            onConfirm: function() { _ejecutarEliminacionConsumible(id, url); }
+            onConfirm: function() { _ejecutarEliminacionConsumible(id, url, btn); }
         });
     } else {
         if (confirm('¿Eliminar este registro?')) {
-            _ejecutarEliminacionConsumible(id, url);
+            _ejecutarEliminacionConsumible(id, url, btn);
         }
     }
 };
 
-function _ejecutarEliminacionConsumible(id, url) {
-    // Buscar el botón por su atributo onclick para desactivarlo visualmente
-    var btn = document.querySelector('button[onclick*="eliminarConsumible(' + id + ',"]');
+function _ejecutarEliminacionConsumible(id, url, btn) {
+    // Si no se pasó el botón, intentar encontrarlo con data-consumible-id
+    if (!btn) btn = document.querySelector('[data-consumible-id="' + id + '"]');
     if (btn) { btn.disabled = true; btn.style.opacity = '0.4'; }
 
-    // Leer CSRF desde el meta tag directamente (funciona siempre que esté en el DOM)
     var csrfMeta = document.querySelector('meta[name="csrf-token"]');
     var csrfToken = csrfMeta ? csrfMeta.content : '';
 
@@ -41,7 +41,11 @@ function _ejecutarEliminacionConsumible(id, url) {
             'Accept': 'application/json',
         }
     })
-    .then(function(r) { return r.json(); })
+    .then(function(r) {
+        if (r.status === 403) throw new Error('Sin permiso. Verifica acceso super.admin.');
+        if (r.status === 419) throw new Error('Sesión expirada. Recarga la página.');
+        return r.json();
+    })
     .then(function(data) {
         if (data.ok) {
             var row = btn ? btn.closest('tr') : null;
@@ -50,16 +54,19 @@ function _ejecutarEliminacionConsumible(id, url) {
                 row.style.opacity = '0';
                 setTimeout(function() { row.remove(); }, 250);
             }
+            if (window.showToast) window.showToast('Registro eliminado', 'success');
         } else {
-            if (window.showModal) window.showModal({ type: 'error', title: 'Error', message: data.message || 'No se pudo eliminar el registro.', hideCancel: true });
-            else alert('No se pudo eliminar el registro.');
+            var msg = data.message || 'No se pudo eliminar el registro.';
+            if (window.showModal) window.showModal({ type: 'error', title: 'Error', message: msg, hideCancel: true });
+            else alert(msg);
             if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
         }
     })
     .catch(function(err) {
         console.error('Error al eliminar consumible:', err);
-        if (window.showModal) window.showModal({ type: 'error', title: 'Error de red', message: 'No se pudo conectar con el servidor.', hideCancel: true });
-        else alert('Error de red al intentar eliminar.');
+        var msg = err.message || 'No se pudo conectar con el servidor.';
+        if (window.showModal) window.showModal({ type: 'error', title: 'Error', message: msg, hideCancel: true });
+        else alert(msg);
         if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
     });
 }

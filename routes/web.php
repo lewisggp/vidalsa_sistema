@@ -92,6 +92,10 @@ Route::middleware(['auth'])->group(function () {
             Route::get('herramientas/consolidado-manual', function () {
                 return view('admin.herramientas.consolidado_manual');
             })->name('herramientas.consolidadoManual');
+
+            Route::get('herramientas/calculadora-filtros', function () {
+                return view('admin.herramientas.calculadora_filtros');
+            })->name('herramientas.calculadoraFiltros');
         });
 
     });

@@ -1657,25 +1657,26 @@ XML;
                 ->select(
                     'tipo_equipos.nombre as tipo_nombre',
                     DB::raw("SUM(CASE WHEN equipos.CATEGORIA_FLOTA = 'FLOTA PESADA'  THEN 1 ELSE 0 END) as pesada_count"),
-                    DB::raw("SUM(CASE WHEN equipos.CATEGORIA_FLOTA = 'FLOTA LIVIANA' THEN 1 ELSE 0 END) as liviana_count"),
-                    DB::raw("SUM(CASE WHEN (equipos.CATEGORIA_FLOTA IS NULL OR equipos.CATEGORIA_FLOTA = '') THEN 1 ELSE 0 END) as sin_asignar_count")
+                    DB::raw("SUM(CASE WHEN equipos.CATEGORIA_FLOTA = 'FLOTA LIVIANA' THEN 1 ELSE 0 END) as liviana_count")
                 )
                 ->leftJoin('tipo_equipos', 'equipos.id_tipo_equipo', '=', 'tipo_equipos.id')
                 ->whereNotNull('equipos.id_tipo_equipo')
                 ->whereNotNull('tipo_equipos.nombre')
                 ->groupBy('tipo_equipos.nombre')
+                ->havingRaw("(
+                    SUM(CASE WHEN equipos.CATEGORIA_FLOTA = 'FLOTA PESADA'  THEN 1 ELSE 0 END) +
+                    SUM(CASE WHEN equipos.CATEGORIA_FLOTA = 'FLOTA LIVIANA' THEN 1 ELSE 0 END)
+                ) > 0")
                 ->orderBy('tipo_equipos.nombre')
                 ->get();
 
             $tiposForCategory = $categoryByTypeRaw->pluck('tipo_nombre')->toArray();
             $pesadaData       = $categoryByTypeRaw->pluck('pesada_count')->toArray();
             $livianaData      = $categoryByTypeRaw->pluck('liviana_count')->toArray();
-            $sinAsignarData   = $categoryByTypeRaw->pluck('sin_asignar_count')->toArray();
 
             $categoryByTypeDatasets = [
                 ['label' => 'Flota Pesada',  'data' => $pesadaData],
-                ['label' => 'Flota Liviana', 'data' => $livianaData],
-                ['label' => 'Sin Asignar',   'data' => $sinAsignarData]
+                ['label' => 'Flota Liviana', 'data' => $livianaData]
             ];
 
             // --- 4. INOPERATIVIDAD POR TIPO DE EQUIPO ---

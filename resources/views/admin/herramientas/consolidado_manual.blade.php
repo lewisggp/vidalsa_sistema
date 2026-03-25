@@ -3,7 +3,6 @@
 
 @section('content')
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <style>
@@ -45,48 +44,31 @@
     .btn-generate:hover { opacity: .9; }
     .btn-clear { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; }
     .btn-clear:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
-    .btn-paste-hint { font-size: 12px; color: #0067b1; background: #eff8ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 7px 12px; display:flex; align-items:center; gap:5px; }
-
-    /* ── Panel Consolidado ────────────────────────────────────── */
-    .cm-consolidado { background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%); border-radius: 16px; padding: 20px; color: white; box-shadow: 0 8px 30px rgba(26,54,93,.35); }
-    .cm-cons-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing:1.5px; opacity:.8; margin-bottom: 14px; display:flex; align-items:center; gap:5px; }
-    .cm-stats-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-    .cm-stat-main { display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,.15); padding: 10px 14px; border-radius: 12px; min-width: 80px; }
-    .cm-stat-main span:first-child { font-size: 42px; font-weight: 800; line-height:1; }
-    .cm-stat-main span:last-child { font-size: 12px; opacity:.8; font-weight:700; margin-top:2px; }
-    .cm-stats-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; flex:1; }
-    .cm-det-pill { display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 8px 4px; border-radius:10px; }
-    .cm-det-pill i { font-size:22px; margin-bottom:3px; }
-    .cm-det-pill strong { font-size:22px; font-weight:800; }
-    .cm-det-pill span { font-size:10px; font-weight:700; text-transform:uppercase; opacity:.85; }
-
-    /* Donut */
-    #donutWrap { position: relative; width: 180px; height: 180px; margin: 0 auto 16px; }
-    #donutCenter { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; pointer-events:none; }
-    #donutCenter .total-num { font-size:36px; font-weight:800; color:#fff; line-height:1; }
-    #donutCenter .total-lbl { font-size:11px; color:rgba(255,255,255,.7); font-weight:600; }
 
     /* Barras tipo */
-    #tiposListWrap { max-height: 260px; overflow-y: auto; padding-right: 4px; }
     #tiposListWrap::-webkit-scrollbar { width: 4px; }
-    #tiposListWrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,.25); border-radius:4px; }
-    .tipo-bar-item { margin-bottom: 10px; }
-    .tipo-bar-header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px; }
-    .tipo-bar-name { font-size: 12px; font-weight: 600; color: rgba(255,255,255,.9); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 210px; }
-    .tipo-bar-count { font-size: 12px; font-weight: 800; color: #fff; }
-    .tipo-bar-track { background: rgba(255,255,255,.15); border-radius:4px; height:6px; }
-    .tipo-bar-fill { height:6px; border-radius:4px; background: linear-gradient(90deg, #60a5fa, #93c5fd); transition: width .6s ease; }
+    #tiposListWrap::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius:4px; }
+    .tipo-bar-item { margin-bottom: 12px; }
+    .tipo-bar-header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px; }
+    .tipo-bar-name { font-size: 12px; font-weight: 700; color: #334155; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 210px; }
+    .tipo-bar-count { font-size: 13px; font-weight: 800; color: #0f172a; }
+    .tipo-bar-track { background: #f1f5f9; border-radius:4px; height:8px; }
+    .tipo-bar-fill { height:8px; border-radius:4px; background: linear-gradient(90deg, #60a5fa, #93c5fd); transition: width .6s ease; }
 
     /* Botón descarga */
-    .btn-download { background: rgba(255,255,255,.15); border: 1.5px solid rgba(255,255,255,.3); color:#fff; border-radius: 10px; padding: 10px 16px; font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; width:100%; justify-content:center; margin-top:16px; transition: all .2s; }
-    .btn-download:hover { background: rgba(255,255,255,.25); }
+    .btn-download { background: #f8fafc; border: 1px solid #cbd5e1; color:#0f172a; border-radius: 10px; padding: 10px 16px; font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; width:100%; justify-content:center; margin-top:20px; transition: all .2s; }
+    .btn-download:hover { background: #e1effa; border-color: #0067b1; color: #0067b1; }
     #downloadSpinner { display:none; }
+
+    /* Custom Scrollbar */
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 </style>
 
 <div class="cm-page">
     <div class="cm-title">
         <i class="material-icons" style="color:#0067b1; font-size:28px;">pie_chart</i>
-        Consolidado Manual de Equipos
+        Consolidado Manual de Distribución
     </div>
 
     <div class="cm-grid">
@@ -99,17 +81,14 @@
             </div>
 
             <div class="cm-hints">
-                💡 <b>Pega desde Excel:</b> Selecciona tus celdas en Excel → <kbd>Ctrl+C</kbd> → haz clic en la primera celda de la columna <b>"Tipo de Equipo"</b> → <kbd>Ctrl+V</kbd>. Los datos se distribuirán automáticamente en las filas. Columnas: <b>Tipo | Operativos | Inoperativos | Mantenimiento</b>
+                💡 <b>Pega desde Excel:</b> Selecciona tus celdas en Excel → <kbd>Ctrl+C</kbd> → haz clic en la celda inicial de <b>"Tipo de Equipo"</b> → <kbd>Ctrl+V</kbd>. ¡Tu información se organizará automáticamente!
             </div>
 
             <table id="editableTable">
                 <thead>
                     <tr>
-                        <th style="width:38%">Tipo de Equipo</th>
-                        <th style="width:16%; text-align:center">Operativos</th>
-                        <th style="width:16%; text-align:center">Inoperativos</th>
-                        <th style="width:16%; text-align:center">Mantenim.</th>
-                        <th style="width:14%">Total</th>
+                        <th style="width:75%">Tipo de Equipo</th>
+                        <th style="width:20%; text-align:center">Cantidad</th>
                         <th style="width:5%"></th>
                     </tr>
                 </thead>
@@ -125,7 +104,7 @@
             <div class="cm-actions">
                 <button class="btn-generate" onclick="generateChart()">
                     <i class="material-icons" style="font-size:18px;">auto_graph</i>
-                    Generar Consolidado
+                    Generar Gráfico
                 </button>
                 <button class="btn-clear" onclick="clearTable()">
                     <i class="material-icons" style="font-size:16px;">clear_all</i>
@@ -134,60 +113,55 @@
             </div>
         </div>
 
-        {{-- ════ PANEL CONSOLIDADO ════ --}}
-        <div>
-            <div class="cm-consolidado" id="consolidadoPanel">
-                <div class="cm-cons-title">
-                    <i class="material-icons" style="font-size:14px;">pie_chart</i>
-                    Consolidado de Equipos
-                </div>
-
-                {{-- Totales --}}
-                <div class="cm-stats-row">
-                    <div class="cm-stat-main">
-                        <span id="c_total">0</span>
-                        <span>TOTAL</span>
+        {{-- ════ PANEL DE DISTRIBUCIÓN EXACTO ════ --}}
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            
+            <!-- Main Total Card (Idéntico a Equipos) -->
+            <div style="background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%); border-radius: 12px; padding: 15px; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; overflow: hidden;">
+                <!-- Decorative Icon -->
+                <i class="material-icons" style="position: absolute; right: -15px; bottom: -15px; font-size: 80px; opacity: 0.1; transform: rotate(-15deg);">agriculture</i>
+                
+                <div style="position: relative; z-index: 2;">
+                    <div style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.8; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                        <i class="material-icons" style="font-size: 14px;">pie_chart</i>
+                        Consolidado de Equipos
                     </div>
-                    <div class="cm-stats-detail">
-                        <div class="cm-det-pill" style="background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.25);">
-                            <i class="material-icons" style="color:#f87171;">cancel</i>
-                            <strong id="c_inop">0</strong>
-                            <span>Inoperativos</span>
-                        </div>
-                        <div class="cm-det-pill" style="background:rgba(245,158,11,.15); border:1px solid rgba(245,158,11,.25);">
-                            <i class="material-icons" style="color:#fbbf24;">engineering</i>
-                            <strong id="c_mant">0</strong>
-                            <span>Mantenimiento</span>
+                    
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <!-- Main Total -->
+                        <div style="display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.15); padding: 8px 6px; border-radius: 10px; min-width: 65px; flex: 1;">
+                            <span id="c_total" style="font-size: 36px; font-weight: 800; line-height: 1;">0</span>
+                            <span style="font-size: 13px; opacity: 0.8; font-weight: 700; margin-top: 2px;">TOTAL</span>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {{-- Distribución Donut --}}
-                <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; opacity:.7; margin-bottom:10px; display:flex; align-items:center; gap:5px;">
-                    <i class="material-icons" style="font-size:13px;">donut_large</i> Distribución
-                </div>
-                <div id="donutWrap">
-                    <canvas id="donutChart"></canvas>
-                    <div id="donutCenter">
-                        <div class="total-num" id="donut_total">0</div>
-                        <div class="total-lbl">TOTAL</div>
-                    </div>
-                </div>
-
-                {{-- Barras por tipo --}}
-                <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; opacity:.7; margin-bottom:10px; display:flex; align-items:center; gap:5px;">
-                    <i class="material-icons" style="font-size:13px;">bar_chart</i> Por Tipo
-                </div>
+            <!-- Breakdown by Type (Contenedor Blanco) -->
+            <div id="consolidadoPanel" style="background: white; border-radius: 12px; padding: 15px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden;">
+                
+                <h4 style="margin: 0 0 12px 0; font-size: 12px; text-transform: uppercase; color: #64748b; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                    <i class="material-icons" style="font-size: 18px; color: #3b82f6;">pie_chart</i>
+                    Distribución
+                </h4>
+                
                 <div id="tiposListWrap">
-                    <p id="tiposEmpty" style="color:rgba(255,255,255,.5); font-size:13px; text-align:center; padding:20px 0;">
-                        Ingresa datos y presiona<br><b>"Generar Consolidado"</b>
-                    </p>
+                    <ul style="list-style: none; padding: 0; margin: 0; max-height: 75vh; overflow-y: auto; overflow-x: visible; display: flex; flex-direction: column; gap: 4px;" class="custom-scrollbar">
+                        <p id="tiposEmpty" style="color:#94a3b8; font-size:13px; text-align:center; padding:20px 0; font-weight:600; margin:0;">
+                            Sin datos válidos para mostrar.
+                        </p>
+                    </ul>
+                </div>
+
+                <div style="margin-top: 15px; border-top: 1px dashed #e2e8f0; padding-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">Total General</span>
+                    <span id="c_total_2" style="font-size: 16px; font-weight: 800; color: #1e293b; background: #f1f5f9; padding: 2px 8px; border-radius: 6px;">0</span>
                 </div>
 
                 <button class="btn-download" onclick="downloadImage()">
                     <span id="downloadSpinner"><i class="material-icons" style="font-size:16px; animation:spin 1s linear infinite;">refresh</i></span>
-                    <i class="material-icons" style="font-size:16px;" id="downloadIcon">download</i>
-                    Descargar Imagen
+                    <i class="material-icons" style="font-size:18px;" id="downloadIcon">download_for_offline</i>
+                    Descargar Gráfico
                 </button>
             </div>
         </div>
@@ -201,23 +175,13 @@
 
 <script>
 // ─── Estado ───────────────────────────────────────────────────
-window._cmDonutInstance = window._cmDonutInstance || null;
-const COLORS = [
-    '#60a5fa','#34d399','#f472b6','#fbbf24','#a78bfa',
-    '#fb923c','#22d3ee','#4ade80','#f87171','#818cf8',
-    '#e879f9','#facc15','#2dd4bf','#f97316','#c084fc'
-];
 
 // ─── Tabla Editable ───────────────────────────────────────────
-function createRow(tipo='', op='', inop='', mant='') {
+function createRow(tipo='', cant='') {
     const tr = document.createElement('tr');
-    const total = (parseInt(op)||0) + (parseInt(inop)||0) + (parseInt(mant)||0);
     tr.innerHTML = `
-        <td><input type="text"   class="tipo-col"  placeholder="Ej: Ambulancia Ford F-350" value="${tipo}" onchange="recalcRow(this)"></td>
-        <td><input type="number" class="num-col"   placeholder="0" min="0" value="${op}"   onchange="recalcRow(this)"></td>
-        <td><input type="number" class="num-col"   placeholder="0" min="0" value="${inop}" onchange="recalcRow(this)"></td>
-        <td><input type="number" class="num-col"   placeholder="0" min="0" value="${mant}" onchange="recalcRow(this)"></td>
-        <td><input type="number" class="num-col"   readonly value="${total||''}" style="color:#1e293b; background:#f8fafc; cursor:default;" tabindex="-1"></td>
+        <td><input type="text"   class="tipo-col"  placeholder="Ej: Tractor" value="${tipo}"></td>
+        <td><input type="number" class="num-col"   placeholder="0" min="0" value="${cant}"></td>
         <td class="td-del"><button class="btn-del-row" title="Eliminar fila" onclick="this.closest('tr').remove()"><i class="material-icons">close</i></button></td>
     `;
     // Paste handler dentro de la celda Tipo
@@ -225,16 +189,8 @@ function createRow(tipo='', op='', inop='', mant='') {
     return tr;
 }
 
-function addRow(tipo='', op='', inop='', mant='') {
-    document.getElementById('tableBody').appendChild(createRow(tipo, op, inop, mant));
-}
-
-function recalcRow(input) {
-    const tr = input.closest('tr');
-    const nums = tr.querySelectorAll('input.num-col:not([readonly])');
-    let sum = 0;
-    nums.forEach(n => sum += parseInt(n.value)||0);
-    tr.querySelector('input[readonly]').value = sum || '';
+function addRow(tipo='', cant='') {
+    document.getElementById('tableBody').appendChild(createRow(tipo, cant));
 }
 
 function clearTable() {
@@ -246,36 +202,47 @@ function clearTable() {
 // ─── PEGAR DESDE EXCEL ────────────────────────────────────────
 function handleExcelPaste(e) {
     const pasteData = (e.clipboardData || window.clipboardData).getData('text');
-    if (!pasteData || (!pasteData.includes('\n') && !pasteData.includes('\t'))) return;
+    if (!pasteData) return;
 
     e.preventDefault();
     const lines = pasteData.trim().split('\n');
     const tbody = document.getElementById('tableBody');
 
-    // Posición de la fila actual
     const currentRow = e.target.closest('tr');
     const rows = Array.from(tbody.querySelectorAll('tr'));
     let startIdx = rows.indexOf(currentRow);
     if (startIdx === -1) startIdx = rows.length;
 
     lines.forEach((line, i) => {
-        const cols = line.split('\t').map(c => c.trim().replace(/\r/g,''));
-        const tipo = cols[0] || '';
-        const op   = parseInt(cols[1]) || '';
-        const inop = parseInt(cols[2]) || '';
-        const mant = parseInt(cols[3]) || '';
+        let cols = line.split('\t').map(c => c.trim().replace(/\r/g,''));
+        
+        // Fallback: Si el usuario pegó de un chat y todo vino con varios espacios en vez de Tabs reales
+        if(cols.length === 1 && line.includes('  ')) {
+            cols = line.split(/\s{2,}/).map(c => c.trim().replace(/\r/g,''));
+        }
+
+        let tipo = cols[0] || '';
+        let cant = parseInt(cols[1]);
+
+        // Último recurso: si pegaron una fila de un chat que no se separó bien "RETROEXCAVADOR 1"
+        if(isNaN(cant)) {
+            const m = (tipo||'').match(/(.+)\s+(\d+)$/);
+            if(m) {
+                tipo = m[1].trim();
+                cant = parseInt(m[2]);
+            } else {
+                cant = '';
+            }
+        }
 
         let targetRow = rows[startIdx + i];
         if (!targetRow) {
-            targetRow = createRow(tipo, op, inop, mant);
+            targetRow = createRow(tipo, cant);
             tbody.appendChild(targetRow);
         } else {
             const inputs = targetRow.querySelectorAll('input');
             inputs[0].value = tipo;
-            inputs[1].value = op;
-            inputs[2].value = inop;
-            inputs[3].value = mant;
-            recalcRow(inputs[1]);
+            inputs[1].value = cant;
         }
     });
 }
@@ -284,85 +251,73 @@ function handleExcelPaste(e) {
 function generateChart() {
     const rows = document.querySelectorAll('#tableBody tr');
     const tipos = [];
-    let totalOp=0, totalInop=0, totalMant=0;
+    let grand=0;
 
     rows.forEach(tr => {
         const inputs = tr.querySelectorAll('input');
         const tipo = inputs[0].value.trim();
-        const op   = parseInt(inputs[1].value)||0;
-        const inop = parseInt(inputs[2].value)||0;
-        const mant = parseInt(inputs[3].value)||0;
-        const total = op + inop + mant;
+        const total   = parseInt(inputs[1].value)||0;
+        
         if (tipo && total > 0) {
-            tipos.push({ nombre: tipo, total, op, inop, mant });
-            totalOp   += op;
-            totalInop += inop;
-            totalMant += mant;
+            // Buscamos si ya existe ese tipo para sumarlo y evitar duplicados graficos
+            let obj = tipos.find(x => x.nombre.toUpperCase() === tipo.toUpperCase());
+            if(obj) obj.total += total;
+            else tipos.push({ nombre: tipo, total });
+            grand += total;
         }
     });
 
-    const grand = totalOp + totalInop + totalMant;
+    // Validar vacíos
+    if(grand === 0 || tipos.length === 0) {
+        resetConsolidado();
+        return;
+    }
 
     // Actualizar números
-    document.getElementById('c_total').textContent   = grand;
-    document.getElementById('c_inop').textContent    = totalInop;
-    document.getElementById('c_mant').textContent    = totalMant;
-    document.getElementById('donut_total').textContent= grand;
+    document.getElementById('c_total').textContent = grand;
+    document.getElementById('c_total_2').textContent = grand;
 
-    // Donut
-    renderDonut(totalOp, totalInop, totalMant);
-
-    // Barras por tipo
+    // Barras de distribución
     renderBars(tipos);
-}
-
-function renderDonut(op, inop, mant) {
-    const ctx = document.getElementById('donutChart').getContext('2d');
-    if (window._cmDonutInstance) window._cmDonutInstance.destroy();
-    window._cmDonutInstance = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Operativos', 'Inoperativos', 'Mantenimiento'],
-            datasets: [{
-                data: [op, inop, mant],
-                backgroundColor: ['#34d399','#f87171','#fbbf24'],
-                borderColor: 'rgba(26,54,93,.5)',
-                borderWidth: 2,
-                hoverOffset: 6
-            }]
-        },
-        options: {
-            cutout: '68%',
-            responsive: true,
-            plugins: { legend: { display:false }, tooltip: { enabled: true } }
-        }
-    });
 }
 
 function renderBars(tipos) {
     const wrap = document.getElementById('tiposListWrap');
     if (!tipos.length) {
-        wrap.innerHTML = '<p id="tiposEmpty" style="color:rgba(255,255,255,.5);font-size:13px;text-align:center;padding:20px 0;">Sin datos válidos para mostrar.</p>';
+        wrap.innerHTML = '<ul style="list-style: none; padding: 0; margin: 0; max-height: 75vh; overflow-y: auto; overflow-x: visible; display: flex; flex-direction: column; gap: 4px;" class="custom-scrollbar"><p id="tiposEmpty" style="color:#94a3b8; font-size:13px; text-align:center; padding:20px 0;">Sin datos válidos para mostrar.</p></ul>';
         return;
     }
-    const maxVal = Math.max(...tipos.map(t => t.total));
-    wrap.innerHTML = tipos.sort((a,b)=>b.total-a.total).map((t, i) => `
-        <div class="tipo-bar-item">
-            <div class="tipo-bar-header">
-                <span class="tipo-bar-name" title="${t.nombre}">${t.nombre}</span>
-                <span class="tipo-bar-count">${t.total}</span>
-            </div>
-            <div class="tipo-bar-track">
-                <div class="tipo-bar-fill" style="width:${(t.total/maxVal*100).toFixed(1)}%; background:${COLORS[i%COLORS.length]};"></div>
-            </div>
-        </div>
-    `).join('');
+    const totalStats = tipos.reduce((acc, t) => acc + t.total, 0);
+    
+    let html = '<ul style="list-style: none; padding: 0; margin: 0; max-height: 75vh; overflow-y: auto; overflow-x: visible; display: flex; flex-direction: column; gap: 4px;" class="custom-scrollbar">';
+    
+    tipos.sort((a,b)=>b.total-a.total).forEach(stat => {
+        const percentage = totalStats > 0 ? (stat.total / totalStats) * 100 : 0;
+        
+        html += `
+            <li style="padding-bottom: 4px; border-bottom: 1px dashed #f1f5f9; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px; gap: 4px;">
+                    <span style="color: #334155; font-size: 11px; font-weight: 600; word-break: break-word; line-height: 1.2; flex: 1;">
+                        ${(stat.nombre || 'Desconocido').toUpperCase()}
+                    </span>
+                    <span style="font-weight: 700; color: #1e293b; font-size: 11px; background: #f1f5f9; padding: 1px 6px; border-radius: 4px; flex-shrink: 0; white-space: nowrap;">
+                        ${stat.total}
+                    </span>
+                </div>
+                <div style="width: 100%; height: 4px; background: #e2e8f0; border-radius: 2px; overflow: hidden;">
+                    <div style="width: ${percentage}%; height: 100%; background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); border-radius: 2px;"></div>
+                </div>
+            </li>
+        `;
+    });
+    html += '</ul>';
+    wrap.innerHTML = html;
 }
 
 function resetConsolidado() {
-    ['c_total','c_inop','c_mant','donut_total'].forEach(id => document.getElementById(id).textContent = '0');
-    if (window._cmDonutInstance) { window._cmDonutInstance.destroy(); window._cmDonutInstance = null; }
-    document.getElementById('tiposListWrap').innerHTML = '<p id="tiposEmpty" style="color:rgba(255,255,255,.5);font-size:13px;text-align:center;padding:20px 0;">Ingresa datos y presiona<br><b>"Generar Consolidado"</b></p>';
+    document.getElementById('c_total').textContent = '0';
+    document.getElementById('c_total_2').textContent = '0';
+    document.getElementById('tiposListWrap').innerHTML = '<ul style="list-style: none; padding: 0; margin: 0; max-height: 75vh; overflow-y: auto; overflow-x: visible; display: flex; flex-direction: column; gap: 4px;" class="custom-scrollbar"><p id="tiposEmpty" style="color:#94a3b8; font-size:13px; text-align:center; padding:20px 0;">Sin datos válidos para mostrar.</p></ul>';
 }
 
 // ─── Descarga ─────────────────────────────────────────────────
@@ -373,9 +328,9 @@ async function downloadImage() {
     btnIcon.style.display = 'none';
     spinner.style.display = 'inline-block';
     try {
-        const canvas = await html2canvas(panel, { scale: 2, backgroundColor: null, useCORS: true });
+        const canvas = await html2canvas(panel, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
         const link = document.createElement('a');
-        link.download = `Consolidado_Equipos_${new Date().toISOString().slice(0,10)}.png`;
+        link.download = `Grafico_Equipos_${new Date().toISOString().slice(0,10)}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
     } finally {
