@@ -857,28 +857,4 @@ class ConsumiblesController extends Controller
             'detalle'     => $detalle,
         ]);
     }
-
-    // ══════════════════════════════════════════════════════════════
-    // DESTROY — Eliminar un consumible
-    // ══════════════════════════════════════════════════════════════
-    public function destroy($id)
-    {
-        // Solo usuarios con permiso super.admin pueden eliminar
-        if (!auth()->user()->can('super.admin')) {
-            return response()->json(['ok' => false, 'message' => 'No tienes permiso para eliminar registros.'], 403);
-        }
-
-        $consumible = Consumible::find($id);
-
-        if (!$consumible) {
-            return response()->json(['ok' => false, 'message' => 'Registro no encontrado.'], 404);
-        }
-
-        $consumible->delete();
-
-        // Invalidar caché de gráficos
-        Cache::increment('consumibles_data_version');
-
-        return response()->json(['ok' => true, 'message' => 'Consumible eliminado correctamente.']);
-    }
 }
