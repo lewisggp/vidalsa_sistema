@@ -64,7 +64,7 @@
                     <input type="text" name="filter_search_dropdown" data-filter-search
                         placeholder="{{ $placeholderText }}"
                         aria-label="Filtrar Frente"
-                        style="width:100%; border:none; background:transparent; padding:10px 5px; font-size:14px; outline:none;"
+                        style="flex:1; border:none; background:transparent; padding:10px 5px; font-size:14px; outline:none; min-width:0;"
                         oninput="window.filterDropdownOptions(this)"
                         autocomplete="off">
                     <i class="material-icons" data-clear-btn
@@ -107,7 +107,7 @@
                         <input type="text" name="filter_search_dropdown" data-filter-search
                             placeholder="{{ $currentTipo ? $currentTipo->nombre : 'Filtrar Tipo...' }}" 
                              aria-label="Filtrar Tipo"
-                            style="width: 100%; border: none; background: transparent; padding: 10px 5px; font-size: 14px; outline: none;"
+                            style="flex: 1; border: none; background: transparent; padding: 10px 5px; font-size: 14px; outline: none; min-width: 0;"
                             oninput="window.filterDropdownOptions(this)"
                             autocomplete="off">
                         <i class="material-icons" data-clear-btn style="padding: 0 5px; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_tipo') ? 'block' : 'none' }}; cursor:pointer;" onclick="event.stopPropagation(); clearDropdownFilter('tipoFilterSelect'); setTimeout(function(){ window.loadMovilizaciones(); }, 100);">close</i>

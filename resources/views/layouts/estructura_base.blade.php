@@ -11,10 +11,6 @@
     <link rel="stylesheet" href="{{ asset('css/maquinaria/catalogo.css') }}?v=2.3">
     <!-- Local Fonts Optimization -->
     <link rel="stylesheet" href="{{ asset('css/fonts.css') }}?v=1.0">
-    <!-- Flatpickr for Date inputs -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
@@ -445,69 +441,7 @@
     </script>
     
     {{-- Core Scripts (Always Loaded) --}}
-    <script>
-        // Inicializar Flatpickr para todos los inputs de fecha (SPA + filas dinámicas)
-        window.initDatePickers = function() {
-            var dateInputs = document.querySelectorAll(
-                'input[type="date"]:not(.flatpickr-input):not([data-flatpickr-skip])'
-            );
-            dateInputs.forEach(function(el) {
-                // Doble-guarda: si flatpickr ya lo procesó, el elemento tiene ._flatpickr
-                if (el._flatpickr) return;
-                flatpickr(el, {
-                    dateFormat:    "Y-m-d",   // valor real enviado al servidor (YYYY-MM-DD)
-                    altInput:      true,       // input visual separado
-                    altFormat:     "d/m/Y",    // lo que ve el usuario: DD/MM/YYYY
-                    locale:        "es",       // idioma Español
-                    disableMobile: true,       // fuerza flatpickr también en móviles
-                    onChange: function(selectedDates, dateStr, instance) {
-                        // Flatpickr actualiza el valor del input original por código JS,
-                        // lo que NO dispara el evento 'change' nativo del HTML.
-                        // Lo disparamos manualmente para que onchange="..." funcione.
-                        var nativeChange = new Event('change', { bubbles: true });
-                        instance.input.dispatchEvent(nativeChange);
-                    }
-                });
-            });
-        };
 
-        document.addEventListener('DOMContentLoaded', function() {
-            window.initDatePickers();
-
-            // MutationObserver — reactiva flatpickr cuando el SPA inyecta nuevo HTML.
-            // IMPORTANTE: se debouncea 100 ms y se guarda contra el loop que el propio
-            // flatpickr genera al insertar su <input alt> en el DOM.
-            var _fpDebounce = null;
-            var _fpBusy = false;
-
-            var observer = new MutationObserver(function(mutations) {
-                if (_fpBusy) return; // ignorar cambios causados por el propio flatpickr
-
-                var hasNewInputs = false;
-                mutations.forEach(function(mut) {
-                    mut.addedNodes.forEach(function(node) {
-                        if (node.nodeType !== 1) return;
-                        // ¿El nodo agregado (o sus hijos) contiene inputs date sin inicializar?
-                        var raw = node.matches && node.matches('input[type="date"]:not(.flatpickr-input)')
-                                  ? [node]
-                                  : Array.from(node.querySelectorAll('input[type="date"]:not(.flatpickr-input)'));
-                        if (raw.length) hasNewInputs = true;
-                    });
-                });
-
-                if (!hasNewInputs) return;
-
-                clearTimeout(_fpDebounce);
-                _fpDebounce = setTimeout(function() {
-                    _fpBusy = true;
-                    window.initDatePickers();
-                    setTimeout(function() { _fpBusy = false; }, 200);
-                }, 80);
-            });
-
-            observer.observe(document.body, { childList: true, subtree: true });
-        });
-    </script>
     <script src="{{ asset('js/maquinaria/module_manager.js') }}?v=2.0"></script>
     <script src="{{ asset('js/maquinaria/uicomponents.js') }}?v=16.4"></script>
     <script src="{{ asset('js/maquinaria/navegacion.js') }}?v=10.2"></script>
