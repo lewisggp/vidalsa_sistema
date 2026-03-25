@@ -257,56 +257,6 @@
     </div>
     
     <script>
-    window.eliminarConsumible = function(id, url) {
-        if (window.showModal) {
-            window.showModal({
-                type: 'warning',
-                title: '¿Eliminar este registro?',
-                message: 'Esta acción eliminará el consumible y no se podrá deshacer.',
-                confirmText: 'Sí, eliminar',
-                cancelText: 'Cancelar',
-                onConfirm: () => _ejecutarEliminacionConsumible(id, url)
-            });
-        } else {
-            if (confirm('¿Eliminar este registro?')) {
-                _ejecutarEliminacionConsumible(id, url);
-            }
-        }
-    };
-
-    function _ejecutarEliminacionConsumible(id, url) {
-        var btn = document.querySelector(`button[onclick*="eliminarConsumible(${id},"]`);
-        if (btn) { btn.disabled = true; btn.style.opacity = '0.4'; }
-
-        fetch(url, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept':       'application/json',
-            }
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.ok) {
-                var row = btn ? btn.closest('tr') : null;
-                if (row) {
-                    row.style.transition = 'opacity .25s';
-                    row.style.opacity = '0';
-                    setTimeout(() => row.remove(), 250);
-                }
-            } else {
-                if (window.showModal) window.showModal({ type: 'error', title: 'Error', message: 'No se pudo eliminar el registro.', hideCancel: true });
-                else alert('No se pudo eliminar el registro.');
-                if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
-            }
-        })
-        .catch(() => {
-            if (window.showModal) window.showModal({ type: 'error', title: 'Error', message: 'Error de red al intentar eliminar.', hideCancel: true });
-            else alert('Error de red al intentar eliminar.');
-            if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
-        });
-    }
-
     window.toggleAccionesMenu = function(event) {
         event.preventDefault();
         event.stopPropagation();
