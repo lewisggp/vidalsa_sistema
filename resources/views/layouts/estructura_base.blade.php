@@ -462,7 +462,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
     <script src="{{ asset('js/maquinaria/frentes_spa.js') }}?v=4.2"></script>
-    <script src="{{ asset('js/maquinaria/consumibles_index.js') }}?v=5.0"></script>
+    <script src="{{ asset('js/maquinaria/consumibles_index.js') }}?v=5.1"></script>
     <script>
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
