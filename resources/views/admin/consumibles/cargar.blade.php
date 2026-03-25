@@ -352,7 +352,7 @@ function agregarFila(data = {}, idx = null) {
     tr.id = `fila_${n}`;
     tr.innerHTML = `
         <td>${n}</td>
-        <td><input type="date"   name="filas[${n}][fecha]"         value="${limpiar(data.fecha)}"    tabindex="${n*10+1}"></td>
+        <td><input type="date"   name="filas[${n}][fecha]"         value="${limpiar(data.fecha)}"    tabindex="${n*10+1}" class="native-date" onclick="this.showPicker()" style="cursor:pointer;"></td>
         <td><input type="text"   name="filas[${n}][identificador]" value="${limpiar(data.id)}"       tabindex="${n*10+2}" placeholder="placa / serial"></td>
         <td><input type="text"   name="filas[${n}][resp_nombre]"   value="${limpiar(data.nombre)}"   tabindex="${n*10+3}" placeholder="Nombre responsable"></td>
         <td><input type="text"   name="filas[${n}][resp_ci]"       value="${limpiar(data.ci)}"       tabindex="${n*10+4}" placeholder="C.I."></td>

@@ -442,27 +442,27 @@
     
     {{-- Core Scripts (Always Loaded) --}}
 
-    <script src="{{ asset('js/maquinaria/module_manager.js') }}?v=2.0"></script>
-    <script src="{{ asset('js/maquinaria/uicomponents.js') }}?v=16.4"></script>
-    <script src="{{ asset('js/maquinaria/navegacion.js') }}?v=10.2"></script>
-    <script src="{{ asset('js/maquinaria/form_logic.js') }}?v=4.0"></script>
-    <script src="{{ asset('js/maquinaria/equipo_catalog_linking.js') }}?v=3.0"></script>
+    <script src="{{ asset('js/maquinaria/module_manager.js') }}?v=2.2"></script>
+    <script src="{{ asset('js/maquinaria/uicomponents.js') }}?v=17.0"></script>
+    <script src="{{ asset('js/maquinaria/navegacion.js') }}?v=11.0"></script>
+    <script src="{{ asset('js/maquinaria/form_logic.js') }}?v=4.2"></script>
+    <script src="{{ asset('js/maquinaria/equipo_catalog_linking.js') }}?v=3.2"></script>
     
     {{-- Module Scripts (Global Load for SPA Navigation) --}}
     {{-- NOTE: These MUST be loaded globally because the SPA navigation --}}
     {{-- calls functions like window.loadEquipos(), window.loadCatalogo(), etc. --}}
     {{-- from navegacion.js when switching between pages without reload --}}
-    <script src="{{ asset('js/maquinaria/menu.js') }}?v=5.0"></script>
-    <script src="{{ asset('js/maquinaria/catalogo_create.js') }}?v=12.0"></script>
-    <script src="{{ asset('js/maquinaria/equipos_index.js') }}?v=21.0"></script>
-    <script src="{{ asset('js/maquinaria/catalogo_index.js') }}?v=3.6"></script>
-    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=7.1"></script>
-    <script src="{{ asset('js/maquinaria/usuarios_index.js') }}?v=10.0"></script>
-    <script src="{{ asset('js/maquinaria/fleet_dashboard.js') }}?v=106.0"></script>
+    <script src="{{ asset('js/maquinaria/menu.js') }}?v=5.2"></script>
+    <script src="{{ asset('js/maquinaria/catalogo_create.js') }}?v=12.2"></script>
+    <script src="{{ asset('js/maquinaria/equipos_index.js') }}?v=21.2"></script>
+    <script src="{{ asset('js/maquinaria/catalogo_index.js') }}?v=3.8"></script>
+    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=7.3"></script>
+    <script src="{{ asset('js/maquinaria/usuarios_index.js') }}?v=10.2"></script>
+    <script src="{{ asset('js/maquinaria/fleet_dashboard.js') }}?v=106.2"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
-    <script src="{{ asset('js/maquinaria/frentes_spa.js') }}?v=4.0"></script>
-    <script src="{{ asset('js/maquinaria/consumibles_index.js') }}?v=3.1"></script>
+    <script src="{{ asset('js/maquinaria/frentes_spa.js') }}?v=4.2"></script>
+    <script src="{{ asset('js/maquinaria/consumibles_index.js') }}?v=5.0"></script>
     <script>
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
@@ -1436,6 +1436,28 @@
     <script src="{{ asset('js/maquinaria/equipos_form.js') }}?v=5.0"></script>
     @yield('extra_js')
     @include('partials.session_timeout')
+
+    <!-- Calendario Flatpickr Global (Restaurado para filtros visuales) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
+    <script>
+        const initCalendars = () => {
+            if (typeof flatpickr !== 'undefined') {
+                // Aplica flatpickr a todos los inputs de tipo date,
+                // EXCEPTO a los que tengan la clase 'native-date' (formularios rápidos)
+                flatpickr('input[type="date"]:not(.native-date)', {
+                    dateFormat: "Y-m-d",
+                    locale: "es",
+                    allowInput: true
+                });
+            }
+        };
+
+        // Inicializar tanto al cargar la página como después de navegación SPA
+        document.addEventListener('DOMContentLoaded', initCalendars);
+        window.addEventListener('spa:contentLoaded', initCalendars);
+    </script>
 
 
 </body>

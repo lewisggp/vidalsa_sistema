@@ -171,8 +171,8 @@
                     <div style="margin-bottom: 15px;">
                         <span style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px;">Rango de Fechas</span>
                         <div style="display: flex; gap: 8px;">
-                            <input type="date" name="fecha_desde" value="{{ request('fecha_desde') }}" onchange="window.submitConsumiblesFilters()" onclick="this.showPicker()" title="Desde" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e0; background: #fbfcfd; outline: none; padding: 0 12px; font-size:12px; color: #1e293b; cursor: pointer;">
-                            <input type="date" name="fecha_hasta" value="{{ request('fecha_hasta') }}" onchange="window.submitConsumiblesFilters()" onclick="this.showPicker()" title="Hasta" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e0; background: #fbfcfd; outline: none; padding: 0 12px; font-size:12px; color: #1e293b; cursor: pointer;">
+                            <input type="date" name="fecha_desde" value="{{ request('fecha_desde') }}" onchange="window.submitConsumiblesFilters()" title="Desde" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e0; background: #fbfcfd; outline: none; padding: 0 12px; font-size:12px; color: #1e293b; cursor: pointer;">
+                            <input type="date" name="fecha_hasta" value="{{ request('fecha_hasta') }}" onchange="window.submitConsumiblesFilters()" title="Hasta" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e0; background: #fbfcfd; outline: none; padding: 0 12px; font-size:12px; color: #1e293b; cursor: pointer;">
                         </div>
                     </div>
 
