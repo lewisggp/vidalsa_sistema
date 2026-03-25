@@ -2160,6 +2160,52 @@ input:-webkit-autofill:active {
    Clases .mv-* son exclusivas de esta sección
    ══════════════════════════════════════════════ */
 
+/* ── mv-mobile-hidden: oculta columnas en tablet/móvil ──
+   IMPORTATE: esta regla DEBE estar aquí (en el CSS global)
+   y NO dentro de un <style> en el blade, porque el SPA
+   inyecta solo el .main-viewport y descarta los estilos inline. */
+@media (max-width: 1024px) {
+    .mv-mobile-hidden {
+        display: none !important;
+    }
+}
+
+/* ── EQUIPOS PAGE LAYOUT (was inline style - moved here for SPA compat.) ── */
+/* Tooltip Burbuja para Subdivisión */
+.tooltip-wrapper:hover .tooltip-bubble {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: translateX(-50%) translateY(0) !important;
+}
+
+/* Layout Responsive para Página de Equipos */
+.page-layout-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 40px;
+    align-items: start;
+    width: 100%;
+}
+
+@media (max-width: 1024px) {
+    .page-layout-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 20px;
+        width: 100%;
+    }
+
+    .admin-card {
+        width: 100% !important;
+        min-height: auto !important;
+    }
+
+    .counter-sidebar {
+        width: 100% !important;
+        position: static !important;
+    }
+}
+
 /* ── Layout principal desktop ── */
 .movilizaciones-layout {
     display: grid;

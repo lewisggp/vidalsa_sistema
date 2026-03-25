@@ -3,42 +3,7 @@
 @section('title', 'Gestión de Equipos')
 
 @section('content')
-<style>
-    /* Tooltip Burbuja para Subdivisión */
-    .tooltip-wrapper:hover .tooltip-bubble {
-        opacity: 1 !important;
-        visibility: visible !important;
-        transform: translateX(-50%) translateY(0) !important;
-    }
 
-    /* Layout Responsive para Página de Equipos */
-    .page-layout-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 300px;
-        gap: 40px;
-        align-items: start;
-        width: 100%;
-    }
-
-    @media (max-width: 1024px) {
-        .page-layout-grid {
-            display: flex !important;
-            flex-direction: column !important; /* Fuerza apilación vertical estricta */
-            gap: 20px;
-            width: 100%;
-        }
-        
-        .admin-card {
-            width: 100% !important;
-            min-height: auto !important;
-        }
-
-        .counter-sidebar {
-            width: 100% !important;
-            position: static !important; /* Quita el sticky en móvil para evitar bugs de scroll */
-        }
-    }
-</style>
 
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">

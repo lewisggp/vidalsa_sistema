@@ -6,7 +6,7 @@
     <title>@yield('title', 'Sistema de Gestión')</title>
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <!-- CSS -->
-    <link rel="stylesheet" href="{{ asset('css/maquinaria/estilos_globales.css') }}?v=19.1">
+    <link rel="stylesheet" href="{{ asset('css/maquinaria/estilos_globales.css') }}?v=19.2">
     <link rel="stylesheet" href="{{ asset('css/maquinaria/menu.css') }}?v=10.3">
     <link rel="stylesheet" href="{{ asset('css/maquinaria/catalogo.css') }}?v=2.3">
     <!-- Local Fonts Optimization -->
@@ -456,7 +456,7 @@
     <script src="{{ asset('js/maquinaria/catalogo_create.js') }}?v=12.2"></script>
     <script src="{{ asset('js/maquinaria/equipos_index.js') }}?v=21.2"></script>
     <script src="{{ asset('js/maquinaria/catalogo_index.js') }}?v=3.8"></script>
-    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=7.4"></script>
+    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=7.5"></script>
     <script src="{{ asset('js/maquinaria/usuarios_index.js') }}?v=10.2"></script>
     <script src="{{ asset('js/maquinaria/fleet_dashboard.js') }}?v=106.2"></script>
 

@@ -520,14 +520,18 @@ window.addEventListener('spa:contentLoaded', function () {
 });
 
 // ── Listener global del evento dropdown-selection (disparado por selectOption) ──
-window.addEventListener('dropdown-selection', function (e) {
-    if (!document.getElementById('movilizacionesTableBody')) return;
-
-    const filterName = e.detail && e.detail.inputName;
-    if (filterName === 'id_frente' || filterName === 'id_tipo') {
-        window.loadMovilizaciones();
-    }
-});
+// Registrado UNA SOLA VEZ: se usa un flag global para evitar que la navegación
+// SPA lo registre múltiples veces, lo que causaría disparos duplicados o silenciosos.
+if (!window._mvDropdownListenerRegistered) {
+    window._mvDropdownListenerRegistered = true;
+    window.addEventListener('dropdown-selection', function (e) {
+        if (!document.getElementById('movilizacionesTableBody')) return;
+        const filterName = e.detail && e.detail.inputName;
+        if (filterName === 'id_frente' || filterName === 'id_tipo') {
+            window.loadMovilizaciones();
+        }
+    });
+}
 
 
 // ─── Date Filter Toggle ─────────────────────────────────────────────────────

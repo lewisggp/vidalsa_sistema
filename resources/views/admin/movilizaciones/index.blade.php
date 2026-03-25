@@ -9,13 +9,6 @@
     </h1>
 </section>
 
-<style>
-    @media (max-width: 1024px) {
-        .mv-mobile-hidden {
-            display: none !important;
-        }
-    }
-</style>
 
 <div class="movilizaciones-layout" style="align-items: start; width: 100%;">
     
