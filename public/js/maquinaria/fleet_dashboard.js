@@ -456,9 +456,10 @@ function createCharts(data) {
     const ageCount  = (data.ageByType  && data.ageByType.labels)  ? data.ageByType.labels.length  : 0;
     const catCount  = (data.categoryByType && data.categoryByType.labels) ? data.categoryByType.labels.length : 0;
     const inopCount = (data.inoperativeByType && data.inoperativeByType.labels) ? data.inoperativeByType.labels.length : 0;
-    if (agePanelEl)  agePanelEl.style.gridColumn  = ageCount  >= 6 ? '1 / -1' : '';
-    if (catPanelEl)  catPanelEl.style.gridColumn  = catCount  >= 6 ? '1 / -1' : '';
-    if (inopPanelEl) inopPanelEl.style.gridColumn = inopCount >= 6 ? '1 / -1' : '';
+    // Only expand to full-width when ≥8 categories (more conservative than before)
+    if (agePanelEl)  agePanelEl.style.gridColumn  = ageCount  >= 8 ? '1 / -1' : '';
+    if (catPanelEl)  catPanelEl.style.gridColumn  = catCount  >= 8 ? '1 / -1' : '';
+    if (inopPanelEl) inopPanelEl.style.gridColumn = inopCount >= 8 ? '1 / -1' : '';
 
     // 1. Estado Operativo - Doughnut
     window.fleetCharts.byStatus = new Chart(canvasStatus, {
@@ -553,11 +554,16 @@ function createStackedBarChart(canvasId, config) {
     if (emptyMsg) emptyMsg.remove();
     ctx.style.display = '';
 
-    // Dynamic height: 40px per label, minimum 220px
+    // Dynamic height: smarter formula with max cap
+    // - ≤5 labels: 44px each   → comfortable spacing
+    // - 6-10 labels: 36px each → compact but readable
+    // - >10 labels: 28px each  → dense but still visible
+    // Hard cap: 380px (never taller than a screen panel)
     const labelCount = config.labels ? config.labels.length : 1;
-    const dynamicHeight = Math.max(220, labelCount * 40);
+    const pxPerLabel = labelCount <= 5 ? 44 : labelCount <= 10 ? 36 : 28;
+    const dynamicHeight = Math.min(380, Math.max(180, labelCount * pxPerLabel));
     ctx.style.height = dynamicHeight + 'px';
-    ctx.style.maxHeight = 'none';
+    ctx.style.maxHeight = dynamicHeight + 'px';
 
     return new Chart(ctx, {
         type: 'bar',
