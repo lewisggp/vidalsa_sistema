@@ -164,14 +164,14 @@
             <div style="margin-bottom: 15px;">
                 <span style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px;">Rango de Fechas</span>
                 <div style="display: flex; gap: 8px;">
-                    <input type="date" id="fDesde" onchange="window.cargarDatos()" title="Desde" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e0; background: #fbfcfd; outline: none; padding: 0 12px; font-size:12px; color: #1e293b; cursor: pointer;">
-                    <input type="date" id="fHasta" onchange="window.cargarDatos()" title="Hasta" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e0; background: #fbfcfd; outline: none; padding: 0 12px; font-size:12px; color: #1e293b; cursor: pointer;">
+                    <input type="date" id="fDesde" class="native-date" onchange="window.cargarDatos()" title="Desde" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e0; background: #fbfcfd; outline: none; padding: 0 12px; font-size:12px; color: #1e293b; cursor: pointer;" onclick="try{this.showPicker()}catch(e){}">
+                    <input type="date" id="fHasta" class="native-date" onchange="window.cargarDatos()" title="Hasta" style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e0; background: #fbfcfd; outline: none; padding: 0 12px; font-size:12px; color: #1e293b; cursor: pointer;" onclick="try{this.showPicker()}catch(e){}">
                 </div>
             </div>
 
         </div>
     </div>
-    <!-- Botón Acciones -->
+            <!-- Botón Acciones -->
     <div style="position: relative; flex-shrink: 0;">
         <button type="button" id="btnAcciones" onclick="document.getElementById('splitDropdownMenu').style.display = document.getElementById('splitDropdownMenu').style.display === 'none' ? 'block' : 'none'; event.stopPropagation();" class="btn-primary-maquinaria" style="padding: 0 15px; height: 42px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
             <i class="material-icons">settings</i>
@@ -181,24 +181,34 @@
         <div id="splitDropdownMenu" style="display: none; position: absolute; top: 100%; right: 0; min-width: 260px; background: #e2e8f0; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; z-index: 1050; margin-top: 10px; overflow: hidden;">
             
             {{-- Navegación Estándar --}}
-            <a href="{{ route('consumibles.index') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                <i class="material-icons" style="font-size:20px;">list</i>
+            <a href="{{ route('consumibles.index') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <div style="background: #e0e7ff; padding: 6px; border-radius: 6px; display: flex;">
+                    <i class="material-icons" style="font-size: 18px; color: #4f46e5;">list_alt</i>
+                </div>
                 <span style="font-size:14px; font-weight:500;">Lista de Consumibles</span>
             </a>
-            <a href="{{ route('consumibles.graficos') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                <i class="material-icons" style="font-size:20px;">bar_chart</i>
+            
+            <a href="{{ route('consumibles.graficos') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <div style="background: #eff6ff; padding: 6px; border-radius: 6px; display: flex;">
+                    <i class="material-icons" style="font-size: 18px; color: #3b82f6;">analytics</i>
+                </div>
                 <span style="font-size:14px; font-weight:500;">Gráficos y Reportes</span>
             </a>
-            <a href="{{ route('consumibles.cargar') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #cbd5e1; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                <i class="material-icons" style="font-size:20px;">upload_file</i>
+            
+            <a href="{{ route('consumibles.cargar') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #cbd5e1; background: transparent; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <div style="background: #fff7ed; padding: 6px; border-radius: 6px; display: flex;">
+                    <i class="material-icons" style="font-size: 18px; color: #ea580c;">note_add</i>
+                </div>
                 <span style="font-size:14px; font-weight:500;">Cargar Lote (Masivo)</span>
             </a>
 
             {{-- Acciones Locales --}}
-            <button type="button" onclick="document.getElementById('splitDropdownMenu').style.display='none'; descargarCsv()" class="dropdown-item-custom" style="width:100%; display:flex; align-items:center; gap:10px; padding:12px 15px; color:#10b981; border:none; background:transparent; text-align:left; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#ecfdf5'" onmouseout="this.style.background='transparent'">
-                <i class="material-icons" style="font-size:20px;">download</i>
-                <span style="font-size:14px; font-weight:500;">Exportar a CSV</span>
-            </button>
+            <a href="#" onclick="document.getElementById('splitDropdownMenu').style.display='none'; descargarCsv(); return false;" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; transition: all 0.2s; border-bottom: 1px solid #f1f5f9; background: transparent;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <div style="background: #f1f5f9; padding: 6px; border-radius: 6px; display: flex;">
+                    <i class="material-icons" style="font-size: 18px; color: #64748b;">download</i>
+                </div>
+                <span style="font-size: 14px; font-weight: 500;">Exportación de Data</span>
+            </a>
         </div>
     </div>
 

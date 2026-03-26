@@ -4,32 +4,14 @@
  */
 
 // ═══════════════════════════════════════════════════════════════════
-// ELIMINAR CONSUMIBLE — GLOBAL (fuera del ModuleManager)
-// Debe estar aquí para que el onclick inline del botón lo encuentre
-// incluso antes de que el módulo haya terminado de inicializarse.
+// ELIMINAR CONSUMIBLE DIRECTO (Sin preguntas, sin claves, sin estorbos)
 // ═══════════════════════════════════════════════════════════════════
-window.eliminarConsumible = function(id, url, btnElement) {
-    var btn = btnElement || null;
-    if (window.showModal) {
-        window.showModal({
-            type: 'warning',
-            title: '¿Eliminar este registro?',
-            message: 'Esta acción eliminará el consumible y no se podrá deshacer.',
-            confirmText: 'Sí, eliminar',
-            cancelText: 'Cancelar',
-            onConfirm: function() { _ejecutarEliminacionConsumible(id, url, btn); }
-        });
-    } else {
-        if (confirm('¿Eliminar este registro?')) {
-            _ejecutarEliminacionConsumible(id, url, btn);
-        }
+window.borrarDirecto = function(id, url, btn) {
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="material-icons" style="font-size:17px; animation:spin 1s linear infinite;">refresh</i>';
+        btn.style.opacity = '0.5';
     }
-};
-
-function _ejecutarEliminacionConsumible(id, url, btn) {
-    // Si no se pasó el botón, intentar encontrarlo con data-consumible-id
-    if (!btn) btn = document.querySelector('[data-consumible-id="' + id + '"]');
-    if (btn) { btn.disabled = true; btn.style.opacity = '0.4'; }
 
     var csrfMeta = document.querySelector('meta[name="csrf-token"]');
     var csrfToken = csrfMeta ? csrfMeta.content : '';
@@ -41,35 +23,29 @@ function _ejecutarEliminacionConsumible(id, url, btn) {
             'Accept': 'application/json',
         }
     })
-    .then(function(r) {
-        if (r.status === 403) throw new Error('Sin permiso. Verifica acceso super.admin.');
-        if (r.status === 419) throw new Error('Sesión expirada. Recarga la página.');
-        return r.json();
-    })
+    .then(function(r) { return r.json(); })
     .then(function(data) {
-        if (data.ok) {
+        if (data.ok || data.success || !data.error) {
             var row = btn ? btn.closest('tr') : null;
             if (row) {
-                row.style.transition = 'opacity .25s';
+                row.style.transition = 'opacity 0.2s, transform 0.2s';
                 row.style.opacity = '0';
-                setTimeout(function() { row.remove(); }, 250);
+                row.style.transform = 'scale(0.95)';
+                setTimeout(function() { row.remove(); }, 200);
             }
-            if (window.showToast) window.showToast('Registro eliminado', 'success');
+            if (window.showToast) window.showToast('Registro eliminado al instante.', 'success');
         } else {
-            var msg = data.message || 'No se pudo eliminar el registro.';
-            if (window.showModal) window.showModal({ type: 'error', title: 'Error', message: msg, hideCancel: true });
-            else alert(msg);
-            if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+            console.error('Error al borrar', data);
+            if (window.showToast) window.showToast('No se pudo eliminar', 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="material-icons" style="font-size:17px;">delete</i>'; btn.style.opacity = '1'; }
         }
     })
-    .catch(function(err) {
-        console.error('Error al eliminar consumible:', err);
-        var msg = err.message || 'No se pudo conectar con el servidor.';
-        if (window.showModal) window.showModal({ type: 'error', title: 'Error', message: msg, hideCancel: true });
-        else alert(msg);
-        if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+    .catch(function(e) {
+        console.error(e);
+        if (window.showToast) window.showToast('Error de red', 'error');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="material-icons" style="font-size:17px;">delete</i>'; btn.style.opacity = '1'; }
     });
-}
+};
 
 // ═══════════════════════════════════════════════════════════════════
 // MÓDULO CONSUMIBLES — lógica de la página (Match, edición inline)

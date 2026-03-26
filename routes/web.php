@@ -96,6 +96,11 @@ Route::middleware(['auth'])->group(function () {
             Route::get('herramientas/calculadora-filtros', function () {
                 return view('admin.herramientas.calculadora_filtros');
             })->name('herramientas.calculadoraFiltros');
+
+            Route::get('herramientas/calculadora-equipos-frentes', function () {
+                $frentes = \App\Models\FrenteTrabajo::orderBy('NOMBRE_FRENTE')->pluck('NOMBRE_FRENTE')->toArray();
+                return view('admin.herramientas.calculadora_frentes', compact('frentes'));
+            })->name('herramientas.calculadoraFrentes');
         });
 
     });

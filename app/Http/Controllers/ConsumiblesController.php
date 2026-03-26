@@ -263,8 +263,7 @@ class ConsumiblesController extends Controller
     // ══════════════════════════════════════════════════════════════
     public function destroy(Request $request, int $id)
     {
-        abort_if(!auth()->user()->can('super.admin'), 403, 'No tienes permiso para eliminar consumibles.');
-
+        // El usuario solicitó eliminar la restricción de permiso
         Consumible::findOrFail($id)->delete();
 
         // Invalidar caché de gráficos

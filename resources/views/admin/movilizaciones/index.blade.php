@@ -163,7 +163,8 @@
                                 style="width: 100%; height: 32px; padding: 0 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; background: {{ request('fecha_desde') ? '#e1effa' : 'white' }}; outline: none; color: #0f172a; box-sizing: border-box;"
                                 onfocus="this.style.borderColor='#0067b1'"
                                 onblur="this.style.borderColor='#e2e8f0'"
-                                onchange="loadMovilizaciones()">
+                                onchange="loadMovilizaciones()"
+                                onclick="try{this.showPicker()}catch(e){}">
                         </div>
 
                         <!-- Fecha Hasta -->
@@ -174,7 +175,8 @@
                                 style="width: 100%; height: 32px; padding: 0 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; background: {{ request('fecha_hasta') ? '#e1effa' : 'white' }}; outline: none; color: #0f172a; box-sizing: border-box;"
                                 onfocus="this.style.borderColor='#0067b1'"
                                 onblur="this.style.borderColor='#e2e8f0'"
-                                onchange="loadMovilizaciones()">
+                                onchange="loadMovilizaciones()"
+                                onclick="try{this.showPicker()}catch(e){}">
                         </div>
 
                         <!-- Dirección del Frente (Entrada / Salida) -->
@@ -286,23 +288,5 @@
 
 
 
-@endsection
-
-@section('extra_js')
-<script>
-    // --- SPA STRICT CACHE BUSTER ---
-    // If the user navigates via SPA from another module, they might be stuck with an old
-    // cached version of `movilizaciones_index.js` in the <head>. This forces the new version
-    // to load if the definition of loadMovilizaciones doesn't match the new one.
-    if (typeof window.loadMovilizaciones === 'function') {
-        const fnStr = window.loadMovilizaciones.toString();
-        if (!fnStr.includes('EMERGENCE ERROR')) {
-            console.log("🔄 [SPA] Versión vieja de movilizaciones detectada en memoria. Inyectando v8.2...");
-            const script = document.createElement('script');
-            script.src = "{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=8.2";
-            document.head.appendChild(script);
-        }
-    }
-</script>
 @endsection
 
