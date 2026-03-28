@@ -34,16 +34,16 @@
         @endphp
 
         {{-- =====================================================================
-             FILTRO FRENTE: LOCAL = bloqueado | GLOBAL = dropdown con default real
+             FILTRO FRENTE: Desbloqueado para todos
              ===================================================================== --}}
         <div class="mv-filter-item" style="flex: 2; min-width: 170px;">
             @php
                 $currentFrenteId = request('id_frente');
                 $currentFrente = $currentFrenteId && $currentFrenteId !== 'all' ? $frentes->firstWhere('ID_FRENTE', $currentFrenteId) : null;
-                $frentesDropdown = $isLocalUser ? $frentes->whereIn('ID_FRENTE', $dashFrenteIds) : $frentes;
-                $placeholderText = $currentFrente ? $currentFrente->NOMBRE_FRENTE : (count($dashFrenteIds) > 0 ? 'Todos Mis Frentes' : 'Todos los Frentes');
+                $frentesDropdown = $frentes; // Todos ven todos
+                $placeholderText = $currentFrente ? $currentFrente->NOMBRE_FRENTE : 'Todos los Frentes';
             @endphp
-            <div class="custom-dropdown" id="frenteFilterSelect" data-filter-type="id_frente" data-default-label="{{ count($dashFrenteIds) > 0 ? 'Todos Mis Frentes' : 'Todos los Frentes' }}">
+            <div class="custom-dropdown" id="frenteFilterSelect" data-filter-type="id_frente" data-default-label="Todos los Frentes">
                 <input type="hidden" name="id_frente" data-filter-value value="{{ $currentFrenteId }}" form="search-form">
 
                 <div class="dropdown-trigger {{ $currentFrenteId && $currentFrenteId !== 'all' ? 'filter-active' : '' }}" style="padding:0; display:flex; align-items:center; background:#fbfcfd; overflow:hidden; border:1px solid #cbd5e0; border-radius:12px; height:45px;">
@@ -57,16 +57,16 @@
                         oninput="window.filterDropdownOptions(this)"
                         autocomplete="off">
                     <i class="material-icons" data-clear-btn
-                       style="padding:0 5px; color:var(--maquinaria-gray-text); font-size:18px; display:{{ $currentFrenteId && $currentFrenteId != 'all' ? 'block' : 'none' }}; cursor:pointer;"
-                       onclick="event.stopPropagation(); clearDropdownFilter('frenteFilterSelect'); setTimeout(function(){ window.loadMovilizaciones(); }, 100);">close</i>
+                        style="padding:0 5px; color:var(--maquinaria-gray-text); font-size:18px; display:{{ $currentFrenteId && $currentFrenteId != 'all' ? 'block' : 'none' }}; cursor:pointer;"
+                        onclick="event.stopPropagation(); clearDropdownFilter('frenteFilterSelect'); setTimeout(function(){ window.loadMovilizaciones(); }, 100);">close</i>
                 </div>
 
                 <div class="dropdown-content" style="padding:5px; max-height:none; overflow:visible;">
                     <div class="dropdown-item-list" style="max-height:250px; overflow-y:auto;">
                         <div class="dropdown-item {{ !$currentFrenteId || $currentFrenteId == 'all' ? 'selected' : '' }}"
                              data-value="all"
-                             onclick="selectOption('frenteFilterSelect', 'all', '{{ $isLocalUser ? 'Todos Mis Frentes' : 'TODOS LOS FRENTES' }}'); setTimeout(function(){ window.loadMovilizaciones(); }, 100);">
-                            {{ $isLocalUser ? 'TODOS MIS FRENTES' : 'TODOS LOS FRENTES' }}
+                             onclick="selectOption('frenteFilterSelect', 'all', 'TODOS LOS FRENTES'); setTimeout(function(){ window.loadMovilizaciones(); }, 100);">
+                            TODOS LOS FRENTES
                         </div>
                         @foreach($frentesDropdown as $frente)
                             <div class="dropdown-item {{ $currentFrenteId == $frente->ID_FRENTE ? 'selected' : '' }}"

@@ -33,16 +33,7 @@ class MovilizacionController extends Controller
 
         $query = Movilizacion::with(['equipo.tipo', 'equipo.especificaciones', 'equipo.documentacion', 'frenteOrigen', 'frenteDestino', 'usuario']);
 
-        // User Security Scope
-        if (count($frentesPermitidos) > 0) {
-            $query->where(function($q) use ($frentesPermitidos) {
-                $q->whereIn('ID_FRENTE_ORIGEN', $frentesPermitidos)
-                  ->orWhereIn('ID_FRENTE_DESTINO', $frentesPermitidos);
-            });
-        } elseif ($isLocalUser) {
-            // Usuario local sin frentes asigados = no ve nada.
-            $query->whereRaw('1 = 0');
-        }
+        // Eliminada la barrera de seguridad de usuario local. Todos ven todo.
 
         // Smart Search Filters (Pattern-Based Optimization)
         if ($request->filled('search')) {
@@ -125,15 +116,7 @@ class MovilizacionController extends Controller
         // Stats: Total In Transit — filtrado con los mismos criterios base
         $statsQuery = Movilizacion::where('ESTADO_MVO', 'TRANSITO');
 
-        // Apply User Scope to Stats
-        if (count($frentesPermitidos) > 0) {
-            $statsQuery->where(function($q) use ($frentesPermitidos) {
-                $q->whereIn('ID_FRENTE_ORIGEN', $frentesPermitidos)
-                  ->orWhereIn('ID_FRENTE_DESTINO', $frentesPermitidos);
-            });
-        } elseif ($isLocalUser) {
-            $statsQuery->whereRaw('1 = 0');
-        }
+        // Sin limite de frentes locales
 
         // Aplicar filtro de frente a las stats (mismo criterio que la tabla)
         if ($request->filled('id_frente') && $request->id_frente !== 'all') {
