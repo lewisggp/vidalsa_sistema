@@ -5,7 +5,7 @@
 @section('content')
 <section class="page-title-card" style="text-align: left; margin: 0 0 10px 0;">
     <h1 class="page-title">
-        <span class="page-title-line2" style="color: #000; white-space: normal; word-break: break-word;">Control de Recepción (Historial)</span>
+        <span class="page-title-line2" style="color: #000; white-space: normal; word-break: break-word;">Bitácora de Movilizaciones y Actualizaciones</span>
     </h1>
 </section>
 
@@ -34,16 +34,16 @@
         @endphp
 
         {{-- =====================================================================
-             FILTRO FRENTE: Desbloqueado para todos
+             FILTRO FRENTE: Restringido a frentes permitidos
              ===================================================================== --}}
         <div class="mv-filter-item" style="flex: 2; min-width: 170px;">
             @php
                 $currentFrenteId = request('id_frente');
                 $currentFrente = $currentFrenteId && $currentFrenteId !== 'all' ? $frentes->firstWhere('ID_FRENTE', $currentFrenteId) : null;
-                $frentesDropdown = $frentes; // Todos ven todos
-                $placeholderText = $currentFrente ? $currentFrente->NOMBRE_FRENTE : 'Todos los Frentes';
+                $frentesDropdown = $isLocalUser ? $frentes->whereIn('ID_FRENTE', $dashFrenteIds) : $frentes;
+                $placeholderText = $currentFrente ? $currentFrente->NOMBRE_FRENTE : ($isLocalUser ? 'Mis Frentes' : 'Todos los Frentes');
             @endphp
-            <div class="custom-dropdown" id="frenteFilterSelect" data-filter-type="id_frente" data-default-label="Todos los Frentes">
+            <div class="custom-dropdown" id="frenteFilterSelect" data-filter-type="id_frente" data-default-label="{{ $isLocalUser ? 'Mis Frentes' : 'Todos los Frentes' }}">
                 <input type="hidden" name="id_frente" data-filter-value value="{{ $currentFrenteId }}" form="search-form">
 
                 <div class="dropdown-trigger {{ $currentFrenteId && $currentFrenteId !== 'all' ? 'filter-active' : '' }}" style="padding:0; display:flex; align-items:center; background:#fbfcfd; overflow:hidden; border:1px solid #cbd5e0; border-radius:12px; height:45px;">
@@ -65,8 +65,8 @@
                     <div class="dropdown-item-list" style="max-height:250px; overflow-y:auto;">
                         <div class="dropdown-item {{ !$currentFrenteId || $currentFrenteId == 'all' ? 'selected' : '' }}"
                              data-value="all"
-                             onclick="selectOption('frenteFilterSelect', 'all', 'TODOS LOS FRENTES'); setTimeout(function(){ window.loadMovilizaciones(); }, 100);">
-                            TODOS LOS FRENTES
+                             onclick="selectOption('frenteFilterSelect', 'all', '{{ $isLocalUser ? 'MIS FRENTES' : 'TODOS LOS FRENTES' }}'); setTimeout(function(){ window.loadMovilizaciones(); }, 100);">
+                            {{ $isLocalUser ? 'MIS FRENTES' : 'TODOS LOS FRENTES' }}
                         </div>
                         @foreach($frentesDropdown as $frente)
                             <div class="dropdown-item {{ $currentFrenteId == $frente->ID_FRENTE ? 'selected' : '' }}"
