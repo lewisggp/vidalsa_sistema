@@ -166,11 +166,12 @@ class MovilizacionController extends Controller
                 <i class="material-icons" style="font-size: 18px; color: #8b5cf6;">local_shipping</i>
                 En Tránsito por Frente
             </h4>
-            <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px;">';
+            <div class="custom-scrollbar-container" style="max-height: 250px; overflow-y: auto; padding-right: 5px;">
+            <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px;">';
 
             if ($transitoPorFrente->isNotEmpty()) {
                 foreach ($transitoPorFrente as $stat) {
-                    $statsHtml .= '<li style="padding: 10px; background: #f8fafc; border-radius: 8px; border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+                    $statsHtml .= '<li style="padding: 6px 10px; background: #f8fafc; border-radius: 8px; border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
                             <span style="font-size: 12px; color: #64748b; font-weight: 600;">' . $stat->NOMBRE_FRENTE . '</span>
                             <span style="background: #e0e7ff; color: #4338ca; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 700;">' . $stat->total . '</span>
                         </li>';
@@ -178,7 +179,7 @@ class MovilizacionController extends Controller
             } else {
                 $statsHtml .= '<li style="padding: 15px; text-align: center; color: #94a3b8; font-style: italic; font-size: 13px;">No hay equipos en tránsito</li>';
             }
-            $statsHtml .= '</ul>';
+            $statsHtml .= '</ul></div>';
 
             return response()->json([
                 'html' => $tableHtml,

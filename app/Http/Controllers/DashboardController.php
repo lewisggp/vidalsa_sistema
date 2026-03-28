@@ -166,6 +166,7 @@ class DashboardController extends Controller
               ->orWhere('FECHA_ROTC', '<', $in30Days)
               ->orWhere('FECHA_RACDA', '<', $in30Days);
         })
+        ->where('ESTADO_OPERATIVO', '!=', 'DESINCORPORADO')
         ->with([
             'documentacion.frenteGestionPoliza',
             'documentacion.frenteGestionRotc',

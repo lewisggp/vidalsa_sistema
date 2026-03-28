@@ -435,7 +435,7 @@
 
     <div class="custom-scrollbar-container" style="margin-top: 5px; overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch;">
 
-        <table class="admin-table table-equipos-mobile" style="width: 100%; border-collapse: separate; border-spacing: 0 10px;">
+        <table class="admin-table table-equipos-mobile" style="width: 100%; min-width: 1000px; border-collapse: separate; border-spacing: 0 10px;">
             <thead>
                 <tr class="table-row-header">
                     <th class="table-header-custom" style="width: 150px;"></th> <!-- Foto Fixed -->
