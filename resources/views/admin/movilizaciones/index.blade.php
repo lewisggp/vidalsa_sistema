@@ -5,7 +5,7 @@
 @section('content')
 <section class="page-title-card" style="text-align: left; margin: 0 0 10px 0;">
     <h1 class="page-title">
-        <span class="page-title-line2" style="color: #000;">Control de Recepción (Historial)</span>
+        <span class="page-title-line2" style="color: #000; white-space: normal; word-break: break-word; text-align: center;">Control de Recepción (Historial)</span>
     </h1>
 </section>
 
