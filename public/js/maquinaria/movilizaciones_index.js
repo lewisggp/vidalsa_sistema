@@ -24,102 +24,97 @@ window.selectMovilizacionFilter = function (type, value) {
     window.loadMovilizaciones();
 };
 
-window.loadMovilizaciones = function (url = null, _retry) {
+window.loadMovilizaciones = async function (pageUrl = null) {
+    const tableBody = document.getElementById('movilizacionesTableBody');
+    if (!tableBody) return; // Salida temprana: no estamos en la sección de movilizaciones
+
+    if (window.showPreloader) window.showPreloader();
+    
     try {
-        console.log("🚀 [LOAD] Iniciando loadMovilizaciones...");
+        const container = document.querySelector('.movilizaciones-main-card') || document;
         
-        const tableBody = document.getElementById('movilizacionesTableBody');
-        if (!tableBody) {
-            if ((_retry || 0) < 10) {
-                console.log("⏳ [LOAD] Reintentando encontrar tbody (" + ((_retry || 0) + 1) + "/10)...");
-                setTimeout(() => window.loadMovilizaciones(url, (_retry || 0) + 1), 150);
-            } else {
-                console.warn('⚠️ [LOAD] tableBody no encontrado en DOM.');
-            }
-            return;
-        }
-
-        let baseUrl = '/admin/movilizaciones';
-        const container = tableBody.closest('.movilizaciones-main-card') || document;
-        const searchInput     = container.querySelector('#searchInput');
-        const frenteInput     = container.querySelector('input[name="id_frente"]');
-        const tipoInput       = container.querySelector('input[name="id_tipo"]');
-        const fechaDesde      = container.querySelector('#filterFechaDesde');
-        const fechaHasta      = container.querySelector('#filterFechaHasta');
-        const direccionFrente = container.querySelector('#filterDireccionFrente');
-
+        // 1. Recolectar parámetros de forma segura
         const params = new URLSearchParams();
+        
+        const searchInput = document.getElementById('searchInput');
         if (searchInput && searchInput.value) params.append('search', searchInput.value);
+        
+        const frenteInput = document.querySelector('input[name="id_frente"]');
         if (frenteInput && frenteInput.value && frenteInput.value !== 'all') params.append('id_frente', frenteInput.value);
+        
+        const tipoInput = document.querySelector('input[name="id_tipo"]');
         if (tipoInput && tipoInput.value && tipoInput.value !== 'all') params.append('id_tipo', tipoInput.value);
+        
+        const fechaDesde = document.getElementById('filterFechaDesde');
         if (fechaDesde && fechaDesde.value) params.append('fecha_desde', fechaDesde.value);
+        
+        const fechaHasta = document.getElementById('filterFechaHasta');
         if (fechaHasta && fechaHasta.value) params.append('fecha_hasta', fechaHasta.value);
-        if (direccionFrente && direccionFrente.value) params.append('direccion_frente', direccionFrente.value);
+        
+        const direccion = document.getElementById('filterDireccionFrente');
+        if (direccion && direccion.value) params.append('direccion_frente', direccion.value);
 
-        if (url && typeof url === 'string' && url.includes('page=')) {
+        // Extraer número de página si fue pasado en un string de URL
+        if (pageUrl && typeof pageUrl === 'string') {
             try {
-                const urlObj = new URL(url, window.location.origin);
+                const urlObj = new URL(pageUrl, window.location.origin);
                 const page = urlObj.searchParams.get('page');
                 if (page) params.set('page', page);
-            } catch (e) { console.error('[LOAD] URL parse error:', e); }
+            } catch (ignore) {}
         }
 
-        const queryStr = params.toString();
-        const finalUrl = baseUrl + (queryStr ? '?' + queryStr : '');
+        const finalUrl = '/admin/movilizaciones?' + params.toString();
 
-        console.log("🚀 [LOAD] FETCH a -> " + finalUrl);
+        if (tableBody) tableBody.style.opacity = '0.5';
 
-        tableBody.style.opacity = '0.5';
-        if (window.showPreloader) window.showPreloader();
-
-        fetch(finalUrl, {
+        // 2. Fetch de datos
+        const response = await fetch(finalUrl, {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'Accept':           'application/json',
-                'Cache-Control':    'no-cache, no-store, must-revalidate',
-                'Pragma':           'no-cache'
-            },
-            cache: 'no-store'
-        })
-            .then(response => {
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                return response.json();
-            })
-            .then(data => {
-                console.log("✅ [LOAD] Datos recibidos con éxito");
-                tableBody.innerHTML = data.html;
-                tableBody.style.opacity = '1';
+                'Accept': 'application/json'
+            }
+        });
 
-                const paginationContainer = document.getElementById('movilizacionesPagination');
-                if (paginationContainer) paginationContainer.innerHTML = data.pagination;
+        if (!response.ok) throw new Error('Error de red al cargar datos HTTP ' + response.status);
+        const data = await response.json();
 
-                const statsContainer = document.getElementById('statusStatsContainer');
-                if (statsContainer && data.statsHtml) statsContainer.innerHTML = data.statsHtml;
+        // 3. Actualizar vistas
+        if (tableBody) {
+            tableBody.innerHTML = data.html || '';
+            tableBody.style.opacity = '1';
+        }
 
-                const totalTransitoEl = document.getElementById('totalTransitoCount');
-                if (totalTransitoEl && data.totalTransito !== undefined)
-                    totalTransitoEl.innerText = data.totalTransito;
+        const paginationDiv = document.getElementById('movilizacionesPagination');
+        if (paginationDiv) paginationDiv.innerHTML = data.pagination || '';
 
-                const mobileTransitoEl = document.getElementById('mobileTransitoCount');
-                if (mobileTransitoEl && data.totalTransito !== undefined)
-                    mobileTransitoEl.innerText = data.totalTransito;
+        const statsDiv = document.getElementById('statusStatsContainer');
+        if (statsDiv && data.statsHtml) statsDiv.innerHTML = data.statsHtml;
 
-                if (window.history && window.history.pushState) {
-                    window.history.pushState(null, '', finalUrl);
-                }
-                
-                if (window.hidePreloader) window.hidePreloader();
-            })
-            .catch(error => {
-                console.error('❌ [LOAD] Fetch Error:', error);
-                tableBody.style.opacity = '1';
-                if (window.hidePreloader) window.hidePreloader();
-            });
+        const totalEls = [document.getElementById('totalTransitoCount'), document.getElementById('mobileTransitoCount')];
+        totalEls.forEach(el => { if (el && data.totalTransito !== undefined) el.innerText = data.totalTransito; });
 
-    } catch (globalExt) {
-        console.error("❌ [LOAD] EMERGENCE ERROR en loadMovilizaciones:", globalExt);
+        // 4. Update browser URL silenciosamente
+        if (window.history && window.history.pushState) {
+            window.history.pushState(null, '', finalUrl);
+        }
+
+    } catch (e) {
+        console.error("Error cargando movilizaciones:", e);
+        const tb = document.getElementById('movilizacionesTableBody');
+        if (tb) tb.style.opacity = '1';
+    } finally {
+        if (window.hidePreloader) window.hidePreloader();
     }
 };
+
+// Delegación de eventos para capturar clicks de la paginación de Laravel sin recargar la página
+document.addEventListener('click', function (e) {
+    const link = e.target.closest('#movilizacionesPagination a.page-link');
+    if (link) {
+        e.preventDefault();
+        window.loadMovilizaciones(link.href);
+    }
+});
 
 
 // ===========================================

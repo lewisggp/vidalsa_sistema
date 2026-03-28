@@ -155,28 +155,21 @@
                             <span style="font-size: 11px; color: #64748b; font-weight: 400; text-decoration: underline; cursor: default;" onclick="clearDateFilters()">Limpiar Todo</span>
                         </h4>
 
-                        <!-- Fecha Desde -->
+                        <!-- Rango de Fechas (Estilo unificado) -->
                         <div style="margin-bottom: 15px;">
-                            <span style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px;">Fecha Desde</span>
-                            <input type="date" id="filterFechaDesde"
-                                value="{{ request('fecha_desde') }}"
-                                style="width: 100%; height: 32px; padding: 0 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; background: {{ request('fecha_desde') ? '#e1effa' : 'white' }}; outline: none; color: #0f172a; box-sizing: border-box;"
-                                onfocus="this.style.borderColor='#0067b1'"
-                                onblur="this.style.borderColor='#e2e8f0'"
-                                onchange="loadMovilizaciones()"
-                                onclick="try{this.showPicker()}catch(e){}">
-                        </div>
-
-                        <!-- Fecha Hasta -->
-                        <div style="margin-bottom: 15px;">
-                            <span style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px;">Fecha Hasta</span>
-                            <input type="date" id="filterFechaHasta"
-                                value="{{ request('fecha_hasta') }}"
-                                style="width: 100%; height: 32px; padding: 0 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; background: {{ request('fecha_hasta') ? '#e1effa' : 'white' }}; outline: none; color: #0f172a; box-sizing: border-box;"
-                                onfocus="this.style.borderColor='#0067b1'"
-                                onblur="this.style.borderColor='#e2e8f0'"
-                                onchange="loadMovilizaciones()"
-                                onclick="try{this.showPicker()}catch(e){}">
+                            <span style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px;">Rango de Fechas</span>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="date" id="filterFechaDesde" class="native-date" 
+                                    onchange="loadMovilizaciones()" title="Desde" 
+                                    value="{{ request('fecha_desde') }}"
+                                    style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e0; background: #fbfcfd; outline: none; padding: 0 12px; font-size:12px; color: #1e293b; cursor: pointer;" 
+                                    onclick="try{this.showPicker()}catch(e){}">
+                                <input type="date" id="filterFechaHasta" class="native-date" 
+                                    onchange="loadMovilizaciones()" title="Hasta" 
+                                    value="{{ request('fecha_hasta') }}"
+                                    style="width: 100%; height: 36px; border-radius: 6px; border: 1px solid #cbd5e0; background: #fbfcfd; outline: none; padding: 0 12px; font-size:12px; color: #1e293b; cursor: pointer;" 
+                                    onclick="try{this.showPicker()}catch(e){}">
+                            </div>
                         </div>
 
                         <!-- Dirección del Frente (Entrada / Salida) -->

@@ -188,13 +188,7 @@
                 <span style="font-size:14px; font-weight:500;">Lista de Consumibles</span>
             </a>
             
-            <a href="{{ route('consumibles.graficos') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                <div style="background: #eff6ff; padding: 6px; border-radius: 6px; display: flex;">
-                    <i class="material-icons" style="font-size: 18px; color: #3b82f6;">analytics</i>
-                </div>
-                <span style="font-size:14px; font-weight:500;">Gráficos y Reportes</span>
-            </a>
-            
+
             <a href="{{ route('consumibles.cargar') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #cbd5e1; background: transparent; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                 <div style="background: #fff7ed; padding: 6px; border-radius: 6px; display: flex;">
                     <i class="material-icons" style="font-size: 18px; color: #ea580c;">note_add</i>
@@ -768,45 +762,52 @@ function renderTotalFrente(datos) {
 // ── Consumo por tipo de equipo (barra por tipo, total sumado) ───────
 function renderTipoEquipo(datos) {
     const loadEl = document.getElementById('loadingTipoEq');
-    if (!datos || datos.length === 0) {
-        loadEl.innerHTML = '<span style="color:#94a3b8;font-size:13px;">Sin equipos identificados para mostrar.</span>';
+    const canvElT = document.getElementById('chartTipoEq');
+
+    // Manejo correcto de vacío
+    if (!datos || !Array.isArray(datos) || datos.length === 0) {
+        loadEl.innerHTML = '<span style="color:#94a3b8;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;height:100%;"><i class="material-icons" style="margin-right:5px;font-size:18px;">info</i>Sin equipos identificados para mostrar.</span>';
         loadEl.style.display = 'flex';
+        canvElT.style.display = 'none';
         return;
     }
+    
     loadEl.style.display = 'none';
-    // Agrupar por tipo_equipo sumando totales de todos los frentes
-    const mapaTotal    = {};
-    const mapaDespachos = {};
-    const mapaUnidad   = {};
-    datos.forEach(d => {
-        mapaTotal[d.tipo_equipo]     = (mapaTotal[d.tipo_equipo]     || 0) + parseFloat(d.total);
-        mapaDespachos[d.tipo_equipo] = (mapaDespachos[d.tipo_equipo] || 0) + parseInt(d.despachos || 0);
-        mapaUnidad[d.tipo_equipo]    = d.unidad;
-    });
-    // Ordenar de mayor a menor
-    const ordenado = Object.entries(mapaTotal).sort((a, b) => b[1] - a[1]);
-    const PALETA_EQ = ['#003a70','#c41c00','#0077cc','#7b1fa2','#e65100','#1b5e20','#00838f','#546e7a','#f57f17','#4a148c'];
+    canvElT.style.display = 'block';
 
-    document.getElementById('chartTipoEq').style.display = 'block';
+    // Se asume que el backend ya agrupó por tipo_equipo y ordenó por total (ver ConsumiblesController.php)
+    const labels = datos.map(d => d.tipo_equipo || 'S/T');
+    const valores = datos.map(d => parseFloat(d.total || 0));
+    const despachosArr = datos.map(d => parseInt(d.despachos || 0));
+    const unidadesArr = datos.map(d => d.unidad || '');
+    
+    const PALETA_EQ = ['#003a70','#c41c00','#0077cc','#7b1fa2','#e65100','#1b5e20','#00838f','#546e7a','#f57f17','#4a148c'];
+    const backgroundColors = labels.map((_, i) => PALETA_EQ[i % PALETA_EQ.length]);
+
     let retriesT = 0;
     const drawT = () => {
         if (typeof Chart === 'undefined') {
             if (retriesT++ < 50) setTimeout(drawT, 100);
             return;
         }
-        const canvElT = document.getElementById('chartTipoEq');
-        const existingT = Chart.getChart(canvElT);
-        if (existingT) existingT.destroy();
+
+        // Destruir instancia anterior si existe (evita conflictos y canvas sobrepuestos)
+        if (window.chartTipoEqInst) {
+            window.chartTipoEqInst.destroy();
+        } else {
+            const existingT = Chart.getChart(canvElT);
+            if (existingT) existingT.destroy();
+        }
         
         try {
-            window.chartTipoEq = new Chart(canvElT, {
+            window.chartTipoEqInst = new Chart(canvElT, {
                 type: 'bar',
                 data: {
-                    labels:   ordenado.map(([t]) => t),
+                    labels: labels,
                     datasets: [{
-                        label: 'Consumo total',
-                        data:  ordenado.map(([, v]) => v),
-                        backgroundColor: ordenado.map((_, i) => PALETA_EQ[i % PALETA_EQ.length]),
+                        label: 'Consumo',
+                        data: valores,
+                        backgroundColor: backgroundColors,
                         borderRadius: 6,
                         borderSkipped: false,
                     }]
@@ -822,18 +823,19 @@ function renderTipoEquipo(datos) {
                             align: 'end',
                             color: '#1e293b',
                             font: { size: 10, weight: '700' },
-                            formatter: v => v > 0 ? v.toLocaleString('es-VE', {maximumFractionDigits:0}) : '',
+                            formatter: v => v > 0 ? v.toLocaleString('es-VE', {minimumFractionDigits:0, maximumFractionDigits:2}) : '',
                             clip: false,
                         },
                         tooltip: {
                             callbacks: {
                                 label: ctx => {
-                                    const tipo = ordenado[ctx.dataIndex][0];
-                                    const dep  = mapaDespachos[tipo] || 0;
-                                    const u    = mapaUnidad[tipo] || '';
+                                    const idx = ctx.dataIndex;
+                                    const dep = despachosArr[idx];
+                                    const u = unidadesArr[idx];
+                                    const valStr = ctx.parsed.y.toLocaleString('es-VE', {minimumFractionDigits:0, maximumFractionDigits:2});
                                     return [
-                                        ` ${ctx.parsed.y.toLocaleString('es-VE')} ${u}`,
-                                        ` ⛽ ${dep} despacho${dep !== 1 ? 's' : ''}`,
+                                        ` ${valStr} ${u}`,
+                                        ` ⛽ ${dep} despacho${dep !== 1 ? 's' : ''}`
                                     ];
                                 }
                             }
@@ -845,8 +847,11 @@ function renderTipoEquipo(datos) {
                     }
                 }
             });
-        } catch(e) { console.error(e); }
+        } catch(e) { 
+            console.error("Error al renderizar chartTipoEq:", e); 
+        }
     };
+    
     drawT();
 }
 

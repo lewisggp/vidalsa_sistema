@@ -156,10 +156,6 @@
                     <i class="material-icons" style="font-size:20px;">bar_chart</i>
                     <span style="font-size:14px; font-weight:500;">Gráficos y Reportes</span>
                 </a>
-                <a href="{{ route('consumibles.cargar') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #cbd5e1; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <i class="material-icons" style="font-size:20px;">upload_file</i>
-                    <span style="font-size:14px; font-weight:500;">Cargar Lote (Masivo)</span>
-                </a>
 
                 {{-- Acciones Locales --}}
                 <a href="javascript:void(0)" onclick="limpiarTabla(); document.getElementById('splitDropdownMenu').style.display='none'" style="display:flex; align-items:center; gap:10px; padding:12px 15px; color:#ef4444; text-decoration:none; background:transparent; transition:all 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">

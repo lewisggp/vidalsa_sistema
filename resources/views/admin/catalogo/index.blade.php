@@ -9,8 +9,8 @@
     </h1>
 </section>
 
-<div class="page-layout-grid" style="display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 40px; align-items: start; width: 100%;">
-    <div class="admin-card" style="margin: 0; min-height: 80vh; min-width: 0; width: fit-content; padding: 6px;">
+<div class="page-layout-grid">
+    <div class="admin-card" style="margin: 0; min-height: 80vh; min-width: 0; width: 100%; padding: 6px;">
 
     <div class="filter-toolbar-container" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center; margin-bottom: 5px;">
     <form id="catalogoFiltersForm" onsubmit="event.preventDefault(); loadCatalogo();" style="display: contents;">
@@ -92,7 +92,7 @@
 
     <div class="custom-scrollbar-container" style="width: 100%; overflow-x: auto; margin-top: 5px;">
         <!-- Added catalog-specific-table class for CSS isolation -->
-        <table class="admin-table catalog-specific-table" style="width: 1040px; min-width: 60%; margin: 0; max-width: 100%;">
+        <table class="admin-table catalog-specific-table" style="width: 100%; min-width: 1040px; margin: 0; border-collapse: separate; border-spacing: 0 5px;">
             <thead>
                 <tr class="table-row-header">
                     <th class="table-header-custom table-cell-bordered" style="width: 160px;"></th> 

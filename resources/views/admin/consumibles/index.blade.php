@@ -223,12 +223,7 @@
                 <div id="splitDropdownMenu" style="display: none; position: absolute; top: 100%; right: 0; min-width: 260px; background: #e2e8f0; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; z-index: 1050; margin-top: 10px; overflow: hidden;">
                     
                     {{-- Navegación Estándar --}}
-                    <a href="{{ route('consumibles.index') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                        <div style="background: #e0e7ff; padding: 6px; border-radius: 6px; display: flex;">
-                            <i class="material-icons" style="font-size: 18px; color: #4f46e5;">list_alt</i>
-                        </div>
-                        <span style="font-size:14px; font-weight:500;">Lista de Consumibles</span>
-                    </a>
+
                     
                     <a href="{{ route('consumibles.graficos') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                         <div style="background: #eff6ff; padding: 6px; border-radius: 6px; display: flex;">
