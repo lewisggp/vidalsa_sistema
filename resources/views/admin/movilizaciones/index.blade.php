@@ -39,18 +39,14 @@
         <div class="mv-filter-item" style="flex: 2; min-width: 170px;">
             @php
                 $currentFrenteId = request('id_frente');
-                // Si es un global validando por primera vez y tiene frentes default, podemos usarlo:
-                if (!$isLocalUser && !$currentFrenteId && isset($userFrenteAsig) && $userFrenteAsig) {
-                    $currentFrenteId = $userFrenteAsig;
-                }
-                $currentFrente = $currentFrenteId ? $frentes->firstWhere('ID_FRENTE', $currentFrenteId) : null;
+                $currentFrente = $currentFrenteId && $currentFrenteId !== 'all' ? $frentes->firstWhere('ID_FRENTE', $currentFrenteId) : null;
                 $frentesDropdown = $isLocalUser ? $frentes->whereIn('ID_FRENTE', $dashFrenteIds) : $frentes;
-                $placeholderText = $currentFrente ? $currentFrente->NOMBRE_FRENTE : ($isLocalUser ? 'Todos Mis Frentes' : 'Filtrar Frente...');
+                $placeholderText = $currentFrente ? $currentFrente->NOMBRE_FRENTE : (count($dashFrenteIds) > 0 ? 'Todos Mis Frentes' : 'Todos los Frentes');
             @endphp
-            <div class="custom-dropdown" id="frenteFilterSelect" data-filter-type="id_frente" data-default-label="{{ $isLocalUser ? 'Todos Mis Frentes' : 'Filtrar Frente...' }}">
+            <div class="custom-dropdown" id="frenteFilterSelect" data-filter-type="id_frente" data-default-label="{{ count($dashFrenteIds) > 0 ? 'Todos Mis Frentes' : 'Todos los Frentes' }}">
                 <input type="hidden" name="id_frente" data-filter-value value="{{ $currentFrenteId }}" form="search-form">
 
-                <div class="dropdown-trigger {{ $currentFrenteId && $currentFrenteId != 'all' ? 'filter-active' : '' }}" style="padding:0; display:flex; align-items:center; background:#fbfcfd; overflow:hidden; border:1px solid #cbd5e0; border-radius:12px; height:45px;">
+                <div class="dropdown-trigger {{ $currentFrenteId && $currentFrenteId !== 'all' ? 'filter-active' : '' }}" style="padding:0; display:flex; align-items:center; background:#fbfcfd; overflow:hidden; border:1px solid #cbd5e0; border-radius:12px; height:45px;">
                     <div style="padding:0 10px; display:flex; align-items:center; color:var(--maquinaria-gray-text);">
                         <i class="material-icons" style="font-size:18px;">search</i>
                     </div>

@@ -27,21 +27,20 @@ class MovilizacionController extends Controller
         $frentesPermitidos = $user ? $user->getFrentesIds() : [];
 
         if (!$isLocalUser && $user && count($frentesPermitidos) > 0) {
-            // GLOBAL: Only set default on initial page load if assigned to exactly ONE frente
-            if (!$request->wantsJson() && !$request->exists('id_frente') && count($frentesPermitidos) === 1) {
-                $request->merge(['id_frente' => $frentesPermitidos[0]]);
-            }
+            // GLOBALES (Nivel!=2) resuelven su scope nativo en consulta,
+            // no forzamos `id_frente` en request para mantener el Dropdown Visual HTML limpio.
         }
 
         $query = Movilizacion::with(['equipo.tipo', 'equipo.especificaciones', 'equipo.documentacion', 'frenteOrigen', 'frenteDestino', 'usuario']);
 
-        // LOCAL User Security Scope
-        if ($isLocalUser && count($frentesPermitidos) > 0) {
+        // User Security Scope
+        if (count($frentesPermitidos) > 0) {
             $query->where(function($q) use ($frentesPermitidos) {
                 $q->whereIn('ID_FRENTE_ORIGEN', $frentesPermitidos)
                   ->orWhereIn('ID_FRENTE_DESTINO', $frentesPermitidos);
             });
         } elseif ($isLocalUser) {
+            // Usuario local sin frentes asigados = no ve nada.
             $query->whereRaw('1 = 0');
         }
 
@@ -120,13 +119,14 @@ class MovilizacionController extends Controller
             $query->whereDate('created_at', '<=', $request->fecha_hasta);
         }
 
+        // Fetch paginated results
         $movilizaciones = $query->orderBy('created_at', 'desc')->paginate(12);
 
-        // Stats: Total In Transit — filtrado con los mismos criterios activos
+        // Stats: Total In Transit — filtrado con los mismos criterios base
         $statsQuery = Movilizacion::where('ESTADO_MVO', 'TRANSITO');
 
-        // Apply Local User Scope to Stats
-        if ($isLocalUser && count($frentesPermitidos) > 0) {
+        // Apply User Scope to Stats
+        if (count($frentesPermitidos) > 0) {
             $statsQuery->where(function($q) use ($frentesPermitidos) {
                 $q->whereIn('ID_FRENTE_ORIGEN', $frentesPermitidos)
                   ->orWhereIn('ID_FRENTE_DESTINO', $frentesPermitidos);
