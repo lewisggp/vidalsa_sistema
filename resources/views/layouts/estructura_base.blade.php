@@ -91,7 +91,7 @@
                 <i class="material-icons" style="font-size: 18px; margin-right: 5px;">agriculture</i>Vehículo
             </a>
             <a href="{{ route('movilizaciones.index') }}" class="nav-link {{ request()->is('admin/movilizaciones*') ? 'active' : '' }}" style="display: flex; align-items: center;">
-                <i class="material-icons" style="font-size: 18px; margin-right: 5px;">local_shipping</i>Recepción
+                <i class="material-icons" style="font-size: 18px; margin-right: 5px;">local_shipping</i>Historial Mov.
             </a>
 
             <!-- Configuraciones Dropdown -->
@@ -149,7 +149,7 @@
             <i class="material-icons">agriculture</i> Vehículo
         </a>
         <a href="{{ route('movilizaciones.index') }}" class="mobile-nav-link {{ request()->is('admin/movilizaciones*') ? 'active' : '' }}">
-            <i class="material-icons">local_shipping</i> Recepción
+            <i class="material-icons">local_shipping</i> Historial Mov.
         </a>
 
         <!-- Mobile Group -->
