@@ -164,5 +164,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 link.classList.remove('active');
             }
         });
+
+        // Add dynamic visibility for the "Inicio" (Menu) button in SPA transitions
+        const navInicioBtn = document.getElementById('nav-inicio-btn');
+        if (navInicioBtn) {
+            try {
+                const urlObj = new URL(url);
+                if (urlObj.pathname === '/menu' || urlObj.pathname.endsWith('/menu')) {
+                    navInicioBtn.style.setProperty('display', 'none', 'important');
+                } else {
+                    navInicioBtn.style.setProperty('display', 'flex', 'important');
+                }
+            } catch (e) {
+                console.error("Error updating nav-inicio button", e);
+            }
+        }
     }
 });

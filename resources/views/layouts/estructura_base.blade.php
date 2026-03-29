@@ -83,12 +83,10 @@
         </div>
 
         <nav class="header-nav">
-            @unless(request()->is('menu'))
-            <a href="{{ route('menu') }}" class="nav-link" style="display: flex; align-items: center;">
+            <a id="nav-inicio-btn" href="{{ route('menu') }}" class="nav-link" style="display: {{ request()->is('menu') ? 'none' : 'flex' }} !important; align-items: center;">
                 <i class="material-icons" style="font-size: 18px; margin-right: 5px;">home</i>Inicio
             </a>
-            @endunless
-            
+
             <a href="{{ route('equipos.index') }}" class="nav-link {{ request()->is('admin/equipos*') ? 'active' : '' }}" style="display: flex; align-items: center;">
                 <i class="material-icons" style="font-size: 18px; margin-right: 5px;">agriculture</i>Vehículo
             </a>

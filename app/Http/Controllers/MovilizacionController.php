@@ -31,7 +31,14 @@ class MovilizacionController extends Controller
             // no forzamos `id_frente` en request para mantener el Dropdown Visual HTML limpio.
         }
 
-        $query = Movilizacion::with(['equipo.tipo', 'equipo.especificaciones', 'equipo.documentacion', 'frenteOrigen', 'frenteDestino', 'usuario']);
+        $query = Movilizacion::with([
+            'equipo.tipo',
+            'equipo.especificaciones:ID_ESPEC,COMBUSTIBLE,CONSUMO_PROMEDIO,FOTO_REFERENCIAL',
+            'equipo.documentacion',
+            'frenteOrigen',
+            'frenteDestino',
+            'usuario',
+        ]);
 
         // Eliminada la barrera de seguridad de usuario local. Todos ven todo.
 
@@ -40,12 +47,26 @@ class MovilizacionController extends Controller
             $search = trim($request->search);
             $searchUpper = strtoupper($search);
 
-            $query->where(function ($q) use ($search, $searchUpper) {
+            // Pattern 5 (default) needs leftJoins applied BEFORE the where() group.
+            // We detect this case outside the closure so $query is accessible.
+            $isDefaultSearch = !preg_match('/^MV-?\d+/i', $search)
+                            && !preg_match('/\d{2}-\d{2}-\d{4}/', $search)
+                            && strpos($search, '#') !== 0
+                            && strpos($search, '-') === false;
+
+            if ($isDefaultSearch) {
+                // Left-join equipos and documentacion so we can search SERIAL_CHASIS
+                // and PLACA directly in SQL without a correlated EXISTS subquery (full scan).
+                $query->leftJoin('equipos AS eq_search', 'movilizacion_historial.ID_EQUIPO', '=', 'eq_search.ID_EQUIPO')
+                      ->leftJoin('documentacion AS doc_search', 'eq_search.ID_EQUIPO', '=', 'doc_search.ID_EQUIPO');
+            }
+
+            $query->where(function ($q) use ($search, $searchUpper, $isDefaultSearch) {
                 // Pattern 1: MV-XXXXX or MVXXXXX → Search CODIGO_CONTROL
                 if (preg_match('/^MV-?\d+/i', $search)) {
                     $cleanSearch = ltrim(str_replace(['MV-', 'MV'], '', $searchUpper), '0');
                     $q->where('CODIGO_CONTROL', 'like', "%{$searchUpper}%")
-                        ->orWhere('CODIGO_CONTROL', 'like', "%{$cleanSearch}%");
+                      ->orWhere('CODIGO_CONTROL', 'like', "%{$cleanSearch}%");
                 }
                 // Pattern 2: DD-MM-YYYY format → Search CODIGO_PATIO
                 elseif (preg_match('/\d{2}-\d{2}-\d{4}/', $search)) {
@@ -66,35 +87,36 @@ class MovilizacionController extends Controller
                         $qEq->where('CODIGO_PATIO', 'like', "%{$search}%");
                     });
                 }
-                // Pattern 5: Default → Search PLACA and SERIAL_CHASIS
+                // Pattern 5: Default → SERIAL_CHASIS or PLACA via leftJoin (no subquery/full scan)
                 else {
-                    $q->whereHas('equipo', function ($qEq) use ($search) {
-                        $qEq->where('SERIAL_CHASIS', 'like', "%{$search}%")
-                            ->orWhereHas('documentacion', function ($qDoc) use ($search) {
-                                $qDoc->where('PLACA', 'like', "%{$search}%");
-                            });
-                    });
+                    $q->where('eq_search.SERIAL_CHASIS', 'like', "%{$searchUpper}%")
+                      ->orWhere('doc_search.PLACA', 'like', "%{$searchUpper}%");
                 }
             });
         }
 
-        if ($request->filled('id_frente') && $request->id_frente !== 'all') {
-            $direccion = $request->input('direccion_frente'); // 'entrada', 'salida', o vacío
 
-            if ($direccion === 'entrada') {
-                // Solo registros donde el frente seleccionado es el DESTINO (equipos que ENTRARON)
-                $query->where('ID_FRENTE_DESTINO', $request->id_frente);
-            } elseif ($direccion === 'salida') {
-                // Solo registros donde el frente seleccionado es el ORIGEN (equipos que SALIERON)
-                $query->where('ID_FRENTE_ORIGEN', $request->id_frente);
-            } else {
-                // Sin filtro de dirección: mostrar ambos (comportamiento original)
-                $query->where(function ($q) use ($request) {
-                    $q->where('ID_FRENTE_DESTINO', $request->id_frente)
-                        ->orWhere('ID_FRENTE_ORIGEN', $request->id_frente);
-                });
+        // ─── SHARED filter logic (applied to both main query and stats query) ───────
+        // Extracted into a closure to eliminate code duplication and ensure both
+        // queries always use identical filtering criteria.
+        $applyFrenteFilter = function ($q) use ($request) {
+            if ($request->filled('id_frente') && $request->id_frente !== 'all') {
+                $direccion = $request->input('direccion_frente');
+                if ($direccion === 'entrada') {
+                    $q->where('ID_FRENTE_DESTINO', $request->id_frente);
+                } elseif ($direccion === 'salida') {
+                    $q->where('ID_FRENTE_ORIGEN', $request->id_frente);
+                } else {
+                    $q->where(function ($inner) use ($request) {
+                        $inner->where('ID_FRENTE_DESTINO', $request->id_frente)
+                              ->orWhere('ID_FRENTE_ORIGEN', $request->id_frente);
+                    });
+                }
             }
-        }
+        };
+
+        // ─── Apply shared filters to main query ───────────────────────────────────
+        $applyFrenteFilter($query);
 
         if ($request->filled('id_tipo') && $request->id_tipo !== 'all') {
             $query->whereHas('equipo', function ($q) use ($request) {
@@ -102,7 +124,7 @@ class MovilizacionController extends Controller
             });
         }
 
-        // Filtro por rango de fechas (usando created_at para cubrir recepciones directas y actualizaciones)
+        // Date range filter (using created_at to cover direct receptions and dispatches)
         if ($request->filled('fecha_desde')) {
             $query->whereDate('created_at', '>=', $request->fecha_desde);
         }
@@ -113,34 +135,17 @@ class MovilizacionController extends Controller
         // Fetch paginated results
         $movilizaciones = $query->orderBy('created_at', 'desc')->paginate(12)->onEachSide(1);
 
-        // Stats: Total In Transit — filtrado con los mismos criterios base
+        // ─── Stats: Total In Transit ──────────────────────────────────────────────
+        // Uses the same shared filter closure to guarantee consistency with the table.
         $statsQuery = Movilizacion::where('ESTADO_MVO', 'TRANSITO');
+        $applyFrenteFilter($statsQuery);
 
-        // Sin limite de frentes locales
-
-        // Aplicar filtro de frente a las stats (mismo criterio que la tabla)
-        if ($request->filled('id_frente') && $request->id_frente !== 'all') {
-            $direccion = $request->input('direccion_frente');
-            if ($direccion === 'entrada') {
-                $statsQuery->where('ID_FRENTE_DESTINO', $request->id_frente);
-            } elseif ($direccion === 'salida') {
-                $statsQuery->where('ID_FRENTE_ORIGEN', $request->id_frente);
-            } else {
-                $statsQuery->where(function ($q) use ($request) {
-                    $q->where('ID_FRENTE_DESTINO', $request->id_frente)
-                      ->orWhere('ID_FRENTE_ORIGEN', $request->id_frente);
-                });
-            }
-        }
-
-        // Aplicar filtro de tipo a las stats
         if ($request->filled('id_tipo') && $request->id_tipo !== 'all') {
             $statsQuery->whereHas('equipo', function ($q) use ($request) {
                 $q->where('id_tipo_equipo', $request->id_tipo);
             });
         }
 
-        // Aplicar filtro de fechas a las stats
         if ($request->filled('fecha_desde')) {
             $statsQuery->whereDate('FECHA_DESPACHO', '>=', $request->fecha_desde);
         }
@@ -148,8 +153,7 @@ class MovilizacionController extends Controller
             $statsQuery->whereDate('FECHA_DESPACHO', '<=', $request->fecha_hasta);
         }
 
-        $totalTransito = (clone $statsQuery)->count();
-
+        $totalTransito    = (clone $statsQuery)->count();
         $transitoPorFrente = (clone $statsQuery)
             ->join('frentes_trabajo', 'movilizacion_historial.ID_FRENTE_DESTINO', '=', 'frentes_trabajo.ID_FRENTE')
             ->select('frentes_trabajo.NOMBRE_FRENTE', DB::raw('count(*) as total'))

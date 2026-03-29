@@ -94,19 +94,20 @@ class EquipoController extends Controller
                     str_replace(['O', '0'], ['0', 'O'], $searchUpper),
                 ])->unique()->values()->all();
 
+                // To optimize PLACA search without full scanning documentacion table, we join it here
+                $equipos->leftJoin('documentacion AS doc_search', 'equipos.ID_EQUIPO', '=', 'doc_search.ID_EQUIPO');
+
                 $equipos->where(function ($q) use ($searchUpper, $placaVariants) {
                     // Exact search for non-plate fields
-                    $q->where('SERIAL_CHASIS', 'like', "%{$searchUpper}%")
-                      ->orWhere('SERIAL_DE_MOTOR', 'like', "%{$searchUpper}%")
-                      ->orWhere('CODIGO_PATIO', 'like', "%{$searchUpper}%")
-                      ->orWhere('NUMERO_ETIQUETA', 'like', "%{$searchUpper}%")
-                      // O/0-aware search only for PLACA
-                      ->orWhereHas('documentacion', function ($d) use ($placaVariants) {
-                          $d->where(function ($pq) use ($placaVariants) {
-                              foreach ($placaVariants as $variant) {
-                                  $pq->orWhere('PLACA', 'like', "%{$variant}%");
-                              }
-                          });
+                    $q->where('equipos.SERIAL_CHASIS', 'like', "%{$searchUpper}%")
+                      ->orWhere('equipos.SERIAL_DE_MOTOR', 'like', "%{$searchUpper}%")
+                      ->orWhere('equipos.CODIGO_PATIO', 'like', "%{$searchUpper}%")
+                      ->orWhere('equipos.NUMERO_ETIQUETA', 'like', "%{$searchUpper}%")
+                      // O/0-aware search only for PLACA via Left Join
+                      ->orWhere(function ($pq) use ($placaVariants) {
+                          foreach ($placaVariants as $variant) {
+                              $pq->orWhere('doc_search.PLACA', 'like', "%{$variant}%");
+                          }
                       });
                 });
             }
@@ -116,27 +117,25 @@ class EquipoController extends Controller
 
 
         // --- Documentation Filters ---
-        if ($request->filled('filter_propiedad') && $request->filter_propiedad === 'true') {
-            $equipos->whereHas('documentacion', function ($q) {
-                $q->whereNotNull('LINK_DOC_PROPIEDAD');
-            });
-        }
+        $hasDocFilter = ($request->filled('filter_propiedad') && $request->filter_propiedad === 'true') ||
+                        ($request->filled('filter_poliza') && $request->filter_poliza === 'true') ||
+                        ($request->filled('filter_rotc') && $request->filter_rotc === 'true') ||
+                        ($request->filled('filter_racda') && $request->filter_racda === 'true');
 
-        if ($request->filled('filter_poliza') && $request->filter_poliza === 'true') {
-            $equipos->whereHas('documentacion', function ($q) {
-                $q->whereNotNull('LINK_POLIZA_SEGURO');
-            });
-        }
-
-        if ($request->filled('filter_rotc') && $request->filter_rotc === 'true') {
-            $equipos->whereHas('documentacion', function ($q) {
-                $q->whereNotNull('LINK_ROTC');
-            });
-        }
-
-        if ($request->filled('filter_racda') && $request->filter_racda === 'true') {
-            $equipos->whereHas('documentacion', function ($q) {
-                $q->whereNotNull('LINK_RACDA');
+        if ($hasDocFilter) {
+            $equipos->whereHas('documentacion', function ($q) use ($request) {
+                if ($request->filled('filter_propiedad') && $request->filter_propiedad === 'true') {
+                    $q->whereNotNull('LINK_DOC_PROPIEDAD');
+                }
+                if ($request->filled('filter_poliza') && $request->filter_poliza === 'true') {
+                    $q->whereNotNull('LINK_POLIZA_SEGURO');
+                }
+                if ($request->filled('filter_rotc') && $request->filter_rotc === 'true') {
+                    $q->whereNotNull('LINK_ROTC');
+                }
+                if ($request->filled('filter_racda') && $request->filter_racda === 'true') {
+                    $q->whereNotNull('LINK_RACDA');
+                }
             });
         }
 
@@ -343,24 +342,25 @@ class EquipoController extends Controller
         }
 
         // --- Documentation Filters ---
-        if ($request->filled('filter_propiedad') && $request->filter_propiedad === 'true') {
-            $equipos->whereHas('documentacion', function ($q) {
-                $q->whereNotNull('LINK_DOC_PROPIEDAD');
-            });
-        }
-        if ($request->filled('filter_poliza') && $request->filter_poliza === 'true') {
-            $equipos->whereHas('documentacion', function ($q) {
-                $q->whereNotNull('LINK_POLIZA_SEGURO');
-            });
-        }
-        if ($request->filled('filter_rotc') && $request->filter_rotc === 'true') {
-            $equipos->whereHas('documentacion', function ($q) {
-                $q->whereNotNull('LINK_ROTC');
-            });
-        }
-        if ($request->filled('filter_racda') && $request->filter_racda === 'true') {
-            $equipos->whereHas('documentacion', function ($q) {
-                $q->whereNotNull('LINK_RACDA');
+        $hasDocFilter = ($request->filled('filter_propiedad') && $request->filter_propiedad === 'true') ||
+                        ($request->filled('filter_poliza') && $request->filter_poliza === 'true') ||
+                        ($request->filled('filter_rotc') && $request->filter_rotc === 'true') ||
+                        ($request->filled('filter_racda') && $request->filter_racda === 'true');
+
+        if ($hasDocFilter) {
+            $equipos->whereHas('documentacion', function ($q) use ($request) {
+                if ($request->filled('filter_propiedad') && $request->filter_propiedad === 'true') {
+                    $q->whereNotNull('LINK_DOC_PROPIEDAD');
+                }
+                if ($request->filled('filter_poliza') && $request->filter_poliza === 'true') {
+                    $q->whereNotNull('LINK_POLIZA_SEGURO');
+                }
+                if ($request->filled('filter_rotc') && $request->filter_rotc === 'true') {
+                    $q->whereNotNull('LINK_ROTC');
+                }
+                if ($request->filled('filter_racda') && $request->filter_racda === 'true') {
+                    $q->whereNotNull('LINK_RACDA');
+                }
             });
         }
 
@@ -370,14 +370,17 @@ class EquipoController extends Controller
                 $tagSearch = str_replace('#', '', $search);
                 $equipos->where('NUMERO_ETIQUETA', 'like', "%{$tagSearch}%");
             } else {
+                // Optimize PLACA search with leftJoin instead of whereHas
+                $equipos->leftJoin('documentacion AS doc_search', 'equipos.ID_EQUIPO', '=', 'doc_search.ID_EQUIPO');
+                // Ensure we only select from equipos explicitly, to prevent joined tables overwriting keys
+                $equipos->select('equipos.*');
+                
                 $equipos->where(function ($q) use ($search) {
-                    $q->where('SERIAL_CHASIS', 'like', "%{$search}%")
-                        ->orWhereHas('documentacion', function ($d) use ($search) {
-                            $d->where('PLACA', 'like', "%{$search}%");
-                        })
-                        ->orWhere('SERIAL_DE_MOTOR', 'like', "%{$search}%")
-                        ->orWhere('CODIGO_PATIO', 'like', "%{$search}%")
-                        ->orWhere('NUMERO_ETIQUETA', 'like', "%{$search}%");
+                    $q->where('equipos.SERIAL_CHASIS', 'like', "%{$search}%")
+                        ->orWhere('doc_search.PLACA', 'like', "%{$search}%")
+                        ->orWhere('equipos.SERIAL_DE_MOTOR', 'like', "%{$search}%")
+                        ->orWhere('equipos.CODIGO_PATIO', 'like', "%{$search}%")
+                        ->orWhere('equipos.NUMERO_ETIQUETA', 'like', "%{$search}%");
                 });
             }
         }
@@ -555,10 +558,6 @@ XML;
         // Performance Optimization: Don't pre-load models list
         // Models will be loaded dynamically via AJAX autocomplete (same as years)
         // This eliminates DOM bloat when there are thousands of models
-        $modelosList = [];
-
-        // Performance Optimization: Don't pre-load models list
-        // Models will be loaded dynamically via AJAX autocomplete
         $modelosList = [];
 
         $aniosList = \Illuminate\Support\Facades\Cache::remember('anios_list_form_v3', 60, function () {
