@@ -417,6 +417,7 @@ class ConsumiblesController extends Controller
         $todosEquipos = DB::table('consumibles')
             ->join('equipos',         'equipos.ID_EQUIPO',   '=', 'consumibles.ID_EQUIPO')
             ->leftJoin('tipo_equipos','tipo_equipos.id',     '=', 'equipos.id_tipo_equipo')
+            ->leftJoin('frentes_trabajo','frentes_trabajo.ID_FRENTE', '=', 'equipos.ID_FRENTE_ACTUAL')
             ->where(function($q) use ($filtrosConfirmados) { $filtrosConfirmados($q); })
             ->whereNotNull('consumibles.ID_EQUIPO')
             ->select(
@@ -424,6 +425,7 @@ class ConsumiblesController extends Controller
                 'equipos.MARCA',
                 'equipos.MODELO',
                 DB::raw("COALESCE(tipo_equipos.nombre, 'S/T') as tipo"),
+                DB::raw("MAX(frentes_trabajo.NOMBRE_FRENTE) as frente"),
                 DB::raw('COUNT(*) as despachos'),
                 DB::raw('SUM(consumibles.CANTIDAD) as total'),
                 DB::raw('MAX(consumibles.UNIDAD) as unidad'),

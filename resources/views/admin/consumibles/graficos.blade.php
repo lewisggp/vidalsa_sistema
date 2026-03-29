@@ -182,13 +182,12 @@
             
             {{-- Navegación Estándar --}}
             <a href="{{ route('consumibles.index') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                <div style="background: #e0e7ff; padding: 6px; border-radius: 6px; display: flex;">
-                    <i class="material-icons" style="font-size: 18px; color: #4f46e5;">list_alt</i>
+                <div style="background: #eff6ff; padding: 6px; border-radius: 6px; display: flex;">
+                    <i class="material-icons" style="font-size: 18px; color: #3b82f6;">list_alt</i>
                 </div>
                 <span style="font-size:14px; font-weight:500;">Lista de Consumibles</span>
             </a>
             
-
             <a href="{{ route('consumibles.cargar') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #cbd5e1; background: transparent; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                 <div style="background: #fff7ed; padding: 6px; border-radius: 6px; display: flex;">
                     <i class="material-icons" style="font-size: 18px; color: #ea580c;">note_add</i>
@@ -423,7 +422,15 @@
             Despachos por Equipo — Todos
             <span class="g-subtitle" id="subtotalEquipos"></span>
         </p>
-        <input class="eq-search" id="eqSearch" type="text" placeholder="Buscar placa, marca, modelo, tipo..." oninput="filtrarTablaEquipos(this.value)">
+        <div style="display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;">
+            <input class="eq-search" id="eqSearch" type="text" placeholder="Buscar placa, marca o modelo..." oninput="filtrarTablaEquipos()" style="margin-bottom: 0; flex: 1; min-width: 200px;">
+            <select id="eqFilterTipo" class="eq-search" onchange="filtrarTablaEquipos()" style="margin-bottom: 0; width: auto; flex: 0 1 auto; min-width: 150px; background-color: #fbfcfd;">
+                <option value="">Todos los Tipos</option>
+            </select>
+            <select id="eqFilterFrente" class="eq-search" onchange="filtrarTablaEquipos()" style="margin-bottom: 0; width: auto; flex: 0 1 auto; min-width: 150px; background-color: #fbfcfd;">
+                <option value="">Todos los Frentes</option>
+            </select>
+        </div>
         <div id="loadingTodosEq" class="loading-overlay">
             <i class="material-icons" style="animation:spin 1s linear infinite;">refresh</i>
         </div>
@@ -434,8 +441,9 @@
                         <th class="sortable" onclick="sortTabla(0)">Tipo ▵</th>
                         <th class="sortable" onclick="sortTabla(1)">Identificador(es)</th>
                         <th class="sortable" onclick="sortTabla(2)">Marca / Modelo</th>
-                        <th class="sortable" onclick="sortTabla(3)" style="text-align:right;">Despachos ▾</th>
-                        <th class="sortable" onclick="sortTabla(4)" style="text-align:right;">Total</th>
+                        <th class="sortable" onclick="sortTabla(3)">Frente</th>
+                        <th class="sortable" onclick="sortTabla(4)" style="text-align:right;">Despachos ▾</th>
+                        <th class="sortable" onclick="sortTabla(5)" style="text-align:right;">Total</th>
                     </tr>
                 </thead>
                 <tbody id="bodyTodosEq"></tbody>
@@ -1213,7 +1221,6 @@ function descargarRanking() {
     capturaPanelHtml('panelRankingEquipos', 'top_equipos_consumo');
 }
 
-// ── TODOS LOS EQUIPOS — Tabla completa con buscador ─────────────━
 window._todosData = window._todosData || [];
 window._currentFilteredData = null;
 window._currentPageEq = 1;
@@ -1226,7 +1233,27 @@ function renderTodosEquipos(datos) {
     window._currentPageEq = 1;
     document.getElementById('subtotalEquipos').textContent =
         `— ${window._todosData.length} equipo${window._todosData.length !== 1 ? 's' : ''} registrados`;
-    llenarTablaEquipos(window._currentFilteredData, window._currentPageEq);
+        
+    // Populate filter dropdowns
+    const tipos = [...new Set(window._todosData.map(d => d.tipo))].filter(Boolean).sort();
+    const frentes = [...new Set(window._todosData.map(d => d.frente))].filter(Boolean).sort();
+    
+    const tipoSelect = document.getElementById('eqFilterTipo');
+    const frentesSelect = document.getElementById('eqFilterFrente');
+    
+    // Save current values to restore them after repopulating
+    const currTipo = tipoSelect.value;
+    const currFrente = frentesSelect.value;
+    
+    tipoSelect.innerHTML = '<option value="">Todos los Tipos</option>' + 
+        tipos.map(t => `<option value="${t}">${t}</option>`).join('');
+    frentesSelect.innerHTML = '<option value="">Todos los Frentes</option>' + 
+        frentes.map(f => `<option value="${f}">${f}</option>`).join('');
+        
+    tipoSelect.value = tipos.includes(currTipo) ? currTipo : '';
+    frentesSelect.value = frentes.includes(currFrente) ? currFrente : '';
+
+    filtrarTablaEquipos();
 }
 
 const ITEMS_PER_PAGE = 15;
@@ -1236,7 +1263,7 @@ function llenarTablaEquipos(datos, page = 1) {
     const containerPag = document.getElementById('paginacionEquipos');
     
     if (!datos || datos.length === 0) {
-        body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:#94a3b8;">Sin datos disponibles.</td></tr>`;
+        body.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8;">Sin datos disponibles.</td></tr>`;
         if (containerPag) containerPag.innerHTML = '';
         return;
     }
@@ -1250,12 +1277,14 @@ function llenarTablaEquipos(datos, page = 1) {
     body.innerHTML = paginated.map((d, i) => {
         const total = parseFloat(d.total);
         const ids   = (d.identificadores || d.CODIGO_PATIO || '—');
+        const front = d.frente || '—';
         return `<tr>
             <td style="font-size:11px;font-weight:700;color:#0067b1;text-transform:uppercase;">${d.tipo}</td>
             <td>
                 <span style="font-family:monospace;font-weight:700;color:#1e293b;font-size:12px;">${ids}</span>
             </td>
             <td style="font-size:12px;">${d.MARCA} ${d.MODELO}</td>
+            <td style="font-size:12px; color:#475569;">${front}</td>
             <td style="text-align:right;"><span class="eq-desp-badge">⛽ ${d.despachos}</span></td>
             <td style="text-align:right;font-weight:800;color:#0067b1;">
                 ${total.toLocaleString('es-VE',{minimumFractionDigits:0,maximumFractionDigits:1})}
@@ -1313,21 +1342,23 @@ window.cambiarPaginaEq = function(newPage) {
     llenarTablaEquipos(datos, newPage);
 };
 
-function filtrarTablaEquipos(q) {
-    if (!q) { 
-        window._currentFilteredData = window._todosData;
-        window._currentPageEq = 1;
-        llenarTablaEquipos(window._currentFilteredData, 1); 
-        return; 
-    }
-    const lq = q.toLowerCase();
-    window._currentFilteredData = window._todosData.filter(d =>
-        (d.identificadores||'').toLowerCase().includes(lq) ||
-        (d.CODIGO_PATIO||'').toLowerCase().includes(lq)    ||
-        (d.MARCA||'').toLowerCase().includes(lq)           ||
-        (d.MODELO||'').toLowerCase().includes(lq)          ||
-        (d.tipo||'').toLowerCase().includes(lq)
-    );
+function filtrarTablaEquipos() {
+    const q = (document.getElementById('eqSearch').value || '').toLowerCase();
+    const fTipo = document.getElementById('eqFilterTipo').value;
+    const fFrente = document.getElementById('eqFilterFrente').value;
+    
+    window._currentFilteredData = window._todosData.filter(d => {
+        const matchesText = !q || (
+            (d.identificadores||'').toLowerCase().includes(q) ||
+            (d.CODIGO_PATIO||'').toLowerCase().includes(q)    ||
+            (d.MARCA||'').toLowerCase().includes(q)           ||
+            (d.MODELO||'').toLowerCase().includes(q)
+        );
+        const matchesTipo = !fTipo || d.tipo === fTipo;
+        const matchesFrente = !fFrente || d.frente === fFrente;
+        return matchesText && matchesTipo && matchesFrente;
+    });
+    
     window._currentPageEq = 1;
     llenarTablaEquipos(window._currentFilteredData, 1);
 }
@@ -1336,15 +1367,26 @@ window._sortDir = window._sortDir || -1; // -1=desc, 1=asc
 
 function sortTabla(col) {
     window._sortDir *= -1;
-    const keys = ['tipo', 'identificadores', 'MARCA', 'despachos', 'total'];
+    const keys = ['tipo', 'identificadores', 'MARCA', 'frente', 'despachos', 'total'];
     const key  = keys[col];
     
     const currData = window._currentFilteredData || window._todosData;
     
     window._currentFilteredData = [...currData].sort((a, b) => {
-        const av = isNaN(a[key]) ? (a[key]||'') : parseFloat(a[key]);
-        const bv = isNaN(b[key]) ? (b[key]||'') : parseFloat(b[key]);
-        return av > bv ? window._sortDir : av < bv ? -window._sortDir : 0;
+        const aRaw = a[key] || '';
+        const bRaw = b[key] || '';
+        
+        // Handle numeric sorting for despachos and total
+        if (key === 'despachos' || key === 'total') {
+            const numA = parseFloat(aRaw) || 0;
+            const numB = parseFloat(bRaw) || 0;
+            return numA > numB ? window._sortDir : numA < numB ? -window._sortDir : 0;
+        }
+        
+        // Handle string sorting (case insensitive)
+        const strA = String(aRaw).toLowerCase();
+        const strB = String(bRaw).toLowerCase();
+        return strA > strB ? window._sortDir : strA < strB ? -window._sortDir : 0;
     });
     
     window._currentPageEq = 1;
