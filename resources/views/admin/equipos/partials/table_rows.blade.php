@@ -187,7 +187,7 @@
                     data-anchor-tipo-nombre="{{ $equipo->ancladoA->tipo->nombre ?? 'Equipo' }}"
                     data-anchor-placa="{{ $equipo->ancladoA->documentacion->PLACA ?? '' }}"
                     data-anchor-serial="{{ $equipo->ancladoA->SERIAL_CHASIS ?? '' }}"
-                    data-sub-count="{{ collect($equipo->subActivos)->count() ?? 0 }}"
+                    data-sub-count="{{ $equipo->sub_activos_count ?? 0 }}"
                     data-detalle-ubicacion="{{ $equipo->DETALLE_UBICACION_ACTUAL ?? '' }}"
                     onclick="showDetailsImproved(this, event)"
                     class="btn-details-mini" title="Ver Detalles">

@@ -147,7 +147,8 @@ class EquipoController extends Controller
                 'especificaciones:ID_ESPEC,COMBUSTIBLE,CONSUMO_PROMEDIO,FOTO_REFERENCIAL',
                 'tipo',
                 'frenteActual',
-                'ancladoA',
+                'ancladoA.tipo',
+                'ancladoA.documentacion',
             ])
             ->withCount('subActivos')
             ->orderBy('tipo_equipos.nombre', 'asc')

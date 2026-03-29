@@ -295,7 +295,8 @@
         document.head.appendChild(_styleRD);
 
         // En el MENÚ no hay tabla de movilizaciones, así que sobreescribimos
-        // loadMovilizaciones para que refresque solo la lista pendiente (sin recargar página).
+        // loadMovilizaciones para que refresque solo la lista pendiente.
+        // Nota: movilizaciones_index.js restaura la función real cuando se navega a esa sección vía SPA.
         window.loadMovilizaciones = function () {
             if (typeof window.refreshPendingMovs === 'function') {
                 window.refreshPendingMovs();

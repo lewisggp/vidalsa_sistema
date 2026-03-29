@@ -29,8 +29,6 @@
             $authUser       = auth()->user();
             $isLocalUser    = $authUser && $authUser->NIVEL_ACCESO == 2;
             $dashFrenteIds  = $authUser ? $authUser->getFrentesIds() : [];
-            $hasMultiple    = count($dashFrenteIds) > 1;
-            $userFrenteObj  = count($dashFrenteIds) === 1 ? $frentes->firstWhere('ID_FRENTE', $dashFrenteIds[0]) : null;
         @endphp
 
         {{-- =====================================================================
@@ -58,20 +56,20 @@
                         autocomplete="off">
                     <i class="material-icons" data-clear-btn
                         style="padding:0 5px; color:var(--maquinaria-gray-text); font-size:18px; display:{{ $currentFrenteId && $currentFrenteId != 'all' ? 'block' : 'none' }}; cursor:pointer;"
-                        onclick="event.stopPropagation(); clearDropdownFilter('frenteFilterSelect'); setTimeout(function(){ window.loadMovilizaciones(); }, 100);">close</i>
+                        onclick="event.stopPropagation(); clearDropdownFilter('frenteFilterSelect');">close</i>
                 </div>
 
                 <div class="dropdown-content" style="padding:5px; max-height:none; overflow:visible;">
                     <div class="dropdown-item-list" style="max-height:250px; overflow-y:auto;">
                         <div class="dropdown-item {{ !$currentFrenteId || $currentFrenteId == 'all' ? 'selected' : '' }}"
                              data-value="all"
-                             onclick="selectOption('frenteFilterSelect', 'all', '{{ $isLocalUser ? 'MIS FRENTES' : 'TODOS LOS FRENTES' }}'); setTimeout(function(){ window.loadMovilizaciones(); }, 100);">
+                             onclick="selectOption('frenteFilterSelect', 'all', '{{ $isLocalUser ? 'MIS FRENTES' : 'TODOS LOS FRENTES' }}');">
                             {{ $isLocalUser ? 'MIS FRENTES' : 'TODOS LOS FRENTES' }}
                         </div>
                         @foreach($frentesDropdown as $frente)
                             <div class="dropdown-item {{ $currentFrenteId == $frente->ID_FRENTE ? 'selected' : '' }}"
                                  data-value="{{ $frente->ID_FRENTE }}"
-                                 onclick="selectOption('frenteFilterSelect', '{{ $frente->ID_FRENTE }}', '{{ addslashes($frente->NOMBRE_FRENTE) }}'); setTimeout(function(){ window.loadMovilizaciones(); }, 100);">
+                                 onclick="selectOption('frenteFilterSelect', '{{ $frente->ID_FRENTE }}', '{{ addslashes($frente->NOMBRE_FRENTE) }}');">
                                 {{ $frente->NOMBRE_FRENTE }}
                             </div>
                         @endforeach
@@ -99,16 +97,16 @@
                             style="flex: 1; border: none; background: transparent; padding: 10px 5px; font-size: 14px; outline: none; min-width: 0;"
                             oninput="window.filterDropdownOptions(this)"
                             autocomplete="off">
-                        <i class="material-icons" data-clear-btn style="padding: 0 5px; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_tipo') ? 'block' : 'none' }}; cursor:pointer;" onclick="event.stopPropagation(); clearDropdownFilter('tipoFilterSelect'); setTimeout(function(){ window.loadMovilizaciones(); }, 100);">close</i>
+                        <i class="material-icons" data-clear-btn style="padding: 0 5px; color: var(--maquinaria-gray-text); font-size: 18px; display: {{ request('id_tipo') ? 'block' : 'none' }}; cursor:pointer;" onclick="event.stopPropagation(); clearDropdownFilter('tipoFilterSelect');">close</i>
                     </div>
 
                     <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible;">
                         <div class="dropdown-item-list" style="max-height: 250px; overflow-y: auto;">
-                            <div class="dropdown-item {{ !request('id_tipo') || request('id_tipo') == 'all' ? 'selected' : '' }}" data-value="all" onclick="selectOption('tipoFilterSelect', 'all', 'TODOS LOS TIPOS'); setTimeout(function(){ window.loadMovilizaciones(); }, 100);">
+                            <div class="dropdown-item {{ !request('id_tipo') || request('id_tipo') == 'all' ? 'selected' : '' }}" data-value="all" onclick="selectOption('tipoFilterSelect', 'all', 'TODOS LOS TIPOS');">
                                 TODOS LOS TIPOS
                             </div>
                             @foreach($allTipos as $tipo)
-                                <div class="dropdown-item {{ request('id_tipo') == $tipo->id ? 'selected' : '' }}" data-value="{{ $tipo->id }}" onclick="selectOption('tipoFilterSelect', '{{ $tipo->id }}', '{{ addslashes($tipo->nombre) }}'); setTimeout(function(){ window.loadMovilizaciones(); }, 100);">
+                                <div class="dropdown-item {{ request('id_tipo') == $tipo->id ? 'selected' : '' }}" data-value="{{ $tipo->id }}" onclick="selectOption('tipoFilterSelect', '{{ $tipo->id }}', '{{ addslashes($tipo->nombre) }}');">
                                     {{ $tipo->nombre }}
                                 </div>
                             @endforeach
@@ -131,7 +129,7 @@
                                 autocomplete="off"
                                 onkeydown="if(event.key === 'Enter'){ event.preventDefault(); window.loadMovilizaciones(); }"
                                 oninput="clearTimeout(window._searchTimerMv); window._searchTimerMv = setTimeout(() => { const btn = document.getElementById('btn_clear_search'); if(btn) btn.style.display = this.value.length > 0 ? 'block' : 'none'; window.loadMovilizaciones(); }, 600);">
-                            <i id="btn_clear_search" class="material-icons clear-icon" style="display: {{ request('search') ? 'block' : 'none' }};" onclick="selectMovilizacionFilter('search', '');">close</i>
+                            <i id="btn_clear_search" class="material-icons clear-icon" style="display: {{ request('search') ? 'block' : 'none' }};" onclick="document.getElementById('searchInput').value=''; document.getElementById('btn_clear_search').style.display='none'; window.loadMovilizaciones();">close</i>
                         </div>
                     </form>
                 </div>
@@ -223,7 +221,7 @@
         </div>
         
         <!-- Pagination -->
-        <div id="movilizacionesPagination" style="margin-top: 25px; overflow-x: auto; max-width: 100%;">
+        <div id="movilizacionesPagination" style="margin-top: 5px; overflow-x: auto; max-width: 100%;">
             {{ $movilizaciones->links() }}
         </div>
 

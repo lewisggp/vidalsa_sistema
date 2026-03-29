@@ -62,110 +62,7 @@
 <form method="POST" action="{{ route('consumibles.guardarLote') }}" id="formLote">
 @csrf
 
-{{-- ═══ CONFIGURACIÓN DEL LOTE ═══ --}}
-<div class="admin-card" style="box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); padding: 25px; margin-bottom: 20px;">
 
-    <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:end;">
-        {{-- TIPO CONSUMIBLE --}}
-        <div style="flex: 1; min-width: 160px;">
-            <label class="con-label">Tipo de Consumible *</label>
-            <div class="custom-dropdown" id="tipoDropdownCargar" data-default-label="— Seleccionar —">
-                <input type="hidden" name="tipo_consumible" id="tipoSelect" value="{{ old('tipo_consumible') }}" required>
-                <div class="dropdown-trigger" style="padding:0; display:flex; align-items:center; background:#fbfcfd; overflow:hidden; border:1px solid #cbd5e0; border-radius:10px; height:42px; cursor:pointer;">
-                    <input type="text" data-filter-search
-                        readonly
-                        value="{{ old('tipo_consumible') ? \App\Models\Consumible::tiposLabel()[old('tipo_consumible')] : '— Seleccionar —' }}"
-                        style="width:100%; border:none; background:transparent; padding:0 14px; font-size:13px; outline:none; height:100%; cursor:pointer;"
-                        autocomplete="off">
-                    <i class="material-icons" style="padding:0 10px; color:var(--maquinaria-gray-text, #94a3b8); font-size:18px;">arrow_drop_down</i>
-                </div>
-                <div class="dropdown-content" style="padding:5px; max-height:none; overflow:visible; z-index:1000;">
-                    <div class="dropdown-item-list" style="max-height:250px; overflow-y:auto;">
-                        @foreach($tipos as $val => $label)
-                            <div class="dropdown-item {{ old('tipo_consumible') == $val ? 'selected' : '' }}"
-                                 data-value="{{ $val }}"
-                                 onclick="window.selectOption('tipoDropdownCargar', '{{ $val }}', '{{ $label }}'); window.actualizarUnidad();">
-                                {{ $label }}
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- UNIDAD --}}
-        <div style="flex: 1; min-width: 120px;">
-            <label class="con-label">Unidad *</label>
-            <div class="custom-dropdown" id="unidadDropdownCargar" data-default-label="Litros">
-                <input type="hidden" name="unidad" id="unidadSelect" value="{{ old('unidad', 'LITROS') }}" required>
-                <div class="dropdown-trigger" style="padding:0; display:flex; align-items:center; background:#fbfcfd; overflow:hidden; border:1px solid #cbd5e0; border-radius:10px; height:42px; cursor:pointer;">
-                    <input type="text" data-filter-search
-                        readonly
-                        value="{{ ['LITROS'=>'Litros', 'GALONES'=>'Galones', 'UNIDADES'=>'Unidades', 'KG'=>'Kg'][old('unidad', 'LITROS')] ?? 'Litros' }}"
-                        style="width:100%; border:none; background:transparent; padding:0 14px; font-size:13px; outline:none; height:100%; cursor:pointer;"
-                        autocomplete="off">
-                    <i class="material-icons" style="padding:0 10px; color:var(--maquinaria-gray-text, #94a3b8); font-size:18px;">arrow_drop_down</i>
-                </div>
-                <div class="dropdown-content" style="padding:5px; max-height:none; overflow:visible; z-index:1000;">
-                    <div class="dropdown-item-list" style="max-height:250px; overflow-y:auto;">
-                        @foreach($unidades as $val => $label)
-                            <div class="dropdown-item {{ old('unidad', 'LITROS') == $val ? 'selected' : '' }}"
-                                 data-value="{{ $val }}"
-                                 onclick="window.selectOption('unidadDropdownCargar', '{{ $val }}', '{{ $label }}');">
-                                {{ $label }}
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- FRENTE --}}
-        <div style="flex: 1; min-width: 200px;">
-            <label class="con-label">Frente de Trabajo *</label>
-            <div style="position:relative;">
-                <input type="text" id="frenteSearch" placeholder="Todos los frentes..."
-                    class="con-input" autocomplete="off"
-                    style="height: 42px;"
-                    oninput="filtrarFrentes(this.value)"
-                    onfocus="mostrarTodosLosFrente()">
-                <input type="hidden" name="id_frente" id="idFrenteHidden" value="{{ old('id_frente') }}">
-                <div id="frenteDropdown"
-                     style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff;
-                            border:1px solid #cbd5e0; border-radius:10px; box-shadow:0 8px 20px rgba(0,0,0,.12);
-                            z-index:200; max-height:240px; overflow-y:auto; margin-top:4px;"></div>
-            </div>
-            <span id="frenteSeleccionado" style="font-size:12px; color:#059669; font-weight:600; margin-top:4px; display:none;"></span>
-        </div>
-        
-        {{-- ACCIONES --}}
-        <div style="position:relative; flex: 0 0 auto; margin-top: auto;">
-            <button type="button" id="btnAcciones" class="btn-primary-maquinaria" style="padding: 0 15px; height: 42px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);" onclick="document.getElementById('splitDropdownMenu').style.display = document.getElementById('splitDropdownMenu').style.display === 'none' ? 'block' : 'none'; event.stopPropagation();">
-                <i class="material-icons">settings</i>
-                <span>Acciones</span>
-                <i class="material-icons" style="font-size: 18px; margin-left: 2px;">expand_more</i>
-            </button>
-            <div id="splitDropdownMenu" style="display:none; position:absolute; top:100%; right:0; min-width:260px; background:#e2e8f0; border-radius:8px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); border:1px solid #e2e8f0; z-index:1050; margin-top:10px; overflow:hidden;">
-                
-                {{-- Navegación Estándar --}}
-                <a href="{{ route('consumibles.index') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <i class="material-icons" style="font-size:20px;">list</i>
-                    <span style="font-size:14px; font-weight:500;">Lista de Consumibles</span>
-                </a>
-                <a href="{{ route('consumibles.graficos') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <i class="material-icons" style="font-size:20px;">bar_chart</i>
-                    <span style="font-size:14px; font-weight:500;">Gráficos y Reportes</span>
-                </a>
-
-                {{-- Acciones Locales --}}
-                <a href="javascript:void(0)" onclick="limpiarTabla(); document.getElementById('splitDropdownMenu').style.display='none'" style="display:flex; align-items:center; gap:10px; padding:12px 15px; color:#ef4444; text-decoration:none; background:transparent; transition:all 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
-                    <i class="material-icons" style="font-size:20px;">delete_sweep</i>
-                    <span style="font-size:14px; font-weight:500;">Limpiar Toda la Tabla</span>
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
 
 {{-- Datalists para autocompletado en columna Espec --}}
 <datalist id="listAceite">
@@ -189,8 +86,74 @@
 
 
 
-    {{-- Tabla --}}
-    <div class="tbl-wrap">
+    {{-- Tabla envuelta con Selectores --}}
+    <div class="tbl-wrap" style="padding: 15px 15px 0 15px; background: #fff;">
+        
+        {{-- SELECTORES INTEGRADAMENTE DENTRO DEL CONTENEDOR --}}
+        <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:end; margin-bottom: 20px;">
+            {{-- TIPO CONSUMIBLE --}}
+            <div style="flex: 1; min-width: 160px;">
+                <label class="con-label">Tipo de Consumible *</label>
+                <div class="custom-dropdown" id="tipoDropdownCargar" data-default-label="— Seleccionar —">
+                    <input type="hidden" name="tipo_consumible" id="tipoSelect" value="{{ old('tipo_consumible') }}" required>
+                    <div class="dropdown-trigger" style="padding:0; display:flex; align-items:center; background:#fbfcfd; overflow:hidden; border:1px solid #cbd5e0; border-radius:10px; height:42px; cursor:pointer;">
+                        <input type="text" data-filter-search readonly value="{{ old('tipo_consumible') ? \App\Models\Consumible::tiposLabel()[old('tipo_consumible')] : '— Seleccionar —' }}" style="width:100%; border:none; background:transparent; padding:0 14px; font-size:13px; outline:none; height:100%; cursor:pointer;" autocomplete="off">
+                        <i class="material-icons" style="padding:0 10px; color:#94a3b8; font-size:18px;">arrow_drop_down</i>
+                    </div>
+                    <div class="dropdown-content" style="padding:5px; max-height:none; overflow:visible; z-index:1000;">
+                        <div class="dropdown-item-list" style="max-height:250px; overflow-y:auto;">
+                            @foreach($tipos as $val => $label)
+                                <div class="dropdown-item {{ old('tipo_consumible') == $val ? 'selected' : '' }}" data-value="{{ $val }}" onclick="window.selectOption('tipoDropdownCargar', '{{ $val }}', '{{ $label }}'); window.actualizarUnidad();">{{ $label }}</div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- UNIDAD --}}
+            <div style="flex: 1; min-width: 120px;">
+                <label class="con-label">Unidad *</label>
+                <div class="custom-dropdown" id="unidadDropdownCargar" data-default-label="Litros">
+                    <input type="hidden" name="unidad" id="unidadSelect" value="{{ old('unidad', 'LITROS') }}" required>
+                    <div class="dropdown-trigger" style="padding:0; display:flex; align-items:center; background:#fbfcfd; overflow:hidden; border:1px solid #cbd5e0; border-radius:10px; height:42px; cursor:pointer;">
+                        <input type="text" data-filter-search readonly value="{{ ['LITROS'=>'Litros', 'GALONES'=>'Galones', 'UNIDADES'=>'Unidades', 'KG'=>'Kg'][old('unidad', 'LITROS')] ?? 'Litros' }}" style="width:100%; border:none; background:transparent; padding:0 14px; font-size:13px; outline:none; height:100%; cursor:pointer;" autocomplete="off">
+                        <i class="material-icons" style="padding:0 10px; color:#94a3b8; font-size:18px;">arrow_drop_down</i>
+                    </div>
+                    <div class="dropdown-content" style="padding:5px; max-height:none; overflow:visible; z-index:1000;">
+                        <div class="dropdown-item-list" style="max-height:250px; overflow-y:auto;">
+                            @foreach($unidades as $val => $label)
+                                <div class="dropdown-item {{ old('unidad', 'LITROS') == $val ? 'selected' : '' }}" data-value="{{ $val }}" onclick="window.selectOption('unidadDropdownCargar', '{{ $val }}', '{{ $label }}');">{{ $label }}</div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- FRENTE --}}
+            <div style="flex: 1; min-width: 200px;">
+                <label class="con-label">Frente de Trabajo *</label>
+                <div style="position:relative;">
+                    <input type="text" id="frenteSearch" placeholder="Todos los frentes..." class="con-input" autocomplete="off" style="height: 42px;" oninput="filtrarFrentes(this.value)" onfocus="mostrarTodosLosFrente()">
+                    <input type="hidden" name="id_frente" id="idFrenteHidden" value="{{ old('id_frente') }}">
+                    <div id="frenteDropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #cbd5e0; border-radius:10px; box-shadow:0 8px 20px rgba(0,0,0,.12); z-index:200; max-height:240px; overflow-y:auto; margin-top:4px;"></div>
+                </div>
+            </div>
+            
+            {{-- ACCIONES --}}
+            <div style="position:relative; flex: 0 0 auto; margin-top: auto;">
+                <button type="button" id="btnAcciones" class="btn-primary-maquinaria" style="padding: 0 15px; height: 42px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);" onclick="document.getElementById('splitDropdownMenu').style.display = document.getElementById('splitDropdownMenu').style.display === 'none' ? 'block' : 'none'; event.stopPropagation();">
+                    <i class="material-icons">settings</i>
+                    <span>Acciones</span>
+                    <i class="material-icons" style="font-size: 18px; margin-left: 2px;">expand_more</i>
+                </button>
+                <div id="splitDropdownMenu" style="display:none; position:absolute; top:100%; right:0; min-width:260px; background:#e2e8f0; border-radius:8px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); border:1px solid #e2e8f0; z-index:1050; margin-top:10px; overflow:hidden;">
+                    <a href="{{ route('consumibles.index') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'"><i class="material-icons" style="font-size:20px;">list</i><span style="font-size:14px; font-weight:500;">Lista de Consumibles</span></a>
+                    <a href="{{ route('consumibles.graficos') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'"><i class="material-icons" style="font-size:20px;">bar_chart</i><span style="font-size:14px; font-weight:500;">Gráficos y Reportes</span></a>
+                    <a href="javascript:void(0)" onclick="limpiarTabla(); document.getElementById('splitDropdownMenu').style.display='none'" style="display:flex; align-items:center; gap:10px; padding:12px 15px; color:#ef4444; text-decoration:none; background:transparent; transition:all 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'"><i class="material-icons" style="font-size:20px;">delete_sweep</i><span style="font-size:14px; font-weight:500;">Limpiar Toda la Tabla</span></a>
+                </div>
+            </div>
+        </div>
+
         <table id="tablaFilas">
             <thead>
                 <tr>

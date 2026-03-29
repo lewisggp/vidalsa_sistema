@@ -83,9 +83,11 @@
         </div>
 
         <nav class="header-nav">
-            <a href="{{ route('menu') }}" class="nav-link {{ request()->is('menu') ? 'active' : '' }}" style="display: flex; align-items: center;">
+            @unless(request()->is('menu'))
+            <a href="{{ route('menu') }}" class="nav-link" style="display: flex; align-items: center;">
                 <i class="material-icons" style="font-size: 18px; margin-right: 5px;">home</i>Inicio
             </a>
+            @endunless
             
             <a href="{{ route('equipos.index') }}" class="nav-link {{ request()->is('admin/equipos*') ? 'active' : '' }}" style="display: flex; align-items: center;">
                 <i class="material-icons" style="font-size: 18px; margin-right: 5px;">agriculture</i>Vehículo
@@ -456,7 +458,7 @@
     <script src="{{ asset('js/maquinaria/catalogo_create.js') }}?v=12.2"></script>
     <script src="{{ asset('js/maquinaria/equipos_index.js') }}?v=21.2"></script>
     <script src="{{ asset('js/maquinaria/catalogo_index.js') }}?v=3.8"></script>
-    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=7.6"></script>
+    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=7.8"></script>
     <script src="{{ asset('js/maquinaria/usuarios_index.js') }}?v=10.2"></script>
     <script src="{{ asset('js/maquinaria/fleet_dashboard.js') }}?v=106.3"></script>
 

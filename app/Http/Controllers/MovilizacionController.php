@@ -111,7 +111,7 @@ class MovilizacionController extends Controller
         }
 
         // Fetch paginated results
-        $movilizaciones = $query->orderBy('created_at', 'desc')->paginate(12);
+        $movilizaciones = $query->orderBy('created_at', 'desc')->paginate(12)->onEachSide(1);
 
         // Stats: Total In Transit — filtrado con los mismos criterios base
         $statsQuery = Movilizacion::where('ESTADO_MVO', 'TRANSITO');

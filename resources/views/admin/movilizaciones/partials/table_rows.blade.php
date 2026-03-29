@@ -95,10 +95,12 @@
         </td>
     </tr>
 @empty
-    <tr class="mv-row-card" style="box-shadow: none !important; border: transparent !important; background: transparent !important;">
-        <td colspan="5" style="text-align: center; padding: 60px 20px; color: #94a3b8; border: 1px dashed #cbd5e0 !important; border-radius: 12px; width: 100% !important; display: block !important; max-width: 100% !important;">
-            <i class="material-icons" style="font-size: 48px; margin-bottom: 10px; opacity: 0.3;">local_shipping</i>
-            <p style="font-weight: 600; font-size: 14px; margin: 0;">No se encontraron movilizaciones registradas.</p>
+    <tr>
+        <td colspan="5" style="padding: 60px 20px; border: none; background: transparent;">
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #94a3b8; border: 1px dashed #cbd5e0; border-radius: 12px; padding: 60px 20px;">
+                <i class="material-icons" style="font-size: 48px; opacity: 0.3;">local_shipping</i>
+                <p style="font-weight: 600; font-size: 14px; margin: 0;">No se encontraron movilizaciones registradas.</p>
+            </div>
         </td>
     </tr>
 @endforelse

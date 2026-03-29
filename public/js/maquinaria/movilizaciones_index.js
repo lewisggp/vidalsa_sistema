@@ -1,60 +1,46 @@
-// movilizaciones_index.js - Movilizaciones Module Logic
-
-// Global Filter Handler (Isolated from Equipos)
-window.selectMovilizacionFilter = function (type, value) {
-    // 1. Update Input Values
-    if (type === 'frente') {
-        const input = document.querySelector('input[name="id_frente"]');
-        if (input) input.value = value;
-    }
-
-    if (type === 'tipo') {
-        const input = document.querySelector('input[name="id_tipo"]');
-        if (input) input.value = value;
-    }
-
-    if (type === 'search') {
-        const input = document.getElementById('searchInput');
-        if (input) input.value = value;
-        const btn = document.getElementById('btn_clear_search');
-        if (btn) btn.style.display = value ? 'block' : 'none';
-    }
-
-    // 2. Trigger Reload
-    window.loadMovilizaciones();
-};
+// Referencia interna a la función real. Se usa para restaurarla si el menú la pisa vía SPA.
+var _loadMovilizacionesReal;
 
 window.loadMovilizaciones = async function (pageUrl = null) {
     const tableBody = document.getElementById('movilizacionesTableBody');
     if (!tableBody) return; // Salida temprana: no estamos en la sección de movilizaciones
 
     if (window.showPreloader) window.showPreloader();
-    
+
     try {
-        const container = document.querySelector('.movilizaciones-main-card') || document;
-        
-        // 1. Recolectar parámetros de forma segura
+        // Scopear TODOS los queries al contenedor de movilizaciones
+        //    para evitar conflictos con inputs de Equipos en el DOM del SPA
+        const mvCard = document.querySelector('.movilizaciones-main-card');
+
+        const getInputVal = (name, container) => {
+            const el = (container || document).querySelector(`input[name="${name}"][data-filter-value]`);
+            return el ? el.value.trim() : '';
+        };
+
         const params = new URLSearchParams();
-        
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput && searchInput.value) params.append('search', searchInput.value);
-        
-        const frenteInput = document.querySelector('input[name="id_frente"]');
-        if (frenteInput && frenteInput.value && frenteInput.value !== 'all') params.append('id_frente', frenteInput.value);
-        
-        const tipoInput = document.querySelector('input[name="id_tipo"]');
-        if (tipoInput && tipoInput.value && tipoInput.value !== 'all') params.append('id_tipo', tipoInput.value);
-        
+
+        // Búsqueda de texto — el searchInput tiene id único
+        const searchEl = document.getElementById('searchInput');
+        if (searchEl && searchEl.value.trim()) params.append('search', searchEl.value.trim());
+
+        // Filtros scoped al card de movilizaciones
+        const frenteVal = getInputVal('id_frente', mvCard);
+        if (frenteVal && frenteVal !== 'all') params.append('id_frente', frenteVal);
+
+        const tipoVal = getInputVal('id_tipo', mvCard);
+        if (tipoVal && tipoVal !== 'all') params.append('id_tipo', tipoVal);
+
+        // Filtros de fecha (tienen IDs únicos)
         const fechaDesde = document.getElementById('filterFechaDesde');
         if (fechaDesde && fechaDesde.value) params.append('fecha_desde', fechaDesde.value);
-        
+
         const fechaHasta = document.getElementById('filterFechaHasta');
         if (fechaHasta && fechaHasta.value) params.append('fecha_hasta', fechaHasta.value);
-        
+
         const direccion = document.getElementById('filterDireccionFrente');
         if (direccion && direccion.value) params.append('direccion_frente', direccion.value);
 
-        // Extraer número de página si fue pasado en un string de URL
+        // Página para paginación AJAX
         if (pageUrl && typeof pageUrl === 'string') {
             try {
                 const urlObj = new URL(pageUrl, window.location.origin);
@@ -64,10 +50,9 @@ window.loadMovilizaciones = async function (pageUrl = null) {
         }
 
         const finalUrl = '/admin/movilizaciones?' + params.toString();
+        tableBody.style.opacity = '0.5';
 
-        if (tableBody) tableBody.style.opacity = '0.5';
-
-        // 2. Fetch de datos
+        // 2. Fetch
         const response = await fetch(finalUrl, {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
@@ -75,14 +60,12 @@ window.loadMovilizaciones = async function (pageUrl = null) {
             }
         });
 
-        if (!response.ok) throw new Error('Error de red al cargar datos HTTP ' + response.status);
+        if (!response.ok) throw new Error('HTTP ' + response.status);
         const data = await response.json();
 
-        // 3. Actualizar vistas
-        if (tableBody) {
-            tableBody.innerHTML = data.html || '';
-            tableBody.style.opacity = '1';
-        }
+        // 3. Actualizar DOM
+        tableBody.innerHTML = data.html || '';
+        tableBody.style.opacity = '1';
 
         const paginationDiv = document.getElementById('movilizacionesPagination');
         if (paginationDiv) paginationDiv.innerHTML = data.pagination || '';
@@ -90,22 +73,25 @@ window.loadMovilizaciones = async function (pageUrl = null) {
         const statsDiv = document.getElementById('statusStatsContainer');
         if (statsDiv && data.statsHtml) statsDiv.innerHTML = data.statsHtml;
 
-        const totalEls = [document.getElementById('totalTransitoCount'), document.getElementById('mobileTransitoCount')];
-        totalEls.forEach(el => { if (el && data.totalTransito !== undefined) el.innerText = data.totalTransito; });
+        [document.getElementById('totalTransitoCount'), document.getElementById('mobileTransitoCount')]
+            .forEach(el => { if (el && data.totalTransito !== undefined) el.innerText = data.totalTransito; });
 
-        // 4. Update browser URL silenciosamente
+        // 4. URL silenciosa
         if (window.history && window.history.pushState) {
             window.history.pushState(null, '', finalUrl);
         }
 
     } catch (e) {
-        console.error("Error cargando movilizaciones:", e);
+        console.error('[loadMovilizaciones] Error:', e);
         const tb = document.getElementById('movilizacionesTableBody');
         if (tb) tb.style.opacity = '1';
     } finally {
         if (window.hidePreloader) window.hidePreloader();
     }
 };
+
+// Guardamos referencia a la función real para poder restaurarla si el menú la pisa vía SPA
+_loadMovilizacionesReal = window.loadMovilizaciones;
 
 // Delegación de eventos para capturar clicks de la paginación de Laravel sin recargar la página
 document.addEventListener('click', function (e) {
@@ -520,24 +506,28 @@ if (document.readyState === 'loading') {
 // ── Navegación SPA (clic desde otro módulo) ────────────────────
 window.addEventListener('spa:contentLoaded', function () {
     if (document.getElementById('movilizacionesTableBody')) {
+        // Restaurar la función real en caso de que el menú la haya pisado con la versión simplificada
+        window.loadMovilizaciones = _loadMovilizacionesReal;
         initMovilizaciones();
     }
 });
 
-// ── Listener global del evento dropdown-selection (disparado por selectOption) ──
-// Usa el evento para módulos como movilizaciones cuyos items del dropdown tienen
-// onclick que ya llaman loadMovilizaciones directamente — este listener es
-// un fallback por si el onclick falla (ej. versiones cacheadas del blade).
-if (!window._mvDropdownListenerRegistered) {
-    window._mvDropdownListenerRegistered = true;
+// ── Listener de selección de dropdowns (Frente / Tipo) ─────────
+// selectOption() en uicomponents.js dispara 'dropdown-selection' al cambiar un filtro.
+// Este listener lo captura y llama loadMovilizaciones() cuando estamos en la sección.
+// Se registra UNA SOLA VEZ con un flag para evitar duplicados en navegación SPA.
+if (!window._mvDropdownSelectionRegistered) {
+    window._mvDropdownSelectionRegistered = true;
     window.addEventListener('dropdown-selection', function (e) {
-        const filterName = e.detail && e.detail.inputName;
-        if (filterName === 'id_frente' || filterName === 'id_tipo') {
-            // Delay suficiente para que selectOption actualice el input hidden
-            setTimeout(() => window.loadMovilizaciones(), 200);
+        // Solo actuar si estamos en la página de movilizaciones
+        if (!document.getElementById('movilizacionesTableBody')) return;
+        // Solo los dropdowns de esta sección (Frente y Tipo)
+        if (e.detail.dropdownId === 'frenteFilterSelect' || e.detail.dropdownId === 'tipoFilterSelect') {
+            window.loadMovilizaciones();
         }
     });
 }
+
 
 
 // ─── Date Filter Toggle ─────────────────────────────────────────────────────
