@@ -193,7 +193,7 @@ class MovilizacionController extends Controller
             ]);
         }
 
-        $frentes = FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')->orderBy('NOMBRE_FRENTE')->get();
+        $frentes = FrenteTrabajo::orderBy('NOMBRE_FRENTE')->get();
         $allTipos = \App\Models\TipoEquipo::orderBy('nombre')->get();
 
         return view('admin.movilizaciones.index', compact('movilizaciones', 'totalTransito', 'transitoPorFrente', 'frentes', 'allTipos'));
