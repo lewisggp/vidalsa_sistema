@@ -133,7 +133,10 @@
             <div style="flex: 1; min-width: 200px;">
                 <label class="con-label">Frente de Trabajo *</label>
                 <div style="position:relative;">
-                    <input type="text" id="frenteSearch" placeholder="Todos los frentes..." class="con-input" autocomplete="off" style="height: 42px;" oninput="filtrarFrentes(this.value)" onfocus="mostrarTodosLosFrente()">
+                    <div style="padding:0; display:flex; align-items:center; background:#fbfcfd; overflow:hidden; border:1px solid #cbd5e0; border-radius:10px; height:42px;">
+                        <input type="text" id="frenteSearch" placeholder="Todos los frentes..." autocomplete="off" style="width:100%; border:none; background:transparent; padding:0 14px; font-size:13px; outline:none; height:100%;" oninput="filtrarFrentes(this.value)" onfocus="mostrarTodosLosFrente()">
+                        <i class="material-icons" style="padding:0 10px; color:#94a3b8; font-size:18px; cursor:pointer;" onclick="document.getElementById('frenteSearch').focus()">arrow_drop_down</i>
+                    </div>
                     <input type="hidden" name="id_frente" id="idFrenteHidden" value="{{ old('id_frente') }}">
                     <div id="frenteDropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #cbd5e0; border-radius:10px; box-shadow:0 8px 20px rgba(0,0,0,.12); z-index:200; max-height:240px; overflow-y:auto; margin-top:4px;"></div>
                 </div>
