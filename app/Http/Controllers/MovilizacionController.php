@@ -237,6 +237,9 @@ class MovilizacionController extends Controller
             'USUARIO_REGISTRO' => auth()->user()->CORREO_ELECTRONICO ?? 'SISTEMA',
         ]);
 
+        // Al despachar a otro frente, la ubicación específica anterior ya no aplica
+        $equipo->update(['DETALLE_UBICACION_ACTUAL' => null]);
+
         return redirect()->route('movilizaciones.index')->with('success', 'Movilización registrada correctamente.');
     }
 
@@ -324,8 +327,9 @@ class MovilizacionController extends Controller
             }
 
             \App\Models\Equipo::whereIn('ID_EQUIPO', $request->ids)->update([
-                'ID_FRENTE_ACTUAL' => $frente->ID_FRENTE,
-                'CONFIRMADO_EN_SITIO' => $generarPdf ? 0 : 1
+                'ID_FRENTE_ACTUAL'          => $frente->ID_FRENTE,
+                'CONFIRMADO_EN_SITIO'       => $generarPdf ? 0 : 1,
+                'DETALLE_UBICACION_ACTUAL'  => null, // Se borra al salir del frente
             ]);
 
             DB::commit();
@@ -712,7 +716,11 @@ class MovilizacionController extends Controller
             'USUARIO_REGISTRO'  => $usuario->CORREO_ELECTRONICO ?? 'SISTEMA',
         ]);
 
-        $equipo->update(['ID_FRENTE_ACTUAL' => $request->ID_FRENTE_DESTINO]);
+        // Al despachar a otro frente, la ubicación específica anterior ya no aplica
+        $equipo->update([
+            'ID_FRENTE_ACTUAL'         => $request->ID_FRENTE_DESTINO,
+            'DETALLE_UBICACION_ACTUAL' => null,
+        ]);
 
         return response()->json(['success' => true, 'message' => 'Despacho registrado correctamente.']);
     }

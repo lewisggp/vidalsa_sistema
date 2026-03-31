@@ -403,6 +403,12 @@ function initCatalogo() {
             img.onload = () => img.style.opacity = 1;
         });
     }
+
+    // Reload via AJAX solo si hay parámetros de búsqueda
+    var hasParams = window.location.search.length > 1;
+    if (hasParams) { 
+        window.loadCatalogo(); 
+    }
 }
 
 // Register with Module Manager for SPA compatibility

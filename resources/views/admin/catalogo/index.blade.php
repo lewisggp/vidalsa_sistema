@@ -92,7 +92,7 @@
 
     <div class="custom-scrollbar-container" style="width: 100%; overflow-x: auto; margin-top: 5px;">
         <!-- Added catalog-specific-table class for CSS isolation -->
-        <table class="admin-table catalog-specific-table" style="width: 100%; min-width: 1040px; margin: 0; border-collapse: separate; border-spacing: 0 5px;">
+        <table class="admin-table catalog-specific-table" style="width: 100%; margin: 0; border-collapse: separate; border-spacing: 0 5px;">
             <thead>
                 <tr class="table-row-header">
                     <th class="table-header-custom table-cell-bordered" style="width: 160px;"></th> 

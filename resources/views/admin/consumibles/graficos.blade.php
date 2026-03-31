@@ -799,13 +799,14 @@ function renderTipoEquipo(datos) {
             return;
         }
 
-        // Destruir instancia anterior si existe (evita conflictos y canvas sobrepuestos)
-        if (window.chartTipoEqInst) {
-            window.chartTipoEqInst.destroy();
-        } else {
+        try {
+            if (window.chartTipoEqInst) { window.chartTipoEqInst.destroy(); window.chartTipoEqInst = null; }
+        } catch(e) { console.warn('Silently caught chart destroy exception'); }
+        
+        try {
             const existingT = Chart.getChart(canvElT);
             if (existingT) existingT.destroy();
-        }
+        } catch(e) {}
         
         try {
             window.chartTipoEqInst = new Chart(canvElT, {
@@ -907,8 +908,8 @@ function renderCauchosPorModelo(datos) {
             if (retriesC++ < 50) setTimeout(drawC, 100);
             return;
         }
-        const existingC = Chart.getChart(canvEl);
-        if (existingC) existingC.destroy();
+        try { if (window.chartCauchoModelo) { window.chartCauchoModelo.destroy(); window.chartCauchoModelo = null; } } catch(e) {}
+        try { const existingC = Chart.getChart(canvEl); if (existingC) existingC.destroy(); } catch(e) {}
         
         window.chartCauchoModelo = new Chart(canvEl, {
             type: 'bar',
@@ -979,7 +980,7 @@ function renderEquiposPorFrente(datos, frenteId) {
     loadEl.innerHTML = '<i class="material-icons" style="animation:spin 1s linear infinite;">refresh</i>';
     loadEl.style.display = 'flex';
     canvEl.style.display = 'none';
-    if (window.chartEqFrente) { window.chartEqFrente.destroy(); window.chartEqFrente = null; }
+    try { if (window.chartEqFrente) { window.chartEqFrente.destroy(); window.chartEqFrente = null; } } catch(e) {}
 
     if (!datos || datos.length === 0) {
         loadEl.innerHTML = '<span style="color:#94a3b8;font-size:13px;">Sin equipos identificados en este frente.</span>';
@@ -1046,8 +1047,8 @@ function renderEquiposPorFrente(datos, frenteId) {
             if (retriesE++ < 50) setTimeout(drawE, 100);
             return;
         }
-        const existingE = Chart.getChart(canvEl);
-        if (existingE) existingE.destroy();
+        try { if (window.chartEqFrente) { window.chartEqFrente.destroy(); window.chartEqFrente = null; } } catch(e) {}
+        try { const existingE = Chart.getChart(canvEl); if (existingE) existingE.destroy(); } catch(e) {}
         
         try {
             window.chartEqFrente = new Chart(canvEl, {

@@ -494,12 +494,15 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () {
         if (document.getElementById('movilizacionesTableBody')) {
             initMovilizaciones();
+            var hasParams = window.location.search.length > 1;
+            if (hasParams) { window.loadMovilizaciones(); }
         }
     });
 } else {
-    // DOM ya cargado (script cargado después del DOMContentLoaded)
     if (document.getElementById('movilizacionesTableBody')) {
         initMovilizaciones();
+        var hasParams = window.location.search.length > 1;
+        if (hasParams) { window.loadMovilizaciones(); }
     }
 }
 
@@ -509,6 +512,8 @@ window.addEventListener('spa:contentLoaded', function () {
         // Restaurar la función real en caso de que el menú la haya pisado con la versión simplificada
         window.loadMovilizaciones = _loadMovilizacionesReal;
         initMovilizaciones();
+        var hasParams = window.location.search.length > 1;
+        if (hasParams) { window.loadMovilizaciones(); }
     }
 });
 

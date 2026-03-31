@@ -15,57 +15,59 @@ class DashboardController extends Controller
         $user      = auth()->user();
         $isGlobal  = $user && $user->NIVEL_ACCESO == 1;
         $frenteIds = $user ? $user->getFrentesIds() : [];
+        $userId    = $user ? $user->ID_USUARIO : 'guest';
+        
+        // Ensure each user has their own cache key to avoid leaking data between users
+        $cacheKey = "dashboard_user_data_{$userId}";
 
-        // 1. Mobilizations Today
-        $movilizacionesHoyQuery = Movilizacion::whereDate('created_at', Carbon::today());
-        if (count($frenteIds) > 0) {
-            $movilizacionesHoyQuery->where(function($q) use ($frenteIds) {
-                $q->whereIn('ID_FRENTE_ORIGEN', $frenteIds)
-                  ->orWhereIn('ID_FRENTE_DESTINO', $frenteIds);
-            });
-        } elseif (!$isGlobal) {
-            $movilizacionesHoyQuery->whereRaw('1 = 0');
-        }
-        $movilizacionesHoy = $movilizacionesHoyQuery->count();
+        // Cache the dashboard logic to improve speed
+        $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, now()->addMinutes(5), function () use ($isGlobal, $frenteIds) {
+            // 1. Mobilizations Today
+            $movilizacionesHoyQuery = Movilizacion::whereDate('created_at', Carbon::today());
+            if (count($frenteIds) > 0) {
+                $movilizacionesHoyQuery->where(function($q) use ($frenteIds) {
+                    $q->whereIn('ID_FRENTE_ORIGEN', $frenteIds)
+                      ->orWhereIn('ID_FRENTE_DESTINO', $frenteIds);
+                });
+            } elseif (!$isGlobal) {
+                $movilizacionesHoyQuery->whereRaw('1 = 0');
+            }
+            $movilizacionesHoy = $movilizacionesHoyQuery->count();
 
-        // 2. Pending Mobilizations (TRÁNSITO)
-        $pendientesQuery = Movilizacion::where('ESTADO_MVO', 'TRANSITO');
-        if (count($frenteIds) > 0) {
-            $pendientesQuery->whereIn('ID_FRENTE_DESTINO', $frenteIds);
-        } elseif (!$isGlobal) {
-            $pendientesQuery->whereRaw('1 = 0');
-        }
-        $pendientes = $pendientesQuery->count();
+            // 2. Pending Mobilizations (TRÁNSITO)
+            $pendientesQuery = Movilizacion::where('ESTADO_MVO', 'TRANSITO');
+            if (count($frenteIds) > 0) {
+                $pendientesQuery->whereIn('ID_FRENTE_DESTINO', $frenteIds);
+            } elseif (!$isGlobal) {
+                $pendientesQuery->whereRaw('1 = 0');
+            }
+            $pendientes = $pendientesQuery->count();
 
-        // 3. Alerts List — LOCAL users see only their frentes' equipment
-        $expiredList = $this->generateAlertsList(!$isGlobal ? $frenteIds : null);
-        $totalAlerts  = $expiredList->count();
+            // 3. Alerts List — LOCAL users see only their frentes' equipment
+            $expiredList = $this->generateAlertsList(!$isGlobal ? $frenteIds : null);
+            $totalAlerts  = $expiredList->count();
 
-        // 4. Recent Activity (list) — LOCAL users see only their frentes
-        $recentActivityQuery = Movilizacion::with(['equipo.tipo', 'equipo.documentacion', 'frenteDestino'])
-            ->where('ESTADO_MVO', 'TRANSITO')
-            ->orderBy('created_at', 'desc')
-            ->limit(50);
-        if (count($frenteIds) > 0) {
-            $recentActivityQuery->whereIn('ID_FRENTE_DESTINO', $frenteIds);
-        } elseif (!$isGlobal) {
-            $recentActivityQuery->whereRaw('1 = 0');
-        }
-        $recentActivity = $recentActivityQuery->get();
+            // 4. Recent Activity (list) — LOCAL users see only their frentes
+            $recentActivityQuery = Movilizacion::with(['equipo.tipo', 'equipo.documentacion', 'frenteDestino'])
+                ->where('ESTADO_MVO', 'TRANSITO')
+                ->orderBy('created_at', 'desc')
+                ->limit(50);
+            if (count($frenteIds) > 0) {
+                $recentActivityQuery->whereIn('ID_FRENTE_DESTINO', $frenteIds);
+            } elseif (!$isGlobal) {
+                $recentActivityQuery->whereRaw('1 = 0');
+            }
+            $recentActivity = $recentActivityQuery->get();
 
-        // 5. Frentes activos (necesarios para el modal de Recepción Directa)
-        $frentes = FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')
-            ->orderBy('NOMBRE_FRENTE')
-            ->get();
+            // 5. Frentes activos (necesarios para el modal de Recepción Directa)
+            $frentes = FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')
+                ->orderBy('NOMBRE_FRENTE')
+                ->get();
 
-        return view('menu', compact(
-            'totalAlerts',
-            'movilizacionesHoy',
-            'pendientes',
-            'recentActivity',
-            'expiredList',
-            'frentes'
-        ));
+            return compact('movilizacionesHoy', 'pendientes', 'totalAlerts', 'recentActivity', 'expiredList', 'frentes');
+        });
+
+        return view('menu', $data);
     }
 
     public function resetCache()

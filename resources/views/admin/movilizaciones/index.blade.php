@@ -34,7 +34,7 @@
         {{-- =====================================================================
              FILTRO FRENTE: Restringido a frentes permitidos
              ===================================================================== --}}
-        <div class="mv-filter-item" style="flex: 2; min-width: 170px;">
+        <div class="mv-filter-item">
             @php
                 $currentFrenteId = request('id_frente');
                 $currentFrente = $currentFrenteId && $currentFrenteId !== 'all' ? $frentes->firstWhere('ID_FRENTE', $currentFrenteId) : null;
@@ -79,7 +79,7 @@
         </div>
 
             <!-- Tipo Filter -->
-            <div class="mv-filter-item" style="flex: 2; min-width: 170px;">
+            <div class="mv-filter-item">
                 <div class="custom-dropdown" id="tipoFilterSelect" data-filter-type="id_tipo" data-default-label="Filtrar Tipo...">
                     <input type="hidden" name="id_tipo" data-filter-value value="{{ request('id_tipo') }}" form="search-form">
                     
@@ -119,7 +119,7 @@
             <div class="mv-search-adv-row">
 
                 <!-- Search Filter -->
-                <div class="mv-filter-item mv-search-item" style="flex: 1.5; min-width: 140px;">
+                <div class="mv-filter-item mv-search-item">
                     <form action="{{ route('movilizaciones.index') }}" method="GET" id="search-form" onsubmit="event.preventDefault(); loadMovilizaciones();" style="margin: 0;">
                         <div class="search-wrapper" style="width: 100%; border-color: {{ request('search') ? '#0067b1' : '#cbd5e0' }}; background: {{ request('search') ? '#e1effa' : '#fff' }};">
                             <i class="material-icons search-icon">search</i>

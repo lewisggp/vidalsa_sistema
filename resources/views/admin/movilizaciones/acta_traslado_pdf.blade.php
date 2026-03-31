@@ -113,10 +113,12 @@
             $nomKey = "RESP_{$i}_NOM";
             $carKey = "RESP_{$i}_CAR";
             $equKey = "RESP_{$i}_EQU";
+            $cedKey = "RESP_{$i}_CED";
 
             $nom = trim($frenteOrigen->$nomKey ?? '');
             $car = trim($frenteOrigen->$carKey ?? 'RESPONSABLE');
             $equ = trim($frenteOrigen->$equKey ?? '');
+            $ced = trim($frenteOrigen->$cedKey ?? '');
 
             $isPlaceholder = empty($nom) || 
                              strtolower($nom) === 'nombre y apellido' ||
@@ -126,10 +128,10 @@
             if (!$isPlaceholder) {
                 if ($equ) {
                     if (in_array($equ, $categoriesInActa)) {
-                        $responsablesToShow[] = ['nom' => $nom, 'car' => $car];
+                        $responsablesToShow[] = ['nom' => $nom, 'car' => $car, 'ced' => $ced];
                     }
                 } else {
-                    $responsablesToShow[] = ['nom' => $nom, 'car' => $car];
+                    $responsablesToShow[] = ['nom' => $nom, 'car' => $car, 'ced' => $ced];
                 }
             }
         }
@@ -165,13 +167,22 @@
                                             <td style="border-top: 0.5pt solid #000; height: 1px;"></td>
                                         </tr>
                                         <tr>
-                                            <td align="center" style="font-size: 8.5pt; line-height: 1.5;">
+                                            <td align="center" style="font-size: 8pt; line-height: 1.5;">
+                                                {{ strtoupper($resp['car']) }}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td align="center" style="font-size: 8.5pt; line-height: 1.5; font-weight: bold;">
                                                 {{ strtoupper($resp['nom']) }}
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td align="center" style="font-size: 8pt; line-height: 1.5;">
-                                                {{ strtoupper($resp['car']) }}
+                                            <td align="center" style="font-size: 8pt; line-height: 1.5; color: #333;">
+                                                @if(!empty($resp['ced']))
+                                                    C.I.: {{ strtoupper($resp['ced']) }}
+                                                @else
+                                                    C.I.: _______________
+                                                @endif
                                             </td>
                                         </tr>
                                     </table>

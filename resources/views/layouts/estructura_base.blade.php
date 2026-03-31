@@ -6,9 +6,9 @@
     <title>@yield('title', 'Sistema de Gestión')</title>
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <!-- CSS -->
-    <link rel="stylesheet" href="{{ asset('css/maquinaria/estilos_globales.css') }}?v=19.2">
+    <link rel="stylesheet" href="{{ asset('css/maquinaria/estilos_globales.css') }}?v=20.4">
     <link rel="stylesheet" href="{{ asset('css/maquinaria/menu.css') }}?v=10.3">
-    <link rel="stylesheet" href="{{ asset('css/maquinaria/catalogo.css') }}?v=2.3">
+    <link rel="stylesheet" href="{{ asset('css/maquinaria/catalogo.css') }}?v=4.1">
     <!-- Local Fonts Optimization -->
     <link rel="stylesheet" href="{{ asset('css/fonts.css') }}?v=1.0">
 
@@ -116,7 +116,7 @@
                 </div>
             </div>
 
-            <a href="{{ route('consumibles.index') }}" class="nav-link {{ request()->is('admin/consumibles*') ? 'active' : '' }}" style="display:flex; align-items:center;">
+            <a href="{{ route('consumibles.graficos') }}" class="nav-link {{ request()->is('admin/consumibles*') ? 'active' : '' }}" style="display:flex; align-items:center;">
                 <i class="material-icons" style="font-size:18px; margin-right:5px;">local_gas_station</i>Consumibles
             </a>
             <a href="#" class="nav-link">Sección 6</a>
@@ -443,7 +443,7 @@
     {{-- Core Scripts (Always Loaded) --}}
 
     <script src="{{ asset('js/maquinaria/module_manager.js') }}?v=2.2"></script>
-    <script src="{{ asset('js/maquinaria/uicomponents.js') }}?v=17.1"></script>
+    <script src="{{ asset('js/maquinaria/uicomponents.js') }}?v=18.3"></script>
     <script src="{{ asset('js/maquinaria/navegacion.js') }}?v=11.0"></script>
     <script src="{{ asset('js/maquinaria/form_logic.js') }}?v=4.2"></script>
     <script src="{{ asset('js/maquinaria/equipo_catalog_linking.js') }}?v=3.2"></script>
@@ -455,8 +455,8 @@
     <script src="{{ asset('js/maquinaria/menu.js') }}?v=5.2"></script>
     <script src="{{ asset('js/maquinaria/catalogo_create.js') }}?v=12.2"></script>
     <script src="{{ asset('js/maquinaria/equipos_index.js') }}?v=21.2"></script>
-    <script src="{{ asset('js/maquinaria/catalogo_index.js') }}?v=3.8"></script>
-    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=7.8"></script>
+    <script src="{{ asset('js/maquinaria/catalogo_index.js') }}?v=4.0"></script>
+    <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=8.2"></script>
     <script src="{{ asset('js/maquinaria/usuarios_index.js') }}?v=10.2"></script>
     <script src="{{ asset('js/maquinaria/fleet_dashboard.js') }}?v=106.3"></script>
 
@@ -1436,28 +1436,6 @@
     <script src="{{ asset('js/maquinaria/equipos_form.js') }}?v=5.0"></script>
     @yield('extra_js')
     @include('partials.session_timeout')
-
-    <!-- Calendario Flatpickr Global (Restaurado para filtros visuales) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
-    <script>
-        const initCalendars = () => {
-            if (typeof flatpickr !== 'undefined') {
-                // Aplica flatpickr a todos los inputs de tipo date,
-                // EXCEPTO a los que tengan la clase 'native-date' (formularios rápidos)
-                flatpickr('input[type="date"]:not(.native-date)', {
-                    dateFormat: "Y-m-d",
-                    locale: "es",
-                    allowInput: true
-                });
-            }
-        };
-
-        // Inicializar tanto al cargar la página como después de navegación SPA
-        document.addEventListener('DOMContentLoaded', initCalendars);
-        window.addEventListener('spa:contentLoaded', initCalendars);
-    </script>
 
 
 </body>

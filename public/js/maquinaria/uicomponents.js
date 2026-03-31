@@ -1015,6 +1015,13 @@ window.showDetailsImproved = function (target, event) {
             saAccordion.style.display = 'none';
         }
     }
+
+    // ── Cargar Responsables Asignados ────────────────────────
+    const respAccordion = document.getElementById('responsable_accordion');
+    if (respAccordion && eqId) {
+        respAccordion.style.display = 'block';
+        window.loadResponsables(eqId);
+    }
 };
 
 window.closeDetailsModal = function (event) {
@@ -1028,6 +1035,15 @@ window.closeDetailsModal = function (event) {
         }
     }
 
+    // Auto-save responsable si hay texto en los campos
+    const respCedula = document.getElementById('resp_cedula');
+    const respNombre = document.getElementById('resp_nombre');
+    if (respCedula && respNombre && (respCedula.value.trim() !== '' || respNombre.value.trim() !== '')) {
+        if (typeof window.saveResponsable === "function") {
+            window.saveResponsable(true); // true = autoSave al cerrar
+        }
+    }
+
     const modal = document.getElementById("detailsModal");
     if (modal) {
         modal.classList.remove("active");
@@ -1035,6 +1051,128 @@ window.closeDetailsModal = function (event) {
             modal.style.display = "none";
         }, 300);
     }
+};
+
+window.loadResponsables = function(equipoId) {
+    const list = document.getElementById('responsable_list');
+    
+    // Al cargar historial, aseguremos que el formulario de edición esté cerrado y limpio
+    const formContainer = document.getElementById('responsable_form_container');
+    const inputCed = document.getElementById('resp_cedula');
+    const inputNom = document.getElementById('resp_nombre');
+    
+    if (formContainer && inputCed && inputNom) {
+        formContainer.style.display = 'none';
+        inputCed.value = '';
+        inputNom.value = '';
+    }
+
+    if (!list) return;
+
+    list.innerHTML = '<p style="color:#94a3b8;font-size:12px;text-align:center;padding:8px;">Cargando responsables...</p>';
+
+    fetch(`/admin/equipos/${equipoId}/responsables`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (!res.success || res.data.length === 0) {
+            list.innerHTML = '';
+            // Si no hay responsables nunca, abrir el formulario para que asigne uno
+            if (formContainer) {
+                formContainer.style.display = 'flex';
+            }
+            return;
+        }
+
+        list.innerHTML = res.data.map((r, index) => {
+            const isCurrent = index === 0;
+            const bg = isCurrent ? '#f0fdf4' : '#f8fafc';
+            const border = isCurrent ? '#bbf7d0' : '#e2e8f0';
+            const tag = isCurrent ? `<span style="background: #16a34a; color: white; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; text-transform: uppercase;">Actual</span>` : `<span style="color: #94a3b8; font-size: 10px;">Anterior</span>`;
+            
+            // Edit button on current user line
+            const editBtnEl = isCurrent ? `
+            <button type="button" onclick="document.getElementById('responsable_form_container').style.display='flex';" title="Editar Responsable" style="background: white; border: 1px solid #cbd5e1; color: #475569; width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='white'">
+                <i class="material-icons" style="font-size: 14px;">edit</i>
+            </button>` : '';
+
+            // Format fecha
+            const f = new Date(r.FECHA_ASIGNACION);
+            const dStr = isNaN(f.getTime()) ? r.FECHA_ASIGNACION : f.toLocaleDateString('es-VE');
+
+            return `
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:${bg};border-radius:10px;border:1px solid ${border};transition:background .15s;">
+                <div style="width:36px;height:36px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;color:#64748b;font-weight:700;font-size:14px;">
+                    ${r.PERSONA_ASIGNADA.charAt(0).toUpperCase()}
+                </div>
+                <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <span style="font-size:13px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.PERSONA_ASIGNADA}</span>
+                        ${tag}
+                    </div>
+                    <div style="font-size:11px;color:#64748b;margin-top:2px;">
+                        C.I. ${r.CEDULA_RESPONSABLE} &nbsp;&bull;&nbsp; Asignado el ${dStr}
+                    </div>
+                </div>
+                ${editBtnEl}
+            </div>`;
+        }).join('');
+    })
+    .catch(() => {
+        list.innerHTML = '<p style="color:#dc2626;font-size:12px;text-align:center;padding:8px;">Error al cargar responsables.</p>';
+    });
+};
+
+window.saveResponsable = function(isAutoSave = false) {
+    const equipoId = window._quickEditEquipoId;
+    if (!equipoId) return;
+
+    const cedulaInput = document.getElementById('resp_cedula');
+    const nombreInput = document.getElementById('resp_nombre');
+    if (!cedulaInput || !nombreInput) return;
+
+    const cedula = cedulaInput.value.trim();
+    const nombre = nombreInput.value.trim();
+
+    if (!cedula || !nombre) {
+        if (isAutoSave && (cedula || nombre)) {
+            if (window.showToast) window.showToast('No se guardó el responsable: Cédula y nombre son obligatorios.', 'warning');
+        } else if (!isAutoSave) {
+            if (window.showToast) window.showToast('La cédula y el nombre son obligatorios.', 'error');
+        }
+        return;
+    }
+
+    // Al guardar al cerrar, la lista puede que no sea visible, pero mostramos un toast
+    fetch(`/admin/equipos/${equipoId}/responsables`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            CEDULA_RESPONSABLE: cedula,
+            PERSONA_ASIGNADA: nombre
+        })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            cedulaInput.value = '';
+            nombreInput.value = '';
+            if (window.showToast) window.showToast('Responsable asignado con éxito.', 'success');
+            // Recargamos historial en caso de que el modal siga vivo (ej. guardado manual si se volviera a agregar el botón)
+            window.loadResponsables(equipoId); 
+        } else {
+            if (window.showToast) window.showToast(res.message || 'Error al guardar responsable', 'error');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        if (window.showToast) window.showToast('Error de conexión al guardar responsable', 'error');
+    });
 };
 
 window.uploadDocument = function (input, type, equipoId, containerId, label) {

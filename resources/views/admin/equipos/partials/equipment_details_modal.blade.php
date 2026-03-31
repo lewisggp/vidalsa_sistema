@@ -168,7 +168,36 @@
                     </div>
                 </details>
 
-                {{-- Sección 3: Sub-activos vinculados (oculta por defecto, se muestra via JS) --}}
+                {{-- Sección 3: Responsable Asignado --}}
+                <details id="responsable_accordion" name="equipment_accordion"
+                    style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; display: none;">
+                    <summary style="padding: 15px 20px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 10px; background: #f8fafc; list-style: none;">
+                        <i class="material-icons" style="font-size: 20px; color: #64748b;">person_pin</i>
+                        <span>Responsable Asignado</span>
+                    </summary>
+                    <div style="padding: 16px 20px; border-top: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 15px;">
+
+                        {{-- Formulario para asignar nuevo responsable (oculto por defecto) --}}
+                        <div id="responsable_form_container" style="display: none; flex-direction: column; gap: 10px; font-size: 14px; background: #f8fafc; padding: 12px 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+                                <span style="color: #475569; font-weight: 600;">Cédula:</span>
+                                <input type="text" id="resp_cedula" placeholder="Ej: V-12345678" autocomplete="off" style="width: 55%; padding: 6px 10px; border: 1px solid #94a3b8; border-radius: 6px; font-size: 13px; outline: none; background: white; color: #0f172a;">
+                            </div>
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #475569; font-weight: 600;">Nombre Completo:</span>
+                                <input type="text" id="resp_nombre" placeholder="Nombre completo" autocomplete="off" style="width: 55%; padding: 6px 10px; border: 1px solid #94a3b8; border-radius: 6px; font-size: 13px; outline: none; background: white; color: #0f172a;">
+                            </div>
+                        </div>
+
+                        {{-- Lista de responsables (historial) --}}
+                        <div id="responsable_list" style="display: flex; flex-direction: column; gap: 8px;">
+                            {{-- Llenado por JS --}}
+                        </div>
+                    </div>
+                </details>
+
+                {{-- Sección 4: Sub-activos vinculados (oculta por defecto, se muestra via JS) --}}
                 <details id="sa_accordion" name="equipment_accordion"
                     style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; display: none;">
                     <summary style="padding: 15px 20px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 10px; background: #f8fafc; list-style: none;">

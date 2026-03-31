@@ -153,6 +153,13 @@
                     </div>
 
                     <div>
+                        <label for="RESP_1_CED" class="form-label">Cédula</label>
+                        <input type="text" id="RESP_1_CED" name="RESP_1_CED" class="form-input-custom"
+                            style="background: white; text-transform: uppercase;" placeholder="Ej: V-12345678"
+                            value="{{ old('RESP_1_CED', $frente->RESP_1_CED ?? '') }}" maxlength="20" autocomplete="off">
+                    </div>
+
+                    <div>
                         <span class="form-label">Filtro Firma <span style="font-weight: normal; font-size: 11px; color: #64748b;">(Opcional)</span></span>
                         <div class="custom-dropdown" id="resp1EquSelect">
                             <input type="hidden" name="RESP_1_EQU" id="input_resp1_equ" value="{{ old('RESP_1_EQU', $frente->RESP_1_EQU ?? '') }}">
@@ -190,6 +197,13 @@
                         <input type="text" id="RESP_2_CAR" name="RESP_2_CAR" class="form-input-custom"
                             style="background: white;" placeholder="Ej: Supervisor"
                             value="{{ old('RESP_2_CAR', $frente->RESP_2_CAR ?? '') }}" autocomplete="off">
+                    </div>
+
+                    <div>
+                        <label for="RESP_2_CED" class="form-label">Cédula</label>
+                        <input type="text" id="RESP_2_CED" name="RESP_2_CED" class="form-input-custom"
+                            style="background: white; text-transform: uppercase;" placeholder="Ej: V-12345678"
+                            value="{{ old('RESP_2_CED', $frente->RESP_2_CED ?? '') }}" maxlength="20" autocomplete="off">
                     </div>
 
                     <div>
@@ -233,6 +247,13 @@
                     </div>
 
                     <div>
+                        <label for="RESP_3_CED" class="form-label">Cédula</label>
+                        <input type="text" id="RESP_3_CED" name="RESP_3_CED" class="form-input-custom"
+                            style="background: white; text-transform: uppercase;" placeholder="Ej: V-12345678"
+                            value="{{ old('RESP_3_CED', $frente->RESP_3_CED ?? '') }}" maxlength="20" autocomplete="off">
+                    </div>
+
+                    <div>
                         <span class="form-label">Filtro Firma</span>
                         <div class="custom-dropdown" id="resp3EquSelect">
                             <input type="hidden" name="RESP_3_EQU" id="input_resp3_equ" value="{{ old('RESP_3_EQU', $frente->RESP_3_EQU ?? '') }}">
@@ -270,6 +291,13 @@
                         <input type="text" id="RESP_4_CAR" name="RESP_4_CAR" class="form-input-custom"
                             style="background: white;" placeholder="Ej: Residente"
                             value="{{ old('RESP_4_CAR', $frente->RESP_4_CAR ?? '') }}" autocomplete="off">
+                    </div>
+
+                    <div>
+                        <label for="RESP_4_CED" class="form-label">Cédula</label>
+                        <input type="text" id="RESP_4_CED" name="RESP_4_CED" class="form-input-custom"
+                            style="background: white; text-transform: uppercase;" placeholder="Ej: V-12345678"
+                            value="{{ old('RESP_4_CED', $frente->RESP_4_CED ?? '') }}" maxlength="20" autocomplete="off">
                     </div>
 
                     <div>

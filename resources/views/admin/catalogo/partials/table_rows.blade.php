@@ -16,8 +16,16 @@
             @endif
         </td>
         <td class="table-cell-custom table-cell-bordered" data-label="Modelo / Año">
-            <div class="catalog-Model">{{ $catalogo->MODELO }}</div>
-            <div style="font-size: 15px; color: #000;">{{ $catalogo->ANIO_ESPEC }}</div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div>
+                    <div class="catalog-label" style="font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Modelo</div>
+                    <div class="catalog-Model" style="font-size: 14px; font-weight: 800; color: #1e293b;">{{ $catalogo->MODELO }}</div>
+                </div>
+                <div>
+                    <div class="catalog-label" style="font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Año</div>
+                    <div style="font-size: 14px; font-weight: 800; color: #1e293b;">{{ $catalogo->ANIO_ESPEC }}</div>
+                </div>
+            </div>
         </td>
         <td class="table-cell-custom table-cell-bordered" data-label="Motor / Energía / Consumo">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px;">
