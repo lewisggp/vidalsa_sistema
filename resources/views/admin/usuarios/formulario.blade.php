@@ -25,22 +25,6 @@
                 @enderror
             </div>
 
-            <div>
-                <label for="CEDULA" class="form-label">Cédula de Identidad</label>
-                <input type="text" id="CEDULA" name="CEDULA"
-                    class="form-input-custom @error('CEDULA') is-invalid @enderror"
-                    value="{{ old('CEDULA', $user->CEDULA ?? '') }}"
-                    placeholder="Ej: V-12345678"
-                    maxlength="20"
-                    autocomplete="off"
-                    style="text-transform: uppercase;">
-                @error('CEDULA')
-                    <span class="error-message-inline">{{ $message }}</span>
-                @enderror
-                <small style="color: var(--maquinaria-gray-text); font-size: 12px; display: block; margin-top: 4px;">
-                    Opcional · Máx. 20 caracteres
-                </small>
-            </div>
 
             <div>
                 <label for="CORREO_ELECTRONICO" class="form-label">Email Corporativo</label>

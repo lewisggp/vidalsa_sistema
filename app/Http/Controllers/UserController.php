@@ -24,7 +24,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         // Start with base query
-        $query = Usuario::select('ID_USUARIO', 'NOMBRE_COMPLETO', 'CEDULA', 'CORREO_ELECTRONICO', 'ID_ROL', 'ID_FRENTE_ASIGNADO', 'NIVEL_ACCESO', 'ESTATUS')
+        $query = Usuario::select('ID_USUARIO', 'NOMBRE_COMPLETO', 'CORREO_ELECTRONICO', 'ID_ROL', 'ID_FRENTE_ASIGNADO', 'NIVEL_ACCESO', 'ESTATUS')
             ->with([
                 'rol:ID_ROL,NOMBRE_ROL', 
                 'frenteAsignado:ID_FRENTE,NOMBRE_FRENTE'
@@ -100,7 +100,7 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'NOMBRE_COMPLETO' => 'required|string|max:150',
-            'CEDULA'          => 'nullable|string|max:20',
+
             'CORREO_ELECTRONICO' => [
                 'required',
                 'email',
@@ -137,7 +137,7 @@ class UserController extends Controller
         // Create user with mass assignment for validated data
         $user = new Usuario();
         $user->NOMBRE_COMPLETO = mb_convert_case($request->NOMBRE_COMPLETO, MB_CASE_TITLE, 'UTF-8');
-        $user->CEDULA = $request->filled('CEDULA') ? strtoupper(trim($request->CEDULA)) : null;
+
         $user->CORREO_ELECTRONICO = strtolower($request->CORREO_ELECTRONICO);
         $user->PASSWORD_HASH = Hash::make($request->password);
         $user->ID_ROL = $request->ID_ROL;
@@ -192,7 +192,7 @@ class UserController extends Controller
 
         $validated = $request->validate([
             'NOMBRE_COMPLETO' => 'required|string|max:150',
-            'CEDULA'          => 'nullable|string|max:20',
+
             'CORREO_ELECTRONICO' => [
                 'required',
                 'email',
@@ -227,7 +227,7 @@ class UserController extends Controller
 
         // Update user attributes
         $user->NOMBRE_COMPLETO = mb_convert_case($request->NOMBRE_COMPLETO, MB_CASE_TITLE, 'UTF-8');
-        $user->CEDULA = $request->filled('CEDULA') ? strtoupper(trim($request->CEDULA)) : null;
+
         $user->CORREO_ELECTRONICO = strtolower($request->CORREO_ELECTRONICO);
         $user->ID_ROL = $request->ID_ROL;
         $user->NIVEL_ACCESO = $request->NIVEL_ACCESO;

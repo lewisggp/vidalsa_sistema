@@ -2,12 +2,6 @@
                     <tr>
                          <td class="table-cell-bordered" style="font-weight: 700; color: var(--maquinaria-dark-blue); padding: 8px 12px; white-space: nowrap;">
                             {{ $user->NOMBRE_COMPLETO }}
-                            @if($user->CEDULA)
-                                <br><span style="font-size: 11px; font-weight: 500; color: #64748b; letter-spacing: 0.3px;">
-                                    <i class="material-icons" style="font-size: 11px; vertical-align: middle;">badge</i>
-                                    {{ $user->CEDULA }}
-                                </span>
-                            @endif
                         </td>
                         <td class="table-cell-bordered" style="color: var(--maquinaria-gray-text); font-size: 14px; padding: 8px 12px; white-space: nowrap;">{{ $user->CORREO_ELECTRONICO }}</td>
                         <td class="table-cell-bordered" style="padding: 8px 12px; text-align: left; color: #4a5568; font-weight: 600;">
