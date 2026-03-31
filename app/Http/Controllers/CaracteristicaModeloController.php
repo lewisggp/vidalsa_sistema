@@ -124,9 +124,13 @@ class CaracteristicaModeloController extends Controller
                     $driveService = GoogleDriveService::getInstance();
                     $folderId = config('filesystems.disks.google.catalog_folder'); // Specific folder for model photos
                     $file = $request->file('foto_referencial');
-                    $filename = 'catalog_' . time() . '_' . $catalogo->ID_ESPEC . '.' . $file->getClientOriginalExtension();
                     
-                    $driveFile = $driveService->uploadFile($folderId, $file, $filename, $file->getMimeType());
+                    // Convert to webp
+                    $webpFile = $this->convertToWebp($file);
+                    
+                    $filename = 'catalog_' . time() . '_' . $catalogo->ID_ESPEC . '.webp';
+                    
+                    $driveFile = $driveService->uploadFile($folderId, $webpFile, $filename, 'image/webp');
                     
                     if ($driveFile && isset($driveFile->id)) {
                         $catalogo->update(['FOTO_REFERENCIAL' => '/storage/google/' . $driveFile->id]);
@@ -223,9 +227,13 @@ class CaracteristicaModeloController extends Controller
                     $driveService = GoogleDriveService::getInstance();
                     $folderId = config('filesystems.disks.google.catalog_folder');
                     $file = $request->file('foto_referencial');
-                    $filename = 'catalog_' . time() . '_' . $catalogo->ID_ESPEC . '.' . $file->getClientOriginalExtension();
+
+                    // Convert to webp
+                    $webpFile = $this->convertToWebp($file);
+
+                    $filename = 'catalog_' . time() . '_' . $catalogo->ID_ESPEC . '.webp';
                     
-                    $driveFile = $driveService->uploadFile($folderId, $file, $filename, $file->getMimeType());
+                    $driveFile = $driveService->uploadFile($folderId, $webpFile, $filename, 'image/webp');
                     
                     if ($driveFile && isset($driveFile->id)) {
                         // 2. UPDATE DATABASE WITH NEW FILE ID
@@ -404,5 +412,46 @@ class CaracteristicaModeloController extends Controller
             ->pluck('ANIO');
 
         return response()->json($years);
+    }
+    /**
+     * Convert an uploaded image to WebP format natively
+     */
+    private function convertToWebp($file)
+    {
+        $mime = $file->getMimeType();
+        $imagePath = $file->getRealPath();
+
+        // Already WebP or not an image we can easily process
+        if ($mime === 'image/webp') return $file;
+
+        $image = null;
+        if ($mime === 'image/jpeg' || $mime === 'image/jpg') {
+            $image = @imagecreatefromjpeg($imagePath);
+        } elseif ($mime === 'image/png') {
+            $image = @imagecreatefrompng($imagePath);
+            if ($image) {
+                // Preserve transparency
+                imagepalettetotruecolor($image);
+                imagealphablending($image, false);
+                imagesavealpha($image, true);
+            }
+        }
+
+        if ($image) {
+            $tempPath = sys_get_temp_dir() . '/' . uniqid('webp_') . '.webp';
+            imagewebp($image, $tempPath, 85); // 85% quality is a good balance
+            imagedestroy($image);
+            
+            return new \Illuminate\Http\UploadedFile(
+                $tempPath,
+                'converted.webp',
+                'image/webp',
+                null,
+                true // test mode to prevent file upload errors from tmp
+            );
+        }
+
+        // Fallback to original if conversion fails
+        return $file;
     }
 }
