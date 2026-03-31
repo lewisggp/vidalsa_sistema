@@ -206,7 +206,7 @@ class EquipoController extends Controller
 
             // Calculate Frentes Stats from Collection (if needed for drilldown)
             if ($request->filled('id_tipo')) {
-                $frentesStats = $equipos->whereNotNull('ID_FRENTE_ACTUAL')->groupBy('ID_FRENTE_ACTUAL')->map(function ($group) {
+                $frentesStats = $allResults->whereNotNull('ID_FRENTE_ACTUAL')->groupBy('ID_FRENTE_ACTUAL')->map(function ($group) {
                     $first = $group->first();
                     return (object) [
                         'ID_FRENTE_ACTUAL' => $first->ID_FRENTE_ACTUAL,
@@ -2160,4 +2160,32 @@ XML;
         ]);
     }
     // ──────────────────────────────────────────────────────────────────────────────
+
+    // ──────────────────────────────────────────────────────────────────────────────
+    // ── GESTIÓN DE RESPONSABLES DE EQUIPOS ─────────────────────────────────────────
+
+    public function getResponsables($id)
+    {
+        $responsables = \App\Models\Responsable::where('ID_EQUIPO', $id)
+            ->orderBy('FECHA_ASIGNACION', 'desc')
+            ->get();
+        return response()->json(['success' => true, 'data' => $responsables]);
+    }
+
+    public function storeResponsable(Request $request, $id)
+    {
+        $request->validate([
+            'CEDULA_RESPONSABLE' => 'required|string|max:20',
+            'PERSONA_ASIGNADA'   => 'required|string|max:150',
+        ]);
+
+        $responsable = \App\Models\Responsable::create([
+            'ID_EQUIPO'          => $id,
+            'CEDULA_RESPONSABLE' => strtoupper(trim($request->CEDULA_RESPONSABLE)),
+            'PERSONA_ASIGNADA'   => strtoupper(trim($request->PERSONA_ASIGNADA)),
+            'FECHA_ASIGNACION'   => now(),
+        ]);
+
+        return response()->json(['success' => true, 'data' => $responsable]);
+    }
 }
