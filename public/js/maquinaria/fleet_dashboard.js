@@ -461,58 +461,90 @@ function createCharts(data) {
     if (catPanelEl)  catPanelEl.style.gridColumn  = catCount  >= 8 ? '1 / -1' : '';
     if (inopPanelEl) inopPanelEl.style.gridColumn = inopCount >= 8 ? '1 / -1' : '';
 
-    // 1. Estado Operativo - Doughnut
-    window.fleetCharts.byStatus = new Chart(canvasStatus, {
-        type: 'doughnut',
-        data: {
-            labels: data.byStatus.labels,
-            datasets: [{
-                data: data.byStatus.values,
-                backgroundColor: data.byStatus.labels.map(label => window.CHART_COLORS.status[label] || '#64748b'),
-                borderWidth: 2,
-                borderColor: '#fff'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: LEGEND_STYLE,
-                tooltip: TOOLTIP_STYLES,
-                datalabels: {
-                    color: 'white',
-                    font: { weight: 'bold', size: 12, family: "'Inter', 'Segoe UI', sans-serif" },
-                    formatter: (value) => value > 0 ? value : ''
-                }
+    // Función auxiliar para mostrar mensaje de vacío
+    const showEmptyState = (canvas, parentId, emptyText) => {
+        if (canvas) {
+            const parent = canvas.parentElement;
+            const msg = document.createElement('p');
+            msg.style.cssText = 'color:#94a3b8;font-size:13px;text-align:center;padding:30px 0;width:100%;';
+            msg.textContent = emptyText;
+            canvas.style.display = 'none';
+            if (!parent.querySelector('.fleet-empty-msg')) {
+                msg.classList.add('fleet-empty-msg');
+                parent.appendChild(msg);
             }
         }
-    });
+    };
+
+    // 1. Estado Operativo - Doughnut
+    if (canvasStatus && data.byStatus && data.byStatus.labels && data.byStatus.labels.length > 0) {
+        const parent = canvasStatus.parentElement;
+        const emptyMsg = parent.querySelector('.fleet-empty-msg');
+        if (emptyMsg) emptyMsg.remove();
+        canvasStatus.style.display = '';
+
+        window.fleetCharts.byStatus = new Chart(canvasStatus, {
+            type: 'doughnut',
+            data: {
+                labels: data.byStatus.labels,
+                datasets: [{
+                    data: data.byStatus.values,
+                    backgroundColor: data.byStatus.labels.map(label => window.CHART_COLORS.status[label] || '#64748b'),
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: LEGEND_STYLE,
+                    tooltip: TOOLTIP_STYLES,
+                    datalabels: {
+                        color: 'white',
+                        font: { weight: 'bold', size: 12, family: "'Inter', 'Segoe UI', sans-serif" },
+                        formatter: (value) => value > 0 ? value : ''
+                    }
+                }
+            }
+        });
+    } else {
+        showEmptyState(canvasStatus, 'chartStatusByFront', 'Sin datos operativos en esta selección.');
+    }
 
     // 2. Flota Nueva vs Vieja por Tipo - Stacked Horizontal Bar
-    window.fleetCharts.ageByType = createStackedBarChart('chartAgeByType', {
-        labels: data.ageByType.labels,
-        datasets: data.ageByType.datasets.map((ds, idx) => ({
-            label: ds.label,
-            data: ds.data,
-            backgroundColor: window.CHART_COLORS.age[idx],
-            borderWidth: 0,
-            borderRadius: 0,
-            borderSkipped: false
-        }))
-    });
+    if (canvasAge && data.ageByType && data.ageByType.labels && data.ageByType.labels.length > 0) {
+        window.fleetCharts.ageByType = createStackedBarChart('chartAgeByType', {
+            labels: data.ageByType.labels,
+            datasets: data.ageByType.datasets.map((ds, idx) => ({
+                label: ds.label,
+                data: ds.data,
+                backgroundColor: window.CHART_COLORS.age[idx],
+                borderWidth: 0,
+                borderRadius: 0,
+                borderSkipped: false
+            }))
+        });
+    } else {
+        showEmptyState(canvasAge, 'chartAgeByType', 'Sin equipos registrados para este frente.');
+    }
 
     // 3. Flota Pesada vs Liviana por Tipo - Stacked Horizontal Bar
-    window.fleetCharts.categoryByType = createStackedBarChart('chartCategoryByType', {
-        labels: data.categoryByType.labels,
-        datasets: data.categoryByType.datasets.map((ds, idx) => ({
-            label: ds.label,
-            data: ds.data,
-            backgroundColor: window.CHART_COLORS.category[idx],
-            borderWidth: 0,
-            borderRadius: 0,
-            borderSkipped: false
-        }))
-    });
+    if (canvasCat && data.categoryByType && data.categoryByType.labels && data.categoryByType.labels.length > 0) {
+        window.fleetCharts.categoryByType = createStackedBarChart('chartCategoryByType', {
+            labels: data.categoryByType.labels,
+            datasets: data.categoryByType.datasets.map((ds, idx) => ({
+                label: ds.label,
+                data: ds.data,
+                backgroundColor: window.CHART_COLORS.category[idx],
+                borderWidth: 0,
+                borderRadius: 0,
+                borderSkipped: false
+            }))
+        });
+    } else {
+        showEmptyState(canvasCat, 'chartCategoryByType', 'Sin categorias asociadas en este frente.');
+    }
 
     // 4. Inoperatividad por Tipo de Equipo - Stacked Horizontal Bar
     if (canvasInop && data.inoperativeByType && data.inoperativeByType.labels.length > 0) {

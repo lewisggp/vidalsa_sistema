@@ -458,7 +458,7 @@
     <script src="{{ asset('js/maquinaria/catalogo_index.js') }}?v=4.0"></script>
     <script src="{{ asset('js/maquinaria/movilizaciones_index.js') }}?v=8.2"></script>
     <script src="{{ asset('js/maquinaria/usuarios_index.js') }}?v=10.2"></script>
-    <script src="{{ asset('js/maquinaria/fleet_dashboard.js') }}?v=106.3"></script>
+    <script src="{{ asset('js/maquinaria/fleet_dashboard.js') }}?v=106.4"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
     <script src="{{ asset('js/maquinaria/frentes_spa.js') }}?v=4.3"></script>
