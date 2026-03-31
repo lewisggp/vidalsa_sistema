@@ -2472,28 +2472,27 @@ input:-webkit-autofill:active {
     #movilizacionesTable tr.mv-row-card td {
         display: block !important;
         width: 100% !important;
-        padding: 12px !important;
+        padding: 6px 12px !important; /* Compresión vertical estricta */
         border: none !important;
         box-sizing: border-box !important;
     }
 
     /* ── Ocultar obligatoriamente las columnas desktop-only ── */
-    body .movilizaciones-table-wrap table tr.mv-row-card td.mv-mobile-hidden,
-    body .movilizaciones-table-wrap table tr.mv-row-card td.mv-td-fechas,
-    body .movilizaciones-table-wrap table tr.mv-row-card td.mv-col-op {
+    #movilizacionesTable tr.mv-row-card td.mv-mobile-hidden,
+    #movilizacionesTable tr.mv-row-card td.mv-td-fechas,
+    #movilizacionesTable tr.mv-row-card td.mv-col-op {
         display: none !important;
         height: 0 !important;
         padding: 0 !important;
         margin: 0 !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
         border: none !important;
     }
 
     /* ── 1. EQUIPO (Fila 1 de la tarjeta) ── */
     #movilizacionesTable td.mv-td-equipo {
         border-bottom: none !important;
-        padding-bottom: 4px !important;
+        padding-top: 12px !important;
+        padding-bottom: 0px !important; 
     }
 
     #movilizacionesTable td.mv-td-equipo > div {
@@ -2519,9 +2518,10 @@ input:-webkit-autofill:active {
     #movilizacionesTable td.mv-td-trayecto {
         border-bottom: none !important;
         text-align: center !important;
-        padding-top: 0 !important;
-        padding-bottom: 12px !important;
+        padding-top: 2px !important;
+        padding-bottom: 2px !important;
         padding-left: 12px !important; 
+        padding-right: 12px !important; 
     }
 
     .mv-trayecto-container {
@@ -2558,7 +2558,8 @@ input:-webkit-autofill:active {
     #movilizacionesTable td.mv-td-estado {
         border-bottom: none !important;
         text-align: center !important;
-        padding-top: 0 !important;
+        padding-top: 2px !important;
+        padding-bottom: 10px !important;
         display: block !important;
     }
 
