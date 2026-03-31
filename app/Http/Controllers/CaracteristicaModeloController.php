@@ -107,8 +107,17 @@ class CaracteristicaModeloController extends Controller
 
         try {
             $catalogo = null;
+
+            // Convertir imagen a WebP ANTES de la transacción (evitar problemas de $this en closures)
+            $webpFile = null;
+            $tempWebpPath = null;
+            if ($request->hasFile('foto_referencial')) {
+                $webpResult = $this->convertToWebp($request->file('foto_referencial'));
+                $webpFile    = $webpResult['file'];
+                $tempWebpPath = $webpResult['tempPath'];
+            }
             
-            DB::transaction(function () use ($request, &$validated, &$catalogo) {
+            DB::transaction(function () use ($request, &$validated, &$catalogo, $webpFile) {
                 // Force Uppercase on all string fields
                 $fieldsToUpper = ['MODELO', 'MOTOR', 'COMBUSTIBLE', 'CONSUMO_PROMEDIO', 
                                   'ACEITE_MOTOR', 'ACEITE_CAJA', 'LIGA_FRENO', 'REFRIGERANTE', 'TIPO_BATERIA'];
@@ -120,14 +129,9 @@ class CaracteristicaModeloController extends Controller
                 }
                 $catalogo = CaracteristicaModelo::create($validated);
 
-                if ($request->hasFile('foto_referencial')) {
+                if ($webpFile) {
                     $driveService = GoogleDriveService::getInstance();
-                    $folderId = config('filesystems.disks.google.catalog_folder'); // Specific folder for model photos
-                    $file = $request->file('foto_referencial');
-                    
-                    // Convert to webp
-                    $webpFile = $this->convertToWebp($file);
-                    
+                    $folderId = config('filesystems.disks.google.catalog_folder');
                     $filename = 'catalog_' . time() . '_' . $catalogo->ID_ESPEC . '.webp';
                     
                     $driveFile = $driveService->uploadFile($folderId, $webpFile, $filename, 'image/webp');
@@ -139,6 +143,11 @@ class CaracteristicaModeloController extends Controller
                     }
                 }
             });
+
+            // Limpiar archivo temporal WebP del servidor si se creó
+            if ($tempWebpPath && file_exists($tempWebpPath)) {
+                @unlink($tempWebpPath);
+            }
 
             // AUTO-LINK: Find existing equipos with matching model + year and link them
             if ($catalogo) {
@@ -203,8 +212,21 @@ class CaracteristicaModeloController extends Controller
         try {
             $oldModelo = $catalogo->MODELO;
             $oldAnio = $catalogo->ANIO_ESPEC;
+
+            // Convertir imagen a WebP ANTES de la transacción (evitar problemas de $this en closures)
+            $webpFile = null;
+            $tempWebpPath = null;
+            $oldFileId = null;
+            if ($request->hasFile('foto_referencial')) {
+                $webpResult  = $this->convertToWebp($request->file('foto_referencial'));
+                $webpFile    = $webpResult['file'];
+                $tempWebpPath = $webpResult['tempPath'];
+                if ($catalogo->FOTO_REFERENCIAL) {
+                    $oldFileId = str_replace('/storage/google/', '', $catalogo->FOTO_REFERENCIAL);
+                }
+            }
             
-            DB::transaction(function () use ($request, &$validated, $catalogo) {
+            DB::transaction(function () use ($request, &$validated, $catalogo, $webpFile, $oldFileId) {
                 // Force Uppercase on all string fields
                 $fieldsToUpper = ['MODELO', 'MOTOR', 'COMBUSTIBLE', 'CONSUMO_PROMEDIO', 
                                   'ACEITE_MOTOR', 'ACEITE_CAJA', 'LIGA_FRENO', 'REFRIGERANTE', 'TIPO_BATERIA'];
@@ -216,21 +238,10 @@ class CaracteristicaModeloController extends Controller
                 }
                 $catalogo->update($validated);
 
-                if ($request->hasFile('foto_referencial')) {
-                    // Store old file ID for cleanup AFTER successful upload
-                    $oldFileId = null;
-                    if ($catalogo->FOTO_REFERENCIAL) {
-                        $oldFileId = str_replace('/storage/google/', '', $catalogo->FOTO_REFERENCIAL);
-                    }
-
+                if ($webpFile) {
                     // 1. UPLOAD NEW PHOTO TO GOOGLE DRIVE
                     $driveService = GoogleDriveService::getInstance();
                     $folderId = config('filesystems.disks.google.catalog_folder');
-                    $file = $request->file('foto_referencial');
-
-                    // Convert to webp
-                    $webpFile = $this->convertToWebp($file);
-
                     $filename = 'catalog_' . time() . '_' . $catalogo->ID_ESPEC . '.webp';
                     
                     $driveFile = $driveService->uploadFile($folderId, $webpFile, $filename, 'image/webp');
@@ -243,11 +254,9 @@ class CaracteristicaModeloController extends Controller
                         if ($oldFileId) {
                             try {
                                 $driveService->deleteFile($oldFileId);
-                                // Also invalidate local cache
                                 \Illuminate\Support\Facades\Storage::disk('local')->delete('google_cache/' . $oldFileId);
                                 \Illuminate\Support\Facades\Cache::forget('gdrive_meta_' . $oldFileId);
                             } catch (\Exception $e) {
-                                // Log error but don't fail the entire operation
                                 Log::warning('Failed to delete old Google Drive file: ' . $oldFileId . ' - ' . $e->getMessage());
                             }
                         }
@@ -256,6 +265,11 @@ class CaracteristicaModeloController extends Controller
                     }
                 }
             });
+
+            // Limpiar archivo temporal WebP del servidor si se creó
+            if ($tempWebpPath && file_exists($tempWebpPath)) {
+                @unlink($tempWebpPath);
+            }
 
             // AUTO-LINK: If model or year changed, link new matching equipos
             $modeloChanged = ($oldModelo !== $validated['MODELO']);
@@ -414,44 +428,55 @@ class CaracteristicaModeloController extends Controller
         return response()->json($years);
     }
     /**
-     * Convert an uploaded image to WebP format natively
+     * Convierte una imagen subida a formato WebP usando PHP GD nativo.
+     * Devuelve array ['file' => UploadedFile, 'tempPath' => string|null]
+     * para que el caller pueda limpiar el archivo temporal después del upload.
      */
-    private function convertToWebp($file)
+    private function convertToWebp($file): array
     {
-        $mime = $file->getMimeType();
+        $mime      = $file->getMimeType();
         $imagePath = $file->getRealPath();
 
-        // Already WebP or not an image we can easily process
-        if ($mime === 'image/webp') return $file;
+        // Ya es WebP: no hay nada que convertir
+        if ($mime === 'image/webp') {
+            return ['file' => $file, 'tempPath' => null];
+        }
 
-        $image = null;
-        if ($mime === 'image/jpeg' || $mime === 'image/jpg') {
-            $image = @imagecreatefromjpeg($imagePath);
-        } elseif ($mime === 'image/png') {
-            $image = @imagecreatefrompng($imagePath);
-            if ($image) {
-                // Preserve transparency
-                imagepalettetotruecolor($image);
-                imagealphablending($image, false);
-                imagesavealpha($image, true);
+        try {
+            $image = null;
+
+            if (in_array($mime, ['image/jpeg', 'image/jpg'])) {
+                $image = @imagecreatefromjpeg($imagePath);
+            } elseif ($mime === 'image/png') {
+                $image = @imagecreatefrompng($imagePath);
+                if ($image) {
+                    // Preservar transparencia PNG
+                    imagepalettetotruecolor($image);
+                    imagealphablending($image, false);
+                    imagesavealpha($image, true);
+                }
             }
+
+            if ($image) {
+                $tempPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . uniqid('webp_') . '.webp';
+                imagewebp($image, $tempPath, 85); // calidad 85%: buen balance peso/calidad
+                imagedestroy($image);
+
+                $uploadedFile = new \Illuminate\Http\UploadedFile(
+                    $tempPath,
+                    'converted.webp',
+                    'image/webp',
+                    null,
+                    true  // test = true: evita validaciones de $_FILES en archivos temp
+                );
+
+                return ['file' => $uploadedFile, 'tempPath' => $tempPath];
+            }
+        } catch (\Throwable $e) {
+            Log::warning('convertToWebp falló, se usará el archivo original: ' . $e->getMessage());
         }
 
-        if ($image) {
-            $tempPath = sys_get_temp_dir() . '/' . uniqid('webp_') . '.webp';
-            imagewebp($image, $tempPath, 85); // 85% quality is a good balance
-            imagedestroy($image);
-            
-            return new \Illuminate\Http\UploadedFile(
-                $tempPath,
-                'converted.webp',
-                'image/webp',
-                null,
-                true // test mode to prevent file upload errors from tmp
-            );
-        }
-
-        // Fallback to original if conversion fails
-        return $file;
+        // Fallback: si GD falla, se sube el archivo original sin conversión
+        return ['file' => $file, 'tempPath' => null];
     }
 }
