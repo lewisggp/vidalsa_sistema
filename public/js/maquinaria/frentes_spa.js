@@ -57,12 +57,19 @@ function populateFrenteForm(data) {
     // Responsables
     document.getElementById("RESP_1_NOM").value = data.RESP_1_NOM || "";
     document.getElementById("RESP_1_CAR").value = data.RESP_1_CAR || "";
+    if (document.getElementById("RESP_1_CED")) document.getElementById("RESP_1_CED").value = data.RESP_1_CED || "";
+
     document.getElementById("RESP_2_NOM").value = data.RESP_2_NOM || "";
     document.getElementById("RESP_2_CAR").value = data.RESP_2_CAR || "";
+    if (document.getElementById("RESP_2_CED")) document.getElementById("RESP_2_CED").value = data.RESP_2_CED || "";
+
     document.getElementById("RESP_3_NOM").value = data.RESP_3_NOM || "";
     document.getElementById("RESP_3_CAR").value = data.RESP_3_CAR || "";
+    if (document.getElementById("RESP_3_CED")) document.getElementById("RESP_3_CED").value = data.RESP_3_CED || "";
+
     document.getElementById("RESP_4_NOM").value = data.RESP_4_NOM || "";
     document.getElementById("RESP_4_CAR").value = data.RESP_4_CAR || "";
+    if (document.getElementById("RESP_4_CED")) document.getElementById("RESP_4_CED").value = data.RESP_4_CED || "";
 
     // Equipment Filters (Dropdown labels & hidden inputs)
     const setEquFilter = (id, val) => {
@@ -260,12 +267,14 @@ window.resetFrentesForm = function () {
         document.getElementById("label_estatus").innerText =
             "Seleccione Estatus...";
 
-        // Reset all Resp Equ filters
+        // Reset all Resp Equ and Cedula filters
         for (let i = 1; i <= 4; i++) {
             const input = document.getElementById("input_resp" + i + "_equ");
             const label = document.getElementById("label_resp" + i + "_equ");
+            const cedula = document.getElementById("RESP_" + i + "_CED");
             if (input) input.value = "";
             if (label) label.innerText = "SIN FILTRO";
+            if (cedula) cedula.value = "";
         }
 
         const searchInput = document.getElementById("filterSearchInput");
