@@ -61,7 +61,7 @@
                 CONSTRUCTORA VIDALSA 27, C.A., deja constancia formal del despacho y traslado de los equipos
                 detallados a continuación hacia {{ $labelDestino }}
                 <b>{{ strtoupper($frenteDestino->NOMBRE_FRENTE ?? 'DESTINO DESCONOCIDO') }}</b>@if($ubicacionDestino), ubicado en
-                <b>{{ strtoupper($ubicacionDestino) }}</b>@endif.
+                {{ strtoupper($ubicacionDestino) }}@endif.
             </td>
         </tr>
     </table>
