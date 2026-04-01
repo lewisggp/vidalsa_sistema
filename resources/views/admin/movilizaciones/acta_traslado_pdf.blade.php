@@ -142,6 +142,8 @@
         $rows = array_chunk($responsablesToShow, 2);
     @endphp
 
+    @php $totalResp = count($responsablesToShow); @endphp
+
     <table width="100%" border="0" cellpadding="0" cellspacing="0" nobr="true">
 
         <!-- Separador Tabla / Firmas (20px) dentro del bloque nobr -->
@@ -149,102 +151,130 @@
             <td colspan="3" height="20">&nbsp;</td>
         </tr>
 
-        @foreach($rows as $row)
-            <!-- ── Fila: Firmas APROBADO POR (ORIGEN) ── -->
+        @if($totalResp === 1)
+            {{-- ── Caso especial: 1 responsable → APROBADO izquierda | RECIBIDO derecha ── --}}
+            @php $resp = $responsablesToShow[0]; @endphp
             <tr>
-                @foreach($row as $index => $resp)
-                    <!-- Firma -->
-                    <td width="45%" align="center" valign="bottom">
-                        <table width="100%" border="0" cellpadding="0" cellspacing="0">
-                            <tr>
-                                <td align="center" style="font-size: 9pt;"><b>APROBADO POR (ORIGEN):</b></td>
-                            </tr>
-                            <tr>
-                                <td height="35">&nbsp;</td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <table width="85%" align="center" border="0" cellpadding="0" cellspacing="0">
-                                        <tr>
-                                            <td style="border-top: 0.5pt solid #000; height: 1px;"></td>
-                                        </tr>
-                                        <tr>
-                                            <td align="center" style="font-size: 8pt; line-height: 1.5;">
-                                                <b>{{ strtoupper($resp['car']) }}</b>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td align="center" style="font-size: 8.5pt; line-height: 1.5;">
-                                                {{ strtoupper($resp['nom']) }}
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td align="center" style="font-size: 8pt; line-height: 1.5; color: #333;">
-                                                @if(!empty($resp['ced']))
-                                                    @php
-                                                        $cedNum = preg_replace('/[^0-9]/', '', $resp['ced']);
-                                                        $cedFlip = strrev($cedNum);
-                                                        $cedFmt  = strrev(implode('.', str_split($cedFlip, 3)));
-                                                    @endphp
-                                                    C.I.: {{ $cedFmt }}
-                                                @else
-                                                    C.I.: _______________
-                                                @endif
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
+                {{-- APROBADO POR (izquierda) --}}
+                <td width="45%" align="center" valign="bottom">
+                    <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                        <tr><td align="center" style="font-size: 9pt;"><b>APROBADO POR (ORIGEN):</b></td></tr>
+                        <tr><td height="35">&nbsp;</td></tr>
+                        <tr>
+                            <td>
+                                <table width="85%" align="center" border="0" cellpadding="0" cellspacing="0">
+                                    <tr><td style="border-top: 0.5pt solid #000; height: 1px;"></td></tr>
+                                    <tr><td align="center" style="font-size: 8pt; line-height: 1.5;"><b>{{ strtoupper($resp['car']) }}</b></td></tr>
+                                    <tr><td align="center" style="font-size: 8.5pt; line-height: 1.5;">{{ strtoupper($resp['nom']) }}</td></tr>
+                                    <tr>
+                                        <td align="center" style="font-size: 8pt; line-height: 1.5; color: #333;">
+                                            @if(!empty($resp['ced']))
+                                                @php
+                                                    $cedNum = preg_replace('/[^0-9]/', '', $resp['ced']);
+                                                    $cedFmt = strrev(implode('.', str_split(strrev($cedNum), 3)));
+                                                @endphp
+                                                C.I.: {{ $cedFmt }}
+                                            @else
+                                                C.I.: _______________
+                                            @endif
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
 
-                    @if($loop->first && count($row) > 1)
-                        <!-- Espacio central entre firmas -->
-                        <td width="10%"></td>
-                    @elseif($loop->first && count($row) == 1)
-                        <td width="55%" colspan="2"></td>
-                    @endif
-                @endforeach
-            </tr>
-            <tr>
-                <td colspan="3" height="30">&nbsp;</td>
-            </tr>
-        @endforeach
+                {{-- Espacio central --}}
+                <td width="10%"></td>
 
-        <!-- ── Fila: RECIBIDO POR (DESTINO) centrado ── -->
-        <tr>
-            <td colspan="3" align="center">
-                <table width="40%" align="center" border="0" cellpadding="0" cellspacing="0">
-                    <tr>
-                        <td align="center" style="font-size: 9pt;"><b>RECIBIDO POR (DESTINO):</b></td>
-                    </tr>
-                    <tr>
-                        <td height="35">&nbsp;</td>
-                    </tr>
-                    <tr>
-                        <td align="center">
-                            <table width="100%" align="center" border="0" cellpadding="0" cellspacing="0">
+                {{-- RECIBIDO POR (derecha) --}}
+                <td width="45%" align="center" valign="bottom">
+                    <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                        <tr><td align="center" style="font-size: 9pt;"><b>RECIBIDO POR (DESTINO):</b></td></tr>
+                        <tr><td height="35">&nbsp;</td></tr>
+                        <tr>
+                            <td>
+                                <table width="85%" align="center" border="0" cellpadding="0" cellspacing="0">
+                                    <tr><td style="border-top: 0.5pt solid #000; height: 1px;"></td></tr>
+                                    <tr><td align="center" style="font-size: 8.5pt; line-height: 1.5;">Nombre: ___________________________</td></tr>
+                                    <tr><td height="1">&nbsp;</td></tr>
+                                    <tr><td align="center" style="font-size: 8.5pt; line-height: 1.5;">Cédula: ___________________________</td></tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+
+        @else
+            {{-- ── Caso normal: 2+ responsables → loop de APROBADO POR ── --}}
+            @foreach($rows as $row)
+                <tr>
+                    @foreach($row as $index => $resp)
+                        <td width="45%" align="center" valign="bottom">
+                            <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                                <tr><td align="center" style="font-size: 9pt;"><b>APROBADO POR (ORIGEN):</b></td></tr>
+                                <tr><td height="35">&nbsp;</td></tr>
                                 <tr>
-                                    <td style="border-top: 0.5pt solid #000; height: 1px;"></td>
-                                </tr>
-                                <tr>
-                                    <td align="center" style="font-size: 8.5pt; line-height: 1.5;">Nombre:
-                                        ___________________________</td>
-                                </tr>
-                                <tr><td height="1">&nbsp;</td></tr>
-                                <tr>
-                                    <td align="center" style="font-size: 8.5pt; line-height: 1.5;">Cédula:
-                                        ___________________________</td>
+                                    <td>
+                                        <table width="85%" align="center" border="0" cellpadding="0" cellspacing="0">
+                                            <tr><td style="border-top: 0.5pt solid #000; height: 1px;"></td></tr>
+                                            <tr><td align="center" style="font-size: 8pt; line-height: 1.5;"><b>{{ strtoupper($resp['car']) }}</b></td></tr>
+                                            <tr><td align="center" style="font-size: 8.5pt; line-height: 1.5;">{{ strtoupper($resp['nom']) }}</td></tr>
+                                            <tr>
+                                                <td align="center" style="font-size: 8pt; line-height: 1.5; color: #333;">
+                                                    @if(!empty($resp['ced']))
+                                                        @php
+                                                            $cedNum = preg_replace('/[^0-9]/', '', $resp['ced']);
+                                                            $cedFmt = strrev(implode('.', str_split(strrev($cedNum), 3)));
+                                                        @endphp
+                                                        C.I.: {{ $cedFmt }}
+                                                    @else
+                                                        C.I.: _______________
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
                                 </tr>
                             </table>
                         </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
+
+                        @if($loop->first && count($row) > 1)
+                            <td width="10%"></td>
+                        @elseif($loop->first && count($row) == 1)
+                            <td width="55%" colspan="2"></td>
+                        @endif
+                    @endforeach
+                </tr>
+                <tr><td colspan="3" height="30">&nbsp;</td></tr>
+            @endforeach
+
+            {{-- ── RECIBIDO POR centrado debajo (2+ responsables) ── --}}
+            <tr>
+                <td colspan="3" align="center">
+                    <table width="40%" align="center" border="0" cellpadding="0" cellspacing="0">
+                        <tr><td align="center" style="font-size: 9pt;"><b>RECIBIDO POR (DESTINO):</b></td></tr>
+                        <tr><td height="35">&nbsp;</td></tr>
+                        <tr>
+                            <td align="center">
+                                <table width="100%" align="center" border="0" cellpadding="0" cellspacing="0">
+                                    <tr><td style="border-top: 0.5pt solid #000; height: 1px;"></td></tr>
+                                    <tr><td align="center" style="font-size: 8.5pt; line-height: 1.5;">Nombre: ___________________________</td></tr>
+                                    <tr><td height="1">&nbsp;</td></tr>
+                                    <tr><td align="center" style="font-size: 8.5pt; line-height: 1.5;">Cédula: ___________________________</td></tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        @endif
 
     </table>
     <!-- Fin bloque nobr firmas -->
+
 
 </body>
 
