@@ -58,7 +58,7 @@
             <td align="justify" style="font-size: 10pt; line-height: 1.5;">
                 Por medio del presente documento, {{ $labelOrigen }}
                 <b>{{ strtoupper($frenteOrigen->NOMBRE_FRENTE ?? 'OFICINA PRINCIPAL') }}</b> de la
-                <b>CONSTRUCTORA VIDALSA 27, C.A.</b>, deja constancia formal del despacho y traslado de los equipos
+                CONSTRUCTORA VIDALSA 27, C.A., deja constancia formal del despacho y traslado de los equipos
                 detallados a continuación hacia {{ $labelDestino }}
                 <b>{{ strtoupper($frenteDestino->NOMBRE_FRENTE ?? 'DESTINO DESCONOCIDO') }}</b>@if($ubicacionDestino), ubicado en
                 <b>{{ strtoupper($ubicacionDestino) }}</b>@endif.
