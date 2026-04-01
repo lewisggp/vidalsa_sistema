@@ -42,12 +42,14 @@
         $tipoOrigen = strtoupper($frenteOrigen->TIPO_FRENTE ?? 'OPERACION');
         $nombreOrigen = strtoupper($frenteOrigen->NOMBRE_FRENTE ?? '');
         $isResguardoOrigen = ($tipoOrigen === 'RESGUARDO') || str_contains($nombreOrigen, 'PATIO') || str_contains($nombreOrigen, 'SEDE') || str_contains($nombreOrigen, 'TALLER') || str_contains($nombreOrigen, 'ALMACEN');
-        $labelOrigen = $isResguardoOrigen ? 'el centro de resguardo' : 'el frente';
+        $labelOrigen = $isResguardoOrigen ? 'el centro de resguardo' : 'el frente de trabajo';
 
         $tipoDestino = strtoupper($frenteDestino->TIPO_FRENTE ?? 'OPERACION');
         $nombreDestino = strtoupper($frenteDestino->NOMBRE_FRENTE ?? '');
         $isResguardoDestino = ($tipoDestino === 'RESGUARDO') || str_contains($nombreDestino, 'PATIO') || str_contains($nombreDestino, 'SEDE') || str_contains($nombreDestino, 'TALLER') || str_contains($nombreDestino, 'ALMACEN');
-        $labelDestino = $isResguardoDestino ? 'el centro de resguardo' : 'el frente';
+        $labelDestino = $isResguardoDestino ? 'el centro de resguardo' : 'el frente de trabajo';
+
+        $ubicacionDestino = trim($frenteDestino->UBICACION ?? '');
     @endphp
 
     <!-- ===================== CUERPO DEL TEXTO ===================== -->
@@ -58,8 +60,8 @@
                 <b>{{ strtoupper($frenteOrigen->NOMBRE_FRENTE ?? 'OFICINA PRINCIPAL') }}</b> de la
                 <b>CONSTRUCTORA VIDALSA 27, C.A.</b>, deja constancia formal del despacho y traslado de los equipos
                 detallados a continuación hacia {{ $labelDestino }}
-                <b>{{ strtoupper($frenteDestino->NOMBRE_FRENTE ?? 'DESTINO DESCONOCIDO') }}</b>, ubicado en
-                <b>{{ strtoupper($frenteDestino->UBICACION ?? 'UBICACIÓN NO ESPECIFICADA') }}</b>.
+                <b>{{ strtoupper($frenteDestino->NOMBRE_FRENTE ?? 'DESTINO DESCONOCIDO') }}</b>@if($ubicacionDestino), ubicado en
+                <b>{{ strtoupper($ubicacionDestino) }}</b>@endif.
             </td>
         </tr>
     </table>
@@ -168,18 +170,23 @@
                                         </tr>
                                         <tr>
                                             <td align="center" style="font-size: 8pt; line-height: 1.5;">
-                                                {{ strtoupper($resp['car']) }}
+                                                <b>{{ strtoupper($resp['car']) }}</b>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td align="center" style="font-size: 8.5pt; line-height: 1.5; font-weight: bold;">
+                                            <td align="center" style="font-size: 8.5pt; line-height: 1.5;">
                                                 {{ strtoupper($resp['nom']) }}
                                             </td>
                                         </tr>
                                         <tr>
                                             <td align="center" style="font-size: 8pt; line-height: 1.5; color: #333;">
                                                 @if(!empty($resp['ced']))
-                                                    C.I.: {{ strtoupper($resp['ced']) }}
+                                                    @php
+                                                        $cedNum = preg_replace('/[^0-9]/', '', $resp['ced']);
+                                                        $cedFlip = strrev($cedNum);
+                                                        $cedFmt  = strrev(implode('.', str_split($cedFlip, 3)));
+                                                    @endphp
+                                                    C.I.: {{ $cedFmt }}
                                                 @else
                                                     C.I.: _______________
                                                 @endif

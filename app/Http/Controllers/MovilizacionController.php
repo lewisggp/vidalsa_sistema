@@ -42,55 +42,45 @@ class MovilizacionController extends Controller
 
         // Eliminada la barrera de seguridad de usuario local. Todos ven todo.
 
-        // Smart Search Filters (Pattern-Based Optimization)
+        // ─── Búsqueda de texto ────────────────────────────────────────────────────
+        // Usa whereHas() para evitar LEFT JOINs que generan columnas ambiguas
+        // (created_at, updated_at, etc.) y filas duplicadas en la paginación.
         if ($request->filled('search')) {
-            $search = trim($request->search);
+            $search      = trim($request->search);
             $searchUpper = strtoupper($search);
 
-            // Pattern 5 (default) needs leftJoins applied BEFORE the where() group.
-            // We detect this case outside the closure so $query is accessible.
-            $isDefaultSearch = !preg_match('/^MV-?\d+/i', $search)
-                            && !preg_match('/\d{2}-\d{2}-\d{4}/', $search)
-                            && strpos($search, '#') !== 0
-                            && strpos($search, '-') === false;
+            $query->where(function ($q) use ($search, $searchUpper) {
 
-            if ($isDefaultSearch) {
-                // Left-join equipos and documentacion so we can search SERIAL_CHASIS
-                // and PLACA directly in SQL without a correlated EXISTS subquery (full scan).
-                $query->leftJoin('equipos AS eq_search', 'movilizacion_historial.ID_EQUIPO', '=', 'eq_search.ID_EQUIPO')
-                      ->leftJoin('documentacion AS doc_search', 'eq_search.ID_EQUIPO', '=', 'doc_search.ID_EQUIPO');
-            }
-
-            $query->where(function ($q) use ($search, $searchUpper, $isDefaultSearch) {
-                // Pattern 1: MV-XXXXX or MVXXXXX → Search CODIGO_CONTROL
+                // Patrón 1: MV-XXXXX / MVXXXXX → buscar CODIGO_CONTROL
                 if (preg_match('/^MV-?\d+/i', $search)) {
-                    $cleanSearch = ltrim(str_replace(['MV-', 'MV'], '', $searchUpper), '0');
-                    $q->where('CODIGO_CONTROL', 'like', "%{$searchUpper}%")
-                      ->orWhere('CODIGO_CONTROL', 'like', "%{$cleanSearch}%");
-                }
-                // Pattern 2: DD-MM-YYYY format → Search CODIGO_PATIO
-                elseif (preg_match('/\d{2}-\d{2}-\d{4}/', $search)) {
-                    $q->whereHas('equipo', function ($qEq) use ($search) {
-                        $qEq->where('CODIGO_PATIO', 'like', "%{$search}%");
+                    $clean = ltrim(str_replace(['MV-', 'MV'], '', $searchUpper), '0');
+                    $q->where('movilizacion_historial.CODIGO_CONTROL', 'like', "%{$searchUpper}%")
+                      ->orWhere('movilizacion_historial.CODIGO_CONTROL', 'like', "%{$clean}%");
+
+                // Patrón 2: DD-MM-YYYY → buscar CODIGO_PATIO
+                } elseif (preg_match('/\d{2}-\d{2}-\d{4}/', $search)) {
+                    $q->whereHas('equipo', fn ($qEq) =>
+                        $qEq->where('CODIGO_PATIO', 'like', "%{$search}%")
+                    );
+
+                // Patrón 3: #NÚMERO → buscar NUMERO_ETIQUETA
+                } elseif (strpos($search, '#') === 0) {
+                    $tag = ltrim($search, '#');
+                    $q->whereHas('equipo', fn ($qEq) =>
+                        $qEq->where('NUMERO_ETIQUETA', 'like', "%{$tag}%")
+                    );
+
+                // Patrón por defecto: serial, placa, o código de patio
+                // Todo dentro del mismo whereHas para query correcto
+                } else {
+                    $q->where(function ($qInner) use ($searchUpper) {
+                        $qInner->whereHas('equipo', function ($qEq) use ($searchUpper) {
+                            $qEq->where('SERIAL_CHASIS', 'like', "%{$searchUpper}%")
+                                ->orWhere('CODIGO_PATIO', 'like', "%{$searchUpper}%");
+                        })->orWhereHas('equipo.documentacion', function ($qDoc) use ($searchUpper) {
+                            $qDoc->where('PLACA', 'like', "%{$searchUpper}%");
+                        });
                     });
-                }
-                // Pattern 3: #NUMBER → Search NUMERO_ETIQUETA
-                elseif (strpos($search, '#') === 0) {
-                    $numeroEtiqueta = ltrim($search, '#');
-                    $q->whereHas('equipo', function ($qEq) use ($numeroEtiqueta) {
-                        $qEq->where('NUMERO_ETIQUETA', 'like', "%{$numeroEtiqueta}%");
-                    });
-                }
-                // Pattern 4: Contains hyphen → Search CODIGO_PATIO
-                elseif (strpos($search, '-') !== false) {
-                    $q->whereHas('equipo', function ($qEq) use ($search) {
-                        $qEq->where('CODIGO_PATIO', 'like', "%{$search}%");
-                    });
-                }
-                // Pattern 5: Default → SERIAL_CHASIS or PLACA via leftJoin (no subquery/full scan)
-                else {
-                    $q->where('eq_search.SERIAL_CHASIS', 'like', "%{$searchUpper}%")
-                      ->orWhere('doc_search.PLACA', 'like', "%{$searchUpper}%");
                 }
             });
         }
@@ -124,16 +114,16 @@ class MovilizacionController extends Controller
             });
         }
 
-        // Date range filter (using created_at to cover direct receptions and dispatches)
+        // Date range filter
         if ($request->filled('fecha_desde')) {
-            $query->whereDate('created_at', '>=', $request->fecha_desde);
+            $query->whereDate('movilizacion_historial.created_at', '>=', $request->fecha_desde);
         }
         if ($request->filled('fecha_hasta')) {
-            $query->whereDate('created_at', '<=', $request->fecha_hasta);
+            $query->whereDate('movilizacion_historial.created_at', '<=', $request->fecha_hasta);
         }
 
         // Fetch paginated results
-        $movilizaciones = $query->orderBy('created_at', 'desc')->paginate(12)->onEachSide(1);
+        $movilizaciones = $query->orderBy('movilizacion_historial.created_at', 'desc')->paginate(12)->onEachSide(1);
 
         // ─── Stats: Total In Transit ──────────────────────────────────────────────
         // Uses the same shared filter closure to guarantee consistency with the table.

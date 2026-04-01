@@ -293,15 +293,5 @@
         const _styleRD = document.createElement('style');
         _styleRD.textContent = '@keyframes slideDown { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }';
         document.head.appendChild(_styleRD);
-
-        // En el MENÚ no hay tabla de movilizaciones, así que sobreescribimos
-        // loadMovilizaciones para que refresque solo la lista pendiente.
-        // Nota: movilizaciones_index.js restaura la función real cuando se navega a esa sección vía SPA.
-        window.loadMovilizaciones = function () {
-            if (typeof window.refreshPendingMovs === 'function') {
-                window.refreshPendingMovs();
-            }
-        };
-
     </script>
 @endsection

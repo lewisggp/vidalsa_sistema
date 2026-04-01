@@ -120,16 +120,15 @@
 
                 <!-- Search Filter -->
                 <div class="mv-filter-item mv-search-item">
-                    <form action="{{ route('movilizaciones.index') }}" method="GET" id="search-form" onsubmit="event.preventDefault(); loadMovilizaciones();" style="margin: 0;">
+                    <form action="{{ route('movilizaciones.index') }}" method="GET" id="search-form" onsubmit="event.preventDefault(); window.loadMovilizaciones();" style="margin: 0;">
                         <div class="search-wrapper" style="width: 100%; border-color: {{ request('search') ? '#0067b1' : '#cbd5e0' }}; background: {{ request('search') ? '#e1effa' : '#fff' }};">
                             <i class="material-icons search-icon">search</i>
                             <input type="text" id="searchInput" name="search" value="{{ request('search') }}"
                                 placeholder="Buscar Control o Equipo"
                                 class="search-input-field"
                                 autocomplete="off"
-                                onkeydown="if(event.key === 'Enter'){ event.preventDefault(); window.loadMovilizaciones(); }"
-                                oninput="clearTimeout(window._searchTimerMv); window._searchTimerMv = setTimeout(() => { const btn = document.getElementById('btn_clear_search'); if(btn) btn.style.display = this.value.length > 0 ? 'block' : 'none'; window.loadMovilizaciones(); }, 600);">
-                            <i id="btn_clear_search" class="material-icons clear-icon" style="display: {{ request('search') ? 'block' : 'none' }};" onclick="document.getElementById('searchInput').value=''; document.getElementById('btn_clear_search').style.display='none'; window.loadMovilizaciones();">close</i>
+                                oninput="clearTimeout(window._mvSearchTimer); window._mvSearchTimer = setTimeout(() => { const btn = document.getElementById('btn_clear_search'); if (btn) btn.style.display = this.value.length > 0 ? 'block' : 'none'; window.loadMovilizaciones(); }, 400);">
+                            <i id="btn_clear_search" class="material-icons clear-icon" style="display: {{ request('search') ? 'block' : 'none' }};" onclick="document.getElementById('searchInput').value = ''; this.style.display = 'none'; window.loadMovilizaciones();">close</i>
                         </div>
                     </form>
                 </div>
