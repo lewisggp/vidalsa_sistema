@@ -1,7 +1,7 @@
 @forelse($equipos as $equipo)
     <tr>
         <!-- 1. Foto -->
-        <td class="table-cell-custom table-cell-center" style="padding-left: 5px; padding-right: 5px;">
+        <td class="table-cell-custom table-cell-center" style="padding: 4px 2px;">
             <!-- Frente Info (Con Burbuja Personalizada) -->
             <div class="tooltip-wrapper"
                 style="font-size: 13px; color: #000000; margin-bottom: 5px; line-height: 1.3; font-weight: 600; text-align: center; width: 100%; word-wrap: break-word; position: relative; cursor: default;">

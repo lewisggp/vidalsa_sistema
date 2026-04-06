@@ -91,7 +91,7 @@
     <div class="custom-scrollbar-container">
         <table class="admin-table table-usuarios-mobile" style="width: 100% !important;">
             <thead>
-                <tr style="background: #cbd5e0; text-align: left; color: var(--maquinaria-dark-blue); font-size: 14px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; border-bottom: 2px solid #a0aec0;">
+                <tr style="background: #334155; text-align: left; color: #ffffff; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; border-bottom: 2px solid #1e293b;">
                     <th class="table-cell-bordered" style="padding: 10px 15px; text-align: left; min-width: 200px;">Nombre y Apellido</th>
                     <th class="table-cell-bordered" style="padding: 10px 15px; text-align: left; min-width: 180px;">Correo</th>
                     <th class="table-cell-bordered" style="padding: 10px 15px; text-align: left; min-width: 150px;">Rol</th>
