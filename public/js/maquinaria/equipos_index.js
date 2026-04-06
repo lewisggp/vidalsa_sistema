@@ -477,11 +477,6 @@ window.loadEquipos = function (url = null, silent = false) {
         return true; 
     });
 
-    if (!hasAnyInput) {
-        console.log('No active filters detected - showing empty state');
-        tableBody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px; color: #94a3b8; font-style: italic;">SELECCIONE UN FILTRO PARA VISUALIZAR LOS EQUIPOS</td></tr>';
-        return Promise.resolve();
-    }
     */
 
     // NOTE: reApplySelections() is NOT called here because the table

@@ -138,6 +138,15 @@
                         <i class="material-icons">expand_more</i>
                     </div>
                     <div class="multiselect-content" id="frentesMultiselectContent">
+                        <div style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; background: white; z-index: 10;">
+                            <div style="display: flex; align-items: center; border: 1px solid #cbd5e0; border-radius: 6px; background: #fbfcfd; padding: 0 8px;">
+                                <i class="material-icons" style="font-size: 16px; color: #94a3b8;">search</i>
+                                <input type="text" placeholder="Buscar frente..." 
+                                       style="flex: 1; border: none; background: transparent; padding: 8px; outline: none; font-size: 13px;" 
+                                       oninput="const val = this.value.toLowerCase().trim(); document.querySelectorAll('.frente-item-opt').forEach(i => i.style.display = i.textContent.toLowerCase().includes(val) ? '' : 'none');" 
+                                       onclick="event.stopPropagation();">
+                            </div>
+                        </div>
                         @php
                             $rawFrente = old('ID_FRENTE_ASIGNADO', isset($user) ? $user->getRawOriginal('ID_FRENTE_ASIGNADO') : '');
                             $selectedFrentes = is_array($rawFrente)
@@ -145,7 +154,7 @@
                                 : array_filter(array_map('trim', explode(',', $rawFrente ?? '')));
                         @endphp
                         @foreach($frentes as $frente)
-                            <label class="multiselect-item" for="frente_{{ $frente->ID_FRENTE }}">
+                            <label class="multiselect-item frente-item-opt" for="frente_{{ $frente->ID_FRENTE }}">
                                 <input type="checkbox"
                                     id="frente_{{ $frente->ID_FRENTE }}"
                                     name="ID_FRENTE_ASIGNADO[]"

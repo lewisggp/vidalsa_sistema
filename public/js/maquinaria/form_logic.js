@@ -307,7 +307,6 @@ if (document.readyState === 'loading') {
 
 // Explicit SPA Event: Reset flags and re-init
 window.addEventListener('spa:contentLoaded', function () {
-    console.log('🔄 SPA Event: Resetting form flags');
 
     // Reset form flag so it can be re-initialized
     const form = document.getElementById('equipoForm') || document.getElementById('userForm');

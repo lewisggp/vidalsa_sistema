@@ -12,7 +12,6 @@ import {
   Alert,
   ScrollView,
   Modal,
-  RefreshControl,
   Platform,
   Image,
   Dimensions,
@@ -647,10 +646,10 @@ function DrawerMenu({ visible, onClose, onNavigate, onLogout, user }) {
                 }}
               />
 
-              {/* Recepción — igual que web: "local-shipping" */}
+              {/* Movilizaciones — igual que web: "local-shipping" */}
               <MenuItem
                 icon="local-shipping"
-                label="Recepción"
+                label="Historial de Movilizaciones"
                 onPress={() => {
                   onNavigate("movs");
                   onClose();
@@ -1057,23 +1056,6 @@ function PantallaLogin({ onLogin }) {
         </View>
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-// ─── BADGE DE ESTADO ─────────────────────────────────────────────────────────
-function BadgeEstado({ estado }) {
-  const map = {
-    OPERATIVO: { bg: "#dcfce7", color: "#166534" },
-    INOPERATIVO: { bg: "#fee2e2", color: "#991b1b" },
-    "EN MANTENIMIENTO": { bg: "#fef9c3", color: "#854d0e" },
-  };
-  const s = map[estado] || { bg: "#e2e8f0", color: "#475569" };
-  return (
-    <View style={[styles.badge, { backgroundColor: s.bg }]}>
-      <Text style={[styles.badgeText, { color: s.color }]}>
-        {estado || "N/A"}
-      </Text>
-    </View>
   );
 }
 
@@ -3388,6 +3370,8 @@ function PantallaMovilizaciones({ user, onOpenMenu }) {
   const [historial, setHistorial] = useState([]);
   const [cargandoHist, setCargandoHist] = useState(true);
   const [searchHistorial, setSearchHistorial] = useState("");
+  const [filtroTipoHist, setFiltroTipoHist] = useState(""); // "" = todos, "DESPACHO", "RECEPCION_DIRECTA"
+  const [filtroFrenteHist, setFiltroFrenteHist] = useState(""); // "" = todos, o nombre de frente
 
   const cargarHistorial = useCallback(async () => {
     setCargandoHist(true);
@@ -3549,15 +3533,27 @@ function PantallaMovilizaciones({ user, onOpenMenu }) {
   };
 
   const historialesFiltrados = useMemo(() => {
-    if (!searchHistorial.trim()) return historial;
-    const q = searchHistorial.toLowerCase();
-    return historial.filter(
-      (h) =>
-        (h.equipo?.CODIGO_PATIO?.toLowerCase() || "").includes(q) ||
-        (h.equipo?.SERIAL_CHASIS?.toLowerCase() || "").includes(q) ||
-        (h.CODIGO_CONTROL && String(h.CODIGO_CONTROL).includes(q)),
-    );
-  }, [historial, searchHistorial]);
+    return historial.filter((h) => {
+      // Filtro de búsqueda de texto
+      if (searchHistorial.trim()) {
+        const q = searchHistorial.toLowerCase();
+        const matchText =
+          (h.equipo?.CODIGO_PATIO?.toLowerCase() || "").includes(q) ||
+          (h.equipo?.SERIAL_CHASIS?.toLowerCase() || "").includes(q) ||
+          (h.equipo?.PLACA?.toLowerCase() || "").includes(q) ||
+          (h.CODIGO_CONTROL && String(h.CODIGO_CONTROL).includes(q));
+        if (!matchText) return false;
+      }
+      // Filtro de tipo de movimiento
+      if (filtroTipoHist && h.TIPO_MOVIMIENTO !== filtroTipoHist) return false;
+      // Filtro de frente (destino)
+      if (filtroFrenteHist) {
+        const destNombre = h.frente_destino?.NOMBRE_FRENTE || "";
+        if (!destNombre.toLowerCase().includes(filtroFrenteHist.toLowerCase())) return false;
+      }
+      return true;
+    });
+  }, [historial, searchHistorial, filtroTipoHist, filtroFrenteHist]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fdfbfb" }}>
@@ -3565,7 +3561,7 @@ function PantallaMovilizaciones({ user, onOpenMenu }) {
       <TopHeader onOpenMenu={onOpenMenu} />
 
       <Text style={[styles.dashboardTitle, { marginBottom: 15 }]}>
-        Registro de{"\n"}Movilizaciones
+        Historial de{"\n"}Movilizaciones
       </Text>
 
       {/* Selector de modo */}
@@ -3625,7 +3621,7 @@ function PantallaMovilizaciones({ user, onOpenMenu }) {
               fontSize: 13,
             }}
           >
-            Nueva Recepción (+)
+            Nuevo Movimiento (+)
           </Text>
         </TouchableOpacity>
       </View>
@@ -3705,40 +3701,71 @@ function PantallaMovilizaciones({ user, onOpenMenu }) {
               ) : null}
             </View>
 
-            <View style={{ flexDirection: "row", gap: 10, marginBottom: 16 }}>
-              <View
-                style={{
-                  flex: 1,
-                  borderWidth: 1,
-                  borderColor: "#cbd5e0",
-                  borderRadius: 8,
-                  height: 42,
-                  paddingHorizontal: 12,
-                  justifyContent: "center",
-                  backgroundColor: "#fbfcfd",
-                }}
-              >
-                <Text style={{ fontSize: 13, color: "#64748b" }}>
-                  Filtro Tipo ▼
-                </Text>
+            {/* Filtros rápidos: Tipo */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+              <View style={{ flexDirection: "row", gap: 8, paddingBottom: 4 }}>
+                {[
+                  { label: "Todos", value: "" },
+                  { label: "🚛 Despacho", value: "DESPACHO" },
+                  { label: "📥 Recepción Directa", value: "RECEPCION_DIRECTA" },
+                ].map((opt) => (
+                  <TouchableOpacity
+                    key={opt.value}
+                    onPress={() => setFiltroTipoHist(opt.value)}
+                    style={{
+                      paddingHorizontal: 14,
+                      paddingVertical: 8,
+                      borderRadius: 20,
+                      borderWidth: 1,
+                      borderColor: filtroTipoHist === opt.value ? "#0067b1" : "#cbd5e0",
+                      backgroundColor: filtroTipoHist === opt.value ? "#dbeafe" : "#fff",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        fontWeight: "700",
+                        color: filtroTipoHist === opt.value ? "#0067b1" : "#64748b",
+                      }}
+                    >
+                      {opt.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+
+                <View style={{ width: 1, backgroundColor: "#e2e8f0", marginHorizontal: 4 }} />
+
+                {/* Filtros de frente: ORIGEN o DESTINO de los que hay en el historial */}
+                {[...new Set(historial.map((h) => h.frente_destino?.NOMBRE_FRENTE).filter(Boolean))]
+                  .slice(0, 5)
+                  .map((nombre) => (
+                    <TouchableOpacity
+                      key={nombre}
+                      onPress={() =>
+                        setFiltroFrenteHist(filtroFrenteHist === nombre ? "" : nombre)
+                      }
+                      style={{
+                        paddingHorizontal: 14,
+                        paddingVertical: 8,
+                        borderRadius: 20,
+                        borderWidth: 1,
+                        borderColor: filtroFrenteHist === nombre ? "#00004d" : "#cbd5e0",
+                        backgroundColor: filtroFrenteHist === nombre ? "#e0e7ff" : "#fff",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: "700",
+                          color: filtroFrenteHist === nombre ? "#00004d" : "#64748b",
+                        }}
+                      >
+                        {nombre}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
               </View>
-              <View
-                style={{
-                  flex: 1,
-                  borderWidth: 1,
-                  borderColor: "#cbd5e0",
-                  borderRadius: 8,
-                  height: 42,
-                  paddingHorizontal: 12,
-                  justifyContent: "center",
-                  backgroundColor: "#fbfcfd",
-                }}
-              >
-                <Text style={{ fontSize: 13, color: "#64748b" }}>
-                  Filtro Frente ▼
-                </Text>
-              </View>
-            </View>
+            </ScrollView>
 
             {/* Indicador de carga */}
             {cargandoHist && historial.length === 0 ? (
@@ -3758,17 +3785,27 @@ function PantallaMovilizaciones({ user, onOpenMenu }) {
               </View>
             ) : (
               <View>
-                <Text
-                  style={{
-                    fontSize: 12,
-                    color: "#64748b",
-                    fontWeight: "700",
-                    marginBottom: 12,
-                    textTransform: "uppercase",
-                  }}
-                >
-                  ULTIMOS REGISTROS
-                </Text>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: "#64748b",
+                      fontWeight: "700",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    ÚLTIMOS REGISTROS ({historialesFiltrados.length})
+                  </Text>
+                  {(filtroTipoHist || filtroFrenteHist) && (
+                    <TouchableOpacity
+                      onPress={() => { setFiltroTipoHist(""); setFiltroFrenteHist(""); }}
+                      style={{ flexDirection: "row", alignItems: "center", gap: 2 }}
+                    >
+                      <MaterialIcons name="filter-list-off" size={14} color="#ef4444" />
+                      <Text style={{ fontSize: 11, color: "#ef4444", fontWeight: "700" }}>Limpiar</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
                 {historialesFiltrados.map((h, i) => (
                   <View
                     key={h.ID_MOVILIZACION || i}
@@ -4023,64 +4060,42 @@ function PantallaMovilizaciones({ user, onOpenMenu }) {
                       </View>
                     )}
 
-                    {/* Fechas Row */}
+                    {/* Fechas + Usuario Row */}
                     <View
                       style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
                         borderTopWidth: 1,
                         borderTopColor: "#f1f5f9",
                         paddingTop: 10,
+                        gap: 6,
                       }}
                     >
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: 4,
-                        }}
-                      >
-                        <MaterialIcons
-                          name="logout"
-                          size={14}
-                          color="#ef4444"
-                        />
-                        <Text
-                          style={{
-                            fontSize: 12,
-                            color: "#334155",
-                            fontWeight: "600",
-                          }}
-                        >
-                          {h.FECHA_DESPACHO
-                            ? new Date(h.FECHA_DESPACHO).toLocaleDateString(
-                                "es-VE",
-                              )
-                            : "--"}
-                        </Text>
+                      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                          <MaterialIcons name="logout" size={14} color="#ef4444" />
+                          <Text style={{ fontSize: 12, color: "#334155", fontWeight: "600" }}>
+                            {h.FECHA_DESPACHO
+                              ? new Date(h.FECHA_DESPACHO).toLocaleDateString("es-VE")
+                              : "--"}
+                          </Text>
+                        </View>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                          <MaterialIcons name="login" size={14} color="#10b981" />
+                          <Text style={{ fontSize: 12, color: "#334155", fontWeight: "600" }}>
+                            {h.FECHA_RECEPCION
+                              ? new Date(h.FECHA_RECEPCION).toLocaleDateString("es-VE")
+                              : "--"}
+                          </Text>
+                        </View>
                       </View>
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: 4,
-                        }}
-                      >
-                        <MaterialIcons name="login" size={14} color="#10b981" />
-                        <Text
-                          style={{
-                            fontSize: 12,
-                            color: "#334155",
-                            fontWeight: "600",
-                          }}
-                        >
-                          {h.FECHA_RECEPCION
-                            ? new Date(h.FECHA_RECEPCION).toLocaleDateString(
-                                "es-VE",
-                              )
-                            : "--"}
-                        </Text>
-                      </View>
+                      {/* Usuario registrador — igual que web */}
+                      {(h.usuario?.NOMBRE_COMPLETO || h.USUARIO_REGISTRO) ? (
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                          <MaterialIcons name="person" size={13} color="#94a3b8" />
+                          <Text style={{ fontSize: 11, color: "#64748b", fontWeight: "600", flex: 1 }} numberOfLines={1}>
+                            {h.usuario?.NOMBRE_COMPLETO || h.USUARIO_REGISTRO}
+                          </Text>
+                        </View>
+                      ) : null}
                     </View>
                   </View>
                 ))}
@@ -4291,10 +4306,16 @@ export default function App() {
     );
   }
 
-  if (!user) return <PantallaLogin onLogin={setUser} />;
+  if (!user) return (
+    <>
+      <ModernAlertModal />
+      <PantallaLogin onLogin={setUser} />
+    </>
+  );
 
   return (
     <View style={{ flex: 1 }}>
+      <ModernAlertModal />
       <DrawerMenu
         visible={menuVisible}
         onClose={() => setMenuVisible(false)}
