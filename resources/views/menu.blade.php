@@ -11,13 +11,8 @@
     }
 </style>
 
-<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;">
-    <svg viewBox="0 0 1440 900" preserveAspectRatio="xMinYMin slice" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
-        <path d="M0 900 V 400 Q 150 750 600 850 T 1440 900 Z" fill="#00004d" />
-        <path d="M1440 0 V 400 Q 1300 350 1200 0 Z" fill="#00004d" />
-        <path d="M1440 900 V 500 Q 1350 650 1440 800 Z" fill="#00004d" opacity="0.9" />
-    </svg>
-</div>
+<!-- SVG Background unificado -->
+@include('partials.background_svg')
 
 <div class="dashboard-container" style="padding: 10px 20px; position: relative; z-index: 1;">
     

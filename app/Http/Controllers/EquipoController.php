@@ -71,6 +71,17 @@ class EquipoController extends Controller
             $equipos->where('ESTADO_OPERATIVO', $request->estado);
         }
 
+        if ($request->filled('gps') && trim($request->gps) !== '') {
+            $val = strtoupper(trim($request->gps));
+            if ($val === 'SI') {
+                $equipos->whereNotNull('LINK_GPS')->where('LINK_GPS', '!=', '');
+            } elseif ($val === 'NO') {
+                $equipos->where(function($q) {
+                    $q->whereNull('LINK_GPS')->orWhere('LINK_GPS', '=', '');
+                });
+            }
+        }
+
         if ($search) {
             $searchUpper = strtoupper(trim($search));
 
@@ -123,20 +134,21 @@ class EquipoController extends Controller
                         ($request->filled('filter_racda') && $request->filter_racda === 'true');
 
         if ($hasDocFilter) {
-            $equipos->whereHas('documentacion', function ($q) use ($request) {
-                if ($request->filled('filter_propiedad') && $request->filter_propiedad === 'true') {
-                    $q->whereNotNull('LINK_DOC_PROPIEDAD');
-                }
-                if ($request->filled('filter_poliza') && $request->filter_poliza === 'true') {
-                    $q->whereNotNull('LINK_POLIZA_SEGURO');
-                }
-                if ($request->filled('filter_rotc') && $request->filter_rotc === 'true') {
-                    $q->whereNotNull('LINK_ROTC');
-                }
-                if ($request->filled('filter_racda') && $request->filter_racda === 'true') {
-                    $q->whereNotNull('LINK_RACDA');
-                }
-            });
+            $equipos->leftJoin('documentacion AS doc_filter', 'equipos.ID_EQUIPO', '=', 'doc_filter.ID_EQUIPO')
+                     ->where(function ($q) use ($request) {
+                         if ($request->filled('filter_propiedad') && $request->filter_propiedad === 'true') {
+                             $q->whereNotNull('doc_filter.LINK_DOC_PROPIEDAD');
+                         }
+                         if ($request->filled('filter_poliza') && $request->filter_poliza === 'true') {
+                             $q->whereNotNull('doc_filter.LINK_POLIZA_SEGURO');
+                         }
+                         if ($request->filled('filter_rotc') && $request->filter_rotc === 'true') {
+                             $q->whereNotNull('doc_filter.LINK_ROTC');
+                         }
+                         if ($request->filled('filter_racda') && $request->filter_racda === 'true') {
+                             $q->whereNotNull('doc_filter.LINK_RACDA');
+                         }
+                     });
         }
 
         $equipos->select('equipos.*')
@@ -154,7 +166,7 @@ class EquipoController extends Controller
             ->orderBy('equipos.CODIGO_PATIO', 'asc');
 
         // Check if any filter is applied (with non-empty values)
-        $hasFilter = $request->filled('id_frente') || $request->filled('id_tipo') || $request->filled('search_query') || $request->filled('modelo') || $request->filled('marca') || $request->filled('anio') || $request->filled('categoria') || $request->filled('estado') || $request->filled('filter_propiedad') || $request->filled('filter_poliza') || $request->filled('filter_rotc') || $request->filled('filter_racda');
+        $hasFilter = $request->filled('id_frente') || $request->filled('id_tipo') || $request->filled('search_query') || $request->filled('modelo') || $request->filled('marca') || $request->filled('anio') || $request->filled('categoria') || $request->filled('estado') || $request->filled('gps') || $request->filled('filter_propiedad') || $request->filled('filter_poliza') || $request->filled('filter_rotc') || $request->filled('filter_racda');
 
         if ($isLocalUser) {
             // Local users always show the table with their scoped frentes by default
@@ -295,6 +307,7 @@ class EquipoController extends Controller
             || $request->filled('anio')
             || $request->filled('categoria')
             || $request->filled('estado')
+            || $request->filled('gps')
             || $request->filled('filter_propiedad') && $request->filter_propiedad === 'true'
             || $request->filled('filter_poliza') && $request->filter_poliza === 'true'
             || $request->filled('filter_rotc') && $request->filter_rotc === 'true'
@@ -340,6 +353,16 @@ class EquipoController extends Controller
         if ($request->filled('estado')) {
             $equipos->where('ESTADO_OPERATIVO', $request->estado);
         }
+        if ($request->filled('gps') && trim($request->gps) !== '') {
+            $val = strtoupper(trim($request->gps));
+            if ($val === 'SI') {
+                $equipos->whereNotNull('LINK_GPS')->where('LINK_GPS', '!=', '');
+            } elseif ($val === 'NO') {
+                $equipos->where(function($q) {
+                    $q->whereNull('LINK_GPS')->orWhere('LINK_GPS', '=', '');
+                });
+            }
+        }
 
         // --- Documentation Filters ---
         $hasDocFilter = ($request->filled('filter_propiedad') && $request->filter_propiedad === 'true') ||
@@ -348,20 +371,21 @@ class EquipoController extends Controller
                         ($request->filled('filter_racda') && $request->filter_racda === 'true');
 
         if ($hasDocFilter) {
-            $equipos->whereHas('documentacion', function ($q) use ($request) {
-                if ($request->filled('filter_propiedad') && $request->filter_propiedad === 'true') {
-                    $q->whereNotNull('LINK_DOC_PROPIEDAD');
-                }
-                if ($request->filled('filter_poliza') && $request->filter_poliza === 'true') {
-                    $q->whereNotNull('LINK_POLIZA_SEGURO');
-                }
-                if ($request->filled('filter_rotc') && $request->filter_rotc === 'true') {
-                    $q->whereNotNull('LINK_ROTC');
-                }
-                if ($request->filled('filter_racda') && $request->filter_racda === 'true') {
-                    $q->whereNotNull('LINK_RACDA');
-                }
-            });
+            $equipos->leftJoin('documentacion AS doc_filter', 'equipos.ID_EQUIPO', '=', 'doc_filter.ID_EQUIPO')
+                     ->where(function ($q) use ($request) {
+                         if ($request->filled('filter_propiedad') && $request->filter_propiedad === 'true') {
+                             $q->whereNotNull('doc_filter.LINK_DOC_PROPIEDAD');
+                         }
+                         if ($request->filled('filter_poliza') && $request->filter_poliza === 'true') {
+                             $q->whereNotNull('doc_filter.LINK_POLIZA_SEGURO');
+                         }
+                         if ($request->filled('filter_rotc') && $request->filter_rotc === 'true') {
+                             $q->whereNotNull('doc_filter.LINK_ROTC');
+                         }
+                         if ($request->filled('filter_racda') && $request->filter_racda === 'true') {
+                             $q->whereNotNull('doc_filter.LINK_RACDA');
+                         }
+                     });
         }
 
         $search = $request->input('search_query');
@@ -1581,185 +1605,167 @@ XML;
 
     /**
      * Get Fleet Statistics for Dashboard (Cross-Analysis with Frente Filter)
+     * OPTIMIZADO: caché por frente+usuario, queries consolidadas, bug fix acceso local
      */
     public function fleetStats(Request $request)
     {
         try {
-            $user = auth()->user();
-            $isLocal = $user && $user->NIVEL_ACCESO == 2;
+            $user              = auth()->user();
+            $isLocal           = $user && $user->NIVEL_ACCESO == 2;
             $frentesPermitidos = $user ? $user->getFrentesIds() : [];
             $requestedFrenteId = $request->input('frente_id');
 
-            // Base query builder for filtering
-            $baseQuery = Equipo::query();
+            // ── Cache key única por usuario + frente solicitado ──────────────────
+            $cacheKey = 'fleet_stats_u' . ($user?->id ?? 'guest')
+                      . '_f' . ($requestedFrenteId ?: 'all');
 
-            if ($isLocal && count($frentesPermitidos) > 0) {
-                if ($requestedFrenteId && $requestedFrenteId !== 'all') {
-                    // Si pidió uno en particular, lo aceptamos si tiene permiso (aunque ya whereIn filtra, lo hacemos explícito)
+            return \Illuminate\Support\Facades\Cache::remember($cacheKey, 120, function () use (
+                $isLocal, $frentesPermitidos, $requestedFrenteId
+            ) {
+                // ── Construir la query base una sola vez ──────────────────────────
+                $baseQuery = Equipo::query();
+
+                if ($isLocal && count($frentesPermitidos) > 0) {
+                    // Bug fix: NO aplicar dos where consecutivos — usar solo whereIn con un frente si está solicitado
+                    if ($requestedFrenteId && $requestedFrenteId !== 'all'
+                        && in_array($requestedFrenteId, $frentesPermitidos)
+                    ) {
+                        $baseQuery->where('ID_FRENTE_ACTUAL', $requestedFrenteId);
+                    } else {
+                        $baseQuery->whereIn('ID_FRENTE_ACTUAL', $frentesPermitidos);
+                    }
+                } elseif ($isLocal) {
+                    // Usuario local sin frentes permitidos: sin datos
+                    $baseQuery->whereRaw('1 = 0');
+                } elseif ($requestedFrenteId && $requestedFrenteId !== 'all') {
                     $baseQuery->where('ID_FRENTE_ACTUAL', $requestedFrenteId);
-                    $baseQuery->whereIn('ID_FRENTE_ACTUAL', $frentesPermitidos); 
-                } else {
-                    $baseQuery->whereIn('ID_FRENTE_ACTUAL', $frentesPermitidos);
                 }
-            } elseif ($isLocal) {
-                $baseQuery->whereRaw('1 = 0');
-            } elseif ($requestedFrenteId && $requestedFrenteId !== 'all') {
-                $baseQuery->where('ID_FRENTE_ACTUAL', $requestedFrenteId);
-            }
 
-            // Basic Stats
-            $total = (clone $baseQuery)->count();
-            $fleetNew = (clone $baseQuery)->where('ANIO', '>=', 2025)->count();
-            $fleetOld = (clone $baseQuery)->where('ANIO', '<', 2025)->count();
+                // ── Stats básicas: 3 counts en una sola query usando SUM condicional ──
+                // NOTA: usamos una query fresca con los mismos wheres para evitar conflicto de SELECT en MySQL
+                $basicStats = (clone $baseQuery)
+                    ->selectRaw('
+                        COUNT(*) as total,
+                        SUM(CASE WHEN ANIO >= 2025 THEN 1 ELSE 0 END) as fleet_new,
+                        SUM(CASE WHEN ANIO <  2025 THEN 1 ELSE 0 END) as fleet_old
+                    ')
+                    ->first();
 
-            // Calculate Estimated Daily Consumption
-            // Join with caracteristicas_modelo to access CONSUMO_PROMEDIO
-            $totalConsumption = (clone $baseQuery)
-                ->join('caracteristicas_modelo', 'equipos.ID_ESPEC', '=', 'caracteristicas_modelo.ID_ESPEC')
-                ->sum(DB::raw('CAST(caracteristicas_modelo.CONSUMO_PROMEDIO AS DECIMAL(10,2))'));
+                $total    = (int) ($basicStats->total    ?? 0);
+                $fleetNew = (int) ($basicStats->fleet_new ?? 0);
+                $fleetOld = (int) ($basicStats->fleet_old ?? 0);
 
-            // --- 1. ESTADO OPERATIVO ---
-            $byStatusRaw = (clone $baseQuery)
-                ->select('ESTADO_OPERATIVO', DB::raw('count(*) as total'))
-                ->whereNotNull('ESTADO_OPERATIVO')
-                ->groupBy('ESTADO_OPERATIVO')
-                ->orderBy('total', 'desc')
-                ->get();
+                // ── Consumo total: JOIN con especificaciones ──────────────────────
+                $totalConsumption = (clone $baseQuery)
+                    ->join('caracteristicas_modelo', 'equipos.ID_ESPEC', '=', 'caracteristicas_modelo.ID_ESPEC')
+                    ->sum(DB::raw('CAST(caracteristicas_modelo.CONSUMO_PROMEDIO AS DECIMAL(10,2))'));
 
-            $statuses = $byStatusRaw->pluck('ESTADO_OPERATIVO')->toArray();
-            $statusCounts = $byStatusRaw->pluck('total')->toArray();
+                // ── 1. Estado Operativo ───────────────────────────────────────────
+                $byStatusRaw = (clone $baseQuery)
+                    ->select('ESTADO_OPERATIVO', DB::raw('COUNT(*) as total'))
+                    ->whereNotNull('ESTADO_OPERATIVO')
+                    ->groupBy('ESTADO_OPERATIVO')
+                    ->orderByDesc('total')
+                    ->get();
 
-            // --- 2. FLOTA NUEVA VS VIEJA POR TIPO ---
-            $ageByTypeRaw = (clone $baseQuery)
-                ->select(
-                    'tipo_equipos.nombre as tipo_nombre',
-                    DB::raw('SUM(CASE WHEN equipos.ANIO >= 2025 THEN 1 ELSE 0 END) as new_count'),
-                    DB::raw('SUM(CASE WHEN equipos.ANIO < 2025 THEN 1 ELSE 0 END) as old_count')
-                )
-                ->leftJoin('tipo_equipos', 'equipos.id_tipo_equipo', '=', 'tipo_equipos.id')
-                ->whereNotNull('equipos.id_tipo_equipo')
-                ->whereNotNull('tipo_equipos.nombre')
-                ->groupBy('tipo_equipos.nombre')
-                ->orderBy('tipo_equipos.nombre')
-                ->get();
+                // ── 2, 3, 4. Queries agrupadas por tipo (un solo JOIN compartido) ─
+                $byTypeRaw = (clone $baseQuery)
+                    ->select(
+                        'tipo_equipos.nombre as tipo_nombre',
+                        DB::raw('SUM(CASE WHEN equipos.ANIO >= 2025 THEN 1 ELSE 0 END) as new_count'),
+                        DB::raw('SUM(CASE WHEN equipos.ANIO <  2025 THEN 1 ELSE 0 END) as old_count'),
+                        DB::raw("SUM(CASE WHEN equipos.CATEGORIA_FLOTA = 'FLOTA PESADA'  THEN 1 ELSE 0 END) as pesada_count"),
+                        DB::raw("SUM(CASE WHEN equipos.CATEGORIA_FLOTA = 'FLOTA LIVIANA' THEN 1 ELSE 0 END) as liviana_count"),
+                        DB::raw("SUM(CASE WHEN equipos.ESTADO_OPERATIVO = 'INOPERATIVO'      THEN 1 ELSE 0 END) as inoperativo_count"),
+                        DB::raw("SUM(CASE WHEN equipos.ESTADO_OPERATIVO = 'EN MANTENIMIENTO' THEN 1 ELSE 0 END) as mantenimiento_count")
+                    )
+                    ->leftJoin('tipo_equipos', 'equipos.id_tipo_equipo', '=', 'tipo_equipos.id')
+                    ->whereNotNull('equipos.id_tipo_equipo')
+                    ->whereNotNull('tipo_equipos.nombre')
+                    ->groupBy('tipo_equipos.nombre')
+                    ->orderBy('tipo_equipos.nombre')
+                    ->get();
 
-            $tiposForAge  = $ageByTypeRaw->pluck('tipo_nombre')->toArray();
-            $newFleetData = $ageByTypeRaw->pluck('new_count')->toArray();
-            $oldFleetData = $ageByTypeRaw->pluck('old_count')->toArray();
+                // ── 5. Equipos por Frente (siempre global, sin filtro) ────────────
+                $eqByFrenteRaw = Equipo::query()
+                    ->select(
+                        'frentes_trabajo.NOMBRE_FRENTE as frente_nombre',
+                        DB::raw('COUNT(equipos.ID_EQUIPO) as total')
+                    )
+                    ->leftJoin('frentes_trabajo', 'equipos.ID_FRENTE_ACTUAL', '=', 'frentes_trabajo.ID_FRENTE')
+                    ->whereNotNull('equipos.ID_FRENTE_ACTUAL')
+                    ->whereNotNull('frentes_trabajo.NOMBRE_FRENTE')
+                    ->groupBy('frentes_trabajo.NOMBRE_FRENTE')
+                    ->orderByDesc('total')
+                    ->get();
 
-            $ageByTypeDatasets = [
-                ['label' => 'Flota Nueva (≥2025)', 'data' => $newFleetData],
-                ['label' => 'Flota Vieja (<2025)',  'data' => $oldFleetData]
-            ];
+                // ── Transformar byTypeRaw a las 3 secciones ───────────────────────
+                // Age (flota nueva vs vieja)
+                $ageLabels    = $byTypeRaw->pluck('tipo_nombre')->toArray();
+                $newFleetData = $byTypeRaw->pluck('new_count')->map(fn($v) => (int)$v)->toArray();
+                $oldFleetData = $byTypeRaw->pluck('old_count')->map(fn($v) => (int)$v)->toArray();
 
-            // --- 3. FLOTA PESADA VS LIVIANA POR TIPO ---
-            $categoryByTypeRaw = (clone $baseQuery)
-                ->select(
-                    'tipo_equipos.nombre as tipo_nombre',
-                    DB::raw("SUM(CASE WHEN equipos.CATEGORIA_FLOTA = 'FLOTA PESADA'  THEN 1 ELSE 0 END) as pesada_count"),
-                    DB::raw("SUM(CASE WHEN equipos.CATEGORIA_FLOTA = 'FLOTA LIVIANA' THEN 1 ELSE 0 END) as liviana_count")
-                )
-                ->leftJoin('tipo_equipos', 'equipos.id_tipo_equipo', '=', 'tipo_equipos.id')
-                ->whereNotNull('equipos.id_tipo_equipo')
-                ->whereNotNull('tipo_equipos.nombre')
-                ->groupBy('tipo_equipos.nombre')
-                ->havingRaw("(
-                    SUM(CASE WHEN equipos.CATEGORIA_FLOTA = 'FLOTA PESADA'  THEN 1 ELSE 0 END) +
-                    SUM(CASE WHEN equipos.CATEGORIA_FLOTA = 'FLOTA LIVIANA' THEN 1 ELSE 0 END)
-                ) > 0")
-                ->orderBy('tipo_equipos.nombre')
-                ->get();
+                // Category (pesada vs liviana) — filtrar tipos sin ningún dato
+                $catFiltered = $byTypeRaw->filter(fn($r) => ((int)$r->pesada_count + (int)$r->liviana_count) > 0);
+                $catLabels   = $catFiltered->pluck('tipo_nombre')->toArray();
+                $pesadaData  = $catFiltered->pluck('pesada_count')->map(fn($v) => (int)$v)->values()->toArray();
+                $livianaData = $catFiltered->pluck('liviana_count')->map(fn($v) => (int)$v)->values()->toArray();
 
-            $tiposForCategory = $categoryByTypeRaw->pluck('tipo_nombre')->toArray();
-            $pesadaData       = $categoryByTypeRaw->pluck('pesada_count')->toArray();
-            $livianaData      = $categoryByTypeRaw->pluck('liviana_count')->toArray();
+                // Inoperative (inoperativo + mantenimiento) — filtrar tipos sin datos
+                $inopFiltered    = $byTypeRaw->filter(fn($r) => ((int)$r->inoperativo_count + (int)$r->mantenimiento_count) > 0);
+                $inopLabels      = $inopFiltered->pluck('tipo_nombre')->toArray();
+                $inoperativoData = $inopFiltered->pluck('inoperativo_count')->map(fn($v) => (int)$v)->values()->toArray();
+                $mantenimientoData = $inopFiltered->pluck('mantenimiento_count')->map(fn($v) => (int)$v)->values()->toArray();
 
-            $categoryByTypeDatasets = [
-                ['label' => 'Flota Pesada',  'data' => $pesadaData],
-                ['label' => 'Flota Liviana', 'data' => $livianaData]
-            ];
-
-            // --- 4. INOPERATIVIDAD POR TIPO DE EQUIPO ---
-            $inoperativeByTypeRaw = (clone $baseQuery)
-                ->select(
-                    'tipo_equipos.nombre as tipo_nombre',
-                    DB::raw("SUM(CASE WHEN equipos.ESTADO_OPERATIVO = 'INOPERATIVO'      THEN 1 ELSE 0 END) as inoperativo_count"),
-                    DB::raw("SUM(CASE WHEN equipos.ESTADO_OPERATIVO = 'EN MANTENIMIENTO' THEN 1 ELSE 0 END) as mantenimiento_count")
-                )
-                ->leftJoin('tipo_equipos', 'equipos.id_tipo_equipo', '=', 'tipo_equipos.id')
-                ->whereNotNull('equipos.id_tipo_equipo')
-                ->whereNotNull('tipo_equipos.nombre')
-                ->groupBy('tipo_equipos.nombre')
-                ->havingRaw("(
-                    SUM(CASE WHEN equipos.ESTADO_OPERATIVO = 'INOPERATIVO'      THEN 1 ELSE 0 END) +
-                    SUM(CASE WHEN equipos.ESTADO_OPERATIVO = 'EN MANTENIMIENTO' THEN 1 ELSE 0 END)
-                ) > 0")
-                ->orderBy('tipo_equipos.nombre')
-                ->get();
-
-            $tiposForInoperative = $inoperativeByTypeRaw->pluck('tipo_nombre')->toArray();
-            $inoperativoData     = $inoperativeByTypeRaw->pluck('inoperativo_count')->toArray();
-            $mantenimientoData   = $inoperativeByTypeRaw->pluck('mantenimiento_count')->toArray();
-
-            $inoperativeByTypeDatasets = [
-                ['label' => 'Inoperativo',      'data' => $inoperativoData],
-                ['label' => 'En Mantenimiento', 'data' => $mantenimientoData]
-            ];
-
-            // --- 5. EQUIPOS ASIGNADOS POR FRENTE ---
-            // Siempre muestra TODOS los frentes (ignora el filtro de frente del dashboard)
-            $eqByFrenteRaw = Equipo::query()
-                ->select(
-                    'frentes_trabajo.NOMBRE_FRENTE as frente_nombre',
-                    DB::raw('COUNT(equipos.ID_EQUIPO) as total')
-                )
-                ->leftJoin('frentes_trabajo', 'equipos.ID_FRENTE_ACTUAL', '=', 'frentes_trabajo.ID_FRENTE')
-                ->whereNotNull('equipos.ID_FRENTE_ACTUAL')
-                ->whereNotNull('frentes_trabajo.NOMBRE_FRENTE')
-                ->groupBy('frentes_trabajo.NOMBRE_FRENTE')
-                ->orderByDesc('total')
-                ->get();
-
-            $equiposPorFrente = $eqByFrenteRaw->map(fn($r) => [
-                'frente' => $r->frente_nombre,
-                'total'  => (int) $r->total,
-            ])->values()->toArray();
-
-            return response()->json([
-                'success' => true,
-                'stats' => [
-                    'total' => $total,
-                    'fleet_new' => $fleetNew,
-                    'fleet_old' => $fleetOld,
-                    'total_consumption' => number_format($totalConsumption, 2)
-                ],
-                'byStatus' => [
-                    'labels' => $statuses,
-                    'values' => $statusCounts
-                ],
-                'ageByType' => [
-                    'labels' => $tiposForAge,
-                    'datasets' => $ageByTypeDatasets
-                ],
-                'categoryByType' => [
-                    'labels' => $tiposForCategory,
-                    'datasets' => $categoryByTypeDatasets
-                ],
-                'inoperativeByType' => [
-                    'labels'   => $tiposForInoperative,
-                    'datasets' => $inoperativeByTypeDatasets
-                ],
-                'equiposPorFrente' => $equiposPorFrente,
-            ]);
+                return response()->json([
+                    'success' => true,
+                    'stats' => [
+                        'total'             => $total,
+                        'fleet_new'         => $fleetNew,
+                        'fleet_old'         => $fleetOld,
+                        'total_consumption' => number_format((float)$totalConsumption, 2)
+                    ],
+                    'byStatus' => [
+                        'labels' => $byStatusRaw->pluck('ESTADO_OPERATIVO')->toArray(),
+                        'values' => $byStatusRaw->pluck('total')->map(fn($v) => (int)$v)->toArray()
+                    ],
+                    'ageByType' => [
+                        'labels'   => $ageLabels,
+                        'datasets' => [
+                            ['label' => 'Flota Nueva (≥2025)', 'data' => $newFleetData],
+                            ['label' => 'Flota Vieja (<2025)',  'data' => $oldFleetData]
+                        ]
+                    ],
+                    'categoryByType' => [
+                        'labels'   => $catLabels,
+                        'datasets' => [
+                            ['label' => 'Flota Pesada',  'data' => $pesadaData],
+                            ['label' => 'Flota Liviana', 'data' => $livianaData]
+                        ]
+                    ],
+                    'inoperativeByType' => [
+                        'labels'   => $inopLabels,
+                        'datasets' => [
+                            ['label' => 'Inoperativo',      'data' => $inoperativoData],
+                            ['label' => 'En Mantenimiento', 'data' => $mantenimientoData]
+                        ]
+                    ],
+                    'equiposPorFrente' => $eqByFrenteRaw->map(fn($r) => [
+                        'frente' => $r->frente_nombre,
+                        'total'  => (int) $r->total,
+                    ])->values()->toArray(),
+                ]);
+            });
 
         } catch (\Exception $e) {
             Log::error('Fleet Stats Error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener estadísticas'
+                'message' => 'Error al obtener estadísticas: ' . $e->getMessage()
             ], 500);
         }
     }
+
     /**
      * Export Fleet Stats to CSV (Excel compatible)
      */

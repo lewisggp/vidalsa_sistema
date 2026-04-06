@@ -846,8 +846,20 @@ window.showDetailsImproved = function (target, event) {
     const gpsBtn = document.getElementById("modal_gps_btn");
     if (gpsBtn) {
         if (isValid(d.linkGps)) {
-            gpsBtn.href = d.linkGps;
-            gpsBtn.style.display = "flex";
+            gpsBtn.dataset.url = d.linkGps;
+            
+            // Lógica: Placa si la tiene, si no Serial de Chasis
+            let eqName = "";
+            if (isValid(d.placa)) {
+                eqName = "Placa: " + d.placa;
+            } else if (isValid(d.chasis)) {
+                eqName = "Serial: " + d.chasis;
+            } else {
+                eqName = "Desconocido";
+            }
+            gpsBtn.dataset.equipoName = eqName;
+            
+            gpsBtn.style.display = "inline-flex";
         } else {
             gpsBtn.style.display = "none";
         }
@@ -1062,7 +1074,9 @@ window.loadResponsables = function(equipoId) {
     const inputNom = document.getElementById('resp_nombre');
     
     if (formContainer && inputCed && inputNom) {
-        formContainer.style.display = 'none';
+        // En lugar de ocultar siempre con display='none', lo ocultamos DENTRO del fetch SI hay responsables.
+        // Mientras carga, lo dejamos visible provisionalmente para dar respuesta inmediata al usuario.
+        formContainer.style.display = 'flex'; 
         inputCed.value = '';
         inputNom.value = '';
     }
@@ -1083,6 +1097,10 @@ window.loadResponsables = function(equipoId) {
                 formContainer.style.display = 'flex';
             }
             return;
+        }
+
+        if (formContainer) {
+            formContainer.style.display = 'none';
         }
 
         list.innerHTML = res.data.map((r, index) => {

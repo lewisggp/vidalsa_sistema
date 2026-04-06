@@ -67,21 +67,28 @@
             </div>
 
             <div>
-                <span id="lbl_usuario_rol_title" class="form-label">Rol Asignado</span>
+                <label for="ID_ROL" class="form-label">Rol Asignado</label>
                 <div class="custom-dropdown" id="roleSelect">
-                    <input type="hidden" name="ID_ROL" id="input_rol" value="{{ old('ID_ROL', $user->ID_ROL ?? '') }}" aria-label="Rol Asignado">
-                    <div class="dropdown-trigger" id="trigger_rol" onclick="toggleDropdown('roleSelect', event)" tabindex="0" role="button" aria-haspopup="listbox" aria-labelledby="lbl_usuario_rol_title label_rol" style="cursor: default;">
-                        <span id="label_rol">
-                            @php 
-                                $currentRol = $roles->firstWhere('ID_ROL', old('ID_ROL', $user->ID_ROL ?? ''));
-                            @endphp
-                            {{ $currentRol ? $currentRol->NOMBRE_ROL : 'Seleccione un rol...' }}
-                        </span>
-                        <i class="material-icons">expand_more</i>
+                    @php 
+                        $oldId = old('ID_ROL', $user->ID_ROL ?? '');
+                        $currentRol = $roles->firstWhere('ID_ROL', $oldId);
+                        $rolValue = $currentRol ? $currentRol->NOMBRE_ROL : $oldId;
+                    @endphp
+                    <div class="dropdown-trigger" style="cursor: text; padding: 0; display: flex; align-items: center;" onclick="if(!document.getElementById('roleSelect').classList.contains('active')) toggleDropdown('roleSelect', event)">
+                        <input type="text" name="ID_ROL" id="ID_ROL" 
+                               value="{{ $rolValue }}" 
+                               placeholder="Seleccione o escriba un rol..." 
+                               required autocomplete="off" 
+                               style="flex: 1; border: none; background: transparent; padding: 12px 15px; outline: none; color: var(--maquinaria-text); font-size: 14px; font-family: inherit; text-transform: uppercase;"
+                               oninput="const val = this.value.toLowerCase().trim(); document.querySelectorAll('.role-item-opt').forEach(i => i.style.display = i.textContent.toLowerCase().includes(val) ? 'block' : 'none');"
+                               onfocus="document.getElementById('roleSelect').classList.add('active');"
+                               onclick="event.stopPropagation();">
+                        <i class="material-icons" style="padding-right: 15px; cursor: pointer; color: var(--maquinaria-gray-text);">expand_more</i>
                     </div>
-                    <div class="dropdown-content">
+                    <div class="dropdown-content" id="rolesListContainer">
                         @foreach($roles as $rol)
-                            <div class="dropdown-item {{ old('ID_ROL', $user->ID_ROL ?? '') == $rol->ID_ROL ? 'selected' : '' }}" onclick="selectOption('roleSelect', '{{ $rol->ID_ROL }}', '{{ $rol->NOMBRE_ROL }}', 'rol')">
+                            <div class="dropdown-item role-item-opt" 
+                                 onclick="document.getElementById('ID_ROL').value = '{{ $rol->NOMBRE_ROL }}'; document.getElementById('roleSelect').classList.remove('active');">
                                 {{ $rol->NOMBRE_ROL }}
                             </div>
                         @endforeach

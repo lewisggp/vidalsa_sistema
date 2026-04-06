@@ -27,15 +27,15 @@
 
     /* Encabezados tabla consumibles — mismo tono que tabla Equipos */
     .admin-table thead th {
-        background: #cbd5e0 !important;
-        color: var(--maquinaria-dark-blue, #00004d) !important;
+        background: #1e293b !important;
+        color: #ffffff !important;
         font-size: 13px !important;
         font-weight: 700 !important;
         text-transform: uppercase !important;
         letter-spacing: 1px !important;
         padding: 10px 20px !important;
-        border-right: 1px solid #a0aec0 !important;
-        border-bottom: 2px solid #a0aec0 !important;
+        border-right: 1px solid #334155 !important;
+        border-bottom: 2px solid #0f172a !important;
     }
     .admin-table thead th:last-child { border-right: none !important; }
     .admin-table thead th.th-center { text-align: center !important; }

@@ -82,19 +82,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function loadPage(url, pushHistory = true) {
+        // ── Timeout de 60s (1 minuto): evita el spinner eterno si el internet falla ──
+        const controller = new AbortController();
+        const timeoutId  = setTimeout(() => controller.abort(), 60000);
+
         try {
             if (window.showPreloader) window.showPreloader();
 
             // Deshabilitar caché para garantizar que SIEMPRE se obtenga el HTML
             // actualizado y nunca el código viejo roto en la navegación SPA.
-            const response = await fetch(url, { 
-                headers: { 
+            const response = await fetch(url, {
+                signal: controller.signal,          // ← conectado al timeout
+                headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'Cache-Control': 'no-cache, no-store, must-revalidate',
                     'Pragma': 'no-cache'
                 },
                 cache: 'no-store'
             });
+
+            clearTimeout(timeoutId); // cargó bien → cancelar el timeout
 
             // Respuesta HTTP con error → navegación normal
             if (!response.ok) {
@@ -113,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Extraer contenido del viewport
             const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
+            const doc    = parser.parseFromString(html, 'text/html');
             const newContent = doc.querySelector('.main-viewport');
 
             if (!newContent) {
@@ -147,11 +154,22 @@ document.addEventListener('DOMContentLoaded', () => {
             if (mobileMenu && mobileMenu.classList.contains('active')) {
                 mobileMenu.classList.remove('active');
             }
+
         } catch (error) {
-            console.error('Error loading page:', error);
+            clearTimeout(timeoutId);
+
+            if (error.name === 'AbortError') {
+                // Timeout de 60s agotado o conexión caída
+                console.warn('SPA: tiempo de espera agotado (1 min), recargando normalmente.');
+            } else {
+                console.error('Error loading page:', error);
+            }
+
+            // En cualquier caso, intentar carga normal del navegador
             window.location.href = url;
+
         } finally {
-            // Garantizar que el preloader se oculte en todos los casos
+            // SIEMPRE ocultar el spinner, pase lo que pase
             if (window.hidePreloader) window.hidePreloader();
         }
     }

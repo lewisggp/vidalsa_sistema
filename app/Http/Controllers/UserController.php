@@ -108,7 +108,7 @@ class UserController extends Controller
                 'regex:/^.+@cvidalsa27\.com$/i'
             ],
             'password' => 'required|string|min:6',
-            'ID_ROL' => 'required|exists:roles,ID_ROL',
+            'ID_ROL' => 'required|string|max:150',
             'ID_FRENTE_ASIGNADO' => 'nullable|array',
             'ID_FRENTE_ASIGNADO.*' => 'exists:frentes_trabajo,ID_FRENTE',
             'NIVEL_ACCESO' => 'required|integer|in:1,2',
@@ -124,7 +124,7 @@ class UserController extends Controller
             'password.required' => 'La clave de acceso es obligatoria.',
             'password.min' => 'La clave de acceso debe tener al menos 6 caracteres.',
             'ID_ROL.required' => 'Debes asignar un rol al usuario.',
-            'ID_ROL.exists' => 'El rol seleccionado no es válido.',
+            'ID_ROL.max' => 'El rol no puede tener más de 150 caracteres.',
             'ID_FRENTE_ASIGNADO.required' => 'Debes asignar al menos un frente de trabajo.',
             'ID_FRENTE_ASIGNADO.min' => 'Debes asignar al menos un frente de trabajo.',
             'NIVEL_ACCESO.required' => 'El nivel de acceso es obligatorio.',
@@ -140,7 +140,14 @@ class UserController extends Controller
 
         $user->CORREO_ELECTRONICO = strtolower($request->CORREO_ELECTRONICO);
         $user->PASSWORD_HASH = Hash::make($request->password);
-        $user->ID_ROL = $request->ID_ROL;
+        // Resolver el Rol (si lo escribieron nuevo, se crea. Si enviaron el nombre existente, se busca)
+        $rolInput = trim($request->ID_ROL);
+        $roleObj = \App\Models\Role::find($rolInput);
+        if (!$roleObj) {
+            $rolName = mb_strtoupper($rolInput, 'UTF-8');
+            $roleObj = \App\Models\Role::firstOrCreate(['NOMBRE_ROL' => $rolName]);
+        }
+        $user->ID_ROL = $roleObj->ID_ROL;
         $user->NIVEL_ACCESO = $request->NIVEL_ACCESO;
         $user->ESTATUS = $request->ESTATUS;
         // Guardar frentes como CSV (igual que PERMISOS). NULL si usuario GLOBAL sin frente asignado.
@@ -200,7 +207,7 @@ class UserController extends Controller
                 'regex:/^.+@cvidalsa27\.com$/i'
             ],
             'password' => 'nullable|string|min:6',
-            'ID_ROL' => 'required|exists:roles,ID_ROL',
+            'ID_ROL' => 'required|string|max:150',
             'ID_FRENTE_ASIGNADO' => 'nullable|array',
             'ID_FRENTE_ASIGNADO.*' => 'exists:frentes_trabajo,ID_FRENTE',
             'NIVEL_ACCESO' => 'required|integer|in:1,2',
@@ -215,7 +222,7 @@ class UserController extends Controller
             'CORREO_ELECTRONICO.regex' => 'Solo se permiten correos con el dominio @cvidalsa27.com',
             'password.min' => 'La clave de acceso debe tener al menos 6 caracteres.',
             'ID_ROL.required' => 'Debes asignar un rol al usuario.',
-            'ID_ROL.exists' => 'El rol seleccionado no es válido.',
+            'ID_ROL.max' => 'El rol no puede tener más de 150 caracteres.',
             'ID_FRENTE_ASIGNADO.required' => 'Debes asignar al menos un frente de trabajo.',
             'ID_FRENTE_ASIGNADO.min' => 'Debes asignar al menos un frente de trabajo.',
             'NIVEL_ACCESO.required' => 'El nivel de acceso es obligatorio.',
@@ -229,7 +236,14 @@ class UserController extends Controller
         $user->NOMBRE_COMPLETO = mb_convert_case($request->NOMBRE_COMPLETO, MB_CASE_TITLE, 'UTF-8');
 
         $user->CORREO_ELECTRONICO = strtolower($request->CORREO_ELECTRONICO);
-        $user->ID_ROL = $request->ID_ROL;
+        // Resolver el Rol (si lo escribieron nuevo, se crea. Si enviaron el nombre existente, se busca)
+        $rolInput = trim($request->ID_ROL);
+        $roleObj = \App\Models\Role::find($rolInput);
+        if (!$roleObj) {
+            $rolName = mb_strtoupper($rolInput, 'UTF-8');
+            $roleObj = \App\Models\Role::firstOrCreate(['NOMBRE_ROL' => $rolName]);
+        }
+        $user->ID_ROL = $roleObj->ID_ROL;
         $user->NIVEL_ACCESO = $request->NIVEL_ACCESO;
         $user->ESTATUS = $request->ESTATUS;
         // Guardar frentes como CSV (igual que PERMISOS). NULL si usuario GLOBAL sin frente asignado.

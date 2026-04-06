@@ -35,13 +35,8 @@
     </div>
 
     <div class="login-container">
-        <!-- SVG Background: Formas exactas maquinaria -->
-        <svg class="background-svg" viewBox="0 0 1440 900" preserveAspectRatio="xMinYMin slice" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 0 H 600 L 500 400 Q 450 480 350 450 L 0 350 Z" fill="#efefefff" />
-            <path d="M0 900 V 400 Q 150 750 600 850 T 1440 900 Z" fill="#00004d" />
-            <path d="M1440 0 V 400 Q 1300 350 1200 0 Z" fill="#00004d" />
-            <path d="M1440 900 V 500 Q 1350 650 1440 800 Z" fill="#00004d" opacity="0.9" />
-        </svg>
+        <!-- SVG Background: Parcial reutilizado -->
+        @include('partials.background_svg')
 
         <!-- Título independiente -->
         <div class="page-title-container">

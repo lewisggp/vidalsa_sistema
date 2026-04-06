@@ -134,7 +134,10 @@
 
             <!-- Advanced Filter Trigger -->
             <div style="position: relative;">
-                <button type="button" id="btnAdvancedFilter" class="btn-primary-maquinaria" style="height: 45px; width: 45px; padding: 0; display: flex; align-items: center; justify-content: center; background: {{ request('modelo') || request('anio') ? '#e1effa' : 'white' }}; border: 1px solid {{ request('modelo') || request('anio') ? '#0067b1' : '#cbd5e0' }}; color: {{ request('modelo') || request('anio') ? '#0067b1' : '#64748b' }}; box-shadow: none;">
+                @php
+                    $hasAnyAdv = request('modelo') || request('anio') || request('marca') || request('categoria') || request('estado') || request('gps') || request('filter_propiedad') || request('filter_poliza') || request('filter_rotc') || request('filter_racda');
+                @endphp
+                <button type="button" id="btnAdvancedFilter" class="btn-primary-maquinaria" style="height: 45px; width: 45px; padding: 0; display: flex; align-items: center; justify-content: center; background: {{ $hasAnyAdv ? '#fee2e2' : 'white' }}; border: 1px solid {{ $hasAnyAdv ? '#ef4444' : '#cbd5e0' }}; color: {{ $hasAnyAdv ? '#ef4444' : '#64748b' }}; box-shadow: none;">
                     <i class="material-icons">filter_list</i>
                 </button>
                 
@@ -309,7 +312,35 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Tiene GPS Filter -->
+                    <div style="margin-top: 15px;">
+                        <span style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px;">Rastreo Satelital (GPS)</span>
+                        <div class="custom-dropdown" id="gpsAdvFilter" data-filter-type="gps" data-default-label="Seleccionar Estatus..." style="font-size: 12px;">
+                            <input type="hidden" name="gps" data-filter-value value="{{ request('gps') }}">
+                            
+                            <div class="dropdown-trigger" style="padding: 0; display: flex; align-items: center; background: {{ request('gps') ? '#e1effa' : 'white' }}; border: 1px solid #e2e8f0; border-radius: 6px; height: 32px;">
+                                <div style="padding: 0 8px; display: flex; align-items: center; color: #94a3b8;">
+                                    <i class="material-icons" style="font-size: 16px;">gps_fixed</i>
+                                </div>
+                                <input type="text" readonly
+                                    id="filter_display_gps"
+                                    name="filter_display_gps"
+                                    placeholder="{{ request('gps') === 'SI' ? 'Tienen GPS' : (request('gps') === 'NO' ? 'No Tienen GPS' : 'Seleccionar Estatus...') }}" 
+                                    aria-label="Filtrar Estatus GPS"
+                                    style="width: 100%; border: none; background: transparent; padding: 6px 5px; font-size: 12px; outline: none;"
+                                    onclick="this.closest('.custom-dropdown').classList.toggle('active')">
+                                <i class="material-icons" data-clear-btn style="padding: 0 5px; color: #94a3b8; font-size: 16px; display: {{ request('gps') ? 'block' : 'none' }};" 
+                                   onclick="event.stopPropagation(); clearDropdownFilter('gpsAdvFilter'); loadEquipos();">close</i>
+                            </div>
 
+                            <div class="dropdown-content" style="padding: 5px; max-height: none; overflow: visible; z-index: 1000;">
+                                <div class="dropdown-item-list">
+                                    <div class="dropdown-item {{ request('gps') == 'SI' ? 'selected' : '' }}" data-value="SI" onclick="selectOption('gpsAdvFilter', 'SI', 'Tienen GPS'); loadEquipos();">Tienen GPS</div>
+                                    <div class="dropdown-item {{ request('gps') == 'NO' ? 'selected' : '' }}" data-value="NO" onclick="selectOption('gpsAdvFilter', 'NO', 'No Tienen GPS'); loadEquipos();">No Tienen GPS</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <!-- Documentation Filters (New) -->
                     <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #cbd5e1;">
                         <span style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 8px;">Documentación Cargada</span>
@@ -608,7 +639,7 @@
         }
 
         .fleet-filter-container .dropdown-trigger {
-            height: 44px !important;
+            height: 40px !important;
         }
 
         .fleet-filter-container input[type="text"] {
@@ -669,7 +700,7 @@
                         @endphp
                         <div class="fleet-header-controls">
                             <!-- Export Button -->
-                            <button onclick="exportFleetStats()" title="Descargar Reporte Excel" style="background: #10b981; border: none; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); flex-shrink: 0;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
+                            <button onclick="exportFleetStats()" title="Descargar Reporte Excel" style="background: #10b981; border: none; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); flex-shrink: 0;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
                                 <i class="material-icons" style="color: white; font-size: 22px;">download</i>
                             </button>
 
@@ -781,7 +812,7 @@
                 <div id="fleetChartsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px;">
                     <!-- Estado Operativo -->
                     <div id="fdm-panel-status" style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-                        <h4 style="margin: 0 0 20px 0; font-size: 16px; color: #1e293b; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
+                        <h4 style="margin: 0 0 20px 0; font-size: 16px; color: #1e293b; font-weight: 700; text-transform: uppercase; display: flex; align-items: center; justify-content: space-between;">
                             <span style="display: flex; align-items: center; gap: 10px;">
                                 <i class="material-icons" style="font-size: 20px; color: #10b981;">donut_small</i>
                                 Estado Operativo de Equipos
@@ -795,7 +826,7 @@
 
                     <!-- Flota Nueva vs Vieja por Tipo -->
                     <div id="fdm-panel-age" style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-                        <h4 style="margin: 0 0 20px 0; font-size: 16px; color: #1e293b; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
+                        <h4 style="margin: 0 0 20px 0; font-size: 16px; color: #1e293b; font-weight: 700; text-transform: uppercase; display: flex; align-items: center; justify-content: space-between;">
                             <span style="display: flex; align-items: center; gap: 10px;">
                                 <i class="material-icons" style="font-size: 20px; color: #3b82f6;">bar_chart</i>
                                 Flota Nueva vs Vieja por Tipo de Equipo
@@ -809,7 +840,7 @@
 
                     <!-- Flota Pesada vs Liviana por Tipo -->
                     <div id="fdm-panel-category" style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-                        <h4 style="margin: 0 0 20px 0; font-size: 16px; color: #1e293b; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
+                        <h4 style="margin: 0 0 20px 0; font-size: 16px; color: #1e293b; font-weight: 700; text-transform: uppercase; display: flex; align-items: center; justify-content: space-between;">
                             <span style="display: flex; align-items: center; gap: 10px;">
                                 <i class="material-icons" style="font-size: 20px; color: #f59e0b;">category</i>
                                 Flota Pesada vs Liviana por Tipo
@@ -823,7 +854,7 @@
 
                     <!-- Inoperatividad por Tipo de Equipo -->
                     <div id="fdm-panel-inoperative" style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-                        <h4 style="margin: 0 0 20px 0; font-size: 16px; color: #1e293b; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
+                        <h4 style="margin: 0 0 20px 0; font-size: 16px; color: #1e293b; font-weight: 700; text-transform: uppercase; display: flex; align-items: center; justify-content: space-between;">
                             <span style="display: flex; align-items: center; gap: 10px;">
                                 <i class="material-icons" style="font-size: 20px; color: #ef4444;">warning_amber</i>
                                 Inoperatividad por Tipo de Equipo
@@ -866,50 +897,67 @@
         @media (max-width: 768px) {
             #fleetDashboardModal .modal-content {
                 width: 100% !important;
-                height: 100vh !important;
+                height: 100dvh !important;   /* usa dvh para evitar barra de browser en iOS */
                 max-width: 100% !important;
                 border-radius: 0 !important;
             }
 
-            /* Header Structure */
+            /* Header compacto en mobile */
+            .fleet-dashboard-header {
+                padding: 10px 14px !important;
+            }
+
             .fleet-header-wrapper {
                 flex-direction: column !important;
                 align-items: flex-start !important;
                 position: relative !important;
-                padding-right: 40px !important; /* Space for close button */
+                padding-right: 42px !important;
+                gap: 10px !important;
             }
 
             .fleet-header-left {
                 width: 100% !important;
                 flex-direction: column !important;
-                gap: 15px !important;
+                gap: 10px !important;
             }
 
-            .fleet-header-title-group {
-                width: 100% !important;
-                padding-bottom: 5px;
+            /* Título más pequeño en mobile */
+            .fleet-header-title-group h2 {
+                font-size: 14px !important;
+            }
+
+            .fleet-header-title-group p {
+                font-size: 10px !important;
+            }
+
+            /* Icono del dashboard más pequeño */
+            .fleet-header-title-group > div:first-child {
+                padding: 6px !important;
+            }
+
+            .fleet-header-title-group > div:first-child .material-icons {
+                font-size: 18px !important;
             }
 
             /* Controls: Export + Filter Row */
             .fleet-header-controls {
                 width: 100% !important;
-                justify-content: space-between !important;
-                gap: 10px !important;
+                justify-content: flex-start !important;
+                gap: 8px !important;
             }
 
-            /* Filter Container grows to fill space */
+            /* Filter Container crece para llenar espacio */
             .fleet-filter-container {
                 width: auto !important;
                 flex: 1 !important;
                 min-width: 0 !important;
             }
-            
-            /* Ensure the dropdown inside adapts */
+
             .fleet-filter-container .custom-dropdown {
                 width: 100% !important;
             }
 
-            /* Close Button Positioned Top Right */
+            /* Botón cerrar posicionado top-right absoluto */
             .fleet-header-wrapper > button:last-child {
                 position: absolute !important;
                 top: 0 !important;
@@ -919,17 +967,92 @@
                 background: rgba(255,255,255,0.15) !important;
             }
 
-            /* Adjust Font Sizes */
-            .fleet-header-title-group h2 {
-                font-size: 16px !important;
+            /* Dashboard content: menos padding y prevención de overflow */
+            #fleetDashboardModal .modal-content > div[style*="overflow-y: auto"] {
+                padding: 14px !important;
+                overflow-x: hidden !important;
+                box-sizing: border-box !important;
+                width: 100% !important;
             }
 
-            /* Adjust Charts Grid to Single Column */
+            /* Stat cards: 2 columnas en mobile */
+            #fleetDashboardModal [style*="grid-template-columns: repeat(auto-fit, minmax(180px"] {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 8px !important;
+                margin-bottom: 14px !important;
+                width: 100% !important;
+            }
+
+            /* Stat cards: menos padding y fuente más pequeña */
+            #fleetDashboardModal [style*="grid-template-columns: repeat(auto-fit, minmax(180px"] > div {
+                padding: 10px !important;
+                min-width: 0 !important;
+                box-sizing: border-box !important;
+                word-wrap: break-word !important;
+            }
+
+            #fleetDashboardModal [style*="grid-template-columns: repeat(auto-fit, minmax(180px"] h3 {
+                font-size: 18px !important;
+            }
+
+            #fleetDashboardModal [style*="grid-template-columns: repeat(auto-fit, minmax(180px"] p {
+                font-size: 9px !important; /* Ligeramente más pequeño para no desbordar */
+                white-space: normal !important;
+            }
+
+
+            /* Charts: 1 columna y sin overflow */
             #fleetChartsGrid {
                 grid-template-columns: 1fr !important;
+                gap: 12px !important;
+                max-width: 100% !important;
+                overflow: hidden !important;
+            }
+
+            /* Container for each chart allowed to shrink */
+            #fleetChartsGrid > div {
+                min-width: 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
+            }
+
+            /* Panels de gráficos: menos padding */
+            #fdm-panel-status,
+            #fdm-panel-age,
+            #fdm-panel-category,
+            #fdm-panel-inoperative,
+            #fdm-panel-assigned {
+                padding: 14px !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+
+            /* Asegurar que el canvas respete el contenedor */
+            #fleetChartsGrid canvas {
+                max-width: 100% !important;
+                height: auto !important;
+            }
+
+            /* Título de paneles */
+            #fdm-panel-status h4,
+            #fdm-panel-age h4,
+            #fdm-panel-category h4,
+            #fdm-panel-inoperative h4 {
+                font-size: 13px !important;
+                margin-bottom: 12px !important;
+            }
+        }
+
+        /* Tablet (769-1024px): 2 columnas de gráficos */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            #fleetChartsGrid {
+                grid-template-columns: repeat(2, 1fr) !important;
             }
         }
     </style>
+
 <!-- Anclajes Dashboard Modal -->
 <div id="anclajesListModal" class="modal-overlay" style="z-index: 10000;">
     <div class="modal-content" style="width: 90%; max-width: 800px; max-height: 90vh; background: #fff; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">

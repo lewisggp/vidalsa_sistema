@@ -364,35 +364,30 @@
     }
 }
 
-/* Botón Salir en Header (Icono) */
+/* Botón Salir en Header (Icono) - Mismo estilo que los otros botones */
 .btn-logout-header {
     background-color: transparent;
-    border: 2px solid var(--maquinaria-red);
-    /* Borde un poco más grueso para destacar */
-    color: var(--maquinaria-red);
+    border: none;
+    color: var(--maquinaria-gray-text);
     width: auto;
     height: 40px;
-    padding: 0 20px;
-    border-radius: 30px;
+    padding: 0 10px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: default;
-    /* Removed pointer cursor */
     transition: all 0.3s ease;
 }
 
 .btn-logout-header i {
     font-size: 20px;
-    /* Icono cómodo */
     font-weight: bold;
 }
 
 .btn-logout-header:hover {
-    background-color: var(--maquinaria-red);
-    color: white;
-    transform: scale(1.1);
-    box-shadow: 0 4px 10px rgba(169, 29, 40, 0.3);
+    color: var(--maquinaria-blue);
+    background-color: #f1f5f9;
 }
 
 .user-profile {

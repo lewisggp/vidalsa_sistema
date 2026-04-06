@@ -150,9 +150,27 @@
                     <i class="material-icons" style="font-size: 18px; margin-left: 2px;">expand_more</i>
                 </button>
                 <div id="splitDropdownMenu" style="display:none; position:absolute; top:100%; right:0; min-width:260px; background:#e2e8f0; border-radius:8px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); border:1px solid #e2e8f0; z-index:1050; margin-top:10px; overflow:hidden;">
-                    <a href="{{ route('consumibles.index') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'"><i class="material-icons" style="font-size:20px;">list</i><span style="font-size:14px; font-weight:500;">Lista de Consumibles</span></a>
-                    <a href="{{ route('consumibles.graficos') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'"><i class="material-icons" style="font-size:20px;">bar_chart</i><span style="font-size:14px; font-weight:500;">Gráficos y Reportes</span></a>
-                    <a href="javascript:void(0)" onclick="limpiarTabla(); document.getElementById('splitDropdownMenu').style.display='none'" style="display:flex; align-items:center; gap:10px; padding:12px 15px; color:#ef4444; text-decoration:none; background:transparent; transition:all 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'"><i class="material-icons" style="font-size:20px;">delete_sweep</i><span style="font-size:14px; font-weight:500;">Limpiar Toda la Tabla</span></a>
+                    
+                    <a href="{{ route('consumibles.index') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s; cursor: default;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                        <div style="background: #e0f2fe; padding: 6px; border-radius: 6px; display: flex;">
+                            <i class="material-icons" style="font-size: 18px; color: #0284c7;">list</i>
+                        </div>
+                        <span style="font-size:14px; font-weight:500;">Lista de Consumibles</span>
+                    </a>
+                    
+                    <a href="{{ route('consumibles.graficos') }}" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #475569; text-decoration: none; border-bottom: 1px solid #f1f5f9; background: transparent; transition: all 0.2s; cursor: default;" onclick="if(window.showPreloader) window.showPreloader();" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                        <div style="background: #eff6ff; padding: 6px; border-radius: 6px; display: flex;">
+                            <i class="material-icons" style="font-size: 18px; color: #3b82f6;">analytics</i>
+                        </div>
+                        <span style="font-size:14px; font-weight:500;">Gráficos y Reportes</span>
+                    </a>
+                    
+                    <a href="javascript:void(0)" onclick="limpiarTabla(); document.getElementById('splitDropdownMenu').style.display='none'" class="dropdown-item-custom" style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: #ef4444; text-decoration: none; background: transparent; transition: all 0.2s; cursor: default;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
+                        <div style="background: #fee2e2; padding: 6px; border-radius: 6px; display: flex;">
+                            <i class="material-icons" style="font-size: 18px; color: #ef4444;">delete_sweep</i>
+                        </div>
+                        <span style="font-size:14px; font-weight:500;">Limpiar Toda la Tabla</span>
+                    </a>
                 </div>
             </div>
         </div>
@@ -187,11 +205,13 @@
 </div>
 
 {{-- ACCIONES --}}
-<div style="display:flex; justify-content:flex-end; gap:12px; padding-bottom:40px;">
-    <a href="{{ route('consumibles.index') }}" class="btn-secondary">Cancelar</a>
+<div style="margin-top: 30px; display: flex; gap: 12px; justify-content: center; padding-bottom:40px;">
+    <a href="{{ route('consumibles.index') }}" class="btn-primary-maquinaria btn-secondary">
+        Cancelar
+    </a>
     @can('super.admin')
-    <button type="submit" class="btn-primary-maquinaria btn-green" style="padding: 10px 22px; font-size:14px;">
-        <i class="material-icons" style="font-size:18px;">save</i>
+    <button type="submit" class="btn-primary-maquinaria">
+        <i class="material-icons">save</i>
         Guardar Lote
     </button>
     @endcan

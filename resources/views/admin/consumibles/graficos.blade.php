@@ -275,27 +275,7 @@
 </div>
 
 
-{{-- CONSUMO POR TIPO DE EQUIPO × FRENTE --}}
-<div class="g-grid-1">
-    <div class="g-card">
-        <p class="g-title" style="justify-content:space-between;">
-            <span style="display:flex;align-items:center;gap:8px;">
-                <i class="material-icons">directions_car</i>
-                Consumo por Tipo de Equipo y Frente
-                <span class="g-subtitle">— una barra por tipo · solo equipos identificados</span>
-            </span>
-            <button onclick="descargarGrafico('chartTipoEq','consumo_tipo_equipo')" title="Descargar imagen" style="border:none;background:transparent;cursor:pointer;color:#94a3b8;display:flex;align-items:center;padding:4px 8px;border-radius:8px;transition:background .2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
-                <i class="material-icons" style="font-size:17px;">photo_camera</i>
-            </button>
-        </p>
-        <div id="loadingTipoEq" class="loading-overlay">
-            <i class="material-icons" style="animation:spin 1s linear infinite;">refresh</i>
-        </div>
-        <div style="position: relative; height:320px; width:100%;">
-            <canvas id="chartTipoEq" style="display:none;"></canvas>
-        </div>
-    </div>
-</div>
+
 
 {{-- EQUIPOS QUE SURTIERON POR FRENTE (solo con frente seleccionado) --}}
 <div class="g-grid-1" id="secEqFrente" style="display:none;">
@@ -524,7 +504,7 @@ function _cargarDatosLocal() {
     const tipoFiltroPre = document.getElementById('fTipo') ? document.getElementById('fTipo').value : '';
 
     // ── Loading: mostrar spinners de las secciones siempre visibles ──
-    ['loadingTotalFrente','loadingEqAsig','loadingTipoEq',
+    ['loadingTotalFrente','loadingEqAsig',
      'loadingRanking','loadingTodosEq','loadingInoperativos'].forEach(show);
 
     if (tipoFiltroPre === 'CAUCHO') {
@@ -535,7 +515,7 @@ function _cargarDatosLocal() {
     }
 
     // ── Ocultar contenido previo (prev carga) ────────────────────────
-    ['chartTipoEq','totalFrenteBody','eqAsigBody',
+    ['totalFrenteBody','eqAsigBody',
      'rankingBody','wrapTodosEq','chartCauchoModelo', 'inoperativosBody'].forEach(hide);
 
     // ── Secciones de especificación: ocultar antes de cada carga ─────
@@ -577,7 +557,6 @@ function _cargarDatosLocal() {
             }
 
             window.renderEquiposAsignados(data.equipos_asignados || {}, ordenFrente);
-            renderTipoEquipo(data.por_tipo_equipo);
             // Solo mostrar equipos×frente cuando hay un frente específico seleccionado
             if (frenteSeleccionado) {
                 document.getElementById('secEqFrente').style.display = '';
@@ -606,7 +585,7 @@ function _cargarDatosLocal() {
         .catch(err => {
             if (window.hidePreloader) window.hidePreloader();
             console.error('Error cargando datos de gráficos:', err);
-            ['loadingTotalFrente','loadingEqAsig','loadingTipoEq',
+            ['loadingTotalFrente','loadingEqAsig',
              'loadingRanking','loadingTodosEq','loadingInoperativos'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.innerHTML = '<span style="color:#ef4444;">Error al cargar datos</span>';
@@ -767,102 +746,6 @@ function renderTotalFrente(datos) {
 
 
 
-// ── Consumo por tipo de equipo (barra por tipo, total sumado) ───────
-function renderTipoEquipo(datos) {
-    const loadEl = document.getElementById('loadingTipoEq');
-    const canvElT = document.getElementById('chartTipoEq');
-
-    // Manejo correcto de vacío
-    if (!datos || !Array.isArray(datos) || datos.length === 0) {
-        loadEl.innerHTML = '<span style="color:#94a3b8;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;height:100%;"><i class="material-icons" style="margin-right:5px;font-size:18px;">info</i>Sin equipos identificados para mostrar.</span>';
-        loadEl.style.display = 'flex';
-        canvElT.style.display = 'none';
-        return;
-    }
-    
-    loadEl.style.display = 'none';
-    canvElT.style.display = 'block';
-
-    // Se asume que el backend ya agrupó por tipo_equipo y ordenó por total (ver ConsumiblesController.php)
-    const labels = datos.map(d => d.tipo_equipo || 'S/T');
-    const valores = datos.map(d => parseFloat(d.total || 0));
-    const despachosArr = datos.map(d => parseInt(d.despachos || 0));
-    const unidadesArr = datos.map(d => d.unidad || '');
-    
-    const PALETA_EQ = ['#003a70','#c41c00','#0077cc','#7b1fa2','#e65100','#1b5e20','#00838f','#546e7a','#f57f17','#4a148c'];
-    const backgroundColors = labels.map((_, i) => PALETA_EQ[i % PALETA_EQ.length]);
-
-    let retriesT = 0;
-    const drawT = () => {
-        if (typeof Chart === 'undefined') {
-            if (retriesT++ < 50) setTimeout(drawT, 100);
-            return;
-        }
-
-        try {
-            if (window.chartTipoEqInst) { window.chartTipoEqInst.destroy(); window.chartTipoEqInst = null; }
-        } catch(e) { console.warn('Silently caught chart destroy exception'); }
-        
-        try {
-            const existingT = Chart.getChart(canvElT);
-            if (existingT) existingT.destroy();
-        } catch(e) {}
-        
-        try {
-            window.chartTipoEqInst = new Chart(canvElT, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Consumo',
-                        data: valores,
-                        backgroundColor: backgroundColors,
-                        borderRadius: 6,
-                        borderSkipped: false,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    layout: { padding: { top: 22 } },
-                    plugins: {
-                        legend: { display: false },
-                        datalabels: {
-                            anchor: 'end',
-                            align: 'end',
-                            color: '#1e293b',
-                            font: { size: 10, weight: '700' },
-                            formatter: v => v > 0 ? v.toLocaleString('es-VE', {minimumFractionDigits:0, maximumFractionDigits:2}) : '',
-                            clip: false,
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: ctx => {
-                                    const idx = ctx.dataIndex;
-                                    const dep = despachosArr[idx];
-                                    const u = unidadesArr[idx];
-                                    const valStr = ctx.parsed.y.toLocaleString('es-VE', {minimumFractionDigits:0, maximumFractionDigits:2});
-                                    return [
-                                        ` ${valStr} ${u}`,
-                                        ` ⛽ ${dep} despacho${dep !== 1 ? 's' : ''}`
-                                    ];
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } }
-                    }
-                }
-            });
-        } catch(e) { 
-            console.error("Error al renderizar chartTipoEq:", e); 
-        }
-    };
-    
-    drawT();
-}
 
 // ── Cauchos por Tipo de Equipo y Medida ─────────────────────────────────────
 function renderCauchosPorModelo(datos) {
@@ -1306,33 +1189,66 @@ function renderPaginacion(totalItems, totalPages) {
         return;
     }
     
-    let html = `<div style="display:flex; justify-content:space-between; align-items:center; padding-top:14px; color:#64748b; font-size:12px;">`;
     const from = ((window._currentPageEq - 1) * ITEMS_PER_PAGE) + 1;
     const to = Math.min(window._currentPageEq * ITEMS_PER_PAGE, totalItems);
     
-    html += `<span>Mostrando <b style="color:#1e293b">${from}-${to}</b> de <b>${totalItems}</b></span>`;
-    html += `<div style="display:flex; gap:6px; align-items:center;">`;
+    // Contenedor principal
+    let html = `
+    <div style="display:flex; flex-direction:column; align-items:center; gap:15px; margin-top:20px; padding-top:10px; border-top:1px solid #e2e8f0;">
+        <div style="font-size:13px; color:#64748b; text-align:center;">
+            Mostrando <span style="font-weight:700; color:#1e293b;">${from}</span> a <span style="font-weight:700; color:#1e293b;">${to}</span> de <span style="font-weight:700; color:#1e293b;">${totalItems}</span> resultados
+        </div>
+        
+        <ul style="display:flex; list-style:none; padding:0; margin:0; justify-content:center; gap:6px;">
+    `;
     
+    // Estilos base para los items
+    const baseBtn = "display:flex; align-items:center; justify-content:center; padding:6px 12px; border-radius:6px; font-size:13px; border:1px solid #cbd5e1; background:#fff; text-decoration:none; transition:all 0.2s;";
+    const activeBtn = "display:flex; align-items:center; justify-content:center; padding:6px 12px; border-radius:6px; font-size:13px; font-weight:700; border:1px solid #bfdbfe; background:#eff6ff; color:#1d4ed8;";
+    const disabledBtn = "display:flex; align-items:center; justify-content:center; padding:6px 12px; border-radius:6px; font-size:13px; border:1px solid #e2e8f0; background:#f8fafc; color:#94a3b8; cursor:not-allowed;";
+    const hoverColor = "color:#0f172a; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05);";
+
     // Botón Anterior
-    html += `<button onclick="cambiarPaginaEq(${window._currentPageEq - 1})" 
-            style="border:1px solid #cbd5e0; background:#fff; padding:4px 10px; border-radius:6px; font-weight:600; color:#475569; transition:all .2s; cursor:${window._currentPageEq === 1 ? 'not-allowed; opacity:0.5' : 'pointer'};" 
-            onmouseover="if(${window._currentPageEq} > 1) this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'">
-            Anterior
-        </button>`;
+    if (window._currentPageEq === 1) {
+        html += `<li><span style="${disabledBtn}">&laquo; Anterior</span></li>`;
+    } else {
+        html += `<li><button onclick="cambiarPaginaEq(${window._currentPageEq - 1})" style="${baseBtn} color:#475569;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#fff'">&laquo; Anterior</button></li>`;
+    }
     
-    // Números (Página actual de Total)
-    html += `<span style="padding:4px 10px; font-weight:700; background:#eff6ff; color:#0067b1; border-radius:6px; border:1px solid #bfdbfe;">
-                ${window._currentPageEq} / ${totalPages}
-            </span>`;
+    // Calcular rango de páginas visibles
+    let startPage = Math.max(1, window._currentPageEq - 2);
+    let endPage = Math.min(totalPages, window._currentPageEq + 2);
+
+    if (startPage > 1) {
+        html += `<li><button onclick="cambiarPaginaEq(1)" style="${baseBtn} color:#0f172a;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#fff'">1</button></li>`;
+        if (startPage > 2) html += `<li><span style="${disabledBtn} border:none; background:transparent;">...</span></li>`;
+    }
+
+    // Números de página
+    for (let p = startPage; p <= endPage; p++) {
+        if (p === window._currentPageEq) {
+            html += `<li><span style="${activeBtn}">${p}</span></li>`;
+        } else {
+            html += `<li><button onclick="cambiarPaginaEq(${p})" style="${baseBtn} color:#0f172a;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#fff'">${p}</button></li>`;
+        }
+    }
+
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) html += `<li><span style="${disabledBtn} border:none; background:transparent;">...</span></li>`;
+        html += `<li><button onclick="cambiarPaginaEq(${totalPages})" style="${baseBtn} color:#0f172a;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#fff'">${totalPages}</button></li>`;
+    }
     
     // Botón Siguiente
-    html += `<button onclick="cambiarPaginaEq(${window._currentPageEq + 1})" 
-            style="border:1px solid #cbd5e0; background:#fff; padding:4px 10px; border-radius:6px; font-weight:600; color:#475569; transition:all .2s; cursor:${window._currentPageEq === totalPages ? 'not-allowed; opacity:0.5' : 'pointer'};" 
-            onmouseover="if(${window._currentPageEq} < ${totalPages}) this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'">
-            Siguiente
-        </button>`;
+    if (window._currentPageEq === totalPages) {
+        html += `<li><span style="${disabledBtn}">Siguiente &raquo;</span></li>`;
+    } else {
+        html += `<li><button onclick="cambiarPaginaEq(${window._currentPageEq + 1})" style="${baseBtn} color:#475569;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#fff'">Siguiente &raquo;</button></li>`;
+    }
     
-    html += `</div></div>`;
+    html += `
+        </ul>
+    </div>`;
+    
     container.innerHTML = html;
 }
 

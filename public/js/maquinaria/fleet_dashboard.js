@@ -320,18 +320,18 @@ async function loadChartJS() {
         if (typeof Chart !== 'undefined') { resolve(); return; }
 
         const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+        script.src = '/js/chart.umd.min.js';
 
         script.onload = () => {
             const pluginScript = document.createElement('script');
-            pluginScript.src = 'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js';
+            pluginScript.src = '/js/chartjs-plugin-datalabels.min.js';
             pluginScript.onload = () => {
                 Chart.register(ChartDataLabels);
                 
                 // Also load html2canvas for downloads
                 if (typeof html2canvas === 'undefined') {
                     const canvasScript = document.createElement('script');
-                    canvasScript.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+                    canvasScript.src = '/js/html2canvas.min.js';
                     canvasScript.onload = () => resolve();
                     canvasScript.onerror = () => {
                         console.warn('Failed to load html2canvas, downloads might fail.');

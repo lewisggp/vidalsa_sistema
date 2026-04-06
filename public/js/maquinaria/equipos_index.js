@@ -426,6 +426,7 @@ window.loadEquipos = function (url = null, silent = false) {
         anio: getVal('input[name="anio"]', advancedPanel || document),
         categoria: getVal('input[name="categoria"]', advancedPanel || document),
         estado: getVal('input[name="estado"]', advancedPanel || document),
+        gps: getVal('input[name="gps"]', advancedPanel || document),
         filter_propiedad: document.getElementById("chk_propiedad")?.checked
             ? "true"
             : null,
@@ -441,6 +442,22 @@ window.loadEquipos = function (url = null, silent = false) {
     };
 
     const params = new URLSearchParams();
+
+    // Lógica dinámica para poner ROJO el botón de Filtros Avanzados si hay alguno activo
+    const btnAdv = document.getElementById('btnAdvancedFilter');
+    if (btnAdv) {
+        const hasAdv = !!(filters.modelo || filters.marca || filters.anio || filters.categoria || filters.estado || filters.gps || filters.filter_propiedad || filters.filter_poliza || filters.filter_rotc || filters.filter_racda);
+        if (hasAdv) {
+            btnAdv.style.background = '#fee2e2';
+            btnAdv.style.borderColor = '#ef4444';
+            btnAdv.style.color = '#ef4444';
+        } else {
+            // Estado original
+            btnAdv.style.background = 'white';
+            btnAdv.style.borderColor = '#cbd5e0';
+            btnAdv.style.color = '#64748b';
+        }
+    }
 
     // Cleanly append only valid filter values (non-null, non-empty)
     Object.entries(filters).forEach(([key, value]) => {
