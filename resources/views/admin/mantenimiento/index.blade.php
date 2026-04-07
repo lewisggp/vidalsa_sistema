@@ -60,28 +60,31 @@
 
     /* ── Filter Bar ── */
     .mant-filter-bar {
-        display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;
+        display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: nowrap; align-items: center;
+    }
+    .mant-filter-bar .custom-dropdown {
+        flex: 0 0 auto; position: relative;
     }
     .mant-filter-bar .search-wrapper {
-        flex: 1; min-width: 200px; display: flex; align-items: center;
-        border: 1px solid #cbd5e0; border-radius: 10px; padding: 0 12px;
-        background: #fbfcfd; height: 42px;
+        flex: 1; min-width: 150px; display: flex; align-items: center;
+        border: 1px solid #cbd5e0; border-radius: 12px; padding: 0 12px;
+        background: #fbfcfd; height: 45px;
     }
     .mant-filter-bar .search-wrapper input {
         border: none; outline: none; background: transparent; width: 100%;
         font-size: 13px; color: #1e293b; padding: 0 8px;
     }
     .mant-filter-bar .search-wrapper i { color: #94a3b8; font-size: 20px; }
-    .mant-filter-bar select {
-        height: 42px; border: 1px solid #cbd5e0; border-radius: 10px; padding: 0 14px;
-        font-size: 13px; color: #1e293b; background: #fbfcfd; outline: none;
-        min-width: 160px; appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23a0aec0' d='M2 0L0 2h4zm0 5L0 3h4z'/%3E%3C/svg%3E");
-        background-repeat: no-repeat; background-position: right 12px top 50%; background-size: 8px;
-    }
     .mant-filter-bar input[type="date"] {
-        height: 42px; border: 1px solid #cbd5e0; border-radius: 10px; padding: 0 14px;
-        font-size: 13px; color: #1e293b; background: #fbfcfd; outline: none;
+        height: 45px; border: 1px solid #cbd5e0; border-radius: 12px; padding: 0 14px;
+        font-size: 14px; color: #1e293b; background: #fbfcfd; outline: none; flex: 0 0 auto;
+    }
+
+    @media (max-width: 768px) {
+        .mant-filter-bar { flex-wrap: wrap; }
+        .mant-filter-bar .custom-dropdown { flex: 1 1 100%; }
+        .mant-filter-bar .search-wrapper { flex: 1 1 100%; }
+        .mant-filter-bar input[type="date"] { flex: 1 1 100%; }
     }
 
     /* ── Cards / Content ── */
