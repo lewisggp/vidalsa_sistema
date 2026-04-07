@@ -33,9 +33,12 @@
         if (mediaRadio) mediaRadio.checked = true;
         // Reset custom dropdowns
         if (window.clearDropdownFilter) {
+            clearDropdownFilter('fallaFrenteDropdown');
             clearDropdownFilter('fallaEquipoDropdown');
             clearDropdownFilter('fallaTipoDropdown');
         }
+        const frenteHidden = document.getElementById('fallaFrente');
+        if (frenteHidden) frenteHidden.value = '';
         // Restore tipo placeholder
         const tipoSearch = document.querySelector('#fallaTipoDropdown [data-filter-search]');
         if (tipoSearch) tipoSearch.placeholder = 'Mecánica';
@@ -61,10 +64,10 @@
             return;
         }
 
-        // Get frente from stored value or hidden input
-        const frenteId = window._mantCurrentFrente || document.getElementById('filterFrente')?.value;
+        // Get frente from modal dropdown first, then filter bar fallback
+        const frenteId = document.getElementById('fallaFrente')?.value || window._mantCurrentFrente || document.getElementById('filterFrente')?.value;
         if (!frenteId) {
-            showModalError('Selecciona un frente de trabajo en los filtros primero');
+            showModalError('Selecciona un frente de trabajo');
             return;
         }
 

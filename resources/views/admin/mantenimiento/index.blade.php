@@ -408,6 +408,37 @@
         <!-- Body -->
         <div style="padding:20px 25px; overflow-y:auto; flex:1;">
 
+            <!-- Frente de Trabajo -->
+            <div style="margin-bottom:16px;">
+                <label style="display:block; font-size:13px; font-weight:700; color:#475569; margin-bottom:6px;">
+                    <span style="background:#0067b1; color:white; padding:2px 8px; border-radius:50%; font-size:11px; font-weight:800; margin-right:6px;">0</span>
+                    Frente de Trabajo
+                </label>
+                <div class="custom-dropdown" id="fallaFrenteDropdown" data-default-label="Seleccionar frente..." style="width:100%;">
+                    <input type="hidden" id="fallaFrente" value="">
+                    <div class="dropdown-trigger" style="padding:0; display:flex; align-items:center; background:#fbfcfd; overflow:hidden; border:1px solid #cbd5e0; border-radius:12px; height:45px;">
+                        <div style="padding:0 10px; display:flex; align-items:center; color:var(--maquinaria-gray-text,#94a3b8);">
+                            <i class="material-icons" style="font-size:18px;">business</i>
+                        </div>
+                        <input type="text" data-filter-search placeholder="Seleccionar frente..." autocomplete="off"
+                            style="flex:1; border:none; background:transparent; padding:10px 5px; font-size:13px; outline:none; min-width:0;"
+                            oninput="window.filterDropdownOptions && window.filterDropdownOptions(this)">
+                        <i class="material-icons" data-clear-btn style="padding:0 8px; color:var(--maquinaria-gray-text,#94a3b8); font-size:18px; display:none; cursor:pointer;"
+                            onclick="event.stopPropagation(); clearDropdownFilter('fallaFrenteDropdown');">close</i>
+                    </div>
+                    <div class="dropdown-content" style="padding:5px; max-height:none; overflow:visible; z-index:10002;">
+                        <div class="dropdown-item-list" style="max-height:200px; overflow-y:auto;">
+                            @foreach($frentes as $f)
+                                <div class="dropdown-item" data-value="{{ $f->ID_FRENTE }}"
+                                    onclick="selectOption('fallaFrenteDropdown','{{ $f->ID_FRENTE }}','{{ addslashes($f->NOMBRE_FRENTE) }}');">
+                                    {{ $f->NOMBRE_FRENTE }}
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Equipo -->
             <div style="margin-bottom:16px;">
                 <label style="display:block; font-size:13px; font-weight:700; color:#475569; margin-bottom:6px;">
