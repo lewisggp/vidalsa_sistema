@@ -495,9 +495,14 @@ window.loadEquipos = function (url = null, silent = false) {
         },
     })
         .then((response) => {
-            if (response.status === 419 || response.status === 401) {
-                window.location.reload();
-                return;
+            if (response.status === 419 || response.status === 401 || (response.redirected && response.url.includes('/login'))) {
+                window.location.href = '/login';
+                return Promise.reject(new Error('Sesión expirada.'));
+            }
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                window.location.href = '/login';
+                return Promise.reject(new Error("Sesión expirada o respuesta inválida del servidor."));
             }
             if (!response.ok) throw new Error("Network response was not ok");
             return response.json();

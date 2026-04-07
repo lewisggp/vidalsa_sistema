@@ -681,7 +681,20 @@ window.addEventListener('spa:contentLoaded', function () {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
             }
         })
-            .then(response => response.json().then(data => ({ status: response.status, body: data })))
+            .then(async response => {
+                if (response.status === 419 || response.status === 401 || (response.redirected && response.url.includes('/login'))) {
+                    window.location.href = '/login';
+                    return Promise.reject(new Error('Sesión expirada. Redirigiendo al inicio de sesión...'));
+                }
+                
+                const contentType = response.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) {
+                    return Promise.reject(new Error("Sesión expirada o respuesta inválida del servidor."));
+                }
+                
+                const data = await response.json();
+                return { status: response.status, body: data };
+            })
             .then(({ status, body }) => {
                 if (status === 200 || status === 201) {
                     if (window.hidePreloader) window.hidePreloader();
