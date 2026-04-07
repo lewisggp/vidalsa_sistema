@@ -48,19 +48,23 @@
         const descripcion = document.getElementById('fallaDescripcion')?.value;
         const prioridad = document.querySelector('input[name="fallaPrioridad"]:checked')?.value || 'MEDIA';
 
+        // Inline validation errors inside the modal
+        clearModalErrors();
+
         if (!equipoId) {
-            showMsg('warning', 'Selecciona un equipo');
+            showModalError('Selecciona un equipo');
             return;
         }
         if (!descripcion || descripcion.trim().length < 5) {
-            showMsg('warning', 'Describe la falla (mínimo 5 caracteres)');
+            showModalError('Describe la falla (mínimo 5 caracteres)');
+            highlightField('fallaDescripcion');
             return;
         }
 
         // Get frente from stored value or hidden input
         const frenteId = window._mantCurrentFrente || document.getElementById('filterFrente')?.value;
         if (!frenteId) {
-            showMsg('warning', 'Selecciona un frente de trabajo en los filtros primero');
+            showModalError('Selecciona un frente de trabajo en los filtros primero');
             return;
         }
 
@@ -79,7 +83,7 @@
             const repData = await repResp.json();
 
             if (!repData.success || !repData.reporte) {
-                showMsg('error', 'No se pudo crear/obtener el reporte del día');
+                showModalError('No se pudo crear/obtener el reporte del día');
                 return;
             }
 
@@ -106,18 +110,19 @@
 
             if (resp.ok && data.success) {
                 cerrarModalFalla();
-                showMsg('success', data.message || 'Falla registrada');
+                // Show success after modal closes
+                setTimeout(() => showMsg('success', data.message || 'Falla registrada'), 200);
                 // Refresh views
                 if (typeof cargarReportes === 'function') cargarReportes();
                 if (typeof verReporte === 'function') verReporte(repData.reporte.ID_REPORTE);
                 // Refresh stats
                 cargarStatsQuick();
             } else {
-                showMsg('error', data.error || 'Error al registrar la falla');
+                showModalError(data.error || 'Error al registrar la falla');
             }
         } catch (e) {
             console.error('Error guardando falla:', e);
-            showMsg('error', 'Error de conexión');
+            showModalError('Error de conexión al servidor');
         }
     };
 
@@ -283,14 +288,55 @@
        HELPERS
     ═══════════════════════════════════════════ */
     function showMsg(type, message) {
+        console.log('[showMsg]', type, message);
         if (window.showModal) {
-            window.showModal({ type: type, title: type === 'success' ? '¡Éxito!' : type === 'error' ? 'Error' : 'Aviso', message: message, confirmText: 'Aceptar', hideCancel: true });
+            try {
+                window.showModal({ type: type, title: type === 'success' ? '¡Éxito!' : type === 'error' ? 'Error' : 'Aviso', message: message, confirmText: 'Aceptar', hideCancel: true });
+            } catch (e) {
+                alert(message);
+            }
+        } else {
+            alert(message);
         }
     }
 
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    /* ── Inline modal error messages ── */
+    function showModalError(msg) {
+        clearModalErrors();
+        const modal = document.getElementById('modalRegistrarFalla');
+        if (!modal) return;
+        const body = modal.querySelector('[style*="overflow-y:auto"]');
+        if (!body) return;
+        const errDiv = document.createElement('div');
+        errDiv.className = 'mant-modal-error';
+        errDiv.style.cssText = 'background:#fef2f2; border:1px solid #fecaca; color:#dc2626; padding:10px 14px; border-radius:10px; font-size:13px; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:8px; animation:slideDown 0.2s ease-out;';
+        errDiv.innerHTML = '<i class="material-icons" style="font-size:18px;">error</i>' + escapeHtml(msg);
+        body.insertBefore(errDiv, body.firstChild);
+        body.scrollTop = 0;
+    }
+
+    function clearModalErrors() {
+        document.querySelectorAll('.mant-modal-error').forEach(el => el.remove());
+        document.querySelectorAll('.mant-field-error').forEach(el => el.classList.remove('mant-field-error'));
+    }
+
+    function highlightField(fieldId) {
+        const el = document.getElementById(fieldId);
+        if (el) {
+            el.classList.add('mant-field-error');
+            el.style.borderColor = '#dc2626';
+            el.focus();
+            el.addEventListener('input', function handler() {
+                el.style.borderColor = '#cbd5e0';
+                el.classList.remove('mant-field-error');
+                el.removeEventListener('input', handler);
+            });
+        }
     }
 
     async function cargarStatsQuick() {
