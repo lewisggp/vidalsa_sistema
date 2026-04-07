@@ -128,8 +128,8 @@
 
             if (resp.ok && data.success) {
                 cerrarModalFalla();
-                // Show success after modal closes
-                setTimeout(() => showMsg('success', data.message || 'Falla registrada'), 200);
+                // Show snackbar on success
+                showSnackbar(data.message || 'Falla registrada correctamente');
                 // Refresh views
                 if (typeof cargarReportes === 'function') cargarReportes();
                 if (typeof verReporte === 'function') verReporte(repData.reporte.ID_REPORTE);
@@ -341,6 +341,39 @@
     function clearModalErrors() {
         document.querySelectorAll('.mant-modal-error').forEach(el => el.remove());
         document.querySelectorAll('.mant-field-error').forEach(el => el.classList.remove('mant-field-error'));
+    }
+
+    function showSnackbar(msg, type) {
+        type = type || 'success';
+        // Remove existing snackbar
+        const old = document.getElementById('mantSnackbar');
+        if (old) old.remove();
+
+        const colors = {
+            success: { bg: '#16a34a', icon: 'check_circle' },
+            error: { bg: '#dc2626', icon: 'error' },
+            warning: { bg: '#d97706', icon: 'warning' },
+        };
+        const c = colors[type] || colors.success;
+
+        const bar = document.createElement('div');
+        bar.id = 'mantSnackbar';
+        bar.style.cssText = 'position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(20px); background:' + c.bg + '; color:white; padding:12px 24px; border-radius:12px; font-size:14px; font-weight:700; display:flex; align-items:center; gap:10px; z-index:100000; box-shadow:0 8px 24px rgba(0,0,0,0.2); opacity:0; transition:all 0.3s ease;';
+        bar.innerHTML = '<i class="material-icons" style="font-size:20px;">' + c.icon + '</i>' + escapeHtml(msg);
+        document.body.appendChild(bar);
+
+        // Animate in
+        requestAnimationFrame(() => {
+            bar.style.opacity = '1';
+            bar.style.transform = 'translateX(-50%) translateY(0)';
+        });
+
+        // Auto-dismiss
+        setTimeout(() => {
+            bar.style.opacity = '0';
+            bar.style.transform = 'translateX(-50%) translateY(20px)';
+            setTimeout(() => bar.remove(), 300);
+        }, 3000);
     }
 
     function highlightField(fieldId) {
