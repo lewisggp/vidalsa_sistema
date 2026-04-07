@@ -45,6 +45,8 @@
         const frente = document.getElementById('filterFrente')?.value || '';
         const fecha = document.getElementById('filterFecha')?.value || '';
         const estado = document.getElementById('filterEstado')?.value || '';
+        // Store frente for use in fault registration
+        window._mantCurrentFrente = frente;
 
         const params = new URLSearchParams();
         if (frente) params.set('frente', frente);
@@ -58,9 +60,14 @@
             const resp = await fetch('/admin/mantenimiento/reportes?' + params.toString(), {
                 headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
             });
+
+            if (!resp.ok) {
+                throw new Error('HTTP ' + resp.status);
+            }
+
             const data = await resp.json();
             if (container) {
-                container.innerHTML = data.html;
+                container.innerHTML = data.html || '<div class="mant-empty"><i class="material-icons">folder_open</i><p>Sin resultados</p></div>';
                 container.style.opacity = '1';
             }
             const pagEl = document.getElementById('reportesPagination');
@@ -71,7 +78,10 @@
             if (statReportes) statReportes.textContent = data.total ?? 0;
         } catch (e) {
             console.error('Error cargando reportes:', e);
-            if (container) container.style.opacity = '1';
+            if (container) {
+                container.innerHTML = '<div class="mant-empty"><i class="material-icons">error</i><p>Error al cargar reportes. Verifica que las migraciones se hayan ejecutado.</p></div>';
+                container.style.opacity = '1';
+            }
         }
     };
 

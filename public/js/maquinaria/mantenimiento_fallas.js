@@ -17,9 +17,11 @@
     window.cerrarModalFalla = function () {
         const modal = document.getElementById('modalRegistrarFalla');
         if (modal) modal.style.display = 'none';
-        // Reset form
+        // Reset hidden inputs
         const eq = document.getElementById('fallaEquipo');
         if (eq) eq.value = '';
+        const tipo = document.getElementById('fallaTipo');
+        if (tipo) tipo.value = 'MECANICA';
         const desc = document.getElementById('fallaDescripcion');
         if (desc) desc.value = '';
         const sis = document.getElementById('fallaSistema');
@@ -29,11 +31,19 @@
         // Reset priority to MEDIA
         const mediaRadio = document.querySelector('input[name="fallaPrioridad"][value="MEDIA"]');
         if (mediaRadio) mediaRadio.checked = true;
+        // Reset custom dropdowns
+        if (window.clearDropdownFilter) {
+            clearDropdownFilter('fallaEquipoDropdown');
+            clearDropdownFilter('fallaTipoDropdown');
+        }
+        // Restore tipo placeholder
+        const tipoSearch = document.querySelector('#fallaTipoDropdown [data-filter-search]');
+        if (tipoSearch) tipoSearch.placeholder = 'Mecánica';
     };
 
     window.guardarFalla = async function () {
         const equipoId = document.getElementById('fallaEquipo')?.value;
-        const tipoFalla = document.getElementById('fallaTipo')?.value;
+        const tipoFalla = document.getElementById('fallaTipo')?.value || 'MECANICA';
         const sistemaAfectado = document.getElementById('fallaSistema')?.value;
         const descripcion = document.getElementById('fallaDescripcion')?.value;
         const prioridad = document.querySelector('input[name="fallaPrioridad"]:checked')?.value || 'MEDIA';
@@ -47,10 +57,10 @@
             return;
         }
 
-        // Get or create today's report first
-        const frenteId = document.getElementById('filterFrente')?.value;
+        // Get frente from stored value or hidden input
+        const frenteId = window._mantCurrentFrente || document.getElementById('filterFrente')?.value;
         if (!frenteId) {
-            showMsg('warning', 'Selecciona un frente de trabajo primero');
+            showMsg('warning', 'Selecciona un frente de trabajo en los filtros primero');
             return;
         }
 
@@ -116,6 +126,7 @@
     ═══════════════════════════════════════════ */
     window.onEquipoSelected = async function () {
         const equipoId = document.getElementById('fallaEquipo')?.value;
+        console.log('Equipo seleccionado:', equipoId);
         const container = document.getElementById('recomendacionesContainer');
         if (!container) return;
 

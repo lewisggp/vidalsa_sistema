@@ -249,18 +249,53 @@
 
         <!-- Filters -->
         <div class="mant-filter-bar">
-            <select id="filterFrente" onchange="cargarReportes()">
-                <option value="">Todos los frentes</option>
-                @foreach($frentes as $f)
-                    <option value="{{ $f->ID_FRENTE }}">{{ $f->NOMBRE_FRENTE }}</option>
-                @endforeach
-            </select>
-            <input type="date" id="filterFecha" value="{{ date('Y-m-d') }}" onchange="cargarReportes()">
-            <select id="filterEstado" onchange="cargarReportes()">
-                <option value="">Todos</option>
-                <option value="ABIERTO">Abiertos</option>
-                <option value="CERRADO">Cerrados</option>
-            </select>
+            {{-- Dropdown Frente --}}
+            <div class="custom-dropdown" id="frenteFilterSelect" data-filter-type="frente" data-default-label="Todos los Frentes" style="min-width:200px;">
+                <input type="hidden" id="filterFrente" name="frente" data-filter-value value="">
+                <div class="dropdown-trigger" style="padding:0; display:flex; align-items:center; background:#fbfcfd; overflow:hidden; border:1px solid #cbd5e0; border-radius:12px; height:45px;">
+                    <div style="padding:0 10px; display:flex; align-items:center; color:var(--maquinaria-gray-text,#94a3b8);">
+                        <i class="material-icons" style="font-size:18px;">search</i>
+                    </div>
+                    <input type="text" data-filter-search placeholder="Todos los Frentes" autocomplete="off"
+                        style="flex:1; border:none; background:transparent; padding:10px 5px; font-size:14px; outline:none; min-width:0;"
+                        oninput="window.filterDropdownOptions && window.filterDropdownOptions(this)">
+                    <i class="material-icons" data-clear-btn style="padding:0 8px; color:var(--maquinaria-gray-text,#94a3b8); font-size:18px; display:none; cursor:pointer;"
+                        onclick="event.stopPropagation(); clearDropdownFilter('frenteFilterSelect'); cargarReportes();">close</i>
+                </div>
+                <div class="dropdown-content" style="padding:5px; max-height:none; overflow:visible; z-index:1000;">
+                    <div class="dropdown-item-list" style="max-height:250px; overflow-y:auto;">
+                        <div class="dropdown-item selected" data-value="" onclick="selectOption('frenteFilterSelect','','Todos los Frentes'); cargarReportes();">TODOS LOS FRENTES</div>
+                        @foreach($frentes as $f)
+                            <div class="dropdown-item" data-value="{{ $f->ID_FRENTE }}" onclick="selectOption('frenteFilterSelect','{{ $f->ID_FRENTE }}','{{ addslashes($f->NOMBRE_FRENTE) }}'); cargarReportes();">{{ $f->NOMBRE_FRENTE }}</div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+
+            <input type="date" id="filterFecha" value="{{ date('Y-m-d') }}" onchange="cargarReportes()" style="height:45px; border:1px solid #cbd5e0; border-radius:12px; padding:0 14px; font-size:14px; color:#1e293b; background:#fbfcfd; outline:none;">
+
+            {{-- Dropdown Estado --}}
+            <div class="custom-dropdown" id="estadoFilterSelect" data-filter-type="estado" data-default-label="Todos" style="min-width:140px;">
+                <input type="hidden" id="filterEstado" name="estado" data-filter-value value="">
+                <div class="dropdown-trigger" style="padding:0; display:flex; align-items:center; background:#fbfcfd; overflow:hidden; border:1px solid #cbd5e0; border-radius:12px; height:45px;">
+                    <div style="padding:0 10px; display:flex; align-items:center; color:var(--maquinaria-gray-text,#94a3b8);">
+                        <i class="material-icons" style="font-size:18px;">filter_list</i>
+                    </div>
+                    <input type="text" data-filter-search placeholder="Todos" autocomplete="off"
+                        style="flex:1; border:none; background:transparent; padding:10px 5px; font-size:14px; outline:none; min-width:0;"
+                        oninput="window.filterDropdownOptions && window.filterDropdownOptions(this)">
+                    <i class="material-icons" data-clear-btn style="padding:0 8px; color:var(--maquinaria-gray-text,#94a3b8); font-size:18px; display:none; cursor:pointer;"
+                        onclick="event.stopPropagation(); clearDropdownFilter('estadoFilterSelect'); cargarReportes();">close</i>
+                </div>
+                <div class="dropdown-content" style="padding:5px; max-height:none; overflow:visible; z-index:1000;">
+                    <div class="dropdown-item-list" style="max-height:250px; overflow-y:auto;">
+                        <div class="dropdown-item selected" data-value="" onclick="selectOption('estadoFilterSelect','','Todos'); cargarReportes();">TODOS</div>
+                        <div class="dropdown-item" data-value="ABIERTO" onclick="selectOption('estadoFilterSelect','ABIERTO','Abiertos'); cargarReportes();">ABIERTOS</div>
+                        <div class="dropdown-item" data-value="CERRADO" onclick="selectOption('estadoFilterSelect','CERRADO','Cerrados'); cargarReportes();">CERRADOS</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="search-wrapper">
                 <i class="material-icons">search</i>
                 <input type="text" id="searchReportes" placeholder="Buscar equipo, descripción..." onkeyup="filtrarTablaLocal(this.value)">
@@ -371,14 +406,30 @@
                     <span style="background:#0067b1; color:white; padding:2px 8px; border-radius:50%; font-size:11px; font-weight:800; margin-right:6px;">1</span>
                     Equipo
                 </label>
-                <select id="fallaEquipo" style="width:100%; padding:10px 14px; border:1px solid #cbd5e0; border-radius:10px; font-size:13px; background:#f8fafc; outline:none;" onchange="onEquipoSelected()">
-                    <option value="">Seleccionar equipo...</option>
-                    @foreach($equipos as $eq)
-                        <option value="{{ $eq->ID_EQUIPO }}" data-marca="{{ $eq->MARCA }}" data-modelo="{{ $eq->MODELO }}">
-                            {{ $eq->tipo->nombre ?? 'S/T' }} - {{ $eq->MARCA }} {{ $eq->MODELO }} | {{ $eq->SERIAL_CHASIS ?? $eq->CODIGO_PATIO ?? '#'.$eq->NUMERO_ETIQUETA }}
-                        </option>
-                    @endforeach
-                </select>
+                <div class="custom-dropdown" id="fallaEquipoDropdown" data-default-label="Seleccionar equipo..." style="width:100%;">
+                    <input type="hidden" id="fallaEquipo" value="">
+                    <div class="dropdown-trigger" style="padding:0; display:flex; align-items:center; background:#fbfcfd; overflow:hidden; border:1px solid #cbd5e0; border-radius:12px; height:45px;">
+                        <div style="padding:0 10px; display:flex; align-items:center; color:var(--maquinaria-gray-text,#94a3b8);">
+                            <i class="material-icons" style="font-size:18px;">search</i>
+                        </div>
+                        <input type="text" data-filter-search placeholder="Seleccionar equipo..." autocomplete="off"
+                            style="flex:1; border:none; background:transparent; padding:10px 5px; font-size:13px; outline:none; min-width:0;"
+                            oninput="window.filterDropdownOptions && window.filterDropdownOptions(this)">
+                        <i class="material-icons" data-clear-btn style="padding:0 8px; color:var(--maquinaria-gray-text,#94a3b8); font-size:18px; display:none; cursor:pointer;"
+                            onclick="event.stopPropagation(); clearDropdownFilter('fallaEquipoDropdown'); onEquipoSelected();">close</i>
+                    </div>
+                    <div class="dropdown-content" style="padding:5px; max-height:none; overflow:visible; z-index:10002;">
+                        <div class="dropdown-item-list" style="max-height:220px; overflow-y:auto;">
+                            <div class="dropdown-item" data-value="" onclick="selectOption('fallaEquipoDropdown','','Seleccionar equipo...'); onEquipoSelected();">— Ninguno —</div>
+                            @foreach($equipos as $eq)
+                                <div class="dropdown-item" data-value="{{ $eq->ID_EQUIPO }}"
+                                    onclick="selectOption('fallaEquipoDropdown','{{ $eq->ID_EQUIPO }}','{{ addslashes(($eq->tipo->nombre ?? 'S/T') . ' - ' . $eq->MARCA . ' ' . $eq->MODELO) }}'); onEquipoSelected();">
+                                    {{ $eq->tipo->nombre ?? 'S/T' }} - {{ $eq->MARCA }} {{ $eq->MODELO }} | {{ $eq->SERIAL_CHASIS ?? $eq->CODIGO_PATIO ?? '#'.$eq->NUMERO_ETIQUETA }}
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
                 <!-- Recomendaciones auto -->
                 <div id="recomendacionesContainer" style="display:none; margin-top:8px;"></div>
             </div>
@@ -389,14 +440,27 @@
                     <span style="background:#0067b1; color:white; padding:2px 8px; border-radius:50%; font-size:11px; font-weight:800; margin-right:6px;">2</span>
                     Tipo de Falla
                 </label>
-                <select id="fallaTipo" style="width:100%; padding:10px 14px; border:1px solid #cbd5e0; border-radius:10px; font-size:13px; background:#f8fafc; outline:none;">
-                    <option value="MECANICA">Mecánica</option>
-                    <option value="ELECTRICA">Eléctrica</option>
-                    <option value="HIDRAULICA">Hidráulica</option>
-                    <option value="NEUMATICA">Neumática</option>
-                    <option value="ESTRUCTURAL">Estructural</option>
-                    <option value="OTRA">Otra</option>
-                </select>
+                <div class="custom-dropdown" id="fallaTipoDropdown" data-default-label="Mecánica" style="width:100%;">
+                    <input type="hidden" id="fallaTipo" value="MECANICA">
+                    <div class="dropdown-trigger" style="padding:0; display:flex; align-items:center; background:#fbfcfd; overflow:hidden; border:1px solid #cbd5e0; border-radius:12px; height:45px;">
+                        <div style="padding:0 10px; display:flex; align-items:center; color:var(--maquinaria-gray-text,#94a3b8);">
+                            <i class="material-icons" style="font-size:18px;">category</i>
+                        </div>
+                        <input type="text" data-filter-search placeholder="Mecánica" autocomplete="off"
+                            style="flex:1; border:none; background:transparent; padding:10px 5px; font-size:13px; outline:none; min-width:0;"
+                            oninput="window.filterDropdownOptions && window.filterDropdownOptions(this)">
+                    </div>
+                    <div class="dropdown-content" style="padding:5px; max-height:none; overflow:visible; z-index:10002;">
+                        <div class="dropdown-item-list" style="max-height:220px; overflow-y:auto;">
+                            <div class="dropdown-item selected" data-value="MECANICA" onclick="selectOption('fallaTipoDropdown','MECANICA','Mecánica');">Mecánica</div>
+                            <div class="dropdown-item" data-value="ELECTRICA" onclick="selectOption('fallaTipoDropdown','ELECTRICA','Eléctrica');">Eléctrica</div>
+                            <div class="dropdown-item" data-value="HIDRAULICA" onclick="selectOption('fallaTipoDropdown','HIDRAULICA','Hidráulica');">Hidráulica</div>
+                            <div class="dropdown-item" data-value="NEUMATICA" onclick="selectOption('fallaTipoDropdown','NEUMATICA','Neumática');">Neumática</div>
+                            <div class="dropdown-item" data-value="ESTRUCTURAL" onclick="selectOption('fallaTipoDropdown','ESTRUCTURAL','Estructural');">Estructural</div>
+                            <div class="dropdown-item" data-value="OTRA" onclick="selectOption('fallaTipoDropdown','OTRA','Otra');">Otra</div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Sistema Afectado -->
