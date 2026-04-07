@@ -12,6 +12,21 @@
     window.abrirFormularioFalla = function () {
         const modal = document.getElementById('modalRegistrarFalla');
         if (modal) modal.style.display = 'flex';
+
+        // Pre-fill frente from page filter if selected
+        const filterFrenteVal = document.getElementById('filterFrente')?.value;
+        if (filterFrenteVal) {
+            const fallaFrenteHidden = document.getElementById('fallaFrente');
+            if (fallaFrenteHidden) fallaFrenteHidden.value = filterFrenteVal;
+            // Update dropdown placeholder to show selected frente name
+            const frenteDropdown = document.getElementById('fallaFrenteDropdown');
+            if (frenteDropdown) {
+                const matchItem = frenteDropdown.querySelector('.dropdown-item[data-value="' + filterFrenteVal + '"]');
+                if (matchItem && window.selectOption) {
+                    selectOption('fallaFrenteDropdown', filterFrenteVal, matchItem.textContent.trim());
+                }
+            }
+        }
     };
 
     window.cerrarModalFalla = function () {

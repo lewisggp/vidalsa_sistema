@@ -61,7 +61,7 @@
     /* ── Filter Bar ── */
     .mant-filter-bar {
         display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: nowrap; align-items: center;
-        width: 100%; box-sizing: border-box; overflow: hidden;
+        width: 100%; box-sizing: border-box;
     }
     .mant-filter-bar .custom-dropdown {
         flex: 1 1 0; min-width: 0; position: relative;
