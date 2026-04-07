@@ -91,6 +91,25 @@ Route::middleware(['auth'])->group(function () {
             Route::patch('sub-activos/{id}',  [App\Http\Controllers\SubActivoController::class, 'update']) ->name('sub-activos.update');
             Route::delete('sub-activos/{id}', [App\Http\Controllers\SubActivoController::class, 'destroy'])->name('sub-activos.destroy');
 
+            // ── Mantenimiento Integral ───────────────────────────────────────
+            Route::prefix('mantenimiento')->name('mantenimiento.')->group(function () {
+                Route::get('/',                     [App\Http\Controllers\MantenimientoController::class, 'index'])->name('index');
+                Route::get('/reportes',             [App\Http\Controllers\MantenimientoController::class, 'getReportesDiarios'])->name('reportes');
+                Route::get('/reporte/{id}',         [App\Http\Controllers\MantenimientoController::class, 'showReporteDiario'])->name('reporte.show');
+                Route::post('/reporte-hoy',         [App\Http\Controllers\MantenimientoController::class, 'getOrCreateReporte'])->name('reporte.hoy');
+                Route::post('/reporte/{id}/cerrar', [App\Http\Controllers\MantenimientoController::class, 'cerrarReporte'])->name('reporte.cerrar');
+                Route::post('/falla',               [App\Http\Controllers\MantenimientoController::class, 'storeFalla'])->name('falla.store');
+                Route::put('/falla/{id}',           [App\Http\Controllers\MantenimientoController::class, 'updateFalla'])->name('falla.update');
+                Route::get('/consolidado',          [App\Http\Controllers\MantenimientoController::class, 'consolidadoDiario'])->name('consolidado');
+                Route::get('/timeline/{equipoId}',  [App\Http\Controllers\MantenimientoController::class, 'timeline'])->name('timeline');
+                Route::get('/recomendar/{equipoId}',[App\Http\Controllers\MantenimientoController::class, 'recomendarMateriales'])->name('recomendar');
+                Route::post('/falla/{id}/material', [App\Http\Controllers\MantenimientoController::class, 'storeMaterial'])->name('material.store');
+                Route::get('/falla/{id}/pdf',       [App\Http\Controllers\MantenimientoController::class, 'exportPdfIndividual'])->name('falla.pdf');
+                Route::post('/reporte/{id}/pdf',    [App\Http\Controllers\MantenimientoController::class, 'exportPdfLote'])->name('reporte.pdf');
+                Route::get('/consolidado/pdf',      [App\Http\Controllers\MantenimientoController::class, 'exportPdfConsolidado'])->name('consolidado.pdf');
+                Route::get('/stats',                [App\Http\Controllers\MantenimientoController::class, 'statsWidget'])->name('stats');
+            });
+
             // ── Herramientas Manuales ────────────────────────────────────────
             Route::get('herramientas/consolidado-manual', function () {
                 return view('admin.herramientas.consolidado_manual');
