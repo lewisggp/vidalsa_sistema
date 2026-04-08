@@ -1137,7 +1137,6 @@ function PantallaDashboard({ onOpenMenu, equiposCount }) {
 
 // ─── PANTALLA DE EQUIPOS ──────────────────────────────────────────────────────
 function PantallaEquipos({ user, onOpenMenu }) {
-  const [equipos, setEquipos] = useState([]);
   const [equiposTodos, setEquiposTodos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
@@ -1300,9 +1299,8 @@ function PantallaEquipos({ user, onOpenMenu }) {
 
       // Guardar TODOS los equipos (filtroEstado se aplica en memoria via useMemo)
       setEquiposTodos(data);
-      setEquipos(data);
     } catch (err) {
-      console.warn("Error al cargar equipos:", err);
+      // Error silencioso en modo offline — datos locales pueden no estar disponibles aún
       showModernAlert("Error", "No se pudo leer los datos locales.");
     } finally {
       setLoading(false);
