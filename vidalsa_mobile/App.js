@@ -411,9 +411,9 @@ async function leerEquiposLocal(busqueda = "") {
   return await database.getAllAsync(
     `SELECT * FROM equipos WHERE
       UPPER(codigo_patio) LIKE ? OR UPPER(marca) LIKE ? OR UPPER(modelo) LIKE ?
-      OR UPPER(serial_chasis) LIKE ? OR UPPER(frente) LIKE ? OR UPPER(placa) LIKE ?
+      OR UPPER(serial_chasis) LIKE ? OR UPPER(serial_motor) LIKE ? OR UPPER(frente) LIKE ? OR UPPER(placa) LIKE ?
      ORDER BY codigo_patio ASC`,
-    [q, q, q, q, q, q],
+    [q, q, q, q, q, q, q],
   );
 }
 
@@ -1553,11 +1553,9 @@ function PantallaEquipos({ user, onOpenMenu }) {
     );
   };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-      <TopHeader onOpenMenu={onOpenMenu} />
-
+  // Header scrollable del FlatList (filtros + consolidado)
+  const ListaHeader = () => (
+    <View>
       {/* Título */}
       <View
         style={{
@@ -2352,8 +2350,15 @@ function PantallaEquipos({ user, onOpenMenu }) {
           </TouchableOpacity>
         </View>
       </View>
+    </View>
+  );
 
-      {/* Lista de Tarjetas */}
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <TopHeader onOpenMenu={onOpenMenu} />
+
+      {/* Lista de Tarjetas — los filtros se desplazan con la lista */}
       {loading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={C.blue} />
@@ -2365,6 +2370,7 @@ function PantallaEquipos({ user, onOpenMenu }) {
           data={equiposFiltrados}
           keyExtractor={(item) => String(item.id_equipo)}
           renderItem={renderItem}
+          ListHeaderComponent={<ListaHeader />}
           ListEmptyComponent={
             <View style={[styles.centered, { paddingVertical: 60 }]}>
               <MaterialIcons name="filter-alt" size={48} color="#cbd5e0" />

@@ -187,8 +187,17 @@ class ConsumiblesController extends Controller
         // Invalidar caché de gráficos — los datos cambiaron
         Cache::increment('consumibles_data_version');
 
-        return redirect()->route('consumibles.index')
-            ->with('success', "$insertados registros cargados exitosamente. Usa el botón 'Match Automático' para identificar los equipos.");
+        $mensaje = "$insertados registros cargados exitosamente. Usa el botón 'Match Automático' para identificar los equipos.";
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => $mensaje,
+                'insertados' => $insertados,
+                'redirect' => route('consumibles.index'),
+            ]);
+        }
+
+        return redirect()->route('consumibles.index')->with('success', $mensaje);
     }
 
     // ══════════════════════════════════════════════════════════════

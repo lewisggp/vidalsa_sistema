@@ -477,16 +477,96 @@ window.pasteLoteCargarHandler = window.pasteLoteCargarHandler || function(e) {
 document.removeEventListener('paste', window.pasteLoteCargarHandler);
 document.addEventListener('paste', window.pasteLoteCargarHandler);
 
-// ── Validación antes de enviar ────────────────────────────────────
-if(document.getElementById('formLote')) {
-    document.getElementById('formLote').onsubmit = function(e) {
+// ── Envío AJAX con spinner ────────────────────────────────────────
+if (document.getElementById('formLote')) {
+    document.getElementById('formLote').addEventListener('submit', function(e) {
+        e.preventDefault();
+
         const frente = document.getElementById('idFrenteHidden').value;
         const tipo   = document.getElementById('tipoSelect').value;
         const filas  = document.getElementById('cuerpoTabla').children.length;
-        if (!frente) { e.preventDefault(); alert('Selecciona un frente de trabajo.'); return; }
-        if (!tipo)   { e.preventDefault(); alert('Selecciona el tipo de consumible.'); return; }
-        if (!filas)  { e.preventDefault(); alert('Agrega al menos una fila.'); return; }
-    };
+
+        if (!frente) {
+            if (window.showModal) {
+                window.showModal({ type:'warning', title:'Campo requerido', message:'Selecciona un frente de trabajo.', confirmText:'Entendido', hideCancel:true });
+            } else { alert('Selecciona un frente de trabajo.'); }
+            return;
+        }
+        if (!tipo) {
+            if (window.showModal) {
+                window.showModal({ type:'warning', title:'Campo requerido', message:'Selecciona el tipo de consumible.', confirmText:'Entendido', hideCancel:true });
+            } else { alert('Selecciona el tipo de consumible.'); }
+            return;
+        }
+        if (!filas) {
+            if (window.showModal) {
+                window.showModal({ type:'warning', title:'Tabla vacía', message:'Agrega al menos una fila con datos.', confirmText:'Entendido', hideCancel:true });
+            } else { alert('Agrega al menos una fila.'); }
+            return;
+        }
+
+        // Mostrar spinner
+        if (window.showPreloader) window.showPreloader();
+
+        const formData = new FormData(this);
+
+        fetch(this.action, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: formData
+        })
+        .then(async response => {
+            // Detectar sesión expirada
+            if (response.status === 419 || response.status === 401 || (response.redirected && response.url.includes('/login'))) {
+                window.location.href = '/login';
+                return Promise.reject(new Error('Sesión expirada.'));
+            }
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                // Respuesta de redirección Laravel exitosa (forma clásica de back()->redirect())
+                // Redirigir al index de consumibles manualmente
+                window.location.href = '{{ route("consumibles.index") }}';
+                return Promise.reject(new Error('redirect'));
+            }
+            const data = await response.json();
+            return { status: response.status, body: data };
+        })
+        .then(({ status, body }) => {
+            if (window.hidePreloader) window.hidePreloader();
+            if (status === 200 || status === 201 || status === 302) {
+                if (window.showModal) {
+                    window.showModal({
+                        type: 'success',
+                        title: '¡Lote guardado!',
+                        message: body.message || 'Los registros fueron guardados correctamente.',
+                        confirmText: 'Ver Consumibles',
+                        hideCancel: true,
+                        onConfirm: () => { window.location.href = '{{ route("consumibles.index") }}'; }
+                    });
+                } else {
+                    window.location.href = '{{ route("consumibles.index") }}';
+                }
+            } else if (status === 422 && body.errors) {
+                const msgs = Object.values(body.errors).flat().join('\n');
+                if (window.showModal) {
+                    window.showModal({ type:'warning', title:'Errores de validación', message: msgs, confirmText:'Entendido', hideCancel:true });
+                } else { alert(msgs); }
+            } else {
+                throw new Error(body.message || 'Error desconocido del servidor.');
+            }
+        })
+        .catch(err => {
+            if (err.message === 'redirect') return; // redirect ya iniciado, no mostrar error
+            if (window.hidePreloader) window.hidePreloader();
+            if (window.showModal) {
+                window.showModal({ type:'error', title:'Error', message: err.message || 'Ocurrió un error al guardar.', confirmText:'Cerrar', hideCancel:true });
+            } else { alert(err.message); }
+        });
+    });
 }
 
 // ── Inicio: 5 filas vacías ────────────────────────────────────────
