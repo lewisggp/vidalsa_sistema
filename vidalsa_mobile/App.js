@@ -1196,6 +1196,9 @@ function PantallaEquipos({ user, onOpenMenu }) {
   const [busqDropTipo, setBusqDropTipo] = useState("");
   const [showDropAsignar, setShowDropAsignar] = useState(false);
   const [busqDropAsignar, setBusqDropAsignar] = useState("");
+  // Frentes completos (con ID) para el modal de asignación
+  const [frentesCompletos, setFrentesCompletos] = useState([]);
+  const [asignando, setAsignando] = useState(false);
 
   // Sub-activos filtros
   const [filtroSubFrente, setFiltroSubFrente] = useState("");
@@ -1224,7 +1227,11 @@ function PantallaEquipos({ user, onOpenMenu }) {
     try {
       let data = await leerEquiposLocal(busqueda);
 
-      // Extraer frentes y tipos únicos para los dropdowns
+      // Cargar frentes completos desde SQLite (con IDs para movilizaciones)
+      const frentesDB = await leerFrentesLocal();
+      setFrentesCompletos(frentesDB);
+
+      // Extraer frentes y tipos únicos para los dropdowns de filtro
       const frentesSet = [...new Set(data.map(e => e.frente || "").filter(Boolean))].sort();
       const tiposSet = [...new Set(data.map(e => e.tipo || "").filter(Boolean))].sort();
       setFrentesLista(frentesSet);
@@ -2454,22 +2461,52 @@ function PantallaEquipos({ user, onOpenMenu }) {
               </View>
             </View>
             <FlatList
-              data={frentesLista.filter(f => !busqDropAsignar || f.toLowerCase().includes(busqDropAsignar.toLowerCase()))}
-              keyExtractor={(item) => item}
+              data={frentesCompletos.filter(f =>
+                !busqDropAsignar ||
+                f.nombre.toLowerCase().includes(busqDropAsignar.toLowerCase())
+              )}
+              keyExtractor={(item) => String(item.id_frente)}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => {
+                    if (asignando) return;
                     showModernAlert(
                       "Confirmar Asignación",
-                      `¿Mover ${equiposSelect.length} equipo(s) al frente "${item}"?`,
+                      `¿Mover ${equiposSelect.length} equipo(s) al frente "${item.nombre}"?\n\nSe guardará en el teléfono y se sincronizará cuando haya conexión.`,
                       [
                         { text: "Cancelar", style: "cancel" },
                         {
                           text: "Asignar",
-                          onPress: () => {
-                            showModernAlert("Éxito", `${equiposSelect.length} equipo(s) asignados a "${item}"`);
-                            setEquiposSelect([]);
-                            setShowDropAsignar(false);
+                          onPress: async () => {
+                            setAsignando(true);
+                            try {
+                              const database = await getDb();
+                              for (const eq of equiposSelect) {
+                                // 1. Guardar movilización pendiente offline
+                                await guardarMovPendiente({
+                                  tipo: "despacho",
+                                  id_equipo: eq.id_equipo,
+                                  id_frente_dest: item.id_frente,
+                                  detalle_ubi: "",
+                                });
+                                // 2. Actualizar SQLite local inmediatamente
+                                await database.runAsync(
+                                  "UPDATE equipos SET frente = ? WHERE id_equipo = ?",
+                                  [item.nombre, eq.id_equipo],
+                                );
+                              }
+                              setEquiposSelect([]);
+                              setShowDropAsignar(false);
+                              await cargar(); // Refrescar lista
+                              showModernAlert(
+                                "✅ Guardado",
+                                `${equiposSelect.length} equipo(s) asignados a "${item.nombre}".\n\nPresiona "Sincronizar" en Movilizaciones cuando tengas conexión.`,
+                              );
+                            } catch (e) {
+                              showModernAlert("Error", "No se pudo guardar: " + e.message);
+                            } finally {
+                              setAsignando(false);
+                            }
                           },
                         },
                       ]
@@ -2478,11 +2515,11 @@ function PantallaEquipos({ user, onOpenMenu }) {
                   style={{ paddingHorizontal:16, paddingVertical:14, borderBottomWidth:1, borderColor:"#f1f5f9", flexDirection:"row", alignItems:"center", gap:10 }}
                 >
                   <MaterialIcons name="business" size={18} color="#64748b" />
-                  <Text style={{ fontSize:14, color:"#334155", fontWeight:"500", flex:1 }} numberOfLines={2}>{item}</Text>
+                  <Text style={{ fontSize:14, color:"#334155", fontWeight:"500", flex:1 }} numberOfLines={2}>{item.nombre}</Text>
                   <MaterialIcons name="chevron-right" size={20} color="#cbd5e0" />
                 </TouchableOpacity>
               )}
-              ListEmptyComponent={<Text style={{ padding:20, textAlign:"center", color:"#94a3b8" }}>Sin frentes disponibles</Text>}
+              ListEmptyComponent={<Text style={{ padding:20, textAlign:"center", color:"#94a3b8" }}>Sin frentes en el dispositivo. Descarga datos primero.</Text>}
             />
           </View>
         </View>
