@@ -410,200 +410,151 @@ class EquipoController extends Controller
         }
 
         $equipos->with(['frenteActual', 'tipo', 'documentacion', 'especificaciones']);
+        $equiposList = $equipos->get();
 
         // Determinar nombre del frente para el encabezado
         $nombreFrente = 'TODOS LOS FRENTES';
         if ($request->filled('id_frente') && $request->id_frente !== 'all') {
             $frente = FrenteTrabajo::find($request->id_frente);
-            if ($frente) $nombreFrente = strtoupper($frente->NOMBRE_FRENTE);
+            if ($frente) $nombreFrente = mb_strtoupper($frente->NOMBRE_FRENTE);
         }
 
         $currentDate = date('d/m/Y');
-        $fileName = 'listado_equipos_' . date('Y-m-d') . '.xls';
+        $fileName = 'listado_equipos_' . date('Y-m-d') . '.xlsx';
 
-        return response()->streamDownload(function () use ($equipos, $nombreFrente, $currentDate) {
-            $handle = fopen('php://output', 'w');
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Equipos');
 
-            // ── XML / Workbook header ──────────────────────────────────────────
-            fwrite($handle, '<?xml version="1.0"?>' . "\n");
-            fwrite($handle, '<?mso-application progid="Excel.Sheet"?>' . "\n");
-            fwrite($handle, '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"' . "\n");
-            fwrite($handle, ' xmlns:o="urn:schemas-microsoft-com:office:office"' . "\n");
-            fwrite($handle, ' xmlns:x="urn:schemas-microsoft-com:office:excel"' . "\n");
-            fwrite($handle, ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"' . "\n");
-            fwrite($handle, ' xmlns:html="http://www.w3.org/TR/REC-html40">' . "\n");
+        $spreadsheet->getDefaultStyle()->getFont()->setName('Arial')->setSize(10);
 
-            // ── Styles ────────────────────────────────────────────────────────
-            $styles = <<<XML
- <Styles>
-  <Style ss:ID="sEmpresa">
-   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
-   <Borders>
-    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Left"   ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Right"  ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Top"    ss:LineStyle="Continuous" ss:Weight="1"/>
-   </Borders>
-   <Font ss:Bold="1" ss:Color="#FFFFFF" ss:Size="14"/>
-   <Interior ss:Color="#002060" ss:Pattern="Solid"/>
-  </Style>
-  <Style ss:ID="sTitulo">
-   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
-   <Borders>
-    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Left"   ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Right"  ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Top"    ss:LineStyle="Continuous" ss:Weight="1"/>
-   </Borders>
-   <Font ss:Bold="1" ss:Color="#FFFFFF" ss:Size="13"/>
-   <Interior ss:Color="#0070C0" ss:Pattern="Solid"/>
-  </Style>
-  <Style ss:ID="sSubtitulo">
-   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
-   <Borders>
-    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Left"   ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Right"  ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Top"    ss:LineStyle="Continuous" ss:Weight="1"/>
-   </Borders>
-   <Font ss:Bold="1" ss:Color="#002060" ss:Size="11"/>
-   <Interior ss:Color="#D6E4F0" ss:Pattern="Solid"/>
-  </Style>
-  <Style ss:ID="sHeader">
-   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
-   <Borders>
-    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2"/>
-    <Border ss:Position="Left"   ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Right"  ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Top"    ss:LineStyle="Continuous" ss:Weight="2"/>
-   </Borders>
-   <Font ss:Bold="1" ss:Color="#FFFFFF" ss:Size="10"/>
-   <Interior ss:Color="#1F4E79" ss:Pattern="Solid"/>
-  </Style>
-  <Style ss:ID="sData">
-   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
-   <Borders>
-    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Left"   ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Right"  ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Top"    ss:LineStyle="Continuous" ss:Weight="1"/>
-   </Borders>
-   <Font ss:Size="10"/>
-  </Style>
-  <Style ss:ID="sDataCenter">
-   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
-   <Borders>
-    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Left"   ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Right"  ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Top"    ss:LineStyle="Continuous" ss:Weight="1"/>
-   </Borders>
-   <Font ss:Size="10"/>
-  </Style>
-  <Style ss:ID="sDataAlt">
-   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
-   <Borders>
-    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Left"   ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Right"  ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Top"    ss:LineStyle="Continuous" ss:Weight="1"/>
-   </Borders>
-   <Font ss:Size="10"/>
-   <Interior ss:Color="#EBF3FB" ss:Pattern="Solid"/>
-  </Style>
-  <Style ss:ID="sDataCenterAlt">
-   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
-   <Borders>
-    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Left"   ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Right"  ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Top"    ss:LineStyle="Continuous" ss:Weight="1"/>
-   </Borders>
-   <Font ss:Size="10"/>
-   <Interior ss:Color="#EBF3FB" ss:Pattern="Solid"/>
-  </Style>
- </Styles>
-XML;
-            fwrite($handle, $styles . "\n");
-            fwrite($handle, ' <Worksheet ss:Name="Equipos">' . "\n");
-            fwrite($handle, '  <Table ss:DefaultColumnWidth="80">' . "\n");
-
-            // ── Anchos de columna ─────────────────────────────────────────────
-            // Nro | Frente | Tipo | Marca | Modelo | Placa | Serial Chasis
-            fwrite($handle, '   <Column ss:Width="35"/>'  . "\n"); // Nro
-            fwrite($handle, '   <Column ss:Width="140"/>' . "\n"); // Frente
-            fwrite($handle, '   <Column ss:Width="120"/>' . "\n"); // Tipo
-            fwrite($handle, '   <Column ss:Width="100"/>' . "\n"); // Marca
-            fwrite($handle, '   <Column ss:Width="120"/>' . "\n"); // Modelo
-            fwrite($handle, '   <Column ss:Width="80"/>'  . "\n"); // Placa
-            fwrite($handle, '   <Column ss:Width="140"/>' . "\n"); // Serial Chasis
-
-            // ── Fila 1 – Nombre de la empresa (6 cols) ───────────────────────
-            fwrite($handle, '   <Row ss:Height="40">' . "\n");
-            fwrite($handle, '    <Cell ss:MergeAcross="6" ss:StyleID="sEmpresa"><Data ss:Type="String">C.A. VENEZOLANA DE INDUSTRIAS LÁCTEAS S.A. — CVIDALSA</Data></Cell>' . "\n");
-            fwrite($handle, '   </Row>' . "\n");
-
-            // ── Fila 2 – Título del reporte ───────────────────────────────────
-            fwrite($handle, '   <Row ss:Height="35">' . "\n");
-            fwrite($handle, '    <Cell ss:MergeAcross="6" ss:StyleID="sTitulo"><Data ss:Type="String">LISTADO DE MAQUINARIAS Y EQUIPOS</Data></Cell>' . "\n");
-            fwrite($handle, '   </Row>' . "\n");
-
-            // ── Fila 3 – Frente de trabajo y fecha ───────────────────────────
-            fwrite($handle, '   <Row ss:Height="25">' . "\n");
-            fwrite($handle, '    <Cell ss:MergeAcross="4" ss:StyleID="sSubtitulo"><Data ss:Type="String">FRENTE DE TRABAJO: ' . htmlspecialchars($nombreFrente) . '</Data></Cell>' . "\n");
-            fwrite($handle, '    <Cell ss:MergeAcross="1" ss:StyleID="sSubtitulo"><Data ss:Type="String">FECHA: ' . $currentDate . '</Data></Cell>' . "\n");
-            fwrite($handle, '   </Row>' . "\n");
-
-            // ── Fila 4 – Encabezados de columna ──────────────────────────────
-            $headers = ['Nro', 'Frente de Trabajo', 'Tipo de Equipo', 'Marca', 'Modelo', 'Placa', 'Serial de Chasis'];
-            fwrite($handle, '   <Row ss:Height="30">' . "\n");
-            foreach ($headers as $hdr) {
-                fwrite($handle, '    <Cell ss:StyleID="sHeader"><Data ss:Type="String">' . htmlspecialchars($hdr) . '</Data></Cell>' . "\n");
+        // Logo
+        $logoPath = public_path('images/maquinaria/logo.png');
+        if (file_exists($logoPath)) {
+            try {
+                $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
+                $drawing->setName('Logo CVIDALSA');
+                $drawing->setDescription('Logo');
+                $drawing->setPath($logoPath);
+                $drawing->setCoordinates('A1');
+                $drawing->setOffsetX(10);
+                $drawing->setOffsetY(5);
+                $drawing->setHeight(40);
+                $drawing->setWorksheet($sheet);
+            } catch (\Exception $e) {
+                // Silently ignore if image failed
             }
-            fwrite($handle, '   </Row>' . "\n");
+        }
 
-            // ── Filas de datos ────────────────────────────────────────────────
-            $rowNum = 0;
-            $equipos->chunk(200, function ($chunk) use ($handle, &$rowNum) {
-                foreach ($chunk as $equipo) {
-                    $rowNum++;
-                    $isAlt  = ($rowNum % 2 === 0);
-                    $sData  = $isAlt ? 'sDataAlt'       : 'sData';
-                    $sCenter = $isAlt ? 'sDataCenterAlt' : 'sDataCenter';
+        // Fila 1 - Título Empresa
+        $sheet->mergeCells('A1:G1');
+        $sheet->setCellValue('A1', 'C.A. VENEZOLANA DE INDUSTRIAS LÁCTEAS S.A. — CVIDALSA');
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_WHITE);
+        $sheet->getStyle('A1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF002060');
+        $sheet->getRowDimension(1)->setRowHeight(40);
 
-                    $frente  = $equipo->frenteActual ? strtoupper($equipo->frenteActual->NOMBRE_FRENTE) : '—';
-                    $tipo    = $equipo->tipo          ? strtoupper($equipo->tipo->nombre)               : '—';
-                    $marca   = strtoupper($equipo->MARCA   ?? '—');
-                    $modelo  = strtoupper($equipo->MODELO  ?? '—');
-                    $placa   = $equipo->documentacion  ? strtoupper($equipo->documentacion->PLACA ?? '—') : '—';
-                    $chasis  = strtoupper($equipo->SERIAL_CHASIS ?? '—');
+        // Fila 2 - Subtítulo
+        $sheet->mergeCells('A2:G2');
+        $sheet->setCellValue('A2', 'LISTADO DE MAQUINARIAS Y EQUIPOS');
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A2')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(13)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_WHITE);
+        $sheet->getStyle('A2')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF0070C0');
+        $sheet->getRowDimension(2)->setRowHeight(35);
 
-                    fwrite($handle, '   <Row ss:Height="20">' . "\n");
-                    fwrite($handle, '    <Cell ss:StyleID="' . $sCenter . '"><Data ss:Type="Number">' . $rowNum . '</Data></Cell>' . "\n");
-                    fwrite($handle, '    <Cell ss:StyleID="' . $sData   . '"><Data ss:Type="String">' . htmlspecialchars($frente)  . '</Data></Cell>' . "\n");
-                    fwrite($handle, '    <Cell ss:StyleID="' . $sData   . '"><Data ss:Type="String">' . htmlspecialchars($tipo)    . '</Data></Cell>' . "\n");
-                    fwrite($handle, '    <Cell ss:StyleID="' . $sData   . '"><Data ss:Type="String">' . htmlspecialchars($marca)   . '</Data></Cell>' . "\n");
-                    fwrite($handle, '    <Cell ss:StyleID="' . $sData   . '"><Data ss:Type="String">' . htmlspecialchars($modelo)  . '</Data></Cell>' . "\n");
-                    fwrite($handle, '    <Cell ss:StyleID="' . $sCenter . '"><Data ss:Type="String">' . htmlspecialchars($placa)   . '</Data></Cell>' . "\n");
-                    fwrite($handle, '    <Cell ss:StyleID="' . $sData   . '"><Data ss:Type="String">' . htmlspecialchars($chasis)  . '</Data></Cell>' . "\n");
-                    fwrite($handle, '   </Row>' . "\n");
-                }
-            });
+        // Fila 3 - Frente y fecha
+        $sheet->mergeCells('A3:E3');
+        $sheet->setCellValue('A3', 'FRENTE DE TRABAJO: ' . $nombreFrente);
+        $sheet->mergeCells('F3:G3');
+        $sheet->setCellValue('F3', 'FECHA: ' . $currentDate);
+        $sheet->getStyle('A3:G3')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A3:G3')->getFont()->setBold(true)->setSize(11)->getColor()->setARGB('FF002060');
+        $sheet->getStyle('A3:G3')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFD6E4F0');
+        $sheet->getRowDimension(3)->setRowHeight(25);
 
-            // ── Fila de total ─────────────────────────────────────────────────
-            fwrite($handle, '   <Row ss:Height="22">' . "\n");
-            fwrite($handle, '    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Total</Data></Cell>' . "\n");
-            fwrite($handle, '    <Cell ss:MergeAcross="5" ss:StyleID="sHeader"><Data ss:Type="Number">' . $rowNum . '</Data></Cell>' . "\n");
-            fwrite($handle, '   </Row>' . "\n");
+        // Fila 4 - Encabezados
+        $headers = ['Nro', 'Frente de Trabajo', 'Tipo de Equipo', 'Marca', 'Modelo', 'Placa', 'Serial de Chasis'];
+        $colMap = ['A','B','C','D','E','F','G'];
+        foreach($headers as $index => $hdr) {
+            $sheet->setCellValue($colMap[$index] . '4', $hdr);
+        }
+        $sheet->getStyle('A4:G4')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A4:G4')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A4:G4')->getFont()->setBold(true)->setSize(10)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_WHITE);
+        $sheet->getStyle('A4:G4')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF1F4E79');
+        $sheet->getRowDimension(4)->setRowHeight(30);
 
-            fwrite($handle, '  </Table>' . "\n");
-            fwrite($handle, ' </Worksheet>' . "\n");
-            fwrite($handle, '</Workbook>' . "\n");
+        // Anchos de columna
+        $sheet->getColumnDimension('A')->setWidth(8);
+        $sheet->getColumnDimension('B')->setWidth(30);
+        $sheet->getColumnDimension('C')->setWidth(25);
+        $sheet->getColumnDimension('D')->setWidth(20);
+        $sheet->getColumnDimension('E')->setWidth(25);
+        $sheet->getColumnDimension('F')->setWidth(15);
+        $sheet->getColumnDimension('G')->setWidth(25);
 
-            fclose($handle);
+        // Filas de datos
+        $rowNum = 5;
+        $counter = 1;
+        foreach($equiposList as $equipo) {
+            $frente  = $equipo->frenteActual  ? mb_strtoupper($equipo->frenteActual->NOMBRE_FRENTE) : '—';
+            $tipo    = $equipo->tipo          ? mb_strtoupper($equipo->tipo->nombre)               : '—';
+            $marca   = mb_strtoupper($equipo->MARCA   ?? '—');
+            $modelo  = mb_strtoupper($equipo->MODELO  ?? '—');
+            $placa   = $equipo->documentacion ? mb_strtoupper($equipo->documentacion->PLACA ?? '—') : '—';
+            $chasis  = mb_strtoupper($equipo->SERIAL_CHASIS ?? '—');
 
+            $sheet->setCellValue('A'.$rowNum, $counter);
+            $sheet->setCellValue('B'.$rowNum, $frente);
+            $sheet->setCellValue('C'.$rowNum, $tipo);
+            $sheet->setCellValue('D'.$rowNum, $marca);
+            $sheet->setCellValue('E'.$rowNum, $modelo);
+            $sheet->setCellValue('F'.$rowNum, $placa);
+            $sheet->setCellValue('G'.$rowNum, $chasis);
+
+            $sheet->getStyle('A'.$rowNum.':G'.$rowNum)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+            $sheet->getStyle('A'.$rowNum)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('F'.$rowNum)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            
+            if($counter % 2 == 0) {
+                $sheet->getStyle('A'.$rowNum.':G'.$rowNum)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFEBF3FB');
+            }
+
+            $sheet->getRowDimension($rowNum)->setRowHeight(20);
+            $rowNum++;
+            $counter++;
+        }
+
+        // Fila Total
+        $sheet->setCellValue('A'.$rowNum, 'Total');
+        $sheet->mergeCells('B'.$rowNum.':G'.$rowNum);
+        $sheet->setCellValue('B'.$rowNum, ($counter - 1));
+        
+        $sheet->getStyle('A'.$rowNum.':G'.$rowNum)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A'.$rowNum)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A'.$rowNum.':G'.$rowNum)->getFont()->setBold(true)->setSize(10)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_WHITE);
+        $sheet->getStyle('A'.$rowNum.':G'.$rowNum)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF1F4E79');
+        $sheet->getRowDimension($rowNum)->setRowHeight(22);
+
+        // Bordes a toda la tabla
+        $styleArray = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['argb' => 'FF000000'],
+                ],
+            ],
+        ];
+        $sheet->getStyle('A1:G'.$rowNum)->applyFromArray($styleArray);
+
+        return response()->streamDownload(function() use ($spreadsheet) {
+            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+            $writer->save('php://output');
         }, $fileName, [
-            'Content-Type' => 'application/vnd.ms-excel',
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0'
         ]);
     }
 

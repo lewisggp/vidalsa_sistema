@@ -13,6 +13,7 @@
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^2.10.1",
         "masbug/flysystem-google-drive-ext": "*",
+        "phpoffice/phpspreadsheet": "*",
         "yaza/laravel-google-drive-storage": "^4.1"
     },
     "require-dev": {
