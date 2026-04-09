@@ -15,8 +15,42 @@ class UserController extends Controller
     {
         $this->middleware('auth');
         // Requiere clave super.admin EN PERMISOS + rol SUPER ADMIN
-        $this->middleware('can:manage.users')->only(['edit', 'update', 'destroy']);
+        $this->middleware('can:manage.users')->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
     }
+
+    // ─── Perfil Propio (para usuarios sin permiso manage.users) ──────────────
+
+    /**
+     * Muestra la página de edición de clave propia.
+     */
+    public function miPerfil()
+    {
+        $user = auth()->user();
+        return view('admin.usuarios.mi_perfil', compact('user'));
+    }
+
+    /**
+     * Actualiza SOLO la contraseña del usuario autenticado.
+     */
+    public function actualizarMiClave(Request $request)
+    {
+        $request->validate([
+            'password'              => 'required|string|min:6|confirmed',
+            'password_confirmation' => 'required',
+        ], [
+            'password.required'     => 'La nueva contraseña es obligatoria.',
+            'password.min'          => 'La contraseña debe tener al menos 6 caracteres.',
+            'password.confirmed'    => 'Las contraseñas no coinciden.',
+        ]);
+
+        $user = auth()->user();
+        $user->PASSWORD_HASH = Hash::make($request->password);
+        $user->REQUIERE_CAMBIO_CLAVE = 0;
+        $user->save();
+
+        return back()->with('success_perfil', '¡Contraseña actualizada correctamente!');
+    }
+
 
     /**
      * Display a listing of the resource.

@@ -27,6 +27,10 @@ Route::middleware(['auth'])->group(function () {
 
 
         Route::prefix('admin')->group(function () {
+            // Ruta de perfil propio (disponible para TODOS los usuarios autenticados)
+            Route::get('usuarios/mi-perfil', [App\Http\Controllers\UserController::class, 'miPerfil'])->name('usuarios.miPerfil');
+            Route::put('usuarios/mi-perfil', [App\Http\Controllers\UserController::class, 'actualizarMiClave'])->name('usuarios.actualizarMiClave');
+
             Route::resource('usuarios', App\Http\Controllers\UserController::class)->except(['show']);
             Route::get('frentes/buscar', [App\Http\Controllers\FrenteTrabajoController::class, 'search'])->name('frentes.search');
             Route::resource('frentes', App\Http\Controllers\FrenteTrabajoController::class)->except(['show']);
