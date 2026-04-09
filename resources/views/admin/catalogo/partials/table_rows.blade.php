@@ -16,7 +16,8 @@
             @endif
         </td>
         <td class="table-cell-custom table-cell-bordered" data-label="Modelo / Año">
-            <div style="display: flex; flex-direction: column; gap: 6px;">
+            <!-- Desktop View -->
+            <div class="desktop-only-flex" style="display: flex; flex-direction: column; gap: 6px;">
                 <div>
                     <div class="catalog-label" style="font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Modelo</div>
                     <div class="catalog-Model" style="font-size: 14px; font-weight: 800; color: #1e293b;">{{ $catalogo->MODELO }}</div>
@@ -24,6 +25,25 @@
                 <div>
                     <div class="catalog-label" style="font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Año</div>
                     <div style="font-size: 14px; font-weight: 800; color: #1e293b;">{{ $catalogo->ANIO_ESPEC }}</div>
+                </div>
+            </div>
+            <!-- Mobile View -->
+            <div class="mobile-only-grid" style="display: none; grid-template-columns: 1fr 1fr; gap: 6px 10px;">
+                <div>
+                    <div class="catalog-label" style="font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Modelo</div>
+                    <div class="catalog-Model" style="font-size: 12px; font-weight: 800; color: #1e293b; overflow-wrap: break-word;">{{ $catalogo->MODELO }}</div>
+                </div>
+                <div>
+                    <div class="catalog-label" style="font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Motor</div>
+                    <div style="font-size: 12px; font-weight: 800; color: #1e293b; overflow-wrap: break-word;">{{ $catalogo->MOTOR ?: 'N/A' }}</div>
+                </div>
+                <div>
+                    <div class="catalog-label" style="font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Año</div>
+                    <div style="font-size: 12px; font-weight: 800; color: #1e293b;">{{ $catalogo->ANIO_ESPEC }}</div>
+                </div>
+                <div>
+                    <div class="catalog-label" style="font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Combustible</div>
+                    <div style="font-size: 12px; font-weight: 800; color: #1e293b; overflow-wrap: break-word;">{{ $catalogo->COMBUSTIBLE ?: '-' }}</div>
                 </div>
             </div>
         </td>
