@@ -240,54 +240,8 @@ window.loadCatalogo = async function (url = null, showSpinner = true) {
         }
     });
 
-    // OPTIMIZATION: Check if there are any meaningful filters
-    // Strategy: Only skip server request if EVERYTHING is null/empty (truly no input from user)
-    // We exclude 'ajax_load' from this check as it is an internal flag
-    const visibleFilters = {
-        modelo: filters.modelo,
-        anio: filters.anio
-    };
-
-    const hasAnyInput = Object.values(visibleFilters).some(value => {
-        if (value === null || value === '' || value === undefined) return false;
-        if (typeof value === 'string' && value.trim() === '') return false;
-        if (value === 'all') return true; // 'all' is a valid filter
-        return true;
-    });
-
-    // If truly no input at all, clear UI without server request
-    if (!hasAnyInput) {
-        console.log('No active filters detected - clearing UI without server request');
-
-        // Clear table with friendly message
-        if (tableBody) {
-            tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8; font-style: italic;">SELECCIONE UN FILTRO PARA VISUALIZAR EL CATÁLOGO</td></tr>';
-            tableBody.style.opacity = '1';
-        }
-
-        // Clear pagination
-        const paginationContainer = document.getElementById('catalogoPagination');
-        if (paginationContainer) paginationContainer.innerHTML = '';
-
-        // Update Stats Sidebar to Zero/Empty
-        const statsSidebar = document.getElementById('statsSidebarContainer');
-        if (statsSidebar) {
-            // Keep container but reset content to basic empty state or 0
-            // Since stats are usually server-generated, we can set a simple empty state
-            statsSidebar.innerHTML = `
-                <div class="admin-card" style="padding: 15px; text-align: center; color: #94a3b8;">
-                    <i class="material-icons" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;">analytics</i>
-                    <p style="font-size: 13px;">Estadísticas no disponibles</p>
-                </div>
-            `;
-        }
-
-        // Update Browser URL
-        window.history.pushState({}, '', baseUrl);
-
-        if (showSpinner && typeof window.hidePreloader === 'function') window.hidePreloader();
-        return;
-    }
+    // Removed the !hasAnyInput check here. The catalog should always query the server
+    // even if filters are empty, because emptying filters means "show all paginated records".
 
     // Strip existing params from baseUrl if we are rebuilding them (unless it's pagination link)
     if (!url && baseUrl.includes('?')) {
