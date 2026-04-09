@@ -21,18 +21,14 @@ window.confirmDeleteCatalogo = function (id, modelName) {
         confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
 
         // Handle confirm click (AJAX)
-        // Handle confirm click (AJAX)
         newBtn.onclick = async function () {
             // UI Feedback - Show Global Preloader
             if (typeof window.showPreloader === 'function') window.showPreloader();
             newBtn.disabled = true;
-            // newBtn.innerText = 'Eliminado...'; // Removed as per request
 
             let targetUrl = '';
-            // console.log('Attempting DELETE for ID:', id);
             try {
                 targetUrl = `/admin/catalogo/${id}`;
-                // console.log('Target URL:', targetUrl);
 
                 const response = await fetch(targetUrl, {
                     method: 'DELETE',
