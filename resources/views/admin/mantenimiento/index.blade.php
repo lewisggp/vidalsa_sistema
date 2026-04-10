@@ -178,6 +178,10 @@
     .mant-empty p { font-size: 14px; font-weight: 600; }
 
     /* ── Responsive ── */
+    /* ── Animation ── */
+    @keyframes slideDown { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    /* ── Responsive ── */
     @media (max-width: 768px) {
         .mant-container { padding: 10px 12px; }
         .mant-stats { grid-template-columns: repeat(2, 1fr); }
@@ -349,7 +353,7 @@
     <!-- ══════════════════════════════════════════════════════ -->
     <div class="mant-panel" id="panel-consolidado">
         <div class="mant-filter-bar">
-            <input type="date" id="consolidadoFecha" value="{{ date('Y-m-d') }}" onchange="cargarConsolidado()">
+            <input type="date" id="consolidadoFecha" value="{{ date('Y-m-d') }}" onchange="cargarConsolidado()" style="height:45px; border:1px solid #cbd5e0; border-radius:12px; padding:0 14px; font-size:14px; color:#1e293b; background:#fbfcfd; outline:none;">
             <button class="btn-mant-secondary" onclick="cargarConsolidado()">
                 <i class="material-icons" style="font-size:16px;">refresh</i> Actualizar
             </button>
@@ -411,7 +415,7 @@
             <!-- Frente de Trabajo -->
             <div style="margin-bottom:16px;">
                 <label style="display:block; font-size:13px; font-weight:700; color:#475569; margin-bottom:6px;">
-                    <span style="background:#0067b1; color:white; padding:2px 8px; border-radius:50%; font-size:11px; font-weight:800; margin-right:6px;">0</span>
+                    <span style="background:#0067b1; color:white; padding:2px 8px; border-radius:50%; font-size:11px; font-weight:800; margin-right:6px;">1</span>
                     Frente de Trabajo
                 </label>
                 <div class="custom-dropdown" id="fallaFrenteDropdown" data-default-label="Seleccionar frente..." style="width:100%;">
@@ -442,7 +446,7 @@
             <!-- Equipo -->
             <div style="margin-bottom:16px;">
                 <label style="display:block; font-size:13px; font-weight:700; color:#475569; margin-bottom:6px;">
-                    <span style="background:#0067b1; color:white; padding:2px 8px; border-radius:50%; font-size:11px; font-weight:800; margin-right:6px;">1</span>
+                    <span style="background:#0067b1; color:white; padding:2px 8px; border-radius:50%; font-size:11px; font-weight:800; margin-right:6px;">2</span>
                     Equipo
                 </label>
                 <div class="custom-dropdown" id="fallaEquipoDropdown" data-default-label="Seleccionar equipo..." style="width:100%;">
@@ -458,12 +462,24 @@
                             onclick="event.stopPropagation(); clearDropdownFilter('fallaEquipoDropdown'); onEquipoSelected();">close</i>
                     </div>
                     <div class="dropdown-content" style="padding:5px; max-height:none; overflow:visible; z-index:10002;">
-                        <div class="dropdown-item-list" style="max-height:220px; overflow-y:auto;">
-                            <div class="dropdown-item" data-value="" onclick="selectOption('fallaEquipoDropdown','','Seleccionar equipo...'); onEquipoSelected();">— Ninguno —</div>
+                        <div class="dropdown-item-list" style="max-height:280px; overflow-y:auto;">
+                            <div class="dropdown-item" data-value="" onclick="selectOption('fallaEquipoDropdown','','Seleccionar equipo...'); onEquipoSelected();" style="padding:8px 10px; font-size:13px; color:#94a3b8;">— Ninguno —</div>
                             @foreach($equipos as $eq)
+                                @php $eqFoto = $eq->foto; @endphp
                                 <div class="dropdown-item" data-value="{{ $eq->ID_EQUIPO }}"
-                                    onclick="selectOption('fallaEquipoDropdown','{{ $eq->ID_EQUIPO }}','{{ addslashes(($eq->tipo->nombre ?? 'S/T') . ' - ' . $eq->MARCA . ' ' . $eq->MODELO) }}'); onEquipoSelected();">
-                                    {{ $eq->tipo->nombre ?? 'S/T' }} - {{ $eq->MARCA }} {{ $eq->MODELO }} | {{ $eq->SERIAL_CHASIS ?? $eq->CODIGO_PATIO ?? '#'.$eq->NUMERO_ETIQUETA }}
+                                    onclick="selectOption('fallaEquipoDropdown','{{ $eq->ID_EQUIPO }}','{{ addslashes(($eq->tipo->nombre ?? 'S/T') . ' - ' . $eq->MARCA . ' ' . $eq->MODELO) }}'); onEquipoSelected();"
+                                    style="display:flex; align-items:center; gap:10px; padding:6px 10px;">
+                                    @if($eqFoto)
+                                        <img src="{{ $eqFoto }}" alt="" style="width:38px; height:38px; border-radius:8px; object-fit:cover; flex-shrink:0; background:#f1f5f9;">
+                                    @else
+                                        <div style="width:38px; height:38px; border-radius:8px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                            <i class="material-icons" style="font-size:20px; color:#cbd5e0;">agriculture</i>
+                                        </div>
+                                    @endif
+                                    <div style="min-width:0; flex:1;">
+                                        <div style="font-size:12px; font-weight:700; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $eq->tipo->nombre ?? 'S/T' }} — {{ $eq->MARCA }} {{ $eq->MODELO }}</div>
+                                        <div style="font-size:11px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $eq->SERIAL_CHASIS ?? $eq->CODIGO_PATIO ?? '#'.$eq->NUMERO_ETIQUETA }}</div>
+                                    </div>
                                 </div>
                             @endforeach
                         </div>
@@ -476,7 +492,7 @@
             <!-- Tipo de Falla -->
             <div style="margin-bottom:16px;">
                 <label style="display:block; font-size:13px; font-weight:700; color:#475569; margin-bottom:6px;">
-                    <span style="background:#0067b1; color:white; padding:2px 8px; border-radius:50%; font-size:11px; font-weight:800; margin-right:6px;">2</span>
+                    <span style="background:#0067b1; color:white; padding:2px 8px; border-radius:50%; font-size:11px; font-weight:800; margin-right:6px;">3</span>
                     Tipo de Falla
                 </label>
                 <div class="custom-dropdown" id="fallaTipoDropdown" data-default-label="Mecánica" style="width:100%;">
@@ -505,7 +521,7 @@
             <!-- Sistema Afectado -->
             <div style="margin-bottom:16px;">
                 <label style="display:block; font-size:13px; font-weight:700; color:#475569; margin-bottom:6px;">
-                    <span style="background:#0067b1; color:white; padding:2px 8px; border-radius:50%; font-size:11px; font-weight:800; margin-right:6px;">3</span>
+                    <span style="background:#0067b1; color:white; padding:2px 8px; border-radius:50%; font-size:11px; font-weight:800; margin-right:6px;">4</span>
                     Sistema Afectado <span style="font-weight:400; color:#94a3b8;">(opcional)</span>
                 </label>
                 <input type="text" id="fallaSistema" placeholder="Ej: Motor, Transmisión, Sistema Hidráulico..."
@@ -515,7 +531,7 @@
             <!-- Prioridad -->
             <div style="margin-bottom:16px;">
                 <label style="display:block; font-size:13px; font-weight:700; color:#475569; margin-bottom:6px;">
-                    <span style="background:#0067b1; color:white; padding:2px 8px; border-radius:50%; font-size:11px; font-weight:800; margin-right:6px;">4</span>
+                    <span style="background:#0067b1; color:white; padding:2px 8px; border-radius:50%; font-size:11px; font-weight:800; margin-right:6px;">5</span>
                     Prioridad
                 </label>
                 <div style="display:flex; gap:8px; flex-wrap:wrap;">
@@ -537,7 +553,7 @@
             <!-- Descripción -->
             <div style="margin-bottom:16px;">
                 <label style="display:block; font-size:13px; font-weight:700; color:#475569; margin-bottom:6px;">
-                    <span style="background:#0067b1; color:white; padding:2px 8px; border-radius:50%; font-size:11px; font-weight:800; margin-right:6px;">5</span>
+                    <span style="background:#0067b1; color:white; padding:2px 8px; border-radius:50%; font-size:11px; font-weight:800; margin-right:6px;">6</span>
                     Descripción de la Falla
                 </label>
                 <textarea id="fallaDescripcion" rows="3" placeholder="Describe la falla con el mayor detalle posible..."
@@ -558,12 +574,12 @@
     </div>
 </div>
 
+{{-- Modal Detalle Falla --}}
+@include('admin.mantenimiento.partials.modal_detalle_falla')
+
 @endsection
 
 @section('extra_js')
-<script src="{{ asset('js/maquinaria/mantenimiento_index.js') }}?v=1.0"></script>
-<script src="{{ asset('js/maquinaria/mantenimiento_fallas.js') }}?v=1.0"></script>
-<style>
-    @keyframes slideDown { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-</style>
+<script src="{{ asset('js/maquinaria/mantenimiento_index.js') }}?v=1.2"></script>
+<script src="{{ asset('js/maquinaria/mantenimiento_fallas.js') }}?v=1.2"></script>
 @endsection

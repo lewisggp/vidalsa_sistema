@@ -24,20 +24,23 @@ class MantenimientoController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
-        $frentes = FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')
-            ->orderBy('NOMBRE_FRENTE')
-            ->get();
 
-        // Equipos para selector (scoped por nivel acceso)
+        // Frentes y equipos scoped por nivel de acceso
+        $frentesQuery = FrenteTrabajo::where('ESTATUS_FRENTE', 'ACTIVO')
+            ->orderBy('NOMBRE_FRENTE');
+
         if ($user->NIVEL_ACCESO == 2) {
             $frentesIds = $user->getFrentesIds();
+            $frentesQuery->whereIn('ID_FRENTE', $frentesIds);
             $equipos = Equipo::whereIn('ID_FRENTE_ACTUAL', $frentesIds)
-                ->with('tipo')
+                ->with(['tipo', 'especificaciones'])
                 ->orderBy('MARCA')
                 ->get();
         } else {
-            $equipos = Equipo::with('tipo')->orderBy('MARCA')->get();
+            $equipos = Equipo::with(['tipo', 'especificaciones'])->orderBy('MARCA')->get();
         }
+
+        $frentes = $frentesQuery->get();
 
         return view('admin.mantenimiento.index', compact('frentes', 'equipos'));
     }
@@ -90,6 +93,7 @@ class MantenimientoController extends Controller
             'frente',
             'cerradoPor',
             'fallas.equipo.tipo',
+            'fallas.equipo.especificaciones',
             'fallas.usuarioRegistra',
             'fallas.materiales',
         ])->findOrFail($id);
@@ -121,6 +125,15 @@ class MantenimientoController extends Controller
         $request->validate([
             'ID_FRENTE' => 'required|exists:frentes_trabajo,ID_FRENTE',
         ]);
+
+        // Verificar acceso al frente
+        $user = auth()->user();
+        if ($user->NIVEL_ACCESO == 2) {
+            $frentesPermitidos = $user->getFrentesIds();
+            if (!in_array($request->ID_FRENTE, $frentesPermitidos)) {
+                return response()->json(['error' => 'No tienes acceso a este frente de trabajo.'], 403);
+            }
+        }
 
         $reporte = ReporteDiario::firstOrCreate(
             [
@@ -169,6 +182,7 @@ class MantenimientoController extends Controller
             'SISTEMA_AFECTADO' => $request->SISTEMA_AFECTADO,
             'DESCRIPCION_FALLA' => $request->DESCRIPCION_FALLA,
             'PRIORIDAD' => $request->PRIORIDAD,
+            'ESTADO_FALLA' => 'ABIERTA',
         ]);
 
         $falla->load('equipo.tipo', 'usuarioRegistra');
@@ -240,12 +254,15 @@ class MantenimientoController extends Controller
     {
         $fecha = $request->input('fecha', Carbon::today()->toDateString());
 
+        $user = auth()->user();
         $reportes = ReporteDiario::with([
                 'frente',
                 'fallas.equipo.tipo',
+                'fallas.equipo.especificaciones',
                 'fallas.equipo.frenteActual',
             ])
             ->whereDate('FECHA_REPORTE', $fecha)
+            ->when($user->NIVEL_ACCESO == 2, fn ($q) => $q->whereIn('ID_FRENTE', $user->getFrentesIds()))
             ->get();
 
         // Estadísticas nacionales
@@ -291,6 +308,49 @@ class MantenimientoController extends Controller
     }
 
     /**
+     * AJAX: Search equipos for timeline (general text search).
+     */
+    public function searchEquipos(Request $request): JsonResponse
+    {
+        $q = $request->input('q', '');
+        if (strlen($q) < 2) {
+            return response()->json([]);
+        }
+
+        $user = auth()->user();
+        $query = Equipo::with('tipo', 'frenteActual')
+            ->where(function ($qb) use ($q) {
+                $qb->where('MARCA', 'LIKE', "%{$q}%")
+                    ->orWhere('MODELO', 'LIKE', "%{$q}%")
+                    ->orWhere('SERIAL_CHASIS', 'LIKE', "%{$q}%")
+                    ->orWhere('CODIGO_PATIO', 'LIKE', "%{$q}%")
+                    ->orWhereHas('tipo', function ($t) use ($q) {
+                        $t->where('nombre', 'LIKE', "%{$q}%");
+                    });
+            });
+
+        // Scope by access level
+        if ($user->NIVEL_ACCESO == 2) {
+            $frenteIds = $user->frentes->pluck('ID_FRENTE');
+            $query->whereIn('ID_FRENTE_ACTUAL', $frenteIds);
+        }
+
+        $equipos = $query->limit(8)->get()->map(function ($eq) {
+            return [
+                'ID_EQUIPO' => $eq->ID_EQUIPO,
+                'MARCA' => $eq->MARCA,
+                'MODELO' => $eq->MODELO,
+                'SERIAL_CHASIS' => $eq->SERIAL_CHASIS,
+                'CODIGO_PATIO' => $eq->CODIGO_PATIO,
+                'ESTADO_OPERATIVO' => $eq->ESTADO_OPERATIVO,
+                'tipo' => $eq->tipo->nombre ?? 'S/T',
+            ];
+        });
+
+        return response()->json($equipos);
+    }
+
+    /**
      * AJAX: Timeline de estados de un equipo específico.
      */
     public function timeline(int $equipoId): JsonResponse
@@ -305,7 +365,7 @@ class MantenimientoController extends Controller
 
         // Fallas del equipo (últimos 30 días)
         $fallas = RegistroFalla::where('ID_EQUIPO', $equipoId)
-            ->with('reporte.frente')
+            ->with('reporte.frente', 'equipo.especificaciones')
             ->where('created_at', '>=', Carbon::now()->subDays(30))
             ->orderByDesc('HORA_REGISTRO')
             ->get();
@@ -512,19 +572,87 @@ class MantenimientoController extends Controller
      */
     public function statsWidget(): JsonResponse
     {
+        $user = auth()->user();
         $hoy = Carbon::today();
 
-        $fallasAbiertasHoy = RegistroFalla::whereHas('reporte', function ($q) use ($hoy) {
-                $q->whereDate('FECHA_REPORTE', $hoy);
-            })
-            ->where('ESTADO_FALLA', 'ABIERTA')
+        $baseQuery = RegistroFalla::whereHas('reporte', function ($q) use ($hoy, $user) {
+            $q->whereDate('FECHA_REPORTE', $hoy);
+            if ($user->NIVEL_ACCESO == 2) {
+                $q->whereIn('ID_FRENTE', $user->getFrentesIds());
+            }
+        });
+
+        $fallasAbiertasHoy = (clone $baseQuery)
+            ->whereIn('ESTADO_FALLA', ['ABIERTA', 'EN_PROCESO'])
             ->count();
 
-        $totalInoperativos = Equipo::where('ESTADO_OPERATIVO', 'INOPERATIVO')->count();
+        $fallasResueltasHoy = (clone $baseQuery)
+            ->where('ESTADO_FALLA', 'RESUELTA')
+            ->count();
+
+        $reportesHoy = ReporteDiario::whereDate('FECHA_REPORTE', $hoy)
+            ->when($user->NIVEL_ACCESO == 2, fn ($q) => $q->whereIn('ID_FRENTE', $user->getFrentesIds()))
+            ->count();
+
+        $equipoQuery = Equipo::where('ESTADO_OPERATIVO', 'INOPERATIVO');
+        if ($user->NIVEL_ACCESO == 2) {
+            $equipoQuery->whereIn('ID_FRENTE_ACTUAL', $user->getFrentesIds());
+        }
+        $totalInoperativos = $equipoQuery->count();
 
         return response()->json([
             'fallas_abiertas_hoy' => $fallasAbiertasHoy,
+            'fallas_resueltas_hoy' => $fallasResueltasHoy,
+            'reportes_hoy' => $reportesHoy,
             'equipos_inoperativos' => $totalInoperativos,
+        ]);
+    }
+
+    /**
+     * AJAX: Detalle completo de una falla individual.
+     */
+    public function showFalla(int $id): JsonResponse
+    {
+        $falla = RegistroFalla::with([
+            'equipo.tipo',
+            'equipo.frenteActual',
+            'reporte.frente',
+            'usuarioRegistra',
+            'materiales',
+        ])->findOrFail($id);
+
+        return response()->json([
+            'falla' => [
+                'ID_FALLA' => $falla->ID_FALLA,
+                'TIPO_FALLA' => $falla->TIPO_FALLA,
+                'SISTEMA_AFECTADO' => $falla->SISTEMA_AFECTADO,
+                'DESCRIPCION_FALLA' => $falla->DESCRIPCION_FALLA,
+                'PRIORIDAD' => $falla->PRIORIDAD,
+                'ESTADO_FALLA' => $falla->ESTADO_FALLA,
+                'HORA_REGISTRO' => $falla->HORA_REGISTRO?->format('d/m/Y H:i'),
+                'FECHA_RESOLUCION' => $falla->FECHA_RESOLUCION?->format('d/m/Y H:i'),
+                'DESCRIPCION_RESOLUCION' => $falla->DESCRIPCION_RESOLUCION,
+                'equipo' => [
+                    'ID_EQUIPO' => $falla->equipo->ID_EQUIPO ?? null,
+                    'tipo' => $falla->equipo->tipo->nombre ?? 'S/T',
+                    'MARCA' => $falla->equipo->MARCA ?? '',
+                    'MODELO' => $falla->equipo->MODELO ?? '',
+                    'SERIAL_CHASIS' => $falla->equipo->SERIAL_CHASIS ?? '',
+                    'CODIGO_PATIO' => $falla->equipo->CODIGO_PATIO ?? '',
+                    'ESTADO_OPERATIVO' => $falla->equipo->ESTADO_OPERATIVO ?? '',
+                    'frente' => $falla->equipo->frenteActual->NOMBRE_FRENTE ?? 'Sin Frente',
+                ],
+                'usuario' => $falla->usuarioRegistra->NOMBRE_COMPLETO ?? '',
+                'frente_reporte' => $falla->reporte->frente->NOMBRE_FRENTE ?? '',
+                'materiales' => $falla->materiales->map(fn ($m) => [
+                    'ID_MATERIAL_REC' => $m->ID_MATERIAL_REC,
+                    'DESCRIPCION_MATERIAL' => $m->DESCRIPCION_MATERIAL,
+                    'ESPECIFICACION' => $m->ESPECIFICACION,
+                    'CANTIDAD' => $m->CANTIDAD,
+                    'UNIDAD' => $m->UNIDAD,
+                    'FUENTE' => $m->FUENTE,
+                ]),
+            ],
         ]);
     }
 
