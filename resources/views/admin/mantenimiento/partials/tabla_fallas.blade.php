@@ -3,6 +3,7 @@
     <thead>
         <tr>
             <th>Hora</th>
+            <th style="text-align:center;">Foto</th>
             <th>Equipo</th>
             <th>Tipo</th>
             <th>Descripción</th>
@@ -16,6 +17,23 @@
         <tr data-falla-id="{{ $f->ID_FALLA }}">
             <td style="font-weight:700; white-space:nowrap; font-size:12px;">
                 {{ $f->HORA_REGISTRO ? $f->HORA_REGISTRO->format('H:i') : '—' }}
+            </td>
+            <td style="text-align:center; width:80px;">
+                @php
+                    $fotoFalla = ($f->equipo->especificaciones && $f->equipo->especificaciones->FOTO_REFERENCIAL)
+                        ? $f->equipo->especificaciones->FOTO_REFERENCIAL
+                        : $f->equipo->FOTO_EQUIPO;
+                @endphp
+                @if($fotoFalla)
+                    <div class="table-image-wrapper" style="width:70px; height:45px; margin:0 auto;">
+                        <img src="{{ route('drive.file', ['path' => str_replace('/storage/google/', '', $fotoFalla)]) }}"
+                            alt="Equipo" loading="lazy" onload="this.style.opacity='1'" style="opacity:0;">
+                    </div>
+                @else
+                    <div class="table-image-wrapper placeholder" style="width:70px; height:45px; margin:0 auto;">
+                        <span class="material-icons" style="font-size:18px;">image_not_supported</span>
+                    </div>
+                @endif
             </td>
             <td>
                 <div style="font-weight:700; color:#1e293b; font-size:12px;">
@@ -47,6 +65,13 @@
             </td>
             <td style="white-space:nowrap;">
                 @if($f->ESTADO_FALLA === 'ABIERTA')
+                    <button class="btn-mant-sm btn-mant-info" onclick="enProcesoFalla({{ $f->ID_FALLA }})" title="Marcar en proceso" style="background:#fff7ed; color:#ea580c;">
+                        <i class="material-icons" style="font-size:14px;">play_arrow</i>
+                    </button>
+                    <button class="btn-mant-sm btn-mant-success" onclick="resolverFalla({{ $f->ID_FALLA }})" title="Marcar como resuelta">
+                        <i class="material-icons" style="font-size:14px;">check</i>
+                    </button>
+                @elseif($f->ESTADO_FALLA === 'EN_PROCESO')
                     <button class="btn-mant-sm btn-mant-success" onclick="resolverFalla({{ $f->ID_FALLA }})" title="Marcar como resuelta">
                         <i class="material-icons" style="font-size:14px;">check</i>
                     </button>

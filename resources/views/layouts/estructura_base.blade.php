@@ -61,7 +61,9 @@
     </style>
     <!-- Custom UI Components (SPA Friendly) -->
     <!-- Scripts moved to footer for performance -->
+    <meta name="spa-extra-css-start" />
     @yield('extra_css')
+    <meta name="spa-extra-css-end" />
 </head>
 <body class="modern-app">
     <!-- Global Preloader (Bars animation) - Solo para navegación interna -->

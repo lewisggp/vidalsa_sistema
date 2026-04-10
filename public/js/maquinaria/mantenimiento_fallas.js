@@ -135,8 +135,12 @@
                 if (typeof verReporte === 'function') verReporte(repData.reporte.ID_REPORTE);
                 // Refresh stats
                 cargarStatsQuick();
+            } else if (data.errors) {
+                // Laravel validation errors
+                const firstError = Object.values(data.errors)[0];
+                showModalError(Array.isArray(firstError) ? firstError[0] : firstError);
             } else {
-                showModalError(data.error || 'Error al registrar la falla');
+                showModalError(data.error || data.message || 'Error al registrar la falla');
             }
         } catch (e) {
             console.error('Error guardando falla:', e);
@@ -214,14 +218,22 @@
        RESOLVER FALLA (Quick action)
     ═══════════════════════════════════════════ */
     window.resolverFalla = function (fallaId) {
+        // Show modal with resolution description input
+        const modalHtml = '<div style="margin-bottom:12px;">' +
+            '<label style="display:block; font-size:13px; font-weight:700; color:#475569; margin-bottom:6px;">Descripción de la resolución:</label>' +
+            '<textarea id="resolucionTexto" rows="3" placeholder="Describe qué se hizo para resolver la falla..." ' +
+            'style="width:100%; padding:10px 14px; border:1px solid #cbd5e0; border-radius:10px; font-size:13px; background:#f8fafc; outline:none; resize:vertical; box-sizing:border-box; font-family:inherit;"></textarea>' +
+            '</div>';
+
         if (window.showModal) {
             window.showModal({
                 type: 'info',
                 title: 'Resolver Falla',
-                message: '¿Marcar esta falla como resuelta?',
-                confirmText: 'Sí, Resolver',
+                message: modalHtml,
+                confirmText: 'Resolver Falla',
                 cancelText: 'Cancelar',
                 onConfirm: async function () {
+                    const descripcion = document.getElementById('resolucionTexto')?.value || 'Resuelta desde panel de mantenimiento';
                     try {
                         const resp = await fetch('/admin/mantenimiento/falla/' + fallaId, {
                             method: 'PUT',
@@ -233,22 +245,62 @@
                             },
                             body: JSON.stringify({
                                 ESTADO_FALLA: 'RESUELTA',
-                                DESCRIPCION_RESOLUCION: 'Resuelta desde panel de mantenimiento',
+                                DESCRIPCION_RESOLUCION: descripcion,
                             }),
                         });
                         const data = await resp.json();
                         if (data.success) {
-                            showMsg('success', 'Falla resuelta');
+                            showSnackbar('Falla resuelta correctamente');
                             if (typeof cargarReportes === 'function') cargarReportes();
-                            // Refresh the current report view
-                            const currentReport = document.querySelector('[data-falla-id="' + fallaId + '"]')?.closest('.mant-card');
-                            if (currentReport && typeof verReporte === 'function' && window.currentReporteId) {
+                            if (typeof verReporte === 'function' && window.currentReporteId) {
                                 verReporte(window.currentReporteId);
                             }
                             cargarStatsQuick();
+                        } else {
+                            showMsg('error', data.error || 'Error al resolver la falla');
                         }
                     } catch (e) {
                         console.error('Error resolviendo falla:', e);
+                        showMsg('error', 'Error de conexión al resolver la falla');
+                    }
+                }
+            });
+        }
+    };
+
+    /**
+     * Cambiar estado de falla a EN_PROCESO
+     */
+    window.enProcesoFalla = function (fallaId) {
+        if (window.showModal) {
+            window.showModal({
+                type: 'info',
+                title: 'Iniciar Proceso',
+                message: '¿Marcar esta falla como "En Proceso"?',
+                confirmText: 'Sí, En Proceso',
+                cancelText: 'Cancelar',
+                onConfirm: async function () {
+                    try {
+                        const resp = await fetch('/admin/mantenimiento/falla/' + fallaId, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                            },
+                            body: JSON.stringify({ ESTADO_FALLA: 'EN_PROCESO' }),
+                        });
+                        const data = await resp.json();
+                        if (data.success) {
+                            showSnackbar('Falla en proceso');
+                            if (typeof cargarReportes === 'function') cargarReportes();
+                            if (typeof verReporte === 'function' && window.currentReporteId) {
+                                verReporte(window.currentReporteId);
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error actualizando falla:', e);
                     }
                 }
             });
@@ -266,34 +318,88 @@
         modal.style.display = 'flex';
         body.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:20px;">Cargando...</p>';
 
-        // For now, show basic info from the table row
-        const row = document.querySelector(`[data-falla-id="${fallaId}"]`);
-        if (row) {
-            const cells = row.querySelectorAll('td');
-            body.innerHTML = `
-                <div style="margin-bottom:16px;">
-                    <label style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">Equipo</label>
-                    <p style="font-size:14px; font-weight:700; color:#1e293b; margin:4px 0;">${cells[1]?.innerHTML || ''}</p>
-                </div>
-                <div style="margin-bottom:16px;">
-                    <label style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">Tipo de Falla</label>
-                    <p style="font-size:14px; color:#334155; margin:4px 0;">${cells[2]?.textContent?.trim() || ''}</p>
-                </div>
-                <div style="margin-bottom:16px;">
-                    <label style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">Descripción</label>
-                    <p style="font-size:14px; color:#334155; margin:4px 0;">${cells[3]?.textContent?.trim() || ''}</p>
-                </div>
-                <div style="display:flex; gap:16px; margin-bottom:16px;">
-                    <div>
-                        <label style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;">Prioridad</label>
-                        <p style="margin:4px 0;">${cells[4]?.innerHTML || ''}</p>
-                    </div>
-                    <div>
-                        <label style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;">Estado</label>
-                        <p style="margin:4px 0;">${cells[5]?.innerHTML || ''}</p>
-                    </div>
-                </div>
-            `;
+        try {
+            const resp = await fetch('/admin/mantenimiento/falla/' + fallaId, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+            });
+            const data = await resp.json();
+            const f = data.falla;
+
+            const prioColors = { CRITICA: '#dc2626', ALTA: '#ea580c', MEDIA: '#ca8a04', BAJA: '#16a34a' };
+            const estadoColors = { ABIERTA: '#dc2626', EN_PROCESO: '#ea580c', RESUELTA: '#16a34a' };
+            const prioColor = prioColors[f.PRIORIDAD] || '#64748b';
+            const estadoColor = estadoColors[f.ESTADO_FALLA] || '#64748b';
+
+            let materialesHtml = '';
+            if (f.materiales && f.materiales.length > 0) {
+                materialesHtml = '<div style="margin-bottom:16px;">' +
+                    '<label style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">Materiales Recomendados</label>' +
+                    '<div style="margin-top:6px;">';
+                f.materiales.forEach(m => {
+                    materialesHtml += '<div style="display:flex; align-items:center; gap:8px; padding:6px 10px; background:#f8fafc; border-radius:8px; margin-bottom:4px; font-size:12px;">' +
+                        '<i class="material-icons" style="font-size:14px; color:#3b82f6;">inventory_2</i>' +
+                        '<span style="font-weight:600; color:#1e293b;">' + escapeHtml(m.DESCRIPCION_MATERIAL) + '</span>' +
+                        (m.ESPECIFICACION ? '<span style="color:#64748b;">(' + escapeHtml(m.ESPECIFICACION) + ')</span>' : '') +
+                        '<span style="margin-left:auto; font-weight:700; color:#475569;">' + m.CANTIDAD + ' ' + escapeHtml(m.UNIDAD) + '</span>' +
+                        '</div>';
+                });
+                materialesHtml += '</div></div>';
+            }
+
+            let resolucionHtml = '';
+            if (f.ESTADO_FALLA === 'RESUELTA' && f.DESCRIPCION_RESOLUCION) {
+                resolucionHtml = '<div style="margin-bottom:16px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px;">' +
+                    '<label style="font-size:11px; font-weight:700; color:#16a34a; text-transform:uppercase; letter-spacing:0.5px;">Resolución</label>' +
+                    '<p style="font-size:13px; color:#166534; margin:6px 0 0;">' + escapeHtml(f.DESCRIPCION_RESOLUCION) + '</p>' +
+                    (f.FECHA_RESOLUCION ? '<p style="font-size:11px; color:#4ade80; margin:4px 0 0;">Resuelta: ' + f.FECHA_RESOLUCION + '</p>' : '') +
+                    '</div>';
+            }
+
+            body.innerHTML =
+                '<div style="display:flex; align-items:center; gap:12px; margin-bottom:16px; padding:12px; background:#f8fafc; border-radius:12px;">' +
+                    '<i class="material-icons" style="font-size:28px; color:#0067b1;">agriculture</i>' +
+                    '<div style="flex:1;">' +
+                        '<div style="font-size:14px; font-weight:800; color:#1e293b;">' + escapeHtml(f.equipo.tipo) + '</div>' +
+                        '<div style="font-size:12px; color:#64748b;">' + escapeHtml(f.equipo.MARCA) + ' ' + escapeHtml(f.equipo.MODELO) + ' | ' + escapeHtml(f.equipo.SERIAL_CHASIS || f.equipo.CODIGO_PATIO || '') + '</div>' +
+                        '<div style="font-size:11px; color:#94a3b8;">' + escapeHtml(f.equipo.frente) + '</div>' +
+                    '</div>' +
+                    '<span style="padding:4px 10px; border-radius:50px; font-size:11px; font-weight:700; background:' + (f.equipo.ESTADO_OPERATIVO === 'INOPERATIVO' ? '#fef2f2' : '#f0fdf4') + '; color:' + (f.equipo.ESTADO_OPERATIVO === 'INOPERATIVO' ? '#dc2626' : '#16a34a') + ';">' + escapeHtml(f.equipo.ESTADO_OPERATIVO) + '</span>' +
+                '</div>' +
+
+                '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px;">' +
+                    '<div>' +
+                        '<label style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;">Tipo</label>' +
+                        '<p style="font-size:13px; font-weight:700; color:#1e293b; margin:4px 0;">' + escapeHtml(f.TIPO_FALLA) + '</p>' +
+                    '</div>' +
+                    '<div>' +
+                        '<label style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;">Prioridad</label>' +
+                        '<p style="margin:4px 0;"><span style="padding:3px 10px; border-radius:50px; font-size:11px; font-weight:700; color:' + prioColor + ';">' + escapeHtml(f.PRIORIDAD) + '</span></p>' +
+                    '</div>' +
+                    '<div>' +
+                        '<label style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;">Estado</label>' +
+                        '<p style="margin:4px 0;"><span style="padding:3px 10px; border-radius:50px; font-size:11px; font-weight:700; color:' + estadoColor + ';">' + (f.ESTADO_FALLA || '').replace('_', ' ') + '</span></p>' +
+                    '</div>' +
+                '</div>' +
+
+                (f.SISTEMA_AFECTADO ? '<div style="margin-bottom:12px;"><label style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;">Sistema Afectado</label><p style="font-size:13px; color:#334155; margin:4px 0;">' + escapeHtml(f.SISTEMA_AFECTADO) + '</p></div>' : '') +
+
+                '<div style="margin-bottom:16px;">' +
+                    '<label style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">Descripción</label>' +
+                    '<p style="font-size:13px; color:#334155; margin:6px 0; line-height:1.5;">' + escapeHtml(f.DESCRIPCION_FALLA) + '</p>' +
+                '</div>' +
+
+                materialesHtml +
+                resolucionHtml +
+
+                '<div style="display:flex; align-items:center; gap:12px; font-size:11px; color:#94a3b8; padding-top:8px; border-top:1px solid #f1f5f9;">' +
+                    '<span><i class="material-icons" style="font-size:14px; vertical-align:middle;">person</i> ' + escapeHtml(f.usuario) + '</span>' +
+                    '<span><i class="material-icons" style="font-size:14px; vertical-align:middle;">schedule</i> ' + (f.HORA_REGISTRO || '') + '</span>' +
+                    '<span><i class="material-icons" style="font-size:14px; vertical-align:middle;">location_on</i> ' + escapeHtml(f.frente_reporte) + '</span>' +
+                '</div>';
+
+        } catch (e) {
+            console.error('Error cargando detalle falla:', e);
+            body.innerHTML = '<p style="color:#dc2626; text-align:center; padding:20px;">Error al cargar el detalle de la falla</p>';
         }
     };
 
@@ -399,6 +505,8 @@
             const el = (id) => document.getElementById(id);
             if (el('statFallasAbiertas')) el('statFallasAbiertas').textContent = data.fallas_abiertas_hoy ?? 0;
             if (el('statInoperativos')) el('statInoperativos').textContent = data.equipos_inoperativos ?? 0;
+            if (el('statResueltas')) el('statResueltas').textContent = data.fallas_resueltas_hoy ?? 0;
+            if (el('statReportes')) el('statReportes').textContent = data.reportes_hoy ?? 0;
         } catch (e) { /* silent */ }
     }
 

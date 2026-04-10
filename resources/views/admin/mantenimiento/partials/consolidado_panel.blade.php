@@ -121,6 +121,7 @@
             <thead>
                 <tr>
                     <th>Frente</th>
+                    <th style="text-align:center;">Foto</th>
                     <th>Equipo</th>
                     <th>Tipo</th>
                     <th>Descripción</th>
@@ -133,6 +134,23 @@
                     @foreach($rep->fallas as $f)
                     <tr>
                         <td style="font-size:12px; font-weight:600;">{{ $rep->frente->NOMBRE_FRENTE ?? '' }}</td>
+                        <td style="text-align:center; width:80px;">
+                            @php
+                                $fotoCons = ($f->equipo->especificaciones && $f->equipo->especificaciones->FOTO_REFERENCIAL)
+                                    ? $f->equipo->especificaciones->FOTO_REFERENCIAL
+                                    : $f->equipo->FOTO_EQUIPO;
+                            @endphp
+                            @if($fotoCons)
+                                <div class="table-image-wrapper" style="width:70px; height:45px; margin:0 auto;">
+                                    <img src="{{ route('drive.file', ['path' => str_replace('/storage/google/', '', $fotoCons)]) }}"
+                                        alt="Equipo" loading="lazy" onload="this.style.opacity='1'" style="opacity:0;">
+                                </div>
+                            @else
+                                <div class="table-image-wrapper placeholder" style="width:70px; height:45px; margin:0 auto;">
+                                    <span class="material-icons" style="font-size:18px;">image_not_supported</span>
+                                </div>
+                            @endif
+                        </td>
                         <td>
                             <div style="font-size:12px; font-weight:700;">{{ $f->equipo->tipo->nombre ?? 'S/T' }}</div>
                             <div style="font-size:11px; color:#64748b;">{{ $f->equipo->MARCA ?? '' }} {{ $f->equipo->MODELO ?? '' }}</div>

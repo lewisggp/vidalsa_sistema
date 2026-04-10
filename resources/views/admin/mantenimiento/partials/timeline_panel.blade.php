@@ -90,6 +90,7 @@
                 <tr>
                     <th>Fecha</th>
                     <th>Frente</th>
+                    <th style="text-align:center;">Foto</th>
                     <th>Tipo</th>
                     <th>Descripción</th>
                     <th>Prioridad</th>
@@ -101,6 +102,23 @@
                 <tr>
                     <td style="font-weight:700; font-size:12px; white-space:nowrap;">{{ $f->HORA_REGISTRO->format('d/m H:i') }}</td>
                     <td style="font-size:12px;">{{ $f->reporte->frente->NOMBRE_FRENTE ?? '' }}</td>
+                    <td style="text-align:center; width:80px;">
+                        @php
+                            $fotoTl = ($f->equipo->especificaciones && $f->equipo->especificaciones->FOTO_REFERENCIAL)
+                                ? $f->equipo->especificaciones->FOTO_REFERENCIAL
+                                : $f->equipo->FOTO_EQUIPO;
+                        @endphp
+                        @if($fotoTl)
+                            <div class="table-image-wrapper" style="width:70px; height:45px; margin:0 auto;">
+                                <img src="{{ route('drive.file', ['path' => str_replace('/storage/google/', '', $fotoTl)]) }}"
+                                    alt="Equipo" loading="lazy" onload="this.style.opacity='1'" style="opacity:0;">
+                            </div>
+                        @else
+                            <div class="table-image-wrapper placeholder" style="width:70px; height:45px; margin:0 auto;">
+                                <span class="material-icons" style="font-size:18px;">image_not_supported</span>
+                            </div>
+                        @endif
+                    </td>
                     <td style="font-size:12px;">{{ $f->TIPO_FALLA }}</td>
                     <td style="font-size:12px; max-width:200px;">
                         <div style="overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">{{ $f->DESCRIPCION_FALLA }}</div>

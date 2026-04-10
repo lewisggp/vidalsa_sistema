@@ -5,7 +5,8 @@
 (function () {
     'use strict';
 
-    let currentReporteId = null;
+    // Shared across JS files via window
+    window.currentReporteId = null;
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
     /* ═══════════════════════════════════════════
@@ -33,6 +34,8 @@
             const el = (id) => document.getElementById(id);
             if (el('statFallasAbiertas')) el('statFallasAbiertas').textContent = data.fallas_abiertas_hoy ?? 0;
             if (el('statInoperativos')) el('statInoperativos').textContent = data.equipos_inoperativos ?? 0;
+            if (el('statResueltas')) el('statResueltas').textContent = data.fallas_resueltas_hoy ?? 0;
+            if (el('statReportes')) el('statReportes').textContent = data.reportes_hoy ?? 0;
         } catch (e) {
             console.error('Error cargando stats:', e);
         }
@@ -118,7 +121,7 @@
     };
 
     window.verReporte = async function (id) {
-        currentReporteId = id;
+        window.currentReporteId = id;
         const card = document.getElementById('fallaDetailCard');
         const container = document.getElementById('fallasTableContainer');
         if (!card || !container) return;
@@ -158,7 +161,7 @@
     };
 
     window.cerrarReporteActual = function () {
-        if (!currentReporteId) return;
+        if (!window.currentReporteId) return;
         if (window.showModal) {
             window.showModal({
                 type: 'warning',
@@ -168,7 +171,7 @@
                 cancelText: 'Cancelar',
                 onConfirm: async function () {
                     try {
-                        await fetch('/admin/mantenimiento/reporte/' + currentReporteId + '/cerrar', {
+                        await fetch('/admin/mantenimiento/reporte/' + window.currentReporteId + '/cerrar', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -178,7 +181,7 @@
                             },
                         });
                         cargarReportes();
-                        verReporte(currentReporteId);
+                        verReporte(window.currentReporteId);
                     } catch (e) {
                         console.error('Error cerrando reporte:', e);
                     }
@@ -188,11 +191,11 @@
     };
 
     window.exportarPdfReporte = function () {
-        if (!currentReporteId) return;
+        if (!window.currentReporteId) return;
         // Submit as form POST for PDF download
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = '/admin/mantenimiento/reporte/' + currentReporteId + '/pdf';
+        form.action = '/admin/mantenimiento/reporte/' + window.currentReporteId + '/pdf';
         form.target = '_blank';
         const csrf = document.createElement('input');
         csrf.type = 'hidden'; csrf.name = '_token'; csrf.value = csrfToken;
@@ -233,13 +236,13 @@
        TIMELINE SEARCH
     ═══════════════════════════════════════════ */
     let timelineSearchTimeout = null;
-    const timelineInput = document.getElementById('timelineEquipoSearch');
-    if (timelineInput) {
-        timelineInput.addEventListener('input', function () {
+    // Use event delegation so it works after SPA content replacement
+    document.addEventListener('input', function (e) {
+        if (e.target && e.target.id === 'timelineEquipoSearch') {
             clearTimeout(timelineSearchTimeout);
-            timelineSearchTimeout = setTimeout(() => buscarEquipoTimeline(this.value), 400);
-        });
-    }
+            timelineSearchTimeout = setTimeout(() => buscarEquipoTimeline(e.target.value), 400);
+        }
+    });
 
     async function buscarEquipoTimeline(query) {
         const resultsDiv = document.getElementById('timelineSearchResults');
@@ -249,7 +252,7 @@
         }
 
         try {
-            const resp = await fetch('/admin/equipos/search-field?q=' + encodeURIComponent(query), {
+            const resp = await fetch('/admin/mantenimiento/buscar-equipos?q=' + encodeURIComponent(query), {
                 headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
             });
             const equipos = await resp.json();
@@ -261,8 +264,8 @@
                         `<div style="padding:10px 16px; border-bottom:1px solid #f1f5f9; cursor:pointer; display:flex; align-items:center; gap:10px; transition:background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'" onclick="cargarTimeline(${eq.ID_EQUIPO})">
                             <i class="material-icons" style="font-size:20px; color:#0067b1;">agriculture</i>
                             <div>
-                                <div style="font-size:13px; font-weight:700; color:#1e293b;">${eq.MARCA || ''} ${eq.MODELO || ''}</div>
-                                <div style="font-size:11px; color:#64748b;">${eq.SERIAL_CHASIS || eq.CODIGO_PATIO || ''} | ${eq.ESTADO_OPERATIVO || ''}</div>
+                                <div style="font-size:13px; font-weight:700; color:#1e293b;">${eq.tipo || ''} — ${eq.MARCA || ''} ${eq.MODELO || ''}</div>
+                                <div style="font-size:11px; color:#64748b;">${eq.SERIAL_CHASIS || eq.CODIGO_PATIO || ''}</div>
                             </div>
                             <span class="badge-estado ${(eq.ESTADO_OPERATIVO || '').toLowerCase() === 'inoperativo' ? 'abierta' : 'resuelta'}" style="margin-left:auto;">${eq.ESTADO_OPERATIVO || ''}</span>
                         </div>`
