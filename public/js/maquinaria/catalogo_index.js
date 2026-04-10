@@ -21,18 +21,14 @@ window.confirmDeleteCatalogo = function (id, modelName) {
         confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
 
         // Handle confirm click (AJAX)
-        // Handle confirm click (AJAX)
         newBtn.onclick = async function () {
             // UI Feedback - Show Global Preloader
             if (typeof window.showPreloader === 'function') window.showPreloader();
             newBtn.disabled = true;
-            // newBtn.innerText = 'Eliminado...'; // Removed as per request
 
             let targetUrl = '';
-            // console.log('Attempting DELETE for ID:', id);
             try {
                 targetUrl = `/admin/catalogo/${id}`;
-                // console.log('Target URL:', targetUrl);
 
                 const response = await fetch(targetUrl, {
                     method: 'DELETE',
@@ -240,54 +236,8 @@ window.loadCatalogo = async function (url = null, showSpinner = true) {
         }
     });
 
-    // OPTIMIZATION: Check if there are any meaningful filters
-    // Strategy: Only skip server request if EVERYTHING is null/empty (truly no input from user)
-    // We exclude 'ajax_load' from this check as it is an internal flag
-    const visibleFilters = {
-        modelo: filters.modelo,
-        anio: filters.anio
-    };
-
-    const hasAnyInput = Object.values(visibleFilters).some(value => {
-        if (value === null || value === '' || value === undefined) return false;
-        if (typeof value === 'string' && value.trim() === '') return false;
-        if (value === 'all') return true; // 'all' is a valid filter
-        return true;
-    });
-
-    // If truly no input at all, clear UI without server request
-    if (!hasAnyInput) {
-        console.log('No active filters detected - clearing UI without server request');
-
-        // Clear table with friendly message
-        if (tableBody) {
-            tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8; font-style: italic;">SELECCIONE UN FILTRO PARA VISUALIZAR EL CATÁLOGO</td></tr>';
-            tableBody.style.opacity = '1';
-        }
-
-        // Clear pagination
-        const paginationContainer = document.getElementById('catalogoPagination');
-        if (paginationContainer) paginationContainer.innerHTML = '';
-
-        // Update Stats Sidebar to Zero/Empty
-        const statsSidebar = document.getElementById('statsSidebarContainer');
-        if (statsSidebar) {
-            // Keep container but reset content to basic empty state or 0
-            // Since stats are usually server-generated, we can set a simple empty state
-            statsSidebar.innerHTML = `
-                <div class="admin-card" style="padding: 15px; text-align: center; color: #94a3b8;">
-                    <i class="material-icons" style="font-size: 48px; margin-bottom: 10px; opacity: 0.5;">analytics</i>
-                    <p style="font-size: 13px;">Estadísticas no disponibles</p>
-                </div>
-            `;
-        }
-
-        // Update Browser URL
-        window.history.pushState({}, '', baseUrl);
-
-        if (showSpinner && typeof window.hidePreloader === 'function') window.hidePreloader();
-        return;
-    }
+    // Removed the !hasAnyInput check here. The catalog should always query the server
+    // even if filters are empty, because emptying filters means "show all paginated records".
 
     // Strip existing params from baseUrl if we are rebuilding them (unless it's pagination link)
     if (!url && baseUrl.includes('?')) {
@@ -334,14 +284,8 @@ window.loadCatalogo = async function (url = null, showSpinner = true) {
 
         // Update Pagination
         const paginationContainer = document.getElementById('catalogoPagination');
-        if (paginationContainer) {
+        if (paginationContainer && data.pagination !== undefined) {
             paginationContainer.innerHTML = data.pagination;
-            paginationContainer.querySelectorAll('a').forEach(link => {
-                link.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    window.loadCatalogo(this.href);
-                });
-            });
         }
 
         // Update Stats Sidebar
@@ -351,7 +295,9 @@ window.loadCatalogo = async function (url = null, showSpinner = true) {
         }
 
         // Update Browser URL (for shareable links)
-        window.history.pushState({}, '', finalUrl.replace('&ajax_load=1', '').replace('?ajax_load=1', ''));
+        const cleanUrl = new URL(finalUrl, window.location.origin);
+        cleanUrl.searchParams.delete('ajax_load');
+        window.history.pushState({}, '', cleanUrl.toString());
 
     } catch (error) {
         if (error.name === 'AbortError') return;
@@ -370,17 +316,6 @@ window.loadCatalogo = async function (url = null, showSpinner = true) {
 // Initialize Catalogo Module
 function initCatalogo() {
     if (!document.getElementById('catalogoTableBody')) return;
-
-    // Initialize Pagination on Load
-    const paginationContainer = document.getElementById('catalogoPagination');
-    if (paginationContainer) {
-        paginationContainer.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', function (e) {
-                e.preventDefault();
-                window.loadCatalogo(this.href);
-            });
-        });
-    }
 
     // Lazy Load Images
     const lazyImages = document.querySelectorAll('img.lazy-catalog-img');
@@ -404,12 +339,22 @@ function initCatalogo() {
         });
     }
 
-    // Reload via AJAX solo si hay parámetros de búsqueda
+    // Reload via AJAX solo si hay parámetros de búsqueda (en carga inicial)
     var hasParams = window.location.search.length > 1;
-    if (hasParams) { 
+    if (hasParams && !window.catalogoInitialLoadDone) { 
+        window.catalogoInitialLoadDone = true;
         window.loadCatalogo(); 
     }
 }
+
+// Global Event Delegation for Pagination (Solves intermittent click failures)
+document.addEventListener('click', function(e) {
+    const paginationLink = e.target.closest('#catalogoPagination a');
+    if (paginationLink) {
+        e.preventDefault();
+        window.loadCatalogo(paginationLink.href);
+    }
+});
 
 // Register with Module Manager for SPA compatibility
 ModuleManager.register('catalogo',

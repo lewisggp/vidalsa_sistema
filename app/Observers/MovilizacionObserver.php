@@ -43,16 +43,17 @@ class MovilizacionObserver
      */
     private function refreshCache(): void
     {
-        // ESTADO_MVO = 'TRANSITO' is what we count as "Pendientes" or "En Progreso" for the dashboard
-        Cache::forever('dashboard_pendientes', Movilizacion::where('ESTADO_MVO', 'TRANSITO')->count());
+        // Pendientes ya no existen, son instantáneos
+        Cache::forever('dashboard_pendientes', 0);
         
         // Cache movilizaciones today (date-based, will auto-refresh when day changes)
         Cache::forever('dashboard_movilizaciones_hoy', Movilizacion::whereDate('FECHA_DESPACHO', now()->today())->count());
         
         // Cache recent activity (ALL pending mobilizations for dashboard list)
         $recentActivity = Movilizacion::with(['equipo', 'frenteDestino'])
-            ->where('ESTADO_MVO', 'TRANSITO')
+            ->where('ESTADO_MVO', 'RECIBIDO')
             ->orderBy('created_at', 'desc')
+            ->limit(50)
             ->get();
         
         Cache::forever('dashboard_recent_activity', $recentActivity);

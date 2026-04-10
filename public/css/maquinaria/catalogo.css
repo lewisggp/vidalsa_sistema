@@ -128,7 +128,7 @@
         object-fit: contain;
     }
 
-    /* 2. MODELO / AÑO (Arriba Derecha) */
+    /* 2. MODELO / AÑO / (Nuevos on mobile: MOTOR/COMB) */
     .admin-table.catalog-specific-table td:nth-child(2) {
         grid-column: 2 / -1 !important;
         grid-row: 1 / 2 !important;
@@ -136,6 +136,14 @@
         padding-bottom: 2px !important;
         border-bottom: 1px solid #f1f5f9 !important;
         margin-bottom: 4px !important;
+    }
+
+    .admin-table.catalog-specific-table td:nth-child(2) .desktop-only-flex {
+        display: none !important;
+    }
+
+    .admin-table.catalog-specific-table td:nth-child(2) .mobile-only-grid {
+        display: grid !important;
     }
 
 

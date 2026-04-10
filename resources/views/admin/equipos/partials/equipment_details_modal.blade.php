@@ -275,7 +275,7 @@
 
                 <div style="display:flex; flex-direction:column; gap:8px;">
                     <div style="display:flex; flex-direction:column;">
-                        <span style="font-size:11px; color:#64748b; font-weight:700;">EQUIPO Y DISPOSITIVO</span>
+                        <span style="font-size:11px; color:#64748b; font-weight:700;">EQUIPO</span>
                         <span style="font-size:13px; color:#1e293b; font-weight:600;" id="scraped_device">Cargando...</span>
                     </div>
                     <div style="display:flex; flex-direction:column; border-top:1px dashed #e2e8f0; margin-top:2px; padding-top:6px;">
@@ -398,7 +398,11 @@ window.openGpsModal = function(url, equipoName) {
     const loading = document.getElementById('gps_loading_state');
 
     // UI Elements del panel lateral
-    document.getElementById('scraped_device').textContent = equipoName ? ('Placa: ' + equipoName + ' | Serial: SJ389463') : 'Placa: A46BN4R | Serial: SJ389463';
+    let displayName = equipoName || 'Equipo Seleccionado';
+    // Si displayName ya empieza por "Serial:" o "Placa:", evitar repetirlo
+    let prefix = (displayName.toLowerCase().includes('serial:') || displayName.toLowerCase().includes('placa:')) ? '' : 'Dato: ';
+    
+    document.getElementById('scraped_device').textContent = prefix + displayName + ' | En L\u00ednea';
     document.getElementById('scraped_coords').textContent = '-- , --';
     document.getElementById('scraped_actualizacion').textContent = '...';
     document.getElementById('scraped_posicion').textContent = '...';
@@ -417,7 +421,7 @@ window.openGpsModal = function(url, equipoName) {
     // SIMULACIÓN DE SCRAPER (Carga Rápida Optimizada)
     setTimeout(() => {
         // En etapa final, esto vendrá del ScraperController leyendo gps51 directamente
-        document.getElementById('scraped_device').textContent = equipoName ? ('Placa: ' + equipoName + ' | Serial: SJ389463') : 'Placa: A46BN4R | Serial: SJ389463';
+        document.getElementById('scraped_device').textContent = prefix + displayName + ' | Conectado';
         document.getElementById('scraped_coords').textContent = '-64.234510, 8.918608';
         
         let d = new Date();

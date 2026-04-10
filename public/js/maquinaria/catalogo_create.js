@@ -129,16 +129,15 @@
         const form = document.getElementById('catalogoForm');
         if (!form) return;
 
-        // Remove old listener if needed (robustness)
-        const newForm = form.cloneNode(true);
-        if (form.parentNode) {
-            form.parentNode.replaceChild(newForm, form);
-        }
+        // Ensure we don't bind multiple times, but never clone the form 
+        // because cloning destroys user file selections and DOM references
+        if (form.dataset.formInitialized === 'true') return;
+        form.dataset.formInitialized = 'true';
 
-        newForm.addEventListener('submit', handleSubmit);
+        form.addEventListener('submit', handleSubmit);
 
         // Auto-fetch years when Model changes (Manual typing)
-        const modelInput = newForm.querySelector('#MODELO');
+        const modelInput = form.querySelector('#MODELO');
         if (modelInput) {
             modelInput.addEventListener('blur', function () {
                 if (window.checkCatalogMatch) window.checkCatalogMatch();
@@ -146,7 +145,7 @@
         }
 
         // Re-attach preview logic since we cloned the form
-        const fileInput = newForm.querySelector('#foto_referencial');
+        const fileInput = form.querySelector('#foto_referencial');
         if (fileInput) {
             fileInput.addEventListener('change', function (e) {
                 if (e.target.files && e.target.files[0]) {

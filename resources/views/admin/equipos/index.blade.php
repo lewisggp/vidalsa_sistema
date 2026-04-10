@@ -1081,8 +1081,8 @@
         </div>
 
         <!-- Body -->
-        <div id="anclajesBody" style="display: none; padding: 20px; overflow-y: auto; flex: 1; background: #f8fafc;">
-            <div id="anclajesGrid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+        <div id="anclajesBody" style="display: none; padding: 14px 16px; overflow-y: auto; flex: 1; background: #f8fafc;">
+        <div id="anclajesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;">
                 <!-- Dynamically populated -->
             </div>
         </div>
@@ -1128,36 +1128,41 @@
                     const bPlacaOrSerial = (b.placa && b.placa !== 'S/P') ? b.placa : (b.serial || 'N/A');
 
                     // Compute Tags (Type + Label)
-                    const aEtiquetaHtml = a.etiqueta ? `<span style="background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; font-weight: 800; color: #475569; margin-left: 5px;">#${a.etiqueta}</span>` : '';
-                    const aTipoBlock = `<div style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 5px; display: flex; align-items: center; justify-content: center;">${a.tipo || 'Sin Tipo'}${aEtiquetaHtml}</div>`;
+                    const aEtiquetaHtml = a.etiqueta ? `<span style="background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; font-weight: 800; color: #475569; margin-left: 5px; font-size: 10px;">#${a.etiqueta}</span>` : '';
+                    const bEtiquetaHtml = b.etiqueta ? `<span style="background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; font-weight: 800; color: #475569; margin-left: 5px; font-size: 10px;">#${b.etiqueta}</span>` : '';
 
-                    const bEtiquetaHtml = b.etiqueta ? `<span style="background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; font-weight: 800; color: #475569; margin-left: 5px;">#${b.etiqueta}</span>` : '';
-                    const bTipoBlock = `<div style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 5px; display: flex; align-items: center; justify-content: center;">${b.tipo || 'Sin Tipo'}${bEtiquetaHtml}</div>`;
-
-
-                    const aFotoHtml = a.foto ? `<img src="${a.foto}" onerror="this.outerHTML='<div style=&quot;width: 50px; height: 35px; border-radius: 4px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; margin-bottom: 6px;&quot;><i class=&quot;material-icons&quot; style=&quot;color: #cbd5e1; font-size: 18px;&quot;>directions_car</i></div>'" style="width: 50px; height: 35px; object-fit: contain; border-radius: 4px; background: #f1f5f9; margin-bottom: 6px; border: 1px solid #e2e8f0;">` : `<div style="width: 50px; height: 35px; border-radius: 4px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; margin-bottom: 6px;"><i class="material-icons" style="color: #cbd5e1; font-size: 18px;">directions_car</i></div>`;
-                    const bFotoHtml = b.foto ? `<img src="${b.foto}" onerror="this.outerHTML='<div style=&quot;width: 50px; height: 35px; border-radius: 4px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; margin-bottom: 6px;&quot;><i class=&quot;material-icons&quot; style=&quot;color: #cbd5e1; font-size: 18px;&quot;>directions_car</i></div>'" style="width: 50px; height: 35px; object-fit: contain; border-radius: 4px; background: #f1f5f9; margin-bottom: 6px; border: 1px solid #e2e8f0;">` : `<div style="width: 50px; height: 35px; border-radius: 4px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; margin-bottom: 6px;"><i class="material-icons" style="color: #cbd5e1; font-size: 18px;">directions_car</i></div>`;
+                    const aFotoHtml = a.foto ? `<img src="${a.foto}" onerror="this.outerHTML='<div style=&quot;width: 32px; height: 26px; border-radius: 5px; background: #fff; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; flex-shrink: 0;&quot;><i class=&quot;material-icons&quot; style=&quot;color: #cbd5e1; font-size: 14px;&quot;>directions_car</i></div>'" style="width: 32px; height: 26px; object-fit: contain; border-radius: 5px; background: #fff; border: 1px solid #e2e8f0; flex-shrink: 0;">` : `<div style="width: 32px; height: 26px; border-radius: 5px; background: #fff; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; flex-shrink: 0;"><i class="material-icons" style="color: #cbd5e1; font-size: 14px;">directions_car</i></div>`;
+                    const bFotoHtml = b.foto ? `<img src="${b.foto}" onerror="this.outerHTML='<div style=&quot;width: 32px; height: 26px; border-radius: 5px; background: #fff; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; flex-shrink: 0;&quot;><i class=&quot;material-icons&quot; style=&quot;color: #cbd5e1; font-size: 14px;&quot;>directions_car</i></div>'" style="width: 32px; height: 26px; object-fit: contain; border-radius: 5px; background: #fff; border: 1px solid #e2e8f0; flex-shrink: 0;">` : `<div style="width: 32px; height: 26px; border-radius: 5px; background: #fff; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; flex-shrink: 0;"><i class="material-icons" style="color: #cbd5e1; font-size: 14px;">directions_car</i></div>`;
 
                     html += `
-                    <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                    <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; align-items: stretch; gap: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.06); transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow='0 1px 4px rgba(0,0,0,0.06)'">
+                        
                         <!-- Equipo A -->
-                        <div style="display: flex; flex-direction: column; align-items: center; width: 42%; text-align: center;">
+                        <div style="display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 5px 8px; border-radius: 6px; border: 1px solid #f1f5f9;">
                             ${aFotoHtml}
-                            ${aTipoBlock}
-                            <span style="font-size: 13px; font-weight: 800; color: #1e293b; line-height: 1.1; margin-bottom: 2px; letter-spacing: 0.5px; word-break: break-all;">${aPlacaOrSerial}</span>
+                            <div style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+                                <span style="font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.4px;">${a.tipo || 'Sin Tipo'}${aEtiquetaHtml}</span>
+                                <span style="font-size: 12px; font-weight: 800; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3;">${aPlacaOrSerial}</span>
+                            </div>
                         </div>
                         
-                        <!-- Icono Link -->
-                        <div style="display: flex; flex-direction: column; align-items: center; background: #e0f2fe; padding: 6px; border-radius: 50%; color: #0284c7; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
-                            <i class="material-icons" style="font-size: 18px;">link</i>
+                        <!-- Icono Link Central -->
+                        <div style="display: flex; justify-content: center; align-items: center; height: 14px; position: relative;">
+                            <div style="position: absolute; inset: 0 calc(50% - 1px); background: #e2e8f0; width: 1px; margin: 0 auto;"></div>
+                            <div style="background: #dbeafe; width: 18px; height: 18px; border-radius: 50%; color: #2563eb; z-index: 2; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; position: relative;">
+                                <i class="material-icons" style="font-size: 10px; transform: rotate(90deg);">link</i>
+                            </div>
                         </div>
 
                         <!-- Equipo B -->
-                        <div style="display: flex; flex-direction: column; align-items: center; width: 42%; text-align: center;">
+                        <div style="display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 5px 8px; border-radius: 6px; border: 1px solid #f1f5f9;">
                             ${bFotoHtml}
-                            ${bTipoBlock}
-                            <span style="font-size: 13px; font-weight: 800; color: #1e293b; line-height: 1.1; margin-bottom: 2px; letter-spacing: 0.5px; word-break: break-all;">${bPlacaOrSerial}</span>
+                            <div style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+                                <span style="font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.4px;">${b.tipo || 'Sin Tipo'}${bEtiquetaHtml}</span>
+                                <span style="font-size: 12px; font-weight: 800; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3;">${bPlacaOrSerial}</span>
+                            </div>
                         </div>
+
                     </div>`;
                 });
                 grid.innerHTML = html;

@@ -107,6 +107,10 @@
                     <a href="{{ route('usuarios.index') }}" class="nav-dropdown-link {{ request()->is('admin/usuarios*') ? 'active' : '' }}">
                         <i class="material-icons">people</i> Usuarios
                     </a>
+                    @else
+                    <a href="{{ route('usuarios.miPerfil') }}" class="nav-dropdown-link {{ request()->is('admin/usuarios/mi-perfil') ? 'active' : '' }}">
+                        <i class="material-icons">manage_accounts</i> Mi Usuario
+                    </a>
                     @endcan
                     <a href="{{ route('frentes.index') }}" class="nav-dropdown-link {{ request()->is('admin/frentes*') ? 'active' : '' }}">
                         <i class="material-icons">business</i> Frentes de trabajo
@@ -169,6 +173,10 @@
                 @can('manage.users')
                 <a href="{{ route('usuarios.index') }}" class="mobile-nav-link {{ request()->is('admin/usuarios*') ? 'active' : '' }}">
                     <i class="material-icons">people</i> Usuarios
+                </a>
+                @else
+                <a href="{{ route('usuarios.miPerfil') }}" class="mobile-nav-link {{ request()->is('admin/usuarios/mi-perfil') ? 'active' : '' }}">
+                    <i class="material-icons">manage_accounts</i> Mi Usuario
                 </a>
                 @endcan
                 <a href="{{ route('frentes.index') }}" class="mobile-nav-link {{ request()->is('admin/frentes*') ? 'active' : '' }}">
