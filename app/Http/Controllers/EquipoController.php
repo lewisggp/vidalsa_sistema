@@ -409,8 +409,13 @@ class EquipoController extends Controller
             }
         }
 
-        $equipos->with(['frenteActual', 'tipo', 'documentacion', 'especificaciones']);
+        $equipos->with(['frenteActual', 'tipo', 'documentacion', 'especificaciones', 'equiposAnclados.tipo', 'equiposAnclados.documentacion']);
         $equiposList = $equipos->get();
+
+        $equiposMap = [];
+        foreach($equiposList as $equipo) {
+            $equiposMap[$equipo->ID_EQUIPO] = $equipo;
+        }
 
         // Determinar nombre del frente para el encabezado
         $nombreFrente = 'TODOS LOS FRENTES';
@@ -538,21 +543,51 @@ class EquipoController extends Controller
         // Filas de datos
         $rowNum = 6;
         $counter = 1;
+        $processedIds = [];
+
         foreach($equiposList as $equipo) {
-            $tipo    = $equipo->tipo ? mb_strtoupper($equipo->tipo->nombre) : '—';
-            $marca   = mb_strtoupper($equipo->MARCA ?? '—');
-            $modelo  = mb_strtoupper($equipo->MODELO ?? '—');
-            $placa   = $equipo->documentacion ? mb_strtoupper($equipo->documentacion->PLACA ?? '') : '';
-            $chasis  = mb_strtoupper($equipo->SERIAL_CHASIS ?? '');
+            if (isset($processedIds[$equipo->ID_EQUIPO])) {
+                continue;
+            }
+
+            // If it's a child and its parent is also in the list, skip and let the parent print it
+            if ($equipo->ID_ANCLAJE && isset($equiposMap[$equipo->ID_ANCLAJE])) {
+                continue;
+            }
+
+            $tipoArr = [$equipo->tipo ? mb_strtoupper($equipo->tipo->nombre) : '—'];
+            $marcaArr = [mb_strtoupper($equipo->MARCA ?? '—')];
+            $modeloArr = [mb_strtoupper($equipo->MODELO ?? '—')];
+            
+            $chasis = trim($equipo->SERIAL_CHASIS ?? '');
+            $chasisArr = [$chasis !== '' ? mb_strtoupper($chasis) : '—'];
+            
+            $placa = $equipo->documentacion ? trim($equipo->documentacion->PLACA ?? '') : '';
+            $placaArr = [$placa !== '' ? mb_strtoupper($placa) : '—'];
+
+            // Append children if any
+            foreach($equipo->equiposAnclados as $anclado) {
+                 $tipoArr[] = $anclado->tipo ? mb_strtoupper($anclado->tipo->nombre) : '—';
+                 $marcaArr[] = mb_strtoupper($anclado->MARCA ?? '—');
+                 $modeloArr[] = mb_strtoupper($anclado->MODELO ?? '—');
+                 
+                 $achasis = trim($anclado->SERIAL_CHASIS ?? '');
+                 $chasisArr[] = $achasis !== '' ? mb_strtoupper($achasis) : '—';
+                 
+                 $aplaca = $anclado->documentacion ? trim($anclado->documentacion->PLACA ?? '') : '';
+                 $placaArr[] = $aplaca !== '' ? mb_strtoupper($aplaca) : '—';
+
+                 $processedIds[$anclado->ID_EQUIPO] = true;
+            }
 
             $numeroItem = str_pad($counter, 2, '0', STR_PAD_LEFT);
 
             $sheet->setCellValue('A'.$rowNum, $numeroItem);
-            $sheet->setCellValue('B'.$rowNum, $tipo);
-            $sheet->setCellValue('C'.$rowNum, $marca);
-            $sheet->setCellValue('D'.$rowNum, $modelo);
-            $sheet->setCellValue('E'.$rowNum, $chasis !== '' ? $chasis : '—');
-            $sheet->setCellValue('F'.$rowNum, $placa !== '' ? $placa : '—');
+            $sheet->setCellValue('B'.$rowNum, implode("\n", $tipoArr));
+            $sheet->setCellValue('C'.$rowNum, implode("\n", $marcaArr));
+            $sheet->setCellValue('D'.$rowNum, implode("\n", $modeloArr));
+            $sheet->setCellValue('E'.$rowNum, implode("\n", $chasisArr));
+            $sheet->setCellValue('F'.$rowNum, implode("\n", $placaArr));
             
             // Alternancia de colores en las filas (Zebra Striping)
             if ($counter % 2 === 0) {
@@ -562,6 +597,7 @@ class EquipoController extends Controller
             }
 
             $sheet->getStyle('B'.$rowNum)->getAlignment()->setWrapText(true);
+            $sheet->getStyle('C'.$rowNum)->getAlignment()->setWrapText(true);
             $sheet->getStyle('D'.$rowNum)->getAlignment()->setWrapText(true);
             $sheet->getStyle('E'.$rowNum)->getAlignment()->setWrapText(true);
             $sheet->getStyle('F'.$rowNum)->getAlignment()->setWrapText(true);
@@ -572,7 +608,10 @@ class EquipoController extends Controller
             $sheet->getStyle('E'.$rowNum)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle('F'.$rowNum)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
             
-            $sheet->getRowDimension($rowNum)->setRowHeight(30);
+            $numItems = count($tipoArr);
+            $rowHeight = $numItems === 1 ? 30 : ($numItems * 25);
+            $sheet->getRowDimension($rowNum)->setRowHeight($rowHeight);
+            
             $rowNum++;
             $counter++;
         }

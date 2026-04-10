@@ -284,14 +284,8 @@ window.loadCatalogo = async function (url = null, showSpinner = true) {
 
         // Update Pagination
         const paginationContainer = document.getElementById('catalogoPagination');
-        if (paginationContainer) {
+        if (paginationContainer && data.pagination !== undefined) {
             paginationContainer.innerHTML = data.pagination;
-            paginationContainer.querySelectorAll('a').forEach(link => {
-                link.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    window.loadCatalogo(this.href);
-                });
-            });
         }
 
         // Update Stats Sidebar
@@ -323,17 +317,6 @@ window.loadCatalogo = async function (url = null, showSpinner = true) {
 function initCatalogo() {
     if (!document.getElementById('catalogoTableBody')) return;
 
-    // Initialize Pagination on Load
-    const paginationContainer = document.getElementById('catalogoPagination');
-    if (paginationContainer) {
-        paginationContainer.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', function (e) {
-                e.preventDefault();
-                window.loadCatalogo(this.href);
-            });
-        });
-    }
-
     // Lazy Load Images
     const lazyImages = document.querySelectorAll('img.lazy-catalog-img');
     if ('IntersectionObserver' in window) {
@@ -363,6 +346,15 @@ function initCatalogo() {
         window.loadCatalogo(); 
     }
 }
+
+// Global Event Delegation for Pagination (Solves intermittent click failures)
+document.addEventListener('click', function(e) {
+    const paginationLink = e.target.closest('#catalogoPagination a');
+    if (paginationLink) {
+        e.preventDefault();
+        window.loadCatalogo(paginationLink.href);
+    }
+});
 
 // Register with Module Manager for SPA compatibility
 ModuleManager.register('catalogo',
