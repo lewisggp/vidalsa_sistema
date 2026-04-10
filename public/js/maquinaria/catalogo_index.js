@@ -301,7 +301,9 @@ window.loadCatalogo = async function (url = null, showSpinner = true) {
         }
 
         // Update Browser URL (for shareable links)
-        window.history.pushState({}, '', finalUrl.replace('&ajax_load=1', '').replace('?ajax_load=1', ''));
+        const cleanUrl = new URL(finalUrl, window.location.origin);
+        cleanUrl.searchParams.delete('ajax_load');
+        window.history.pushState({}, '', cleanUrl.toString());
 
     } catch (error) {
         if (error.name === 'AbortError') return;
@@ -354,9 +356,10 @@ function initCatalogo() {
         });
     }
 
-    // Reload via AJAX solo si hay parámetros de búsqueda
+    // Reload via AJAX solo si hay parámetros de búsqueda (en carga inicial)
     var hasParams = window.location.search.length > 1;
-    if (hasParams) { 
+    if (hasParams && !window.catalogoInitialLoadDone) { 
+        window.catalogoInitialLoadDone = true;
         window.loadCatalogo(); 
     }
 }

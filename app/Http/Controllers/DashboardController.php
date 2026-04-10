@@ -34,8 +34,8 @@ class DashboardController extends Controller
             }
             $movilizacionesHoy = $movilizacionesHoyQuery->count();
 
-            // 2. Pending Mobilizations (TRÁNSITO)
-            $pendientesQuery = Movilizacion::where('ESTADO_MVO', 'TRANSITO');
+            // 2. Pending Mobilizations (disabled since transit is instant)
+            $pendientesQuery = Movilizacion::whereRaw('1 = 0');
             if (count($frenteIds) > 0) {
                 $pendientesQuery->whereIn('ID_FRENTE_DESTINO', $frenteIds);
             } elseif (!$isGlobal) {
@@ -49,7 +49,7 @@ class DashboardController extends Controller
 
             // 4. Recent Activity (list) — LOCAL users see only their frentes
             $recentActivityQuery = Movilizacion::with(['equipo.tipo', 'equipo.documentacion', 'frenteDestino'])
-                ->where('ESTADO_MVO', 'TRANSITO')
+                ->where('ESTADO_MVO', 'RECIBIDO')
                 ->orderBy('created_at', 'desc')
                 ->limit(50);
             if (count($frenteIds) > 0) {
@@ -123,7 +123,7 @@ class DashboardController extends Controller
         $frenteIds = $user ? $user->getFrentesIds() : [];
 
         $query = Movilizacion::with(['equipo.tipo', 'equipo.documentacion', 'frenteDestino'])
-            ->where('ESTADO_MVO', 'TRANSITO');
+            ->where('ESTADO_MVO', 'RECIBIDO');
 
         if (count($frenteIds) > 0) {
             $query->whereIn('ID_FRENTE_DESTINO', $frenteIds);
@@ -131,7 +131,7 @@ class DashboardController extends Controller
             $query->whereRaw('1 = 0');
         }
 
-        $pendientes = $query->count();
+        $pendientes = 0;
         $recentActivity = $query->orderBy('created_at', 'desc')->limit(50)->get();
 
         $hoyQuery = Movilizacion::whereDate('created_at', \Carbon\Carbon::today());

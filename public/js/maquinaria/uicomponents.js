@@ -848,12 +848,15 @@ window.showDetailsImproved = function (target, event) {
         if (isValid(d.linkGps)) {
             gpsBtn.dataset.url = d.linkGps;
             
-            // Lógica: Placa si la tiene, si no Serial de Chasis
+            // Limpiar si el dato guardado en base de datos ya trae la palabra "Placa:" o "Serial:" adentro
+            let rawPlaca = d.placa ? d.placa.toString().replace(/^(placa|serial)[:\s-]+/i, '').trim() : '';
+            let rawChasis = d.chasis ? d.chasis.toString().replace(/^(placa|serial)[:\s-]+/i, '').trim() : '';
+
             let eqName = "";
-            if (isValid(d.placa)) {
-                eqName = "Placa: " + d.placa;
-            } else if (isValid(d.chasis)) {
-                eqName = "Serial: " + d.chasis;
+            if (isValid(rawPlaca)) {
+                eqName = "Placa: " + rawPlaca;
+            } else if (isValid(rawChasis)) {
+                eqName = "Serial: " + rawChasis;
             } else {
                 eqName = "Desconocido";
             }

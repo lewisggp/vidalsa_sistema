@@ -317,7 +317,7 @@ class EquipoController extends Controller
             return redirect()->back()->with('error', 'Debe aplicar al menos un filtro antes de exportar los datos.');
         }
 
-        $fileName = 'equipos_export_' . date('Y-m-d_H-i') . '.xls';
+        $fileName = 'Listado_Maquinarias_Equipos_' . date('Y-m-d_H-i') . '.xlsx';
 
         $equipos = Equipo::query();
 
@@ -420,16 +420,24 @@ class EquipoController extends Controller
         }
 
         $currentDate = date('d/m/Y');
-        $fileName = 'listado_equipos_' . date('Y-m-d') . '.xlsx';
 
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Equipos');
 
+        // Document properties
+        $spreadsheet->getProperties()
+            ->setCreator('Sistema de Gestión de Equipos Operacionales')
+            ->setLastModifiedBy('Sistema de Gestión de Equipos Operacionales')
+            ->setTitle('Listado de Maquinarias y Equipos')
+            ->setSubject('Exportación - Sistema de Gestión de Equipos Operacionales')
+            ->setDescription('Generado automáticamente por el Sistema de Gestión de Equipos Operacionales - C.VIDALSA 27, C.A.')
+            ->setCompany('Constructora Vidalsa 27, C.A.');
+
         $spreadsheet->getDefaultStyle()->getFont()->setName('Arial')->setSize(10);
 
         // Logo
-        $logoPath = public_path('images/maquinaria/logo.png');
+        $logoPath = public_path('img/imagen_uno.jpg');
         if (file_exists($logoPath)) {
             try {
                 $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
@@ -437,109 +445,59 @@ class EquipoController extends Controller
                 $drawing->setDescription('Logo');
                 $drawing->setPath($logoPath);
                 $drawing->setCoordinates('A1');
-                $drawing->setOffsetX(10);
-                $drawing->setOffsetY(5);
-                $drawing->setHeight(40);
+                $drawing->setOffsetX(15);
+                $drawing->setOffsetY(10);
+                $drawing->setHeight(55);
                 $drawing->setWorksheet($sheet);
             } catch (\Exception $e) {
                 // Silently ignore if image failed
             }
         }
 
-        // Fila 1 - Título Empresa
-        $sheet->mergeCells('A1:G1');
-        $sheet->setCellValue('A1', 'C.A. VENEZOLANA DE INDUSTRIAS LÁCTEAS S.A. — CVIDALSA');
-        $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A1')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
-        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_WHITE);
-        $sheet->getStyle('A1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF002060');
-        $sheet->getRowDimension(1)->setRowHeight(40);
+        // Fila 1 a 3 - Título Empresa
+        $sheet->mergeCells('A1:B3');
+        $sheet->getStyle('A1:B3')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFD9D9D9');
 
-        // Fila 2 - Subtítulo
-        $sheet->mergeCells('A2:G2');
-        $sheet->setCellValue('A2', 'LISTADO DE MAQUINARIAS Y EQUIPOS');
-        $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A2')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
-        $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(13)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_WHITE);
-        $sheet->getStyle('A2')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF0070C0');
-        $sheet->getRowDimension(2)->setRowHeight(35);
+        $sheet->mergeCells('C1:F3');
+        if ($nombreFrente !== 'TODOS LOS FRENTES') {
+            $subTitle = 'PROYECTO: "' . mb_strtoupper($nombreFrente) . '"';
+        } else {
+            $subTitle = 'COPIA DE BASE DE DATOS DEL SISTEMA DE GESTION DE EQUIPOS OPERACIONALES';
+        }
+        $titleText = "LISTADO DE MAQUINARIAS Y EQUIPOS\n" . $subTitle;
+        $sheet->setCellValue('C1', $titleText);
+        $sheet->getStyle('C1')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('C1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('C1')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('C1')->getFont()->setBold(true)->setSize(14)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_BLACK);
+        $sheet->getStyle('C1:F3')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFD9D9D9');
 
-        // Fila 3 - Frente y fecha
-        $sheet->mergeCells('A3:E3');
-        $sheet->setCellValue('A3', 'FRENTE DE TRABAJO: ' . $nombreFrente);
-        $sheet->mergeCells('F3:G3');
-        $sheet->setCellValue('F3', 'FECHA: ' . $currentDate);
-        $sheet->getStyle('A3:G3')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
-        $sheet->getStyle('A3:G3')->getFont()->setBold(true)->setSize(11)->getColor()->setARGB('FF002060');
-        $sheet->getStyle('A3:G3')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFD6E4F0');
+        $sheet->mergeCells('G1:H1');
+        $sheet->setCellValue('G1', 'EDICION: 1');
+        $sheet->getStyle('G1:H1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('G1:H1')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('G1:H1')->getFont()->setBold(true)->setSize(11)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_BLACK);
+        $sheet->getStyle('G1:H1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFD9D9D9');
+
+        $sheet->mergeCells('G2:H2');
+        $sheet->setCellValue('G2', 'REVISION: 0');
+        $sheet->getStyle('G2:H2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('G2:H2')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('G2:H2')->getFont()->setBold(true)->setSize(11)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_BLACK);
+
+        $sheet->mergeCells('G3:H3');
+        $sheet->setCellValue('G3', 'FECHA: ' . $currentDate);
+        $sheet->getStyle('G3:H3')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('G3:H3')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('G3:H3')->getFont()->setBold(true)->setSize(11)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_BLACK);
+
+        $sheet->getRowDimension(1)->setRowHeight(25);
+        $sheet->getRowDimension(2)->setRowHeight(25);
         $sheet->getRowDimension(3)->setRowHeight(25);
+        $sheet->getRowDimension(4)->setRowHeight(10); // Espaciador
 
-        // Fila 4 - Encabezados
-        $headers = ['Nro', 'Frente de Trabajo', 'Tipo de Equipo', 'Marca', 'Modelo', 'Placa', 'Serial de Chasis'];
-        $colMap = ['A','B','C','D','E','F','G'];
-        foreach($headers as $index => $hdr) {
-            $sheet->setCellValue($colMap[$index] . '4', $hdr);
-        }
-        $sheet->getStyle('A4:G4')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A4:G4')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
-        $sheet->getStyle('A4:G4')->getFont()->setBold(true)->setSize(10)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_WHITE);
-        $sheet->getStyle('A4:G4')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF1F4E79');
-        $sheet->getRowDimension(4)->setRowHeight(30);
-
-        // Anchos de columna
-        $sheet->getColumnDimension('A')->setWidth(8);
-        $sheet->getColumnDimension('B')->setWidth(30);
-        $sheet->getColumnDimension('C')->setWidth(25);
-        $sheet->getColumnDimension('D')->setWidth(20);
-        $sheet->getColumnDimension('E')->setWidth(25);
-        $sheet->getColumnDimension('F')->setWidth(15);
-        $sheet->getColumnDimension('G')->setWidth(25);
-
-        // Filas de datos
-        $rowNum = 5;
-        $counter = 1;
-        foreach($equiposList as $equipo) {
-            $frente  = $equipo->frenteActual  ? mb_strtoupper($equipo->frenteActual->NOMBRE_FRENTE) : '—';
-            $tipo    = $equipo->tipo          ? mb_strtoupper($equipo->tipo->nombre)               : '—';
-            $marca   = mb_strtoupper($equipo->MARCA   ?? '—');
-            $modelo  = mb_strtoupper($equipo->MODELO  ?? '—');
-            $placa   = $equipo->documentacion ? mb_strtoupper($equipo->documentacion->PLACA ?? '—') : '—';
-            $chasis  = mb_strtoupper($equipo->SERIAL_CHASIS ?? '—');
-
-            $sheet->setCellValue('A'.$rowNum, $counter);
-            $sheet->setCellValue('B'.$rowNum, $frente);
-            $sheet->setCellValue('C'.$rowNum, $tipo);
-            $sheet->setCellValue('D'.$rowNum, $marca);
-            $sheet->setCellValue('E'.$rowNum, $modelo);
-            $sheet->setCellValue('F'.$rowNum, $placa);
-            $sheet->setCellValue('G'.$rowNum, $chasis);
-
-            $sheet->getStyle('A'.$rowNum.':G'.$rowNum)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
-            $sheet->getStyle('A'.$rowNum)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('F'.$rowNum)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-            
-            if($counter % 2 == 0) {
-                $sheet->getStyle('A'.$rowNum.':G'.$rowNum)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFEBF3FB');
-            }
-
-            $sheet->getRowDimension($rowNum)->setRowHeight(20);
-            $rowNum++;
-            $counter++;
-        }
-
-        // Fila Total
-        $sheet->setCellValue('A'.$rowNum, 'Total');
-        $sheet->mergeCells('B'.$rowNum.':G'.$rowNum);
-        $sheet->setCellValue('B'.$rowNum, ($counter - 1));
-        
-        $sheet->getStyle('A'.$rowNum.':G'.$rowNum)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
-        $sheet->getStyle('A'.$rowNum)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A'.$rowNum.':G'.$rowNum)->getFont()->setBold(true)->setSize(10)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_WHITE);
-        $sheet->getStyle('A'.$rowNum.':G'.$rowNum)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF1F4E79');
-        $sheet->getRowDimension($rowNum)->setRowHeight(22);
-
-        // Bordes a toda la tabla
-        $styleArray = [
+        // Bordes a toda la cuadricula de encabezado
+        $headerBorders = [
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
@@ -547,15 +505,108 @@ class EquipoController extends Controller
                 ],
             ],
         ];
-        $sheet->getStyle('A1:G'.$rowNum)->applyFromArray($styleArray);
+        $sheet->getStyle('A1:H3')->applyFromArray($headerBorders);
 
-        return response()->streamDownload(function() use ($spreadsheet) {
-            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
-            $writer->save('php://output');
-        }, $fileName, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Cache-Control' => 'max-age=0'
-        ]);
+        // Fila 5 - Encabezados de tabla
+        $headers = ['ITEMS', 'DESCRIPCION', 'MARCA', 'COLOR', 'PLACA/ SERIAL', 'MODELO', 'Extintor', 'CERTIFICADO'];
+        $colMap = ['A','B','C','D','E','F','G','H'];
+        foreach($headers as $index => $hdr) {
+            $sheet->setCellValue($colMap[$index] . '5', $hdr);
+        }
+        $sheet->getStyle('A5:H5')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A5:H5')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A5:H5')->getFont()->setBold(true)->setSize(10)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_BLACK);
+        $sheet->getStyle('A5:H5')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFA9C4EB');
+        $sheet->getRowDimension(5)->setRowHeight(30);
+
+        // Anchos de columna
+        $sheet->getColumnDimension('A')->setWidth(8);
+        $sheet->getColumnDimension('B')->setWidth(35);
+        $sheet->getColumnDimension('C')->setWidth(18);
+        $sheet->getColumnDimension('D')->setWidth(15);
+        $sheet->getColumnDimension('E')->setWidth(25);
+        $sheet->getColumnDimension('F')->setWidth(25);
+        $sheet->getColumnDimension('G')->setWidth(12);
+        $sheet->getColumnDimension('H')->setWidth(15);
+
+        // Filas de datos
+        $rowNum = 6;
+        $counter = 1;
+        foreach($equiposList as $equipo) {
+            $tipo    = $equipo->tipo ? mb_strtoupper($equipo->tipo->nombre) : '—';
+            $marca   = mb_strtoupper($equipo->MARCA ?? '—');
+            $modelo  = mb_strtoupper($equipo->MODELO ?? '—');
+            $placa   = $equipo->documentacion ? mb_strtoupper($equipo->documentacion->PLACA ?? '') : '';
+            $chasis  = mb_strtoupper($equipo->SERIAL_CHASIS ?? '');
+
+            // Unir placa y chasis con salto de linea
+            $placaSerial = trim($placa . "\n" . $chasis);
+            if (empty($placaSerial)) {
+                $placaSerial = '—';
+            }
+
+            $numeroItem = str_pad($counter, 2, '0', STR_PAD_LEFT);
+
+            $sheet->setCellValue('A'.$rowNum, $numeroItem);
+            $sheet->setCellValue('B'.$rowNum, $tipo);
+            $sheet->setCellValue('C'.$rowNum, $marca);
+            $sheet->setCellValue('D'.$rowNum, ''); // COLOR no provisto por DB central
+            $sheet->setCellValue('E'.$rowNum, $placaSerial);
+            $sheet->setCellValue('F'.$rowNum, $modelo);
+            $sheet->setCellValue('G'.$rowNum, 'SI');
+            $sheet->setCellValue('H'.$rowNum, ''); // CERTIFICADO por rellenar
+
+            $sheet->getStyle('E'.$rowNum)->getAlignment()->setWrapText(true);
+            $sheet->getStyle('B'.$rowNum)->getAlignment()->setWrapText(true);
+
+            $sheet->getStyle('A'.$rowNum.':H'.$rowNum)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+            $sheet->getStyle('A'.$rowNum)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('C'.$rowNum)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('E'.$rowNum)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('F'.$rowNum)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('G'.$rowNum)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            
+            $sheet->getRowDimension($rowNum)->setRowHeight(35);
+            $rowNum++;
+            $counter++;
+        }
+
+        // Fila Total
+        $sheet->setCellValue('A'.$rowNum, 'TOTALES');
+        $sheet->mergeCells('B'.$rowNum.':C'.$rowNum);
+        $sheet->setCellValue('B'.$rowNum, ($counter - 1) . " EQUIPOS");
+        $sheet->mergeCells('D'.$rowNum.':H'.$rowNum);
+        
+        $sheet->getStyle('A'.$rowNum.':H'.$rowNum)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A'.$rowNum.':B'.$rowNum)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A'.$rowNum.':H'.$rowNum)->getFont()->setBold(true)->setSize(10)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_BLACK);
+        $sheet->getStyle('A'.$rowNum.':H'.$rowNum)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFD9D9D9');
+        $sheet->getRowDimension($rowNum)->setRowHeight(25);
+
+        // Fila firma/sistema
+        $rowNum++;
+        $sheet->mergeCells('A'.$rowNum.':H'.$rowNum);
+        $sheet->setCellValue('A'.$rowNum, 'Exportado por: Sistema de Gestión de Equipos Operacionales — C.VIDALSA 27, C.A. | Fecha: ' . $currentDate);
+        $sheet->getStyle('A'.$rowNum)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle('A'.$rowNum)->getFont()->setItalic(true)->setSize(8)->getColor()->setARGB('FF64748B');
+        $sheet->getRowDimension($rowNum)->setRowHeight(16);
+
+        // Bordes a toda la tabla
+        $sheet->getStyle('A5:H'.$rowNum)->applyFromArray($headerBorders);
+
+        ob_end_clean(); // CRITICAL: Limpia el buffer de salida para evitar que espacios en blanco o BOM corrompan el Excel
+
+        // Usar temp file temporal para asegurar que los headers y nombre de archivo lleguen intactos a cualquier navegador (previene UUID chunks)
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $tempFile = tempnam(sys_get_temp_dir(), 'export_cvidalsa_');
+        $writer->save($tempFile);
+
+        return response()->download($tempFile, $fileName, [
+            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+            'Cache-Control'       => 'max-age=0, must-revalidate, post-check=0, pre-check=0',
+            'Pragma'              => 'public'
+        ])->deleteFileAfterSend(true);
     }
 
 

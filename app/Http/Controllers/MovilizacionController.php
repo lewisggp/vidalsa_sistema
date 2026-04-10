@@ -127,7 +127,7 @@ class MovilizacionController extends Controller
 
         // ─── Stats: Total In Transit ──────────────────────────────────────────────
         // Uses the same shared filter closure to guarantee consistency with the table.
-        $statsQuery = Movilizacion::where('ESTADO_MVO', 'TRANSITO');
+        $statsQuery = Movilizacion::where('ESTADO_MVO', 'RECIBIDO');
         $applyFrenteFilter($statsQuery);
 
         if ($request->filled('id_tipo') && $request->id_tipo !== 'all') {
@@ -143,13 +143,8 @@ class MovilizacionController extends Controller
             $statsQuery->whereDate('FECHA_DESPACHO', '<=', $request->fecha_hasta);
         }
 
-        $totalTransito    = (clone $statsQuery)->count();
-        $transitoPorFrente = (clone $statsQuery)
-            ->join('frentes_trabajo', 'movilizacion_historial.ID_FRENTE_DESTINO', '=', 'frentes_trabajo.ID_FRENTE')
-            ->select('frentes_trabajo.NOMBRE_FRENTE', DB::raw('count(*) as total'))
-            ->groupBy('frentes_trabajo.NOMBRE_FRENTE')
-            ->orderByDesc('total')
-            ->get();
+        $totalTransito    = 0; // Disabled stat
+        $transitoPorFrente = (clone $statsQuery)->whereRaw('1 = 0')->get(); // Empty collection
 
         // Check if JSON specifically requested (for filters)
         if ($request->wantsJson()) {
@@ -216,19 +211,26 @@ class MovilizacionController extends Controller
 
         $origen = $equipo->ID_FRENTE_ACTUAL ?? 1;
 
+        $now = now();
         Movilizacion::create([
             'CODIGO_CONTROL' => $nextId,
             'ID_EQUIPO' => $request->ID_EQUIPO,
             'ID_FRENTE_ORIGEN' => $origen,
             'ID_FRENTE_DESTINO' => $request->ID_FRENTE_DESTINO,
-            'FECHA_DESPACHO' => now(),
-            'ESTADO_MVO' => 'TRANSITO',
+            'FECHA_DESPACHO' => $now,
+            'FECHA_RECEPCION' => $now,
+            'ESTADO_MVO' => 'RECIBIDO',
             'TIPO_MOVIMIENTO' => 'DESPACHO',
             'USUARIO_REGISTRO' => auth()->user()->CORREO_ELECTRONICO ?? 'SISTEMA',
+            'USUARIO_RECEPCION' => auth()->user()->CORREO_ELECTRONICO ?? 'SISTEMA',
         ]);
 
-        // Al despachar a otro frente, la ubicación específica anterior ya no aplica
-        $equipo->update(['DETALLE_UBICACION_ACTUAL' => null]);
+        // Al despachar a otro frente, llega instantaneamente
+        $equipo->update([
+            'ID_FRENTE_ACTUAL' => $request->ID_FRENTE_DESTINO,
+            'DETALLE_UBICACION_ACTUAL' => null,
+            'CONFIRMADO_EN_SITIO' => 1
+        ]);
 
         return redirect()->route('movilizaciones.index')->with('success', 'Movilización registrada correctamente.');
     }
@@ -272,9 +274,11 @@ class MovilizacionController extends Controller
                         'ID_FRENTE_ORIGEN' => $equipo->ID_FRENTE_ACTUAL ?? 1,
                         'ID_FRENTE_DESTINO' => $frente->ID_FRENTE,
                         'FECHA_DESPACHO' => $now,
-                        'ESTADO_MVO' => 'TRANSITO',
+                        'FECHA_RECEPCION' => $now,
+                        'ESTADO_MVO' => 'RECIBIDO',
                         'TIPO_MOVIMIENTO' => 'DESPACHO',
                         'USUARIO_REGISTRO' => $user,
+                        'USUARIO_RECEPCION' => $user,
                         'created_at' => $now,
                         'updated_at' => $now,
                     ];
@@ -318,7 +322,7 @@ class MovilizacionController extends Controller
 
             \App\Models\Equipo::whereIn('ID_EQUIPO', $request->ids)->update([
                 'ID_FRENTE_ACTUAL'          => $frente->ID_FRENTE,
-                'CONFIRMADO_EN_SITIO'       => $generarPdf ? 0 : 1,
+                'CONFIRMADO_EN_SITIO'       => 1,
                 'DETALLE_UBICACION_ACTUAL'  => null, // Se borra al salir del frente
             ]);
 
@@ -695,21 +699,25 @@ class MovilizacionController extends Controller
         $lastLog = Movilizacion::latest('ID_MOVILIZACION')->first();
         $nextId  = $lastLog ? ($lastLog->ID_MOVILIZACION + 1) : 1;
 
+        $now = now();
         Movilizacion::create([
             'CODIGO_CONTROL'    => $nextId,
             'ID_EQUIPO'         => $request->ID_EQUIPO,
             'ID_FRENTE_ORIGEN'  => $equipo->ID_FRENTE_ACTUAL ?? 1,
             'ID_FRENTE_DESTINO' => $request->ID_FRENTE_DESTINO,
-            'FECHA_DESPACHO'    => now(),
-            'ESTADO_MVO'        => 'TRANSITO',
+            'FECHA_DESPACHO'    => $now,
+            'FECHA_RECEPCION'   => $now,
+            'ESTADO_MVO'        => 'RECIBIDO',
             'TIPO_MOVIMIENTO'   => 'DESPACHO',
             'USUARIO_REGISTRO'  => $usuario->CORREO_ELECTRONICO ?? 'SISTEMA',
+            'USUARIO_RECEPCION' => $usuario->CORREO_ELECTRONICO ?? 'SISTEMA',
         ]);
 
-        // Al despachar a otro frente, la ubicación específica anterior ya no aplica
+        // Al despachar a otro frente, llega instantaneamente
         $equipo->update([
             'ID_FRENTE_ACTUAL'         => $request->ID_FRENTE_DESTINO,
             'DETALLE_UBICACION_ACTUAL' => null,
+            'CONFIRMADO_EN_SITIO'      => 1,
         ]);
 
         return response()->json(['success' => true, 'message' => 'Despacho registrado correctamente.']);

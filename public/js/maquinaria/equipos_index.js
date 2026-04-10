@@ -1389,7 +1389,8 @@ window.exportEquipos = function () {
         return;
     }
 
-    window.location.href = "/admin/equipos/export?" + params.toString();
+    // Forzar apertura en nueva pestaña para purgar interceptores de descarga del navegador (como IDM o Livewire)
+    window.open("/admin/equipos/export?" + params.toString(), "_blank");
 };
 
 function initEquipos() {

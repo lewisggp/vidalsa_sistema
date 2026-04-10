@@ -1139,7 +1139,11 @@ function PantallaDashboard({ onOpenMenu, equiposCount }) {
 function PantallaEquipos({ user, onOpenMenu }) {
   const [equiposTodos, setEquiposTodos] = useState([]);
   const [loading, setLoading] = useState(true);
+  // busquedaInput: lo que el usuario escribe (no lanza filtro)
+  // busqueda: el valor real que dispara la query (≥4 chars o vacío)
+  const [busquedaInput, setBusquedaInput] = useState("");
   const [busqueda, setBusqueda] = useState("");
+  const debounceRef = React.useRef(null);
   const [filtroFrente, setFiltroFrente] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
@@ -1218,7 +1222,12 @@ function PantallaEquipos({ user, onOpenMenu }) {
     setChkPoliza(false);
     setChkRotc(false);
     setChkRacda(false);
-    cargar();
+    // Limpiar búsqueda de texto también
+    setBusquedaInput("");
+    setBusqueda("");
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    // No llamar cargar() aquí — el useEffect([cargar]) lo hará
+    // automáticamente al detectar que los estados cambiaron
   };
 
   const cargar = useCallback(async () => {
@@ -1348,6 +1357,14 @@ function PantallaEquipos({ user, onOpenMenu }) {
   useEffect(() => {
     cargar();
   }, [cargar]);
+
+  // Cleanup del debounce al desmontar el componente — evita memory leaks
+  // y actualizaciones de estado en componentes ya desmontados
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   // Status map — matches web icons exactly
   const estadoMap = {
@@ -1659,13 +1676,34 @@ function PantallaEquipos({ user, onOpenMenu }) {
                 color: "#1e293b",
                 paddingVertical: 0,
               }}
-              placeholder="Buscar Seriales"
+              placeholder="Buscar Seriales / Placas (mín. 4 letras)"
               placeholderTextColor="#94a3b8"
-              value={busqueda}
-              onChangeText={setBusqueda}
+              value={busquedaInput}
+              returnKeyType="search"
+              onChangeText={(text) => {
+                setBusquedaInput(text);
+                if (debounceRef.current) clearTimeout(debounceRef.current);
+                
+                if (text.length === 0) {
+                  // Limpiar inmediatamente si borra todo
+                  setBusqueda("");
+                  return;
+                }
+                
+                if (text.length < 4) {
+                  // Inconsistencia evitada: si borra hasta tener menos de 4 chars (ej: "abc"),
+                  // reseteamos la búsqueda para no dejar resultados ocultos pegados.
+                  setBusqueda("");
+                  return;
+                }
+                
+                debounceRef.current = setTimeout(() => {
+                  setBusqueda(text);
+                }, 2000); // 2 segundos de espera
+              }}
             />
-            {busqueda ? (
-              <TouchableOpacity onPress={() => setBusqueda("")}>
+            {busquedaInput ? (
+              <TouchableOpacity onPress={() => { setBusquedaInput(""); setBusqueda(""); if (debounceRef.current) clearTimeout(debounceRef.current); }}>
                 <MaterialIcons name="close" size={18} color="#94a3b8" />
               </TouchableOpacity>
             ) : null}
@@ -2365,9 +2403,21 @@ function PantallaEquipos({ user, onOpenMenu }) {
 
       {/* Lista de Tarjetas — los filtros se desplazan con la lista */}
       {loading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={C.blue} />
-          <Text style={styles.loadingText}>Cargando equipos...</Text>
+        <View style={[styles.centered, { flex: 1 }]}>
+          {/* Spinner premium igual al resto de la app */}
+          <View style={{
+            width: 72, height: 72, borderRadius: 36,
+            backgroundColor: "#f8fafc",
+            borderWidth: 1, borderColor: "#e2e8f0",
+            alignItems: "center", justifyContent: "center",
+            shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.08, shadowRadius: 8, elevation: 3,
+            marginBottom: 14,
+          }}>
+            <ActivityIndicator size="large" color="#0067b1" />
+          </View>
+          <Text style={{ fontSize: 14, fontWeight: "700", color: "#475569" }}>Cargando equipos...</Text>
+          <Text style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>Por favor espera un momento</Text>
         </View>
       ) : (
         <FlatList
@@ -2399,11 +2449,13 @@ function PantallaEquipos({ user, onOpenMenu }) {
       {equiposSelect.length > 0 && (
         <View style={{
           position: "absolute", bottom: 0, left: 0, right: 0,
-          backgroundColor: "#00004d", paddingVertical: 12, paddingHorizontal: 16,
+          backgroundColor: "#00004d", paddingVertical: 14, paddingHorizontal: 16,
+          paddingBottom: Platform.OS === "android" ? 14 : 28, // safe area en iPhone
           flexDirection: "row", alignItems: "center", justifyContent: "space-between",
           borderTopLeftRadius: 16, borderTopRightRadius: 16,
-          shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.15, shadowRadius: 8,
-          elevation: 20,
+          shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.25, shadowRadius: 12,
+          elevation: 30,   // Android: encima de todo
+          zIndex: 9999,    // iOS: encima de la nav
         }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <TouchableOpacity
@@ -2412,19 +2464,26 @@ function PantallaEquipos({ user, onOpenMenu }) {
             >
               <MaterialIcons name="close" size={18} color="#fff" />
             </TouchableOpacity>
-            <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>
-              {equiposSelect.length} seleccionado{equiposSelect.length > 1 ? "s" : ""}
-            </Text>
+            <View>
+              <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>
+                {equiposSelect.length} seleccionado{equiposSelect.length > 1 ? "s" : ""}
+              </Text>
+              <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 11 }}>Mantén pulsado para seleccionar más</Text>
+            </View>
           </View>
           <TouchableOpacity
             onPress={() => { setShowDropAsignar(true); setBusqDropAsignar(""); }}
             style={{
               backgroundColor: "#3b82f6", paddingHorizontal: 16, paddingVertical: 10,
               borderRadius: 10, flexDirection: "row", alignItems: "center", gap: 6,
+              borderWidth: 1, borderColor: "rgba(255,255,255,0.2)",
             }}
           >
             <MaterialIcons name="swap-horiz" size={18} color="#fff" />
-            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>Asignar a Frente</Text>
+            <View>
+              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>Asignar a Frente</Text>
+              <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 10 }}>{equiposSelect.length} equipo{equiposSelect.length > 1 ? "s" : ""}</Text>
+            </View>
           </TouchableOpacity>
         </View>
       )}
